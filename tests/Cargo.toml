@@ -1,0 +1,15 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2018"
+
+[dev-dependencies]
+reputation-contract = { path = "../contracts/reputation", default-features = false, features = [ "test-support" ] }
+tests-utils = { path = "../tests-utils" }
+
+[[bin]]
+name = "reputation-tests"
+path = "src/reputation_tests.rs"
+bench = false
+doctest = false
+
