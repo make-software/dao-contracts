@@ -5,7 +5,9 @@ edition = "2018"
 
 [dev-dependencies]
 reputation-contract = { path = "../contracts/reputation", default-features = false, features = [ "test-support" ] }
-tests-utils = { path = "../tests-utils" }
+test-utils = { path = "../test-utils" }
+casper-types = "1.4.6"
+
 
 [[bin]]
 name = "reputation-tests"
