@@ -2,7 +2,7 @@
 
 use casper_contract::contract_api::runtime;
 use casper_types::{ApiError, U256};
-use contract_utils::Address;
+use utils::Address;
 use reputation_contract::{ReputationContract, ReputationContractInterface};
 
 #[no_mangle]

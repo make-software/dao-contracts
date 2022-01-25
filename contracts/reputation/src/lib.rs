@@ -2,7 +2,7 @@ use casper_contract::contract_api::{storage, runtime};
 use casper_types::{
     CLTyped, EntryPoint, EntryPointAccess, EntryPointType, EntryPoints, Parameter, U256, contracts::NamedKeys, ContractPackageHash, runtime_args, RuntimeArgs
 };
-use contract_utils::{ERC20Token, Address};
+use utils::{ERC20Token, Address};
 
 pub trait ReputationContractInterface {
     fn init(&mut self, initial_supply: U256);
@@ -20,7 +20,7 @@ pub struct ReputationContract {
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self, initial_supply: U256) {
         self.erc20.init();
-        self.erc20.mint(contract_utils::get_immediate_caller_address(), initial_supply);
+        self.erc20.mint(utils::get_immediate_caller_address(), initial_supply);
     }
 
     fn mint(&mut self, amount: U256) {
@@ -36,7 +36,7 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn transfer(&mut self, recipient: Address, amount: U256) {
-        self.erc20.transfer(contract_utils::get_immediate_caller_address(), recipient, amount);
+        self.erc20.transfer(utils::get_immediate_caller_address(), recipient, amount);
     }
 }
 
@@ -55,9 +55,6 @@ impl ReputationContract {
         contract_instance.init(initial_supply);
 
         // Revoke access to init.
-        
-        // Hash of the installed contract will be reachable through named keys.
-        // runtime::put_key(contract_key_name, Key::from(contract_hash));
     }
 
     pub fn entry_points() -> EntryPoints {
@@ -133,8 +130,8 @@ impl ReputationContractInterface for ReputationContractCaller {
 #[cfg(feature = "test-support")]
 mod tests {
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
-    use contract_utils::Address;
-    use test_utils::TestEnv;
+    use utils::Address;
+    use utils::TestEnv;
 
     use crate::{ReputationContractInterface, ReputationContract};
 

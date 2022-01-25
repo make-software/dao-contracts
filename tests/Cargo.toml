@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2018"
 
 [dev-dependencies]
-reputation-contract = { path = "../contracts/reputation", default-features = false, features = [ "test-support" ] }
-test-utils = { path = "../test-utils" }
 casper-types = "1.4.6"
-
+reputation-contract = { path = "../contracts/reputation", default-features = false, features = [ "test-support" ] }
+utils = { path = "../utils", features = [ "test-support" ]}
 
 [[bin]]
 name = "reputation-tests"

@@ -15,7 +15,7 @@ use casper_types::{
     account::AccountHash, runtime_args, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, U512, CLTyped, bytesrepr::{FromBytes, ToBytes}, URef,
 };
-use contract_utils::Address;
+use crate::Address;
 
 #[derive(Clone)]
 pub struct TestEnv {

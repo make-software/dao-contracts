@@ -6,8 +6,7 @@ edition = "2018"
 [dependencies]
 casper-contract = "1.4.3"
 casper-types = "1.4.6"
-test-utils = { path = "../../test-utils", optional = true }
-contract-utils = { path = "../../contract-utils" }
+utils = { path = "../../utils" }
 
 [[bin]]
 name = "reputation_contract"
@@ -22,4 +21,4 @@ lto = true
 
 [features]
 default = [ "casper-contract/default", "casper-contract/std" ]
-test-support = [ "test-utils" ]
+test-support = [ "utils/test-support" ]

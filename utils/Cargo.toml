@@ -1,0 +1,16 @@
+[package]
+name = "utils"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+casper-contract = { version = "1.4.3", default-features = false }
+casper-types = "1.4.6"
+base64 = "0.13.0"
+
+casper-engine-test-support = { version = "2.0.3", features = ["test-support"], optional = true }
+casper-execution-engine = { version = "1.4.4", optional = true }
+
+[features]
+default = [ "casper-contract/default", "casper-contract/std" ]
+test-support = [ "casper-engine-test-support", "casper-execution-engine" ]

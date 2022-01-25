@@ -8,8 +8,14 @@ extern crate alloc;
 mod erc20;
 mod address;
 
+#[cfg(feature = "test-support")]
+mod test_env;
+
 pub use address::Address;
 pub use erc20::ERC20Token;
+
+#[cfg(feature = "test-support")]
+pub use test_env::TestEnv;
 
 pub struct Variable<T> {
     name: String,

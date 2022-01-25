@@ -4,7 +4,7 @@ mod tests {
 
     use casper_types::U256;
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
-    use test_utils::TestEnv;
+    use utils::TestEnv;
 
     #[test]
     fn test_deploy() {
