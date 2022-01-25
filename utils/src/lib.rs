@@ -1,30 +1,41 @@
-use std::{env::VarError, marker::PhantomData, convert::TryInto};
+use std::{convert::TryInto, marker::PhantomData};
 
-use casper_contract::{contract_api::{runtime, storage}, unwrap_or_revert::UnwrapOrRevert};
-use casper_types::{bytesrepr::{FromBytes, ToBytes, self}, CLTyped, URef, system::CallStackElement, ApiError};
+use casper_contract::{
+    contract_api::{runtime, storage},
+    unwrap_or_revert::UnwrapOrRevert,
+};
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    system::CallStackElement,
+    CLTyped, URef,
+};
 
 extern crate alloc;
 
-mod erc20;
 mod address;
+pub mod owner;
+pub mod token;
+pub mod whitelist;
 
 #[cfg(feature = "test-support")]
 mod test_env;
 
 pub use address::Address;
-pub use erc20::ERC20Token;
 
 #[cfg(feature = "test-support")]
 pub use test_env::TestEnv;
 
 pub struct Variable<T> {
     name: String,
-    ty: PhantomData<T>
+    ty: PhantomData<T>,
 }
 
 impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
     pub fn new(name: String) -> Self {
-        Variable { name, ty: PhantomData::<T>::default() }
+        Variable {
+            name,
+            ty: PhantomData::<T>::default(),
+        }
     }
 
     pub fn get(&self) -> T {
@@ -43,15 +54,15 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
 pub struct Mapping<K, V> {
     name: String,
     key_ty: PhantomData<K>,
-    value_ty: PhantomData<V>
+    value_ty: PhantomData<V>,
 }
 
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K, V> {
     pub fn new(name: String) -> Self {
-        Mapping { 
-            name, 
+        Mapping {
+            name,
             key_ty: PhantomData::<K>::default(),
-            value_ty: PhantomData::<V>::default()
+            value_ty: PhantomData::<V>::default(),
         }
     }
 
@@ -138,7 +149,7 @@ fn take_call_stack_elem(n: usize) -> CallStackElement {
 ///
 /// This function ensures that only session code can execute this function, and disallows stored
 /// session/stored contracts.
-pub fn get_immediate_caller_address() -> Address {
+pub fn caller() -> Address {
     let second_elem = take_call_stack_elem(1);
     call_stack_element_to_address(second_elem)
 }
@@ -151,4 +162,3 @@ pub fn get_immediate_caller_address() -> Address {
 //     let top_of_the_stack = take_call_stack_elem(0);
 //     call_stack_element_to_address(top_of_the_stack)
 // }
-

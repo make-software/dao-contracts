@@ -1,42 +1,63 @@
-use casper_contract::contract_api::{storage, runtime};
+use casper_contract::contract_api::{runtime, storage};
 use casper_types::{
-    CLTyped, EntryPoint, EntryPointAccess, EntryPointType, EntryPoints, Parameter, U256, contracts::NamedKeys, ContractPackageHash, runtime_args, RuntimeArgs
+    contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
+    EntryPointType, EntryPoints, RuntimeArgs, U256,
 };
-use utils::{ERC20Token, Address};
+use utils::{owner::Owner, token::Token, whitelist::Whitelist, Address};
 
 pub trait ReputationContractInterface {
-    fn init(&mut self, initial_supply: U256);
-    fn mint(&mut self, amount: U256);
-    fn balance_of(&self, address: Address) -> U256;
-    fn total_supply(&self) -> U256;
-    fn transfer(&mut self, recipient: Address, amount: U256);
+    fn init(&mut self);
+    fn mint(&mut self, recipient: Address, amount: U256);
+    fn burn(&mut self, owner: Address, amount: U256);
+    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
+    fn change_ownership(&mut self, owner: Address);
+    fn add_to_whitelist(&mut self, address: Address);
+    fn remove_from_whitelist(&mut self, address: Address);
 }
 
 #[derive(Default)]
 pub struct ReputationContract {
-    pub erc20: ERC20Token,
+    pub token: Token,
+    pub owner: Owner,
+    pub whitelist: Whitelist,
 }
 
 impl ReputationContractInterface for ReputationContract {
-    fn init(&mut self, initial_supply: U256) {
-        self.erc20.init();
-        self.erc20.mint(utils::get_immediate_caller_address(), initial_supply);
+    fn init(&mut self) {
+        let deployer = utils::caller();
+        self.owner.init(deployer);
+        self.whitelist.init();
+        self.whitelist.add_to_whitelist(deployer);
+        self.token.init();
     }
 
-    fn mint(&mut self, amount: U256) {
-        todo!()
+    fn mint(&mut self, recipient: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.mint(recipient, amount);
     }
 
-    fn total_supply(&self) -> U256 {
-        self.erc20.total_supply.get()
+    fn burn(&mut self, owner: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.burn(owner, amount);
     }
 
-    fn balance_of(&self, address: Address) -> U256 {
-        self.erc20.balances.get(&address)
+    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.raw_transfer(owner, recipient, amount);
     }
 
-    fn transfer(&mut self, recipient: Address, amount: U256) {
-        self.erc20.transfer(utils::get_immediate_caller_address(), recipient, amount);
+    fn change_ownership(&mut self, owner: Address) {
+        self.owner.change_ownership(owner);
+    }
+
+    fn add_to_whitelist(&mut self, address: Address) {
+        self.owner.ensure_owner();
+        self.whitelist.add_to_whitelist(address);
+    }
+
+    fn remove_from_whitelist(&mut self, address: Address) {
+        self.owner.ensure_owner();
+        self.whitelist.remove_from_whitelist(address);
     }
 }
 
@@ -44,15 +65,19 @@ impl ReputationContract {
     pub fn install() {
         // Create a new contract package hash for the contract.
         let (contract_package_hash, _) = storage::create_contract_package_at_hash();
-        runtime::put_key("reputation_contract_package_hash", contract_package_hash.into());
-        storage::add_contract_version(contract_package_hash, ReputationContract::entry_points(), NamedKeys::new());
-
-        // Read arguments for constructor.
-        let initial_supply: U256 = runtime::get_named_arg("initial_supply");
+        runtime::put_key(
+            "reputation_contract_package_hash",
+            contract_package_hash.into(),
+        );
+        storage::add_contract_version(
+            contract_package_hash,
+            ReputationContract::entry_points(),
+            NamedKeys::new(),
+        );
 
         // Call contrustor method.
         let mut contract_instance = ReputationContractCaller::at(contract_package_hash);
-        contract_instance.init(initial_supply);
+        contract_instance.init();
 
         // Revoke access to init.
     }
@@ -60,70 +85,114 @@ impl ReputationContract {
     pub fn entry_points() -> EntryPoints {
         let mut entry_points = EntryPoints::new();
         entry_points.add_entry_point(EntryPoint::new(
-            "mint",
-            vec![Parameter::new("amount", U256::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        ));
-        entry_points.add_entry_point(EntryPoint::new(
             "init",
-            vec![Parameter::new("initial_supply", U256::cl_type())],
+            vec![],
             <()>::cl_type(),
             EntryPointAccess::Public,
             EntryPointType::Contract,
         ));
-        entry_points.add_entry_point(EntryPoint::new(
-            "transfer",
-            vec![
-                Parameter::new("recipient", Address::cl_type()),
-                Parameter::new("amount", U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        ));
+
+        entry_points.add_entry_point(utils::owner::entry_points::change_ownership());
+        entry_points.add_entry_point(utils::whitelist::entry_points::add_to_whitelist());
+        entry_points.add_entry_point(utils::whitelist::entry_points::remove_from_whitelist());
+        entry_points.add_entry_point(utils::token::entry_points::mint());
+        entry_points.add_entry_point(utils::token::entry_points::burn());
+        entry_points.add_entry_point(utils::token::entry_points::transfer_from());
 
         entry_points
     }
 }
 
 pub struct ReputationContractCaller {
-    contract_package_hash: ContractPackageHash
+    contract_package_hash: ContractPackageHash,
 }
 
 impl ReputationContractCaller {
     pub fn at(contract_package_hash: ContractPackageHash) -> Self {
-        ReputationContractCaller { contract_package_hash }
+        ReputationContractCaller {
+            contract_package_hash,
+        }
     }
 }
 
 impl ReputationContractInterface for ReputationContractCaller {
-    fn init(&mut self, initial_supply: U256) {
-        let _: () = runtime::call_versioned_contract(self.contract_package_hash, None, "init", runtime_args! {
-            "initial_supply" => initial_supply
-        });
+    fn init(&mut self) {
+        let _: () = runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "init",
+            runtime_args! {},
+        );
     }
 
-    fn mint(&mut self, amount: U256) {
-        todo!()
+    fn mint(&mut self, recipient: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "mint",
+            runtime_args! {
+                "recipient" => recipient,
+                "amount" => amount
+            },
+        )
     }
 
-    fn total_supply(&self) -> U256 {
-        runtime::call_versioned_contract(self.contract_package_hash, None, "total_supply", runtime_args! {})
-    }
-    
-    fn balance_of(&self, address: Address) -> U256 {
-        runtime::call_versioned_contract(self.contract_package_hash, None, "balance_of", runtime_args! {
-            "address" => address
-        })
+    fn burn(&mut self, owner: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "burn",
+            runtime_args! {
+                "owner" => owner,
+                "amount" => amount
+            },
+        )
     }
 
-    fn transfer(&mut self, recipient: Address, amount: U256) {
-        runtime::call_versioned_contract(self.contract_package_hash, None, "transfer", runtime_args! {
-            "recipient" => recipient,
-            "amount" => amount
-        })
+    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "transfer_from",
+            runtime_args! {
+                "owner" => owner,
+                "recipient" => recipient,
+                "amount" => amount
+            },
+        )
+    }
+
+    fn change_ownership(&mut self, owner: Address) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "change_ownership",
+            runtime_args! {
+                "owner" => owner,
+            },
+        )
+    }
+
+    fn add_to_whitelist(&mut self, address: Address) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "add_to_whitelist",
+            runtime_args! {
+                "address" => address,
+            },
+        )
+    }
+
+    fn remove_from_whitelist(&mut self, address: Address) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "remove_from_whitelist",
+            runtime_args! {
+                "address" => address,
+            },
+        )
     }
 }
 
@@ -133,58 +202,106 @@ mod tests {
     use utils::Address;
     use utils::TestEnv;
 
-    use crate::{ReputationContractInterface, ReputationContract};
+    use crate::{ReputationContract, ReputationContractInterface};
 
     pub struct ReputationContractTest {
         env: TestEnv,
         package_hash: ContractPackageHash,
-        data: ReputationContract
+        data: ReputationContract,
     }
 
     impl ReputationContractTest {
-        pub fn new(env: &TestEnv, initial_supply: U256) -> ReputationContractTest {
-            env.deploy_wasm_file("reputation_contract.wasm", runtime_args! {
-                "initial_supply" => initial_supply
-            });
+        pub fn new(env: &TestEnv) -> ReputationContractTest {
+            env.deploy_wasm_file("reputation_contract.wasm", runtime_args! {});
             let package_hash = env.get_contract_package_hash("reputation_contract_package_hash");
             ReputationContractTest {
                 env: env.clone(),
                 package_hash,
-                data: ReputationContract::default()
+                data: ReputationContract::default(),
             }
+        }
+
+        pub fn get_owner(&self) -> Option<Address> {
+            self.env
+                .get_value(self.package_hash, self.data.owner.owner.path())
+        }
+
+        pub fn total_supply(&self) -> U256 {
+            self.env
+                .get_value(self.package_hash, self.data.token.total_supply.path())
+        }
+
+        pub fn balance_of(&self, address: Address) -> U256 {
+            self.env
+                .get_dict_value(self.package_hash, self.data.token.balances.path(), address)
         }
     }
 
     impl ReputationContractInterface for ReputationContractTest {
-        fn mint(&mut self, amount: U256) {
+        fn init(&mut self) {
+            todo!()
+        }
+
+        fn mint(&mut self, recipient: Address, amount: U256) {
             self.env.call_contract_package(
                 self.package_hash,
                 "mint",
                 runtime_args! {
+                    "recipient" => recipient,
                     "amount" => amount
                 },
             )
         }
 
-        fn init(&mut self, initial_supply: U256) {
-            todo!()
-        }
-
-        fn total_supply(&self) -> U256 {
-            self.env.get_value(self.package_hash, self.data.erc20.total_supply.path())
-        }
-        
-        fn balance_of(&self, address: Address) -> U256 {
-            self.env.get_dict_value(self.package_hash, self.data.erc20.balances.path(), address)
-        }
-
-        fn transfer(&mut self, recipient: Address, amount: U256) {
+        fn burn(&mut self, owner: Address, amount: U256) {
             self.env.call_contract_package(
                 self.package_hash,
-                "transfer",
+                "burn",
                 runtime_args! {
+                    "owner" => owner,
+                    "amount" => amount
+                },
+            )
+        }
+
+        fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "transfer_from",
+                runtime_args! {
+                    "owner" => owner,
                     "recipient" => recipient,
                     "amount" => amount
+                },
+            )
+        }
+
+        fn change_ownership(&mut self, owner: Address) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "change_ownership",
+                runtime_args! {
+                    "owner" => owner
+                },
+            )
+        }
+
+        fn add_to_whitelist(&mut self, address: Address) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "add_to_whitelist",
+                runtime_args! {
+                    "address" => address
+                },
+            )
+        }
+
+        fn remove_from_whitelist(&mut self, address: Address) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "remove_from_whitelist",
+                runtime_args! {
+                    "address" => address
                 },
             )
         }

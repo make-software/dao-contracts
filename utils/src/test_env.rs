@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::Address;
 use casper_engine_test_support::{
     DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
@@ -12,10 +13,11 @@ use casper_execution_engine::core::engine_state::{
     run_genesis_request::RunGenesisRequest, GenesisAccount,
 };
 use casper_types::{
-    account::AccountHash, runtime_args, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
-    SecretKey, U512, CLTyped, bytesrepr::{FromBytes, ToBytes}, URef,
+    account::AccountHash,
+    bytesrepr::{FromBytes, ToBytes},
+    runtime_args, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs, SecretKey,
+    URef, U512,
 };
-use crate::Address;
 
 #[derive(Clone)]
 pub struct TestEnv {
@@ -53,38 +55,28 @@ impl TestEnv {
     }
 
     pub fn get_value<T: FromBytes + CLTyped>(&self, hash: ContractPackageHash, name: &str) -> T {
-        self.state
-            .lock()
-            .unwrap()
-            .get_value(hash, name)
+        self.state.lock().unwrap().get_value(hash, name)
     }
 
-    pub fn get_dict_value<K: ToBytes + CLTyped, V: FromBytes + CLTyped + Default>(&self, hash: ContractPackageHash, name: &str, key: K) -> V {
-        self.state
-            .lock()
-            .unwrap()
-            .get_dict_value(hash, name, key)
+    pub fn get_dict_value<K: ToBytes + CLTyped, V: FromBytes + CLTyped + Default>(
+        &self,
+        hash: ContractPackageHash,
+        name: &str,
+        key: K,
+    ) -> V {
+        self.state.lock().unwrap().get_dict_value(hash, name, key)
     }
 
     pub fn active_account(&self) -> Address {
-        self.state
-            .lock()
-            .unwrap()
-            .active_account()
+        self.state.lock().unwrap().active_account()
     }
 
     pub fn get_account(&self, n: usize) -> Address {
-        self.state
-            .lock()
-            .unwrap()
-            .get_account(n)
+        self.state.lock().unwrap().get_account(n)
     }
 
     pub fn as_account(&self, account: Address) {
-        self.state
-            .lock()
-            .unwrap()
-            .as_account(account);
+        self.state.lock().unwrap().as_account(account);
     }
 }
 
@@ -108,10 +100,10 @@ impl TestEnvState {
             // Create keypair.
             let secret_key = SecretKey::ed25519_from_bytes([i; 32]).unwrap();
             let public_key = PublicKey::from(&secret_key);
-    
+
             // Create an AccountHash from a public key.
             let account_addr = AccountHash::from(&public_key);
-    
+
             // Create a GenesisAccount.
             let account = GenesisAccount::account(
                 public_key,
@@ -135,7 +127,7 @@ impl TestEnvState {
         TestEnvState {
             active_account: accounts[0],
             context: builder,
-            accounts
+            accounts,
         }
     }
 
@@ -171,29 +163,67 @@ impl TestEnvState {
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
-        let account = self.context.get_account(self.active_account_hash()).unwrap();
+        let account = self
+            .context
+            .get_account(self.active_account_hash())
+            .unwrap();
         let key: &Key = account.named_keys().get(name).unwrap();
         ContractPackageHash::from(key.into_hash().unwrap())
     }
 
     pub fn get_value<T: FromBytes + CLTyped>(&self, hash: ContractPackageHash, name: &str) -> T {
-        let contract_hash = self.context.get_contract_package(hash).unwrap().current_contract_hash().unwrap();
+        let contract_hash = self
+            .context
+            .get_contract_package(hash)
+            .unwrap()
+            .current_contract_hash()
+            .unwrap();
 
         // println!("{:#?}", self.context.get_contract(contract_hash));
 
-        self.context.query(None, Key::Hash(contract_hash.value()), &[name.to_string()]).unwrap().as_cl_value().unwrap().clone().into_t().unwrap()
+        self.context
+            .query(None, Key::Hash(contract_hash.value()), &[name.to_string()])
+            .unwrap()
+            .as_cl_value()
+            .unwrap()
+            .clone()
+            .into_t()
+            .unwrap()
     }
 
-    pub fn get_dict_value<K: ToBytes + CLTyped, V: FromBytes + CLTyped + Default>(&self, hash: ContractPackageHash, name: &str, key: K) -> V {
-        let contract_hash = self.context.get_contract_package(hash).unwrap().current_contract_hash().unwrap();
+    pub fn get_dict_value<K: ToBytes + CLTyped, V: FromBytes + CLTyped + Default>(
+        &self,
+        hash: ContractPackageHash,
+        name: &str,
+        key: K,
+    ) -> V {
+        let contract_hash = self
+            .context
+            .get_contract_package(hash)
+            .unwrap()
+            .current_contract_hash()
+            .unwrap();
 
-        let dictionary_seed_uref: URef = self.context.get_contract(contract_hash).unwrap().named_keys().get(name).unwrap().as_uref().unwrap().clone();
+        let dictionary_seed_uref: URef = self
+            .context
+            .get_contract(contract_hash)
+            .unwrap()
+            .named_keys()
+            .get(name)
+            .unwrap()
+            .as_uref()
+            .unwrap()
+            .clone();
 
-        match self.context.query_dictionary_item(None, dictionary_seed_uref, &to_dictionary_key(&key)) {
+        match self.context.query_dictionary_item(
+            None,
+            dictionary_seed_uref,
+            &to_dictionary_key(&key),
+        ) {
             Ok(val) => {
                 let value: V = val.as_cl_value().unwrap().clone().into_t::<V>().unwrap();
                 value
-            },
+            }
             Err(_) => V::default(),
         }
     }
@@ -214,7 +244,6 @@ impl TestEnvState {
         self.active_account = account;
     }
 }
-
 
 fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap();

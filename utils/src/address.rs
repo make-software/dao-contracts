@@ -1,6 +1,5 @@
 /// Taken from: https://raw.githubusercontent.com/casper-ecosystem/erc20/master/erc20/src/address.rs
 /// TODO: Check that with CasperLabs.
-
 // ! Implementation of an `Address` which refers either an account hash, or a contract hash.
 use alloc::vec::Vec;
 use casper_types::{
