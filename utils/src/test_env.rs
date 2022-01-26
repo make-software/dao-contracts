@@ -9,14 +9,15 @@ use casper_engine_test_support::{
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
     DEFAULT_PAYMENT,
 };
-use casper_execution_engine::core::engine_state::{
-    run_genesis_request::RunGenesisRequest, GenesisAccount,
+use casper_execution_engine::core::{
+    engine_state::{self, run_genesis_request::RunGenesisRequest, GenesisAccount},
+    execution,
 };
 use casper_types::{
     account::AccountHash,
     bytesrepr::{FromBytes, ToBytes},
-    runtime_args, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs, SecretKey,
-    URef, U512,
+    runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
+    SecretKey, URef, U512,
 };
 
 #[derive(Clone)]
@@ -78,6 +79,10 @@ impl TestEnv {
     pub fn as_account(&self, account: Address) {
         self.state.lock().unwrap().as_account(account);
     }
+
+    pub fn expect_error<T: Into<ApiError>>(&self, error: T) {
+        self.state.lock().unwrap().expect_error(error);
+    }
 }
 
 impl Default for TestEnv {
@@ -90,6 +95,7 @@ pub struct TestEnvState {
     accounts: Vec<Address>,
     active_account: Address,
     context: InMemoryWasmTestBuilder,
+    expected_error: Option<ApiError>,
 }
 
 impl TestEnvState {
@@ -128,6 +134,7 @@ impl TestEnvState {
             active_account: accounts[0],
             context: builder,
             accounts,
+            expected_error: None,
         }
     }
 
@@ -159,7 +166,33 @@ impl TestEnvState {
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item).build();
-        self.context.exec(execute_request).commit().expect_success();
+        self.context.exec(execute_request).commit();
+
+        if let Some(expected_error) = self.expected_error {
+            // If error is expected.
+            if self.context.is_error() {
+                // The execution actually ended with an error.
+                if let engine_state::Error::Exec(exec_error) = self.context.get_error().unwrap() {
+                    // Make sure that the error is ApiError.
+                    if let execution::Error::Revert(api_error) = exec_error {
+                        assert_eq!(expected_error, api_error);
+                        // Don't expect it anymore.
+                        self.expected_error = None;
+                    } else {
+                        panic!("Unexpected execution error.");
+                    }
+                } else {
+                    panic!("Unexpected engine_state error.");
+                }
+            } else {
+                panic!("Deploy expected to fail.");
+            }
+        } else {
+            // If error is not expected.
+            if self.context.is_error() {
+                self.context.expect_success();
+            }
+        }
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -178,8 +211,6 @@ impl TestEnvState {
             .unwrap()
             .current_contract_hash()
             .unwrap();
-
-        // println!("{:#?}", self.context.get_contract(contract_hash));
 
         self.context
             .query(None, Key::Hash(contract_hash.value()), &[name.to_string()])
@@ -242,6 +273,10 @@ impl TestEnvState {
 
     pub fn as_account(&mut self, account: Address) {
         self.active_account = account;
+    }
+
+    pub fn expect_error<T: Into<ApiError>>(&mut self, error: T) {
+        self.expected_error = Some(error.into());
     }
 }
 

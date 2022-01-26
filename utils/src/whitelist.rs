@@ -1,7 +1,6 @@
 use casper_contract::contract_api::runtime;
-use casper_types::ApiError;
 
-use crate::{caller, Address, Mapping};
+use crate::{caller, Address, Error, Mapping};
 
 pub struct Whitelist {
     pub whitelist: Mapping<Address, bool>,
@@ -30,7 +29,7 @@ impl Whitelist {
 
     pub fn ensure_whitelisted(&self) {
         if !self.whitelist.get(&caller()) {
-            runtime::revert(ApiError::User(1010));
+            runtime::revert(Error::NotOnTheWhietlist);
         }
     }
 }

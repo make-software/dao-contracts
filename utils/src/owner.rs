@@ -1,7 +1,6 @@
 use casper_contract::contract_api::runtime;
-use casper_types::ApiError;
 
-use crate::{caller, Address, Variable};
+use crate::{caller, Address, Error, Variable};
 
 pub struct Owner {
     pub owner: Variable<Option<Address>>,
@@ -28,10 +27,10 @@ impl Owner {
     pub fn ensure_owner(&self) {
         if let Some(owner) = self.owner.get() {
             if owner != caller() {
-                runtime::revert(ApiError::User(1000)) // User is not the owner.
+                runtime::revert(Error::NotAnOwner) // User is not the owner.
             }
         } else {
-            runtime::revert(ApiError::User(1001)) // Owner is not inicialized.
+            runtime::revert(Error::OwnerIsNotInitialized) // Owner is not inicialized.
         }
     }
 }

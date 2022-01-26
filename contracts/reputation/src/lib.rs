@@ -48,6 +48,7 @@ impl ReputationContractInterface for ReputationContract {
 
     fn change_ownership(&mut self, owner: Address) {
         self.owner.change_ownership(owner);
+        runtime::print("Jem zupe");
     }
 
     fn add_to_whitelist(&mut self, address: Address) {

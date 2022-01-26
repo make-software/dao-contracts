@@ -43,6 +43,9 @@ mod tests {
         let new_owner = env.get_account(1);
         rep.change_ownership(new_owner);
         assert_eq!(rep.get_owner().unwrap(), new_owner);
+
+        env.expect_error(utils::Error::NotAnOwner);
+        rep.change_ownership(new_owner);
     }
 }
 

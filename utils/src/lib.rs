@@ -13,6 +13,7 @@ use casper_types::{
 extern crate alloc;
 
 mod address;
+mod error;
 pub mod owner;
 pub mod token;
 pub mod whitelist;
@@ -21,6 +22,7 @@ pub mod whitelist;
 mod test_env;
 
 pub use address::Address;
+pub use error::Error;
 
 #[cfg(feature = "test-support")]
 pub use test_env::TestEnv;
