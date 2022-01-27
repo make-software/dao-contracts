@@ -3,7 +3,7 @@ use casper_types::ApiError;
 pub enum Error {
     NotAnOwner,
     OwnerIsNotInitialized,
-    NotOnTheWhietlist,
+    NotWhitelisted,
 }
 
 impl From<Error> for ApiError {
@@ -11,7 +11,7 @@ impl From<Error> for ApiError {
         let id = match val {
             Error::NotAnOwner => 1000,
             Error::OwnerIsNotInitialized => 1001,
-            Error::NotOnTheWhietlist => 1002,
+            Error::NotWhitelisted => 1002,
         };
         ApiError::User(id)
     }
