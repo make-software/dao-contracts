@@ -16,7 +16,7 @@ mod tests {
     fn test_whitelisting_owner_by_default() {
         let (_, contract) = setup();
 
-        assert_eq!(contract.is_whitelisted(contract.get_owner().unwrap()), true);
+        assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
     }
 
     #[test]
@@ -34,10 +34,9 @@ mod tests {
         let (env, mut contract) = setup();
         let non_owner = env.get_account(1);
 
-        env.as_account(non_owner);
         env.expect_error(utils::Error::NotWhitelisted);
 
-        contract.mint(non_owner, 10.into());
+        contract.as_account(non_owner).mint(non_owner, 10.into());
     }
 
     #[test]
@@ -52,19 +51,72 @@ mod tests {
     }
 
     #[test]
+    fn test_whitelisting_as_owner() {
+        let (env, mut contract) = setup();
+        let (owner, user) = (env.get_account(0), env.get_account(1));
+
+        assert!(contract.is_whitelisted(owner));
+        assert_eq!(contract.is_whitelisted(user), false);
+
+        contract.add_to_whitelist(user);
+        assert!(contract.is_whitelisted(user));
+
+        contract.remove_from_whitelist(user);
+        assert_eq!(contract.is_whitelisted(user), false);
+    }
+
+    #[test]
+    fn test_not_whitelisted_user_removal_has_no_effect() {
+        let (env, mut contract) = setup();
+        let user = env.get_account(1);
+
+        assert_eq!(contract.is_whitelisted(user), false);
+
+        contract.remove_from_whitelist(user);
+        assert_eq!(contract.is_whitelisted(user), false);
+    }
+
+    #[test]
+    fn test_duplicated_whitelisting() {
+        let (env, mut contract) = setup();
+        let user = env.get_account(1);
+
+        contract.add_to_whitelist(user);
+        contract.add_to_whitelist(user);
+        assert!(contract.is_whitelisted(user));
+
+        contract.remove_from_whitelist(user);
+        assert_eq!(contract.is_whitelisted(user), false);
+    }
+
+    #[test]
+    fn test_whitelisting_as_non_owner() {
+        let (env, mut contract) = setup();
+        let (user1, user2) = (env.get_account(1), env.get_account(2));
+
+        contract.add_to_whitelist(user1);
+
+        env.expect_error(utils::Error::NotAnOwner);
+        contract.as_account(user1).add_to_whitelist(user2);
+
+        env.expect_error(utils::Error::NotAnOwner);
+        contract.as_account(user1).remove_from_whitelist(user2);
+    }
+
+    #[test]
     fn test_new_owner_whitelisting() {
         let (env, mut contract) = setup();
 
-        assert_eq!(contract.is_whitelisted(contract.get_owner().unwrap()), true);
+        assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
 
         let new_owner = env.get_account(1);
         contract.change_ownership(new_owner);
 
-        assert_eq!(contract.is_whitelisted(contract.get_owner().unwrap()), true);
+        assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
     }
 
     #[test]
-    fn test_transfer() {
+    fn test_transfer_from() {
         let total_supply = 10.into();
         let transfer_amount = 4.into();
 
@@ -84,10 +136,11 @@ mod tests {
 
         contract.mint(sender, 10.into());
 
-        env.as_account(sender);
         env.expect_error(utils::Error::NotWhitelisted);
 
-        contract.transfer_from(sender, recipient, 1.into());
+        contract
+            .as_account(sender)
+            .transfer_from(sender, recipient, 1.into());
     }
 
     #[test]

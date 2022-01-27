@@ -221,6 +221,11 @@ mod tests {
             }
         }
 
+        pub fn as_account(&mut self, account: Address) -> &mut Self {
+            self.env.as_account(account);
+            self
+        }
+
         pub fn get_owner(&self) -> Option<Address> {
             self.env
                 .get_value(self.package_hash, self.data.owner.owner.path())
