@@ -40,6 +40,35 @@ mod tests {
     }
 
     #[test]
+    fn test_whitelisted_user_burn() {
+        let (env, mut contract) = setup_with_initial_supply(100.into());
+        let owner = env.get_account(0);
+
+        contract.burn(owner, 10.into());
+        assert_eq!(contract.total_supply(), 90.into());
+        assert_eq!(contract.balance_of(owner), 90.into());
+    }
+
+    #[test]
+    #[should_panic = "Unexpected execution error."]
+    fn test_buring_amount_exceeding_balance() {
+        let (env, mut contract) = setup_with_initial_supply(100.into());
+        let owner = env.get_account(0);
+
+        env.expect_error(ApiError::Unhandled);
+        contract.burn(owner, 101.into());
+    }
+
+    #[test]
+    fn test_non_whitelisted_user_burn() {
+        let (env, mut contract) = setup_with_initial_supply(100.into());
+        let (user1, user2) = (env.get_account(0), env.get_account(1));
+
+        env.expect_error(utils::Error::NotWhitelisted);
+        contract.as_account(user2).burn(user1, 10.into());
+    }
+
+    #[test]
     #[should_panic = "Unexpected execution error."]
     fn test_total_supply_overflow() {
         let (env, mut contract) = setup();
