@@ -10,12 +10,6 @@ mod tests {
         assert_eq!(contract.total_supply(), U256::zero());
         assert_eq!(contract.balance_of(env.get_account(0)), U256::zero());
         assert_eq!(contract.balance_of(env.get_account(1)), U256::zero());
-    }
-
-    #[test]
-    fn test_whitelisting_owner_by_default() {
-        let (_, contract) = setup();
-
         assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
     }
 
@@ -23,10 +17,10 @@ mod tests {
     fn test_mint_as_owner() {
         let (env, mut contract) = setup();
         let recipient = env.get_account(1);
+        let total_supply = 100.into();
 
-        contract.mint(recipient, 100.into());
-
-        assert_eq!(contract.balance_of(recipient), 100.into());
+        contract.mint(recipient, total_supply);
+        assert_eq!(contract.balance_of(recipient), total_supply);
     }
 
     #[test]
@@ -41,22 +35,30 @@ mod tests {
 
     #[test]
     fn test_whitelisted_user_burn() {
-        let (env, mut contract) = setup_with_initial_supply(100.into());
+        let total_supply = 100.into();
+        let burn_amount = 10.into();
+        let remaining_supply = total_supply - burn_amount;
+
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
-        contract.burn(owner, 10.into());
-        assert_eq!(contract.total_supply(), 90.into());
-        assert_eq!(contract.balance_of(owner), 90.into());
+        contract.burn(owner, burn_amount);
+
+        assert_eq!(contract.total_supply(), remaining_supply);
+        assert_eq!(contract.balance_of(owner), remaining_supply);
     }
 
     #[test]
     #[should_panic = "Unexpected execution error."]
     fn test_buring_amount_exceeding_balance() {
-        let (env, mut contract) = setup_with_initial_supply(100.into());
+        let total_supply = 100.into();
+        let burn_amount = 101.into();
+
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
         env.expect_error(ApiError::Unhandled);
-        contract.burn(owner, 101.into());
+        contract.burn(owner, burn_amount);
     }
 
     #[test]
@@ -76,7 +78,7 @@ mod tests {
         contract.mint(env.get_account(1), U256::MAX);
 
         env.expect_error(ApiError::Unhandled);
-        contract.mint(env.get_account(2), 1.into());
+        contract.mint(env.get_account(2), U256::one());
     }
 
     #[test]
@@ -135,13 +137,12 @@ mod tests {
     #[test]
     fn test_new_owner_whitelisting() {
         let (env, mut contract) = setup();
+        let (owner, new_owner) = (env.get_account(0), env.get_account(1));
 
-        assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
+        assert!(contract.is_whitelisted(owner));
 
-        let new_owner = env.get_account(1);
         contract.change_ownership(new_owner);
-
-        assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
+        assert!(contract.is_whitelisted(new_owner));
     }
 
     #[test]
@@ -187,7 +188,7 @@ mod tests {
     }
 
     #[test]
-    fn test_onwership() {
+    fn test_ownership() {
         let (env, mut contract) = setup();
         assert_eq!(contract.get_owner().unwrap(), env.active_account());
         let new_owner = env.get_account(1);
@@ -207,7 +208,6 @@ mod tests {
 
     fn setup_with_initial_supply(amount: U256) -> (TestEnv, ReputationContractTest) {
         let (env, mut contract) = setup();
-
         contract.mint(env.get_account(0), amount);
 
         (env, contract)
