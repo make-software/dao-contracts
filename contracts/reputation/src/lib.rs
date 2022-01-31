@@ -47,7 +47,9 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn change_ownership(&mut self, owner: Address) {
+        self.owner.ensure_owner();
         self.owner.change_ownership(owner);
+        self.whitelist.add_to_whitelist(owner);
     }
 
     fn add_to_whitelist(&mut self, address: Address) {
