@@ -3,7 +3,7 @@ use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
     EntryPointType, EntryPoints, RuntimeArgs, U256,
 };
-use utils::{owner::Owner, token::Token, whitelist::Whitelist, Address};
+use utils::{owner::Owner, token::{Token, events::Transfer}, whitelist::Whitelist, Address, Events};
 
 pub trait ReputationContractInterface {
     fn init(&mut self);
@@ -24,6 +24,7 @@ pub struct ReputationContract {
 
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
+        utils::init_events();
         let deployer = utils::caller();
         self.owner.init(deployer);
         self.whitelist.init();
@@ -47,8 +48,9 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn change_ownership(&mut self, owner: Address) {
+        self.owner.ensure_owner();
         self.owner.change_ownership(owner);
-        runtime::print("Jem zupe");
+        self.whitelist.add_to_whitelist(owner);
     }
 
     fn add_to_whitelist(&mut self, address: Address) {
@@ -199,6 +201,7 @@ impl ReputationContractInterface for ReputationContractCaller {
 
 #[cfg(feature = "test-support")]
 mod tests {
+    use casper_types::bytesrepr::{FromBytes, Bytes};
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
     use utils::Address;
     use utils::TestEnv;
@@ -222,6 +225,11 @@ mod tests {
             }
         }
 
+        pub fn as_account(&mut self, account: Address) -> &mut Self {
+            self.env.as_account(account);
+            self
+        }
+
         pub fn get_owner(&self) -> Option<Address> {
             self.env
                 .get_value(self.package_hash, self.data.owner.owner.path())
@@ -235,6 +243,25 @@ mod tests {
         pub fn balance_of(&self, address: Address) -> U256 {
             self.env
                 .get_dict_value(self.package_hash, self.data.token.balances.path(), address)
+        }
+
+        pub fn is_whitelisted(&self, address: Address) -> bool {
+            self.env.get_dict_value(
+                self.package_hash,
+                self.data.whitelist.whitelist.path(),
+                address,
+            )
+        }
+
+        pub fn event<T: FromBytes>(&self, index: u32) -> T {
+            let raw_event: Bytes = self.env.get_dict_value(
+                self.package_hash,
+                "events",
+                index
+            );
+            let (event, bytes) = T::from_bytes(&raw_event).unwrap();
+            assert!(bytes.is_empty());
+            event
         }
     }
 

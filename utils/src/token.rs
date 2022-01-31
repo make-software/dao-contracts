@@ -1,6 +1,8 @@
 use casper_types::U256;
 
-use crate::{Address, Mapping, Variable};
+use crate::{Address, Mapping, Variable, emit};
+
+use self::events::Transfer;
 
 pub struct Token {
     pub total_supply: Variable<U256>,
@@ -39,6 +41,8 @@ impl Token {
             .set(&sender, self.balances.get(&sender) - amount);
         self.balances
             .set(&recipient, self.balances.get(&recipient) + amount);
+
+        emit(Transfer { from: sender, to: recipient, value: amount });
     }
 }
 
@@ -85,5 +89,58 @@ pub mod entry_points {
             EntryPointAccess::Public,
             EntryPointType::Contract,
         )
+    }
+}
+
+pub mod events {
+    use casper_types::{U256, CLTyped, CLType, bytesrepr::{Error, FromBytes, ToBytes}};
+
+    use crate::Address;
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct Transfer {
+        pub from: Address,
+        pub to: Address,
+        pub value: U256
+    }
+
+    impl CLTyped for Transfer {
+        fn cl_type() -> casper_types::CLType {
+            CLType::Any
+        }
+    }
+
+    impl FromBytes for Transfer {
+        fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), Error> {
+            let (event_name, bytes): (String, _) = FromBytes::from_bytes(bytes)?;
+            if &event_name != "transfer" {
+                return Err(Error::Formatting)
+            }
+            let (to, bytes) = FromBytes::from_bytes(bytes)?;
+            let (from, bytes) = FromBytes::from_bytes(bytes)?;
+            let (value, bytes) = FromBytes::from_bytes(bytes)?;
+            let event = Transfer { to, from, value };
+            Ok((event, bytes))
+        }
+    }
+
+    impl ToBytes for Transfer {
+        fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+            let mut vec = Vec::with_capacity(self.serialized_length());
+            vec.append(&mut String::from("transfer").to_bytes()?);
+            vec.append(&mut self.to.to_bytes()?);
+            vec.append(&mut self.from.to_bytes()?);
+            vec.append(&mut self.value.to_bytes()?);
+            Ok(vec)
+        }
+
+        fn serialized_length(&self) -> usize {
+            let mut size = 0;
+            size += String::from("transfer").serialized_length();
+            size += self.from.serialized_length();
+            size += self.to.serialized_length();
+            size += self.value.serialized_length();
+            return size;
+        }
     }
 }
