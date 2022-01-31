@@ -3,7 +3,7 @@ use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
     EntryPointType, EntryPoints, RuntimeArgs, U256,
 };
-use utils::{owner::Owner, token::Token, whitelist::Whitelist, Address};
+use utils::{owner::Owner, staking::TokenWithStaking, whitelist::Whitelist, Address};
 
 pub trait ReputationContractInterface {
     fn init(&mut self);
@@ -17,7 +17,7 @@ pub trait ReputationContractInterface {
 
 #[derive(Default)]
 pub struct ReputationContract {
-    pub token: Token,
+    pub token: TokenWithStaking,
     pub owner: Owner,
     pub whitelist: Whitelist,
 }
@@ -97,9 +97,11 @@ impl ReputationContract {
         entry_points.add_entry_point(utils::owner::entry_points::change_ownership());
         entry_points.add_entry_point(utils::whitelist::entry_points::add_to_whitelist());
         entry_points.add_entry_point(utils::whitelist::entry_points::remove_from_whitelist());
-        entry_points.add_entry_point(utils::token::entry_points::mint());
-        entry_points.add_entry_point(utils::token::entry_points::burn());
-        entry_points.add_entry_point(utils::token::entry_points::transfer_from());
+        entry_points.add_entry_point(utils::staking::entry_points::mint());
+        entry_points.add_entry_point(utils::staking::entry_points::burn());
+        entry_points.add_entry_point(utils::staking::entry_points::transfer_from());
+        entry_points.add_entry_point(utils::staking::entry_points::stake());
+        entry_points.add_entry_point(utils::staking::entry_points::unstake());
 
         entry_points
     }
@@ -235,12 +237,15 @@ mod tests {
 
         pub fn total_supply(&self) -> U256 {
             self.env
-                .get_value(self.package_hash, self.data.token.total_supply.path())
+                .get_value(self.package_hash, self.data.token.token.total_supply.path())
         }
 
         pub fn balance_of(&self, address: Address) -> U256 {
-            self.env
-                .get_dict_value(self.package_hash, self.data.token.balances.path(), address)
+            self.env.get_dict_value(
+                self.package_hash,
+                self.data.token.token.balances.path(),
+                address,
+            )
         }
 
         pub fn is_whitelisted(&self, address: Address) -> bool {
