@@ -26,16 +26,29 @@ impl TokenWithStaking {
     }
 
     pub fn burn(&mut self, owner: Address, amount: U256) {
+        self.ensure_balance(owner, amount);
         self.token.burn(owner, amount);
     }
 
     pub fn raw_transfer(&mut self, sender: Address, recipient: Address, amount: U256) {
+        self.ensure_balance(sender, amount);
         self.token.raw_transfer(sender, recipient, amount);
     }
 
-    fn stake(&mut self, address: Address, amount: U256) {}
+    pub fn stake(&mut self, address: Address, amount: U256) {
+        self.stakes
+            .set(&address, self.stakes.get(&address) + amount);
+    }
 
-    fn unstake(&mut self, address: Address, amount: U256) {}
+    pub fn unstake(&mut self, address: Address, amount: U256) {
+        self.stakes
+            .set(&address, self.stakes.get(&address) - amount);
+    }
+
+    fn ensure_balance(&mut self, address: Address, amount: U256) {
+        let staked_amount = self.stakes.get(&address);
+        self.token.ensure_balance(&address, staked_amount + amount);
+    }
 }
 
 pub mod entry_points {

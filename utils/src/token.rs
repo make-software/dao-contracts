@@ -1,6 +1,7 @@
+use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use crate::{Address, Mapping, Variable};
+use crate::{Address, Error, Mapping, Variable};
 
 pub struct Token {
     pub total_supply: Variable<U256>,
@@ -39,6 +40,12 @@ impl Token {
             .set(&sender, self.balances.get(&sender) - amount);
         self.balances
             .set(&recipient, self.balances.get(&recipient) + amount);
+    }
+
+    pub fn ensure_balance(&mut self, address: &Address, amount: U256) {
+        if self.balances.get(address) < amount {
+            runtime::revert(Error::InsufficientBalance);
+        }
     }
 }
 

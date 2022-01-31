@@ -4,6 +4,7 @@ pub enum Error {
     NotAnOwner,
     OwnerIsNotInitialized,
     NotWhitelisted,
+    InsufficientBalance,
 }
 
 impl From<Error> for ApiError {
@@ -12,6 +13,7 @@ impl From<Error> for ApiError {
             Error::NotAnOwner => 1000,
             Error::OwnerIsNotInitialized => 1001,
             Error::NotWhitelisted => 1002,
+            Error::InsufficientBalance => 1003,
         };
         ApiError::User(id)
     }
