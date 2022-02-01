@@ -9,6 +9,7 @@ use casper_types::{
     system::CallStackElement,
     CLTyped, URef,
 };
+pub use macros;
 
 extern crate alloc;
 
