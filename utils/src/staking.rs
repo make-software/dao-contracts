@@ -11,7 +11,7 @@ pub struct TokenWithStaking {
 impl Default for TokenWithStaking {
     fn default() -> Self {
         Self {
-            stakes: consts::NAME_STAKES.into(),
+            stakes: Mapping::from(consts::NAME_STAKES),
             token: Token::default(),
         }
     }
@@ -44,7 +44,7 @@ impl TokenWithStaking {
     }
 
     pub fn unstake(&mut self, address: Address, amount: U256) {
-        self.ensure_staked_balance(address, amount);
+        self.ensure_staked_balance(&address, amount);
         self.stakes
             .set(&address, self.stakes.get(&address) - amount);
     }
@@ -54,9 +54,8 @@ impl TokenWithStaking {
         self.token.ensure_balance(&address, staked_amount + amount);
     }
 
-    fn ensure_staked_balance(&mut self, address: Address, amount: U256) {
-        let staked_amount = self.stakes.get(&address);
-        if amount > staked_amount {
+    fn ensure_staked_balance(&mut self, address: &Address, amount: U256) {
+        if self.stakes.get(address) < amount {
             runtime::revert(Error::InsufficientBalance);
         }
     }
@@ -65,47 +64,8 @@ impl TokenWithStaking {
 pub mod entry_points {
     use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
 
+    pub use crate::token::entry_points::{burn, mint, transfer_from};
     use crate::{consts, Address};
-
-    pub fn mint() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_MINT,
-            vec![
-                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn burn() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_BURN,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn transfer_from() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_TRANSFER_FROM,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
 
     pub fn stake() -> EntryPoint {
         EntryPoint::new(

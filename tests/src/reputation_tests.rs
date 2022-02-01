@@ -251,14 +251,14 @@ mod tests {
     fn test_transfer_staked_tokens() {
         let total_supply = 100.into();
         let staked_amount = 10.into();
-        let transffered_amount = 99.into();
+        let transferred_amount = 99.into();
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let (owner, recipient) = (env.get_account(0), env.get_account(1));
 
         contract.stake(owner, staked_amount);
 
         env.expect_error(utils::Error::InsufficientBalance);
-        contract.transfer_from(owner, recipient, transffered_amount);
+        contract.transfer_from(owner, recipient, transferred_amount);
     }
 
     #[test]
@@ -282,11 +282,10 @@ mod tests {
         let total_supply = 100.into();
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let amount_to_stake = 50.into();
-        let amount_to_unstake = 30.into();
+        let amount_to_unstake = 60.into();
         let account = env.get_account(0);
 
         contract.stake(account, amount_to_stake);
-        contract.unstake(account, amount_to_unstake);
         env.expect_error(utils::Error::InsufficientBalance);
         contract.unstake(account, amount_to_unstake);
     }

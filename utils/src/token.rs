@@ -11,8 +11,8 @@ pub struct Token {
 impl Default for Token {
     fn default() -> Self {
         Self {
-            total_supply: consts::NAME_TOTAL_SUPPLY.into(),
-            balances: consts::NAME_BALANCES.into(),
+            total_supply: Variable::from(consts::NAME_TOTAL_SUPPLY),
+            balances: Mapping::from(consts::NAME_BALANCES),
         }
     }
 }

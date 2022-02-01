@@ -9,7 +9,7 @@ pub struct Whitelist {
 impl Default for Whitelist {
     fn default() -> Self {
         Self {
-            whitelist: consts::NAME_WHITELIST.into(),
+            whitelist: Mapping::from(consts::NAME_WHITELIST),
         }
     }
 }

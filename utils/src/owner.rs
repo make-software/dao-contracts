@@ -9,7 +9,7 @@ pub struct Owner {
 impl Default for Owner {
     fn default() -> Self {
         Self {
-            owner: consts::NAME_OWNER.into(),
+            owner: Variable::from(consts::NAME_OWNER),
         }
     }
 }
