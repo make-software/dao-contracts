@@ -1,7 +1,7 @@
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use crate::{Address, Error, Mapping, Variable};
+use crate::{consts, Address, Error, Mapping, Variable};
 
 pub struct Token {
     pub total_supply: Variable<U256>,
@@ -11,8 +11,8 @@ pub struct Token {
 impl Default for Token {
     fn default() -> Self {
         Self {
-            total_supply: Variable::new(format!("total_supply")),
-            balances: Mapping::new(format!("balances")),
+            total_supply: consts::NAME_TOTAL_SUPPLY.into(),
+            balances: consts::NAME_BALANCES.into(),
         }
     }
 }
@@ -52,14 +52,14 @@ impl Token {
 pub mod entry_points {
     use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
 
-    use crate::Address;
+    use crate::{consts, Address};
 
     pub fn mint() -> EntryPoint {
         EntryPoint::new(
-            "mint",
+            consts::EP_MINT,
             vec![
-                Parameter::new("recipient", Address::cl_type()),
-                Parameter::new("amount", U256::cl_type()),
+                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,
@@ -69,10 +69,10 @@ pub mod entry_points {
 
     pub fn burn() -> EntryPoint {
         EntryPoint::new(
-            "burn",
+            consts::EP_BURN,
             vec![
-                Parameter::new("owner", Address::cl_type()),
-                Parameter::new("amount", U256::cl_type()),
+                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,
@@ -82,11 +82,11 @@ pub mod entry_points {
 
     pub fn transfer_from() -> EntryPoint {
         EntryPoint::new(
-            "transfer_from",
+            consts::EP_TRANSFER_FROM,
             vec![
-                Parameter::new("owner", Address::cl_type()),
-                Parameter::new("recipient", Address::cl_type()),
-                Parameter::new("amount", U256::cl_type()),
+                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
+                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,

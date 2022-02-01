@@ -1,7 +1,7 @@
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use crate::{token::Token, Address, Error, Mapping};
+use crate::{consts, token::Token, Address, Error, Mapping};
 
 pub struct TokenWithStaking {
     pub stakes: Mapping<Address, U256>,
@@ -11,7 +11,7 @@ pub struct TokenWithStaking {
 impl Default for TokenWithStaking {
     fn default() -> Self {
         Self {
-            stakes: Mapping::new(format!("stakes")),
+            stakes: consts::NAME_STAKES.into(),
             token: Token::default(),
         }
     }
@@ -65,24 +65,14 @@ impl TokenWithStaking {
 pub mod entry_points {
     use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
 
-    use crate::Address;
-
-    const EP_MINT: &str = "mint";
-    const EP_BURN: &str = "burn";
-    const EP_TRANSFER_FROM: &str = "transfer_from";
-    const EP_STAKE: &str = "stake";
-    const EP_UNSTAKE: &str = "unstake";
-
-    const PARAM_RECIPIENT: &str = "recipient";
-    const PARAM_AMOUNT: &str = "amount";
-    const PARAM_OWNER: &str = "owner";
+    use crate::{consts, Address};
 
     pub fn mint() -> EntryPoint {
         EntryPoint::new(
-            EP_MINT,
+            consts::EP_MINT,
             vec![
-                Parameter::new(PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(PARAM_AMOUNT, U256::cl_type()),
+                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,
@@ -92,10 +82,10 @@ pub mod entry_points {
 
     pub fn burn() -> EntryPoint {
         EntryPoint::new(
-            EP_BURN,
+            consts::EP_BURN,
             vec![
-                Parameter::new(PARAM_OWNER, Address::cl_type()),
-                Parameter::new(PARAM_AMOUNT, U256::cl_type()),
+                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,
@@ -105,11 +95,11 @@ pub mod entry_points {
 
     pub fn transfer_from() -> EntryPoint {
         EntryPoint::new(
-            EP_TRANSFER_FROM,
+            consts::EP_TRANSFER_FROM,
             vec![
-                Parameter::new(PARAM_OWNER, Address::cl_type()),
-                Parameter::new(PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(PARAM_AMOUNT, U256::cl_type()),
+                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
+                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,
@@ -119,10 +109,10 @@ pub mod entry_points {
 
     pub fn stake() -> EntryPoint {
         EntryPoint::new(
-            EP_STAKE,
+            consts::EP_STAKE,
             vec![
-                Parameter::new(PARAM_OWNER, Address::cl_type()),
-                Parameter::new(PARAM_AMOUNT, U256::cl_type()),
+                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,
@@ -132,10 +122,10 @@ pub mod entry_points {
 
     pub fn unstake() -> EntryPoint {
         EntryPoint::new(
-            EP_UNSTAKE,
+            consts::EP_UNSTAKE,
             vec![
-                Parameter::new(PARAM_OWNER, Address::cl_type()),
-                Parameter::new(PARAM_AMOUNT, U256::cl_type()),
+                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
+                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
             ],
             <()>::cl_type(),
             EntryPointAccess::Public,

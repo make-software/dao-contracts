@@ -13,6 +13,7 @@ use casper_types::{
 extern crate alloc;
 
 mod address;
+pub mod consts;
 mod error;
 pub mod owner;
 pub mod staking;
