@@ -26,6 +26,7 @@ pub struct ReputationContract {
 
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
+        utils::init_events();
         let deployer = utils::caller();
         self.owner.init(deployer);
         self.whitelist.init();
@@ -238,10 +239,11 @@ impl ReputationContractInterface for ReputationContractCaller {
 
 #[cfg(feature = "test-support")]
 mod tests {
+    use casper_types::bytesrepr::{Bytes, FromBytes};
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
+    use utils::consts;
     use utils::Address;
     use utils::TestEnv;
-    use utils::consts;
 
     use crate::{ReputationContract, ReputationContractInterface};
 
@@ -296,6 +298,13 @@ mod tests {
         pub fn get_staked_balance_of(&self, address: Address) -> U256 {
             self.env
                 .get_dict_value(self.package_hash, self.data.token.stakes.path(), address)
+        }
+
+        pub fn event<T: FromBytes>(&self, index: u32) -> T {
+            let raw_event: Bytes = self.env.get_dict_value(self.package_hash, "events", index);
+            let (event, bytes) = T::from_bytes(&raw_event).unwrap();
+            assert!(bytes.is_empty());
+            event
         }
     }
 

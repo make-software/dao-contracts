@@ -15,6 +15,7 @@ extern crate alloc;
 mod address;
 pub mod consts;
 mod error;
+mod events;
 pub mod owner;
 pub mod staking;
 pub mod token;
@@ -25,6 +26,7 @@ mod test_env;
 
 pub use address::Address;
 pub use error::Error;
+pub use events::Events;
 
 #[cfg(feature = "test-support")]
 pub use test_env::TestEnv;
@@ -166,3 +168,11 @@ pub fn caller() -> Address {
 //     let top_of_the_stack = take_call_stack_elem(0);
 //     call_stack_element_to_address(top_of_the_stack)
 // }
+
+pub fn init_events() {
+    Events::default().init();
+}
+
+pub fn emit<T: ToBytes>(event: T) {
+    Events::default().emit(event);
+}

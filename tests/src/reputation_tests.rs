@@ -2,7 +2,7 @@
 mod tests {
     use casper_types::{ApiError, U256};
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
-    use utils::TestEnv;
+    use utils::{TestEnv, token::events::Transfer};
 
     #[test]
     fn test_deploy() {
@@ -156,6 +156,14 @@ mod tests {
 
         assert_eq!(contract.balance_of(owner), total_supply - transfer_amount);
         assert_eq!(contract.balance_of(first_recipient), transfer_amount);
+
+        let expected_event = Transfer { from: owner, to: first_recipient, value: transfer_amount};
+        let transfer_event: Transfer = contract.event(0);
+        assert_eq!(transfer_event, expected_event);
+    }
+
+    #[test]
+    fn test_transfer_froxm_not_whitelisted_user() {
     }
 
     #[test]
