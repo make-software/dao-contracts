@@ -104,10 +104,11 @@ pub mod entry_points {
 
 pub mod events {
     use casper_types::U256;
+    use macros::Event;
 
     use crate::Address;
 
-    #[derive(Debug, PartialEq, EventFromBytes, EventToBytes)]
+    #[derive(Debug, PartialEq, Event)]
     pub struct Transfer {
         pub from: Address,
         pub to: Address,
