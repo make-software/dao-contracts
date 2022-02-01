@@ -7,7 +7,7 @@ build-contract:
 
 test: build-contract
 	cp target/wasm32-unknown-unknown/release/reputation_contract.wasm tests/wasm
-	cargo test -p tests -- --nocapture
+	cargo test -p tests
 
 clippy:
 	cargo clippy --all-targets -- -D warnings
