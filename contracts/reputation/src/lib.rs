@@ -47,8 +47,9 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn change_ownership(&mut self, owner: Address) {
+        self.owner.ensure_owner();
         self.owner.change_ownership(owner);
-        runtime::print("Jem zupe");
+        self.whitelist.add_to_whitelist(owner);
     }
 
     fn add_to_whitelist(&mut self, address: Address) {
@@ -222,6 +223,11 @@ mod tests {
             }
         }
 
+        pub fn as_account(&mut self, account: Address) -> &mut Self {
+            self.env.as_account(account);
+            self
+        }
+
         pub fn get_owner(&self) -> Option<Address> {
             self.env
                 .get_value(self.package_hash, self.data.owner.owner.path())
@@ -235,6 +241,14 @@ mod tests {
         pub fn balance_of(&self, address: Address) -> U256 {
             self.env
                 .get_dict_value(self.package_hash, self.data.token.balances.path(), address)
+        }
+
+        pub fn is_whitelisted(&self, address: Address) -> bool {
+            self.env.get_dict_value(
+                self.package_hash,
+                self.data.whitelist.whitelist.path(),
+                address,
+            )
         }
     }
 
