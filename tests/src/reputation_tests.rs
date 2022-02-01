@@ -14,6 +14,12 @@ mod tests {
     }
 
     #[test]
+    fn test_init_cannot_be_called_twice() {
+        let (_, mut contract) = setup();
+        contract.init();
+    }
+
+    #[test]
     fn test_mint_as_owner() {
         let (env, mut contract) = setup();
         let recipient = env.get_account(1);

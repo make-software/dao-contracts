@@ -1,7 +1,9 @@
-use casper_contract::contract_api::{runtime, storage};
+use std::collections::BTreeSet;
+
+use casper_contract::{contract_api::{runtime, storage}, unwrap_or_revert::UnwrapOrRevert};
 use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
-    EntryPointType, EntryPoints, RuntimeArgs, U256,
+    EntryPointType, EntryPoints, RuntimeArgs, U256, URef, Group,
 };
 use utils::{owner::Owner, token::{Token, events::Transfer}, whitelist::Whitelist, Address, Events};
 
@@ -72,6 +74,13 @@ impl ReputationContract {
             "reputation_contract_package_hash",
             contract_package_hash.into(),
         );
+
+        let init_access: URef =
+            storage::create_contract_user_group(contract_package_hash, "init", 1, Default::default())
+                .unwrap_or_revert()
+                .pop()
+                .unwrap_or_revert();
+
         storage::add_contract_version(
             contract_package_hash,
             ReputationContract::entry_points(),
@@ -83,6 +92,10 @@ impl ReputationContract {
         contract_instance.init();
 
         // Revoke access to init.
+        let mut urefs = BTreeSet::new();
+        urefs.insert(init_access);
+        storage::remove_contract_user_group_urefs(contract_package_hash, "init", urefs)
+            .unwrap_or_revert();
     }
 
     pub fn entry_points() -> EntryPoints {
@@ -91,7 +104,7 @@ impl ReputationContract {
             "init",
             vec![],
             <()>::cl_type(),
-            EntryPointAccess::Public,
+            EntryPointAccess::Groups(vec![Group::new("init")]),
             EntryPointType::Contract,
         ));
 
@@ -266,7 +279,11 @@ mod tests {
 
     impl ReputationContractInterface for ReputationContractTest {
         fn init(&mut self) {
-            todo!()
+            self.env.call_contract_package(
+                self.package_hash,
+                "init",
+                runtime_args! {},
+            )
         }
 
         fn mint(&mut self, recipient: Address, amount: U256) {

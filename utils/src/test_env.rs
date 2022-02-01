@@ -95,7 +95,7 @@ pub struct TestEnvState {
     accounts: Vec<Address>,
     active_account: Address,
     context: InMemoryWasmTestBuilder,
-    expected_error: Option<ApiError>,
+    expected_error: Option<ApiError>
 }
 
 impl TestEnvState {
