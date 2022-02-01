@@ -1,6 +1,6 @@
 use casper_types::U256;
 
-use crate::{Address, Mapping, Variable, emit};
+use crate::{emit, Address, Mapping, Variable};
 
 use self::events::Transfer;
 
@@ -42,7 +42,11 @@ impl Token {
         self.balances
             .set(&recipient, self.balances.get(&recipient) + amount);
 
-        emit(Transfer { from: sender, to: recipient, value: amount });
+        emit(Transfer {
+            from: sender,
+            to: recipient,
+            value: amount,
+        });
     }
 }
 
@@ -93,7 +97,10 @@ pub mod entry_points {
 }
 
 pub mod events {
-    use casper_types::{U256, CLTyped, CLType, bytesrepr::{Error, FromBytes, ToBytes}};
+    use casper_types::{
+        bytesrepr::{Error, FromBytes, ToBytes},
+        CLType, CLTyped, U256,
+    };
 
     use crate::Address;
 
@@ -101,7 +108,7 @@ pub mod events {
     pub struct Transfer {
         pub from: Address,
         pub to: Address,
-        pub value: U256
+        pub value: U256,
     }
 
     impl CLTyped for Transfer {
@@ -114,7 +121,7 @@ pub mod events {
         fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), Error> {
             let (event_name, bytes): (String, _) = FromBytes::from_bytes(bytes)?;
             if &event_name != "transfer" {
-                return Err(Error::Formatting)
+                return Err(Error::Formatting);
             }
             let (to, bytes) = FromBytes::from_bytes(bytes)?;
             let (from, bytes) = FromBytes::from_bytes(bytes)?;

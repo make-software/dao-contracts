@@ -1,11 +1,19 @@
 use std::collections::BTreeSet;
 
-use casper_contract::{contract_api::{runtime, storage}, unwrap_or_revert::UnwrapOrRevert};
+use casper_contract::{
+    contract_api::{runtime, storage},
+    unwrap_or_revert::UnwrapOrRevert,
+};
 use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
-    EntryPointType, EntryPoints, RuntimeArgs, U256, URef, Group,
+    EntryPointType, EntryPoints, Group, RuntimeArgs, URef, U256,
 };
-use utils::{owner::Owner, token::{Token, events::Transfer}, whitelist::Whitelist, Address, Events};
+use utils::{
+    owner::Owner,
+    token::{events::Transfer, Token},
+    whitelist::Whitelist,
+    Address, Events,
+};
 
 pub trait ReputationContractInterface {
     fn init(&mut self);
@@ -75,11 +83,15 @@ impl ReputationContract {
             contract_package_hash.into(),
         );
 
-        let init_access: URef =
-            storage::create_contract_user_group(contract_package_hash, "init", 1, Default::default())
-                .unwrap_or_revert()
-                .pop()
-                .unwrap_or_revert();
+        let init_access: URef = storage::create_contract_user_group(
+            contract_package_hash,
+            "init",
+            1,
+            Default::default(),
+        )
+        .unwrap_or_revert()
+        .pop()
+        .unwrap_or_revert();
 
         storage::add_contract_version(
             contract_package_hash,
@@ -214,7 +226,7 @@ impl ReputationContractInterface for ReputationContractCaller {
 
 #[cfg(feature = "test-support")]
 mod tests {
-    use casper_types::bytesrepr::{FromBytes, Bytes};
+    use casper_types::bytesrepr::{Bytes, FromBytes};
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
     use utils::Address;
     use utils::TestEnv;
@@ -266,11 +278,7 @@ mod tests {
             )
         }
         pub fn event<T: FromBytes>(&self, index: u32) -> T {
-            let raw_event: Bytes = self.env.get_dict_value(
-                self.package_hash,
-                "events",
-                index
-            );
+            let raw_event: Bytes = self.env.get_dict_value(self.package_hash, "events", index);
             let (event, bytes) = T::from_bytes(&raw_event).unwrap();
             assert!(bytes.is_empty());
             event
@@ -279,11 +287,8 @@ mod tests {
 
     impl ReputationContractInterface for ReputationContractTest {
         fn init(&mut self) {
-            self.env.call_contract_package(
-                self.package_hash,
-                "init",
-                runtime_args! {},
-            )
+            self.env
+                .call_contract_package(self.package_hash, "init", runtime_args! {})
         }
 
         fn mint(&mut self, recipient: Address, amount: U256) {

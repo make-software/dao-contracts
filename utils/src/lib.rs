@@ -29,6 +29,9 @@ pub use events::Events;
 #[cfg(feature = "test-support")]
 pub use test_env::TestEnv;
 
+#[cfg(feature = "test-support")]
+pub use error::ExecutionError;
+
 pub struct Variable<T> {
     name: String,
     ty: PhantomData<T>,
