@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use casper_types::{ApiError, U256, bytesrepr::{ToBytes, FromBytes}};
+    use casper_types::{ApiError, U256};
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
     use utils::{TestEnv, token::events::Transfer};
 
@@ -28,7 +28,7 @@ mod tests {
         let (env, mut contract) = setup();
         let non_owner = env.get_account(1);
 
-        env.expect_error(utils::Error::NotOnTheWhietlist);
+        env.expect_error(utils::Error::NotWhitelisted);
 
         contract.as_account(non_owner).mint(non_owner, 10.into());
     }
@@ -66,7 +66,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(100.into());
         let (user1, user2) = (env.get_account(0), env.get_account(1));
 
-        env.expect_error(utils::Error::NotOnTheWhietlist);
+        env.expect_error(utils::Error::NotWhitelisted);
         contract.as_account(user2).burn(user1, 10.into());
     }
 
@@ -165,12 +165,16 @@ mod tests {
 
     #[test]
     fn test_transfer_froxm_not_whitelisted_user() {
+    }
+
+    #[test]
+    fn test_transfer_from_not_whitelisted_user() {
         let (env, mut contract) = setup();
         let (sender, recipient) = (env.get_account(1), env.get_account(2));
 
         contract.mint(sender, 10.into());
 
-        env.expect_error(utils::Error::NotOnTheWhietlist);
+        env.expect_error(utils::Error::NotWhitelisted);
 
         contract
             .as_account(sender)

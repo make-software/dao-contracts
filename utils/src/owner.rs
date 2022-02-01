@@ -20,7 +20,6 @@ impl Owner {
     }
 
     pub fn change_ownership(&mut self, owner: Address) {
-        self.ensure_owner();
         self.owner.set(Some(owner));
     }
 

@@ -26,7 +26,7 @@ fn mint() {
 fn burn() {
     let owner: Address = runtime::get_named_arg("owner");
     let amount: U256 = runtime::get_named_arg("amount");
-    ReputationContract::default().mint(owner, amount);
+    ReputationContract::default().burn(owner, amount);
 }
 
 #[no_mangle]

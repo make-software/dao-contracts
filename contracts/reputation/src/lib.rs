@@ -252,7 +252,6 @@ mod tests {
                 address,
             )
         }
-
         pub fn event<T: FromBytes>(&self, index: u32) -> T {
             let raw_event: Bytes = self.env.get_dict_value(
                 self.package_hash,

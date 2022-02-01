@@ -29,7 +29,7 @@ impl Whitelist {
 
     pub fn ensure_whitelisted(&self) {
         if !self.whitelist.get(&caller()) {
-            runtime::revert(Error::NotOnTheWhietlist);
+            runtime::revert(Error::NotWhitelisted);
         }
     }
 }
