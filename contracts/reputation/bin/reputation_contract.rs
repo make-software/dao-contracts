@@ -54,3 +54,17 @@ fn remove_from_whitelist() {
     let address: Address = runtime::get_named_arg("address");
     ReputationContract::default().remove_from_whitelist(address);
 }
+
+#[no_mangle]
+fn stake() {
+    let address: Address = runtime::get_named_arg("address");
+    let amount: U256 = runtime::get_named_arg("amount");
+    ReputationContract::default().stake(address, amount);
+}
+
+#[no_mangle]
+fn unstake() {
+    let address: Address = runtime::get_named_arg("address");
+    let amount: U256 = runtime::get_named_arg("amount");
+    ReputationContract::default().unstake(address, amount);
+}

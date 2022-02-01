@@ -13,6 +13,8 @@ pub trait ReputationContractInterface {
     fn change_ownership(&mut self, owner: Address);
     fn add_to_whitelist(&mut self, address: Address);
     fn remove_from_whitelist(&mut self, address: Address);
+    fn stake(&mut self, address: Address, amount: U256);
+    fn unstake(&mut self, address: Address, amount: U256);
 }
 
 #[derive(Default)]
@@ -60,6 +62,16 @@ impl ReputationContractInterface for ReputationContract {
     fn remove_from_whitelist(&mut self, address: Address) {
         self.owner.ensure_owner();
         self.whitelist.remove_from_whitelist(address);
+    }
+
+    fn stake(&mut self, address: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.stake(address, amount);
+    }
+
+    fn unstake(&mut self, address: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.unstake(address, amount);
     }
 }
 
@@ -198,6 +210,30 @@ impl ReputationContractInterface for ReputationContractCaller {
             },
         )
     }
+
+    fn stake(&mut self, address: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "stake",
+            runtime_args! {
+                "address" => address,
+                "amount" => amount
+            },
+        )
+    }
+
+    fn unstake(&mut self, address: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            "unstake",
+            runtime_args! {
+                "address" => address,
+                "amount" => amount
+            },
+        )
+    }
 }
 
 #[cfg(feature = "test-support")]
@@ -254,6 +290,11 @@ mod tests {
                 self.data.whitelist.whitelist.path(),
                 address,
             )
+        }
+
+        pub fn get_staked_balance_of(&self, address: Address) -> U256 {
+            self.env
+                .get_dict_value(self.package_hash, self.data.token.stakes.path(), address)
         }
     }
 
@@ -322,6 +363,28 @@ mod tests {
                 "remove_from_whitelist",
                 runtime_args! {
                     "address" => address
+                },
+            )
+        }
+
+        fn stake(&mut self, address: Address, amount: U256) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "stake",
+                runtime_args! {
+                    "address" => address,
+                    "amount" => amount
+                },
+            )
+        }
+
+        fn unstake(&mut self, address: Address, amount: U256) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "unstake",
+                runtime_args! {
+                    "address" => address,
+                    "amount" => amount
                 },
             )
         }

@@ -49,7 +49,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic = "Unexpected execution error."]
     fn test_buring_amount_exceeding_balance() {
         let total_supply = 100.into();
         let burn_amount = 101.into();
@@ -57,7 +56,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
-        env.expect_error(ApiError::Unhandled);
+        env.expect_error(utils::Error::InsufficientBalance);
         contract.burn(owner, burn_amount);
     }
 
@@ -174,7 +173,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic = "Unexpected execution error."]
     fn test_transfer_amount_higher_than_balance() {
         let total_supply = 10.into();
         let transfer_amount = 11.into();
@@ -182,7 +180,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let (owner, first_recipient) = (env.get_account(0), env.get_account(1));
 
-        env.expect_error(ApiError::Unhandled);
+        env.expect_error(utils::Error::InsufficientBalance);
 
         contract.transfer_from(owner, first_recipient, transfer_amount);
     }
@@ -197,6 +195,100 @@ mod tests {
 
         env.expect_error(utils::Error::NotAnOwner);
         contract.change_ownership(new_owner);
+    }
+
+    #[test]
+    fn test_stake() {
+        let total_supply = 100.into();
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
+        let amount_to_stake = 10.into();
+        let account = env.get_account(0);
+
+        contract.stake(account, amount_to_stake);
+        //staking does not affect the balance
+        assert_eq!(contract.balance_of(account), total_supply);
+        assert_eq!(contract.get_staked_balance_of(account), amount_to_stake);
+    }
+
+    #[test]
+    fn test_stake_amount_exceeding_balance() {
+        let total_supply = 100.into();
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
+        let amount_to_stake = 200.into();
+        let account = env.get_account(0);
+
+        env.expect_error(utils::Error::InsufficientBalance);
+        contract.stake(account, amount_to_stake);
+    }
+
+    #[test]
+    fn test_stake_not_whitelisted() {
+        let (env, mut contract) = setup();
+        let not_whitelisted_account = env.get_account(1);
+
+        env.expect_error(utils::Error::NotWhitelisted);
+
+        contract
+            .as_account(not_whitelisted_account)
+            .stake(not_whitelisted_account, 1.into());
+    }
+
+    #[test]
+    fn test_burn_staked_tokens() {
+        let total_supply = 100.into();
+        let staked_amount = 10.into();
+        let burn_amount = 99.into();
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
+        let owner = env.get_account(0);
+
+        contract.stake(owner, staked_amount);
+
+        env.expect_error(utils::Error::InsufficientBalance);
+        contract.burn(owner, burn_amount);
+    }
+
+    #[test]
+    fn test_transfer_staked_tokens() {
+        let total_supply = 100.into();
+        let staked_amount = 10.into();
+        let transffered_amount = 99.into();
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
+        let (owner, recipient) = (env.get_account(0), env.get_account(1));
+
+        contract.stake(owner, staked_amount);
+
+        env.expect_error(utils::Error::InsufficientBalance);
+        contract.transfer_from(owner, recipient, transffered_amount);
+    }
+
+    #[test]
+    fn test_unstake() {
+        let total_supply = 100.into();
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
+        let amount_to_stake = 10.into();
+        let amount_to_unstake = 4.into();
+        let account = env.get_account(0);
+
+        contract.stake(account, amount_to_stake);
+        contract.unstake(account, amount_to_unstake);
+        assert_eq!(
+            contract.get_staked_balance_of(account),
+            amount_to_stake - amount_to_unstake
+        );
+    }
+
+    #[test]
+    fn test_unstake_amount_exceeding_staked_balance() {
+        let total_supply = 100.into();
+        let (env, mut contract) = setup_with_initial_supply(total_supply);
+        let amount_to_stake = 50.into();
+        let amount_to_unstake = 30.into();
+        let account = env.get_account(0);
+
+        contract.stake(account, amount_to_stake);
+        contract.unstake(account, amount_to_unstake);
+        env.expect_error(utils::Error::InsufficientBalance);
+        contract.unstake(account, amount_to_unstake);
     }
 
     fn setup() -> (TestEnv, ReputationContractTest) {

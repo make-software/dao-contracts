@@ -1,6 +1,7 @@
+use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use crate::{token::Token, Address, Mapping};
+use crate::{token::Token, Address, Error, Mapping};
 
 pub struct TokenWithStaking {
     pub stakes: Mapping<Address, U256>,
@@ -18,6 +19,7 @@ impl Default for TokenWithStaking {
 
 impl TokenWithStaking {
     pub fn init(&mut self) {
+        self.stakes.init();
         self.token.init();
     }
 
@@ -36,11 +38,13 @@ impl TokenWithStaking {
     }
 
     pub fn stake(&mut self, address: Address, amount: U256) {
+        self.ensure_balance(address, amount);
         self.stakes
             .set(&address, self.stakes.get(&address) + amount);
     }
 
     pub fn unstake(&mut self, address: Address, amount: U256) {
+        self.ensure_staked_balance(address, amount);
         self.stakes
             .set(&address, self.stakes.get(&address) - amount);
     }
@@ -48,6 +52,13 @@ impl TokenWithStaking {
     fn ensure_balance(&mut self, address: Address, amount: U256) {
         let staked_amount = self.stakes.get(&address);
         self.token.ensure_balance(&address, staked_amount + amount);
+    }
+
+    fn ensure_staked_balance(&mut self, address: Address, amount: U256) {
+        let staked_amount = self.stakes.get(&address);
+        if amount > staked_amount {
+            runtime::revert(Error::InsufficientBalance);
+        }
     }
 }
 

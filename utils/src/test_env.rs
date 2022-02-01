@@ -193,6 +193,7 @@ impl TestEnvState {
                 self.context.expect_success();
             }
         }
+        self.active_account = self.get_account(0);
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
