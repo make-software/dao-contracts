@@ -153,7 +153,7 @@ pub mod events {
             size += self.from.serialized_length();
             size += self.to.serialized_length();
             size += self.value.serialized_length();
-            return size;
+            size
         }
     }
 }

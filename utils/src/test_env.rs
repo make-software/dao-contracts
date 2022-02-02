@@ -83,6 +83,10 @@ impl TestEnv {
     pub fn expect_error<T: Into<ApiError>>(&self, error: T) {
         self.state.lock().unwrap().expect_error(error);
     }
+
+    pub fn expect_execution_error(&self, error: execution::Error) {
+        self.state.lock().unwrap().expect_execution_error(error);
+    }
 }
 
 impl Default for TestEnv {
@@ -95,7 +99,7 @@ pub struct TestEnvState {
     accounts: Vec<Address>,
     active_account: Address,
     context: InMemoryWasmTestBuilder,
-    expected_error: Option<ApiError>,
+    expected_error: Option<execution::Error>,
 }
 
 impl TestEnvState {
@@ -168,19 +172,13 @@ impl TestEnvState {
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item).build();
         self.context.exec(execute_request).commit();
 
-        if let Some(expected_error) = self.expected_error {
+        if let Some(expected_error) = self.expected_error.clone() {
             // If error is expected.
             if self.context.is_error() {
                 // The execution actually ended with an error.
                 if let engine_state::Error::Exec(exec_error) = self.context.get_error().unwrap() {
-                    // Make sure that the error is ApiError.
-                    if let execution::Error::Revert(api_error) = exec_error {
-                        assert_eq!(expected_error, api_error);
-                        // Don't expect it anymore.
-                        self.expected_error = None;
-                    } else {
-                        panic!("Unexpected execution error.");
-                    }
+                    assert_eq!(expected_error.to_string(), exec_error.to_string());
+                    self.expected_error = None;
                 } else {
                     panic!("Unexpected engine_state error.");
                 }
@@ -236,7 +234,7 @@ impl TestEnvState {
             .current_contract_hash()
             .unwrap();
 
-        let dictionary_seed_uref: URef = self
+        let dictionary_seed_uref: URef = *self
             .context
             .get_contract(contract_hash)
             .unwrap()
@@ -244,8 +242,7 @@ impl TestEnvState {
             .get(name)
             .unwrap()
             .as_uref()
-            .unwrap()
-            .clone();
+            .unwrap();
 
         match self.context.query_dictionary_item(
             None,
@@ -261,15 +258,15 @@ impl TestEnvState {
     }
 
     pub fn active_account(&self) -> Address {
-        Address::from(self.active_account)
+        self.active_account
     }
 
     fn active_account_hash(&self) -> AccountHash {
-        self.active_account().as_account_hash().unwrap().clone()
+        *self.active_account().as_account_hash().unwrap()
     }
 
     pub fn get_account(&self, n: usize) -> Address {
-        self.accounts.get(n).unwrap().clone()
+        *self.accounts.get(n).unwrap()
     }
 
     pub fn as_account(&mut self, account: Address) {
@@ -277,7 +274,11 @@ impl TestEnvState {
     }
 
     pub fn expect_error<T: Into<ApiError>>(&mut self, error: T) {
-        self.expected_error = Some(error.into());
+        self.expect_execution_error(execution::Error::Revert(error.into()));
+    }
+
+    pub fn expect_execution_error(&mut self, error: execution::Error) {
+        self.expected_error = Some(error);
     }
 }
 

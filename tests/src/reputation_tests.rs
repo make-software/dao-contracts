@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use casper_types::{ApiError, U256};
+    use casper_types::U256;
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
-    use utils::{TestEnv, token::events::Transfer};
+    use utils::{token::events::Transfer, ExecutionError, TestEnv};
 
     #[test]
     fn test_deploy() {
@@ -11,6 +11,13 @@ mod tests {
         assert_eq!(contract.balance_of(env.get_account(0)), U256::zero());
         assert_eq!(contract.balance_of(env.get_account(1)), U256::zero());
         assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
+    }
+
+    #[test]
+    fn test_init_cannot_be_called_twice() {
+        let (env, mut contract) = setup();
+        env.expect_execution_error(ExecutionError::InvalidContext);
+        contract.init();
     }
 
     #[test]
@@ -70,13 +77,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic = "Unexpected execution error."]
     fn test_total_supply_overflow() {
         let (env, mut contract) = setup();
 
         contract.mint(env.get_account(1), U256::MAX);
 
-        env.expect_error(ApiError::Unhandled);
+        env.expect_execution_error(ExecutionError::Interpreter(String::from(
+            "trap: Trap { kind: Unreachable }",
+        )));
         contract.mint(env.get_account(2), U256::one());
     }
 
@@ -157,13 +165,13 @@ mod tests {
         assert_eq!(contract.balance_of(owner), total_supply - transfer_amount);
         assert_eq!(contract.balance_of(first_recipient), transfer_amount);
 
-        let expected_event = Transfer { from: owner, to: first_recipient, value: transfer_amount};
+        let expected_event = Transfer {
+            from: owner,
+            to: first_recipient,
+            value: transfer_amount,
+        };
         let transfer_event: Transfer = contract.event(0);
         assert_eq!(transfer_event, expected_event);
-    }
-
-    #[test]
-    fn test_transfer_froxm_not_whitelisted_user() {
     }
 
     #[test]
@@ -174,7 +182,6 @@ mod tests {
         contract.mint(sender, 10.into());
 
         env.expect_error(utils::Error::NotWhitelisted);
-
         contract
             .as_account(sender)
             .transfer_from(sender, recipient, 1.into());
@@ -189,7 +196,6 @@ mod tests {
         let (owner, first_recipient) = (env.get_account(0), env.get_account(1));
 
         env.expect_error(utils::Error::InsufficientBalance);
-
         contract.transfer_from(owner, first_recipient, transfer_amount);
     }
 

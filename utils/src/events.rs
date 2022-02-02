@@ -1,16 +1,19 @@
 use casper_contract::unwrap_or_revert::UnwrapOrRevert;
-use casper_types::bytesrepr::{Bytes, ToBytes, FromBytes};
+use casper_types::bytesrepr::{Bytes, ToBytes};
 
 use crate::{Mapping, Variable};
 
 pub struct Events {
     pub events: Mapping<u32, Bytes>,
-    pub length: Variable<u32>
+    pub length: Variable<u32>,
 }
 
 impl Default for Events {
     fn default() -> Self {
-        Self { events: Mapping::new(String::from("events")), length: Variable::new(String::from("length")) }
+        Self {
+            events: Mapping::new(String::from("events")),
+            length: Variable::new(String::from("length")),
+        }
     }
 }
 
