@@ -51,7 +51,7 @@ impl TokenWithStaking {
 
     fn ensure_balance(&mut self, address: &Address, amount: U256) {
         let staked_amount = self.stakes.get(address);
-        self.token.ensure_balance(&address, staked_amount + amount);
+        self.token.ensure_balance(address, staked_amount + amount);
     }
 
     fn ensure_staked_balance(&mut self, address: &Address, amount: U256) {

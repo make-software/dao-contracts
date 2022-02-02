@@ -25,24 +25,24 @@ pub const NAME_WHITELIST: &str = "whitelist";
 
 impl From<&str> for Variable<Option<Address>> {
     fn from(name: &str) -> Self {
-        Variable::new(format!("{}", name))
+        Variable::new(name.to_string())
     }
 }
 
 impl From<&str> for Variable<U256> {
     fn from(name: &str) -> Self {
-        Variable::new(format!("{}", name))
+        Variable::new(name.to_string())
     }
 }
 
 impl From<&str> for Mapping<Address, U256> {
     fn from(name: &str) -> Self {
-        Mapping::new(format!("{}", name))
+        Mapping::new(name.to_string())
     }
 }
 
 impl From<&str> for Mapping<Address, bool> {
     fn from(name: &str) -> Self {
-        Mapping::new(format!("{}", name))
+        Mapping::new(name.to_string())
     }
 }
