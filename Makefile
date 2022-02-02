@@ -10,7 +10,7 @@ test: build-contract
 	cargo test -p tests
 
 clippy:
-	cargo clippy --all-targets -- -D warnings
+	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
 
 check-lint: clippy
 	cargo fmt -- --check

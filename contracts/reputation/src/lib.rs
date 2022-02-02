@@ -8,12 +8,7 @@ use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
     EntryPointType, EntryPoints, Group, RuntimeArgs, URef, U256,
 };
-use utils::{
-    owner::Owner,
-    token::{events::Transfer, Token},
-    whitelist::Whitelist,
-    Address, Events,
-};
+use utils::{owner::Owner, token::Token, whitelist::Whitelist, Address};
 
 pub trait ReputationContractInterface {
     fn init(&mut self);

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use casper_types::{ApiError, U256};
+    use casper_types::U256;
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
     use utils::{token::events::Transfer, ExecutionError, TestEnv};
 
@@ -184,7 +184,6 @@ mod tests {
         contract.mint(sender, 10.into());
 
         env.expect_error(utils::Error::NotWhitelisted);
-
         contract
             .as_account(sender)
             .transfer_from(sender, recipient, 1.into());

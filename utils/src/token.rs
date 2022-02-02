@@ -12,8 +12,8 @@ pub struct Token {
 impl Default for Token {
     fn default() -> Self {
         Self {
-            total_supply: Variable::new(format!("total_supply")),
-            balances: Mapping::new(format!("balances")),
+            total_supply: Variable::new(String::from("total_supply")),
+            balances: Mapping::new(String::from("balances")),
         }
     }
 }
@@ -147,7 +147,7 @@ pub mod events {
             size += self.from.serialized_length();
             size += self.to.serialized_length();
             size += self.value.serialized_length();
-            return size;
+            size
         }
     }
 }

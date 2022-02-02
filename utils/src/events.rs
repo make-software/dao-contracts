@@ -1,5 +1,5 @@
 use casper_contract::unwrap_or_revert::UnwrapOrRevert;
-use casper_types::bytesrepr::{Bytes, FromBytes, ToBytes};
+use casper_types::bytesrepr::{Bytes, ToBytes};
 
 use crate::{Mapping, Variable};
 

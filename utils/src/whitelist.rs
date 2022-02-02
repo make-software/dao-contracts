@@ -9,7 +9,7 @@ pub struct Whitelist {
 impl Default for Whitelist {
     fn default() -> Self {
         Self {
-            whitelist: Mapping::new(format!("whitelist")),
+            whitelist: Mapping::new(String::from("whitelist")),
         }
     }
 }

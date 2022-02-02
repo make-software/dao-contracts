@@ -9,7 +9,7 @@ pub struct Owner {
 impl Default for Owner {
     fn default() -> Self {
         Self {
-            owner: Variable::new(format!("owner")),
+            owner: Variable::new(String::from("owner")),
         }
     }
 }
