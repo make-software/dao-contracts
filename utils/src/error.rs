@@ -8,6 +8,7 @@ pub enum Error {
     OwnerIsNotInitialized,
     NotWhitelisted,
     InsufficientBalance,
+    TotalSupplyOverflow,
 }
 
 impl From<Error> for ApiError {
@@ -17,6 +18,7 @@ impl From<Error> for ApiError {
             Error::OwnerIsNotInitialized => 1001,
             Error::NotWhitelisted => 1002,
             Error::InsufficientBalance => 1003,
+            Error::TotalSupplyOverflow => 1004,
         };
         ApiError::User(id)
     }
