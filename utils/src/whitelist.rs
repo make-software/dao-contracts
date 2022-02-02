@@ -1,6 +1,6 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{caller, Address, Error, Mapping};
+use crate::{caller, consts, Address, Error, Mapping};
 
 pub struct Whitelist {
     pub whitelist: Mapping<Address, bool>,
@@ -9,7 +9,7 @@ pub struct Whitelist {
 impl Default for Whitelist {
     fn default() -> Self {
         Self {
-            whitelist: Mapping::new(String::from("whitelist")),
+            whitelist: Mapping::from(consts::NAME_WHITELIST),
         }
     }
 }
@@ -37,12 +37,12 @@ impl Whitelist {
 pub mod entry_points {
     use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter};
 
-    use crate::Address;
+    use crate::{consts, Address};
 
     pub fn add_to_whitelist() -> EntryPoint {
         EntryPoint::new(
-            "add_to_whitelist",
-            vec![Parameter::new("address", Address::cl_type())],
+            consts::EP_ADD_TO_WHITELIST,
+            vec![Parameter::new(consts::PARAM_ADDRESS, Address::cl_type())],
             <()>::cl_type(),
             EntryPointAccess::Public,
             EntryPointType::Contract,
@@ -51,8 +51,8 @@ pub mod entry_points {
 
     pub fn remove_from_whitelist() -> EntryPoint {
         EntryPoint::new(
-            "remove_from_whitelist",
-            vec![Parameter::new("address", Address::cl_type())],
+            consts::EP_REMOVE_FROM_WHITELIST,
+            vec![Parameter::new(consts::PARAM_ADDRESS, Address::cl_type())],
             <()>::cl_type(),
             EntryPointAccess::Public,
             EntryPointType::Contract,

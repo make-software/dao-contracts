@@ -8,7 +8,7 @@ use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
     EntryPointType, EntryPoints, Group, RuntimeArgs, URef, U256,
 };
-use utils::{owner::Owner, token::Token, whitelist::Whitelist, Address};
+use utils::{consts, owner::Owner, staking::TokenWithStaking, whitelist::Whitelist, Address};
 
 pub trait ReputationContractInterface {
     fn init(&mut self);
@@ -18,11 +18,13 @@ pub trait ReputationContractInterface {
     fn change_ownership(&mut self, owner: Address);
     fn add_to_whitelist(&mut self, address: Address);
     fn remove_from_whitelist(&mut self, address: Address);
+    fn stake(&mut self, address: Address, amount: U256);
+    fn unstake(&mut self, address: Address, amount: U256);
 }
 
 #[derive(Default)]
 pub struct ReputationContract {
-    pub token: Token,
+    pub token: TokenWithStaking,
     pub owner: Owner,
     pub whitelist: Whitelist,
 }
@@ -66,6 +68,16 @@ impl ReputationContractInterface for ReputationContract {
     fn remove_from_whitelist(&mut self, address: Address) {
         self.owner.ensure_owner();
         self.whitelist.remove_from_whitelist(address);
+    }
+
+    fn stake(&mut self, address: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.stake(address, amount);
+    }
+
+    fn unstake(&mut self, address: Address, amount: U256) {
+        self.whitelist.ensure_whitelisted();
+        self.token.unstake(address, amount);
     }
 }
 
@@ -118,9 +130,11 @@ impl ReputationContract {
         entry_points.add_entry_point(utils::owner::entry_points::change_ownership());
         entry_points.add_entry_point(utils::whitelist::entry_points::add_to_whitelist());
         entry_points.add_entry_point(utils::whitelist::entry_points::remove_from_whitelist());
-        entry_points.add_entry_point(utils::token::entry_points::mint());
-        entry_points.add_entry_point(utils::token::entry_points::burn());
-        entry_points.add_entry_point(utils::token::entry_points::transfer_from());
+        entry_points.add_entry_point(utils::staking::entry_points::mint());
+        entry_points.add_entry_point(utils::staking::entry_points::burn());
+        entry_points.add_entry_point(utils::staking::entry_points::transfer_from());
+        entry_points.add_entry_point(utils::staking::entry_points::stake());
+        entry_points.add_entry_point(utils::staking::entry_points::unstake());
 
         entry_points
     }
@@ -143,7 +157,7 @@ impl ReputationContractInterface for ReputationContractCaller {
         let _: () = runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "init",
+            consts::EP_INIT,
             runtime_args! {},
         );
     }
@@ -152,10 +166,10 @@ impl ReputationContractInterface for ReputationContractCaller {
         runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "mint",
+            consts::EP_MINT,
             runtime_args! {
-                "recipient" => recipient,
-                "amount" => amount
+                consts::PARAM_RECIPIENT => recipient,
+                consts::PARAM_AMOUNT => amount
             },
         )
     }
@@ -164,10 +178,10 @@ impl ReputationContractInterface for ReputationContractCaller {
         runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "burn",
+            consts::EP_BURN,
             runtime_args! {
-                "owner" => owner,
-                "amount" => amount
+                consts::PARAM_OWNER => owner,
+                consts::PARAM_AMOUNT => amount
             },
         )
     }
@@ -176,11 +190,11 @@ impl ReputationContractInterface for ReputationContractCaller {
         runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "transfer_from",
+            consts::EP_TRANSFER_FROM,
             runtime_args! {
-                "owner" => owner,
-                "recipient" => recipient,
-                "amount" => amount
+                consts::PARAM_OWNER => owner,
+                consts::PARAM_RECIPIENT => recipient,
+                consts::PARAM_AMOUNT => amount
             },
         )
     }
@@ -189,9 +203,9 @@ impl ReputationContractInterface for ReputationContractCaller {
         runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "change_ownership",
+            consts::EP_CHANGE_OWNERSHIP,
             runtime_args! {
-                "owner" => owner,
+                consts::PARAM_OWNER => owner,
             },
         )
     }
@@ -200,9 +214,9 @@ impl ReputationContractInterface for ReputationContractCaller {
         runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "add_to_whitelist",
+            consts::EP_ADD_TO_WHITELIST,
             runtime_args! {
-                "address" => address,
+                consts::PARAM_ADDRESS => address,
             },
         )
     }
@@ -211,9 +225,33 @@ impl ReputationContractInterface for ReputationContractCaller {
         runtime::call_versioned_contract(
             self.contract_package_hash,
             None,
-            "remove_from_whitelist",
+            consts::EP_REMOVE_FROM_WHITELIST,
             runtime_args! {
-                "address" => address,
+                consts::PARAM_ADDRESS => address,
+            },
+        )
+    }
+
+    fn stake(&mut self, address: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            consts::EP_STAKE,
+            runtime_args! {
+                consts::PARAM_ADDRESS => address,
+                consts::PARAM_AMOUNT => amount
+            },
+        )
+    }
+
+    fn unstake(&mut self, address: Address, amount: U256) {
+        runtime::call_versioned_contract(
+            self.contract_package_hash,
+            None,
+            consts::EP_UNSTAKE,
+            runtime_args! {
+                consts::PARAM_ADDRESS => address,
+                consts::PARAM_AMOUNT => amount
             },
         )
     }
@@ -223,6 +261,7 @@ impl ReputationContractInterface for ReputationContractCaller {
 mod tests {
     use casper_types::bytesrepr::{Bytes, FromBytes};
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
+    use utils::consts;
     use utils::Address;
     use utils::TestEnv;
 
@@ -257,12 +296,15 @@ mod tests {
 
         pub fn total_supply(&self) -> U256 {
             self.env
-                .get_value(self.package_hash, self.data.token.total_supply.path())
+                .get_value(self.package_hash, self.data.token.token.total_supply.path())
         }
 
         pub fn balance_of(&self, address: Address) -> U256 {
-            self.env
-                .get_dict_value(self.package_hash, self.data.token.balances.path(), address)
+            self.env.get_dict_value(
+                self.package_hash,
+                self.data.token.token.balances.path(),
+                address,
+            )
         }
 
         pub fn is_whitelisted(&self, address: Address) -> bool {
@@ -272,6 +314,12 @@ mod tests {
                 address,
             )
         }
+
+        pub fn get_staked_balance_of(&self, address: Address) -> U256 {
+            self.env
+                .get_dict_value(self.package_hash, self.data.token.stakes.path(), address)
+        }
+
         pub fn event<T: FromBytes>(&self, index: u32) -> T {
             let raw_event: Bytes = self.env.get_dict_value(self.package_hash, "events", index);
             let (event, bytes) = T::from_bytes(&raw_event).unwrap();
@@ -289,10 +337,10 @@ mod tests {
         fn mint(&mut self, recipient: Address, amount: U256) {
             self.env.call_contract_package(
                 self.package_hash,
-                "mint",
+                consts::EP_MINT,
                 runtime_args! {
-                    "recipient" => recipient,
-                    "amount" => amount
+                    consts::PARAM_RECIPIENT => recipient,
+                    consts::PARAM_AMOUNT => amount
                 },
             )
         }
@@ -300,10 +348,10 @@ mod tests {
         fn burn(&mut self, owner: Address, amount: U256) {
             self.env.call_contract_package(
                 self.package_hash,
-                "burn",
+                consts::EP_BURN,
                 runtime_args! {
-                    "owner" => owner,
-                    "amount" => amount
+                    consts::PARAM_OWNER => owner,
+                    consts::PARAM_AMOUNT => amount
                 },
             )
         }
@@ -311,11 +359,11 @@ mod tests {
         fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
             self.env.call_contract_package(
                 self.package_hash,
-                "transfer_from",
+                consts::EP_TRANSFER_FROM,
                 runtime_args! {
-                    "owner" => owner,
-                    "recipient" => recipient,
-                    "amount" => amount
+                    consts::PARAM_OWNER => owner,
+                    consts::PARAM_RECIPIENT => recipient,
+                    consts::PARAM_AMOUNT => amount
                 },
             )
         }
@@ -323,9 +371,9 @@ mod tests {
         fn change_ownership(&mut self, owner: Address) {
             self.env.call_contract_package(
                 self.package_hash,
-                "change_ownership",
+                consts::EP_CHANGE_OWNERSHIP,
                 runtime_args! {
-                    "owner" => owner
+                    consts::PARAM_OWNER => owner
                 },
             )
         }
@@ -333,9 +381,9 @@ mod tests {
         fn add_to_whitelist(&mut self, address: Address) {
             self.env.call_contract_package(
                 self.package_hash,
-                "add_to_whitelist",
+                consts::EP_ADD_TO_WHITELIST,
                 runtime_args! {
-                    "address" => address
+                    consts::PARAM_ADDRESS => address
                 },
             )
         }
@@ -343,9 +391,31 @@ mod tests {
         fn remove_from_whitelist(&mut self, address: Address) {
             self.env.call_contract_package(
                 self.package_hash,
-                "remove_from_whitelist",
+                consts::EP_REMOVE_FROM_WHITELIST,
                 runtime_args! {
-                    "address" => address
+                    consts::PARAM_ADDRESS => address
+                },
+            )
+        }
+
+        fn stake(&mut self, address: Address, amount: U256) {
+            self.env.call_contract_package(
+                self.package_hash,
+                consts::EP_STAKE,
+                runtime_args! {
+                    consts::PARAM_ADDRESS => address,
+                    consts::PARAM_AMOUNT => amount
+                },
+            )
+        }
+
+        fn unstake(&mut self, address: Address, amount: U256) {
+            self.env.call_contract_package(
+                self.package_hash,
+                consts::EP_UNSTAKE,
+                runtime_args! {
+                    consts::PARAM_ADDRESS => address,
+                    consts::PARAM_AMOUNT => amount
                 },
             )
         }
