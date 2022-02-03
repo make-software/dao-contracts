@@ -3,5 +3,6 @@ members = [
     "utils",
     "macros",
     "contracts",
+    "contracts/variable",
     "tests"
 ]

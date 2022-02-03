@@ -1164,6 +1164,12 @@ dependencies = [
  "casper-dao-contracts",
  "casper-dao-utils",
  "casper-types",
+<<<<<<< develop
+=======
+ "reputation-contract",
+ "utils",
+ "variable-repository",
+>>>>>>> Setup module for Variable Repository Contract
 ]
 
 [[package]]
@@ -1270,6 +1276,15 @@ checksum = "79923f7731dc61ebfba3633098bf3ac533bbd35ccd8c57e7088d9a5eebe0263f"
 dependencies = [
  "ctor",
  "version_check",
+]
+
+[[package]]
+name = "variable-repository"
+version = "0.1.0"
+dependencies = [
+ "casper-contract",
+ "casper-types",
+ "utils",
 ]
 
 [[package]]
