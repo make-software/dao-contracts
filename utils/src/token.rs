@@ -25,7 +25,12 @@ impl Token {
     }
 
     pub fn mint(&mut self, recipient: Address, amount: U256) {
-        self.total_supply.set(self.total_supply.get() + amount);
+        let (new_supply, is_overflowed) = self.total_supply.get().overflowing_add(amount);
+        if is_overflowed {
+            runtime::revert(Error::TotalSupplyOverflow);
+        }
+
+        self.total_supply.set(new_supply);
         self.balances
             .set(&recipient, self.balances.get(&recipient) + amount);
     }

@@ -80,12 +80,10 @@ mod tests {
     fn test_total_supply_overflow() {
         let (env, mut contract) = setup();
 
-        contract.mint(env.get_account(1), U256::MAX);
+        contract.mint(env.get_account(0), U256::MAX);
 
-        env.expect_execution_error(ExecutionError::Interpreter(String::from(
-            "trap: Trap { kind: Unreachable }",
-        )));
-        contract.mint(env.get_account(2), U256::one());
+        env.expect_error(utils::Error::TotalSupplyOverflow);
+        contract.mint(env.get_account(0), U256::one());
     }
 
     #[test]
