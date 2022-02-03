@@ -6,6 +6,7 @@ mod tests {
     #[test]
     fn test_deploy() {
         let (env, contract) = setup();
+        assert!(contract.is_whitelisted(env.get_account(0)));
     }
 
     fn setup() -> (TestEnv, VariableRepositoryContractTest) {
