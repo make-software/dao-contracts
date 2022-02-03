@@ -12,7 +12,7 @@ impl Default for Events {
     fn default() -> Self {
         Self {
             events: Mapping::new(String::from("events")),
-            length: Variable::new(String::from("length")),
+            length: Variable::new(String::from("events_length")),
         }
     }
 }

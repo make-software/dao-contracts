@@ -621,6 +621,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1240,6 +1249,7 @@ dependencies = [
  "casper-engine-test-support",
  "casper-execution-engine",
  "casper-types",
+ "macros",
 ]
 
 [[package]]
