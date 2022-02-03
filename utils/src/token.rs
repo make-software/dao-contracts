@@ -25,7 +25,12 @@ impl Token {
     }
 
     pub fn mint(&mut self, recipient: Address, amount: U256) {
-        self.total_supply.set(self.total_supply.get() + amount);
+        let (new_supply, is_overflowed) = self.total_supply.get().overflowing_add(amount);
+        if is_overflowed {
+            runtime::revert(Error::TotalSupplyOverflow);
+        }
+
+        self.total_supply.set(new_supply);
         self.balances
             .set(&recipient, self.balances.get(&recipient) + amount);
     }
@@ -126,13 +131,13 @@ pub mod events {
     impl FromBytes for Transfer {
         fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), Error> {
             let (event_name, bytes): (String, _) = FromBytes::from_bytes(bytes)?;
-            if &event_name != "transfer" {
+            if &event_name != "Transfer" {
                 return Err(Error::Formatting);
             }
-            let (to, bytes) = FromBytes::from_bytes(bytes)?;
             let (from, bytes) = FromBytes::from_bytes(bytes)?;
+            let (to, bytes) = FromBytes::from_bytes(bytes)?;
             let (value, bytes) = FromBytes::from_bytes(bytes)?;
-            let event = Transfer { to, from, value };
+            let event = Transfer { from, to, value };
             Ok((event, bytes))
         }
     }
@@ -140,16 +145,16 @@ pub mod events {
     impl ToBytes for Transfer {
         fn to_bytes(&self) -> Result<Vec<u8>, Error> {
             let mut vec = Vec::with_capacity(self.serialized_length());
-            vec.append(&mut String::from("transfer").to_bytes()?);
-            vec.append(&mut self.to.to_bytes()?);
+            vec.append(&mut String::from("Transfer").to_bytes()?);
             vec.append(&mut self.from.to_bytes()?);
+            vec.append(&mut self.to.to_bytes()?);
             vec.append(&mut self.value.to_bytes()?);
             Ok(vec)
         }
 
         fn serialized_length(&self) -> usize {
             let mut size = 0;
-            size += String::from("transfer").serialized_length();
+            size += String::from("Transfer").serialized_length();
             size += self.from.serialized_length();
             size += self.to.serialized_length();
             size += self.value.serialized_length();
