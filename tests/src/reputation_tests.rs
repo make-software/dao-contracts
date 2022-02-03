@@ -2,15 +2,29 @@
 mod tests {
     use casper_types::U256;
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
-    use utils::{token::events::Transfer, ExecutionError, TestEnv};
+    use utils::{
+        owner::events::OwnerChange,
+        staking::events::{TokensStaked, TokensUnstaked},
+        token::events::{Burn, Mint, Transfer},
+        whitelist::events::{AddedToWhitelist, RemovedFromWhitelist},
+        ExecutionError, TestEnv,
+    };
 
     #[test]
     fn test_deploy() {
         let (env, contract) = setup();
+        let deployer = env.get_account(0);
         assert_eq!(contract.total_supply(), U256::zero());
         assert_eq!(contract.balance_of(env.get_account(0)), U256::zero());
         assert_eq!(contract.balance_of(env.get_account(1)), U256::zero());
         assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
+        contract.expect_event(
+            0,
+            OwnerChange {
+                new_owner: deployer,
+            },
+        );
+        contract.expect_event(1, AddedToWhitelist { address: deployer });
     }
 
     #[test]
@@ -28,6 +42,13 @@ mod tests {
 
         contract.mint(recipient, total_supply);
         assert_eq!(contract.balance_of(recipient), total_supply);
+        contract.expect_event(
+            2,
+            Mint {
+                recipient,
+                value: total_supply,
+            },
+        );
     }
 
     #[test]
@@ -36,7 +57,6 @@ mod tests {
         let non_owner = env.get_account(1);
 
         env.expect_error(utils::Error::NotWhitelisted);
-
         contract.as_account(non_owner).mint(non_owner, 10.into());
     }
 
@@ -50,9 +70,15 @@ mod tests {
         let owner = env.get_account(0);
 
         contract.burn(owner, burn_amount);
-
         assert_eq!(contract.total_supply(), remaining_supply);
         assert_eq!(contract.balance_of(owner), remaining_supply);
+        contract.expect_event(
+            3,
+            Burn {
+                owner,
+                value: burn_amount,
+            },
+        );
     }
 
     #[test]
@@ -96,9 +122,11 @@ mod tests {
 
         contract.add_to_whitelist(user);
         assert!(contract.is_whitelisted(user));
+        contract.expect_event(2, AddedToWhitelist { address: user });
 
         contract.remove_from_whitelist(user);
         assert_eq!(contract.is_whitelisted(user), false);
+        contract.expect_event(3, RemovedFromWhitelist { address: user });
     }
 
     #[test]
@@ -120,9 +148,12 @@ mod tests {
         contract.add_to_whitelist(user);
         contract.add_to_whitelist(user);
         assert!(contract.is_whitelisted(user));
+        contract.expect_event(2, AddedToWhitelist { address: user });
+        contract.expect_event(3, AddedToWhitelist { address: user });
 
         contract.remove_from_whitelist(user);
         assert_eq!(contract.is_whitelisted(user), false);
+        contract.expect_event(4, RemovedFromWhitelist { address: user });
     }
 
     #[test]
@@ -148,6 +179,8 @@ mod tests {
 
         contract.change_ownership(new_owner);
         assert!(contract.is_whitelisted(new_owner));
+        contract.expect_event(2, OwnerChange { new_owner });
+        contract.expect_event(3, AddedToWhitelist { address: new_owner });
     }
 
     #[test]
@@ -162,14 +195,14 @@ mod tests {
 
         assert_eq!(contract.balance_of(owner), total_supply - transfer_amount);
         assert_eq!(contract.balance_of(first_recipient), transfer_amount);
-
-        let expected_event = Transfer {
-            from: owner,
-            to: first_recipient,
-            value: transfer_amount,
-        };
-        let transfer_event: Transfer = contract.event(0);
-        assert_eq!(transfer_event, expected_event);
+        contract.expect_event(
+            3,
+            Transfer {
+                from: owner,
+                to: first_recipient,
+                value: transfer_amount,
+            },
+        );
     }
 
     #[test]
@@ -200,8 +233,9 @@ mod tests {
     #[test]
     fn test_ownership() {
         let (env, mut contract) = setup();
-        assert_eq!(contract.get_owner().unwrap(), env.active_account());
-        let new_owner = env.get_account(1);
+        let (owner, new_owner) = (env.get_account(0), env.get_account(1));
+        assert_eq!(contract.get_owner().unwrap(), owner);
+
         contract.change_ownership(new_owner);
         assert_eq!(contract.get_owner().unwrap(), new_owner);
 
@@ -217,9 +251,15 @@ mod tests {
         let account = env.get_account(0);
 
         contract.stake(account, amount_to_stake);
-        //staking does not affect the balance
         assert_eq!(contract.balance_of(account), total_supply);
         assert_eq!(contract.get_staked_balance_of(account), amount_to_stake);
+        contract.expect_event(
+            3,
+            TokensStaked {
+                address: account,
+                amount: amount_to_stake,
+            },
+        );
     }
 
     #[test]
@@ -239,7 +279,6 @@ mod tests {
         let not_whitelisted_account = env.get_account(1);
 
         env.expect_error(utils::Error::NotWhitelisted);
-
         contract
             .as_account(not_whitelisted_account)
             .stake(not_whitelisted_account, 1.into());
@@ -286,6 +325,13 @@ mod tests {
         assert_eq!(
             contract.get_staked_balance_of(account),
             amount_to_stake - amount_to_unstake
+        );
+        contract.expect_event(
+            4,
+            TokensUnstaked {
+                address: account,
+                amount: amount_to_unstake,
+            },
         );
     }
 

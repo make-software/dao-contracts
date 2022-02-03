@@ -68,10 +68,6 @@ impl TestEnv {
         self.state.lock().unwrap().get_dict_value(hash, name, key)
     }
 
-    pub fn active_account(&self) -> Address {
-        self.state.lock().unwrap().active_account()
-    }
-
     pub fn get_account(&self, n: usize) -> Address {
         self.state.lock().unwrap().get_account(n)
     }
@@ -257,12 +253,8 @@ impl TestEnvState {
         }
     }
 
-    pub fn active_account(&self) -> Address {
-        self.active_account
-    }
-
     fn active_account_hash(&self) -> AccountHash {
-        *self.active_account().as_account_hash().unwrap()
+        *self.active_account.as_account_hash().unwrap()
     }
 
     pub fn get_account(&self, n: usize) -> Address {

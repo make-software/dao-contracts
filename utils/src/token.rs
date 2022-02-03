@@ -1,7 +1,7 @@
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use self::events::Transfer;
+use self::events::{Burn, Mint, Transfer};
 use crate::{consts, emit, Address, Error, Mapping, Variable};
 
 pub struct Token {
@@ -33,12 +33,21 @@ impl Token {
         self.total_supply.set(new_supply);
         self.balances
             .set(&recipient, self.balances.get(&recipient) + amount);
+
+        emit(Mint {
+            recipient,
+            value: amount,
+        });
     }
 
     pub fn burn(&mut self, owner: Address, amount: U256) {
         self.total_supply.set(self.total_supply.get() - amount);
         self.balances
             .set(&owner, self.balances.get(&owner) - amount);
+        emit(Burn {
+            owner,
+            value: amount,
+        });
     }
 
     pub fn raw_transfer(&mut self, sender: Address, recipient: Address, amount: U256) {
@@ -117,6 +126,18 @@ pub mod events {
     pub struct Transfer {
         pub from: Address,
         pub to: Address,
+        pub value: U256,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Mint {
+        pub recipient: Address,
+        pub value: U256,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Burn {
+        pub owner: Address,
         pub value: U256,
     }
 }

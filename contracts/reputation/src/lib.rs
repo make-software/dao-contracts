@@ -259,6 +259,8 @@ impl ReputationContractInterface for ReputationContractCaller {
 
 #[cfg(feature = "test-support")]
 mod tests {
+    use std::fmt::Debug;
+
     use casper_types::bytesrepr::{Bytes, FromBytes};
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
     use utils::consts;
@@ -325,6 +327,10 @@ mod tests {
             let (event, bytes) = T::from_bytes(&raw_event).unwrap();
             assert!(bytes.is_empty());
             event
+        }
+
+        pub fn expect_event<T: FromBytes + PartialEq + Debug>(&self, index: u32, event: T) {
+            assert_eq!(self.event::<T>(index), event);
         }
     }
 

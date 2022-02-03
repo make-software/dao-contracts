@@ -1,6 +1,8 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{caller, consts, Address, Error, Mapping};
+use crate::{caller, consts, emit, Address, Error, Mapping};
+
+use self::events::{AddedToWhitelist, RemovedFromWhitelist};
 
 pub struct Whitelist {
     pub whitelist: Mapping<Address, bool>,
@@ -21,10 +23,12 @@ impl Whitelist {
 
     pub fn add_to_whitelist(&mut self, address: Address) {
         self.whitelist.set(&address, true);
+        emit(AddedToWhitelist { address });
     }
 
     pub fn remove_from_whitelist(&mut self, address: Address) {
         self.whitelist.set(&address, false);
+        emit(RemovedFromWhitelist { address });
     }
 
     pub fn ensure_whitelisted(&self) {
@@ -57,5 +61,20 @@ pub mod entry_points {
             EntryPointAccess::Public,
             EntryPointType::Contract,
         )
+    }
+}
+
+pub mod events {
+    use crate::Address;
+    use macros::Event;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct AddedToWhitelist {
+        pub address: Address,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct RemovedFromWhitelist {
+        pub address: Address,
     }
 }
