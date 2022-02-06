@@ -16,6 +16,8 @@ pub use modules::staking;
 pub use modules::token;
 pub use modules::whitelist;
 
+pub mod list;
+pub mod repository;
 #[cfg(feature = "test-support")]
 mod test_env;
 

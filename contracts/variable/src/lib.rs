@@ -8,7 +8,8 @@ use casper_types::{
     bytesrepr::Bytes, contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint,
     EntryPointAccess, EntryPointType, EntryPoints, Group, RuntimeArgs, URef,
 };
-use utils::{consts, owner::Owner, whitelist::Whitelist, Address};
+
+use utils::{consts, owner::Owner, repository::Repository, whitelist::Whitelist, Address};
 
 const PACKAGE_HASH_KEY: &str = "variable_repository_package_hash";
 
@@ -26,6 +27,7 @@ pub trait VariableRepositoryContractInterface {
 pub struct VariableRepositoryContract {
     pub owner: Owner,
     pub whitelist: Whitelist,
+    pub repository: Repository,
 }
 
 impl VariableRepositoryContractInterface for VariableRepositoryContract {
@@ -35,6 +37,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         self.owner.init(deployer);
         self.whitelist.init();
         self.whitelist.add_to_whitelist(deployer);
+        self.repository.init();
     }
 
     fn change_ownership(&mut self, owner: Address) {
@@ -54,15 +57,15 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     }
 
     fn set_or_update(&mut self, key: String, value: Bytes) {
-        todo!()
+        self.repository.set_or_update(key, value);
     }
 
     fn get(&mut self, key: String) -> Bytes {
-        todo!()
+        self.repository.get(key)
     }
 
     fn delete(&mut self, key: String) {
-        todo!()
+        self.repository.delete(key);
     }
 }
 
@@ -112,6 +115,9 @@ impl VariableRepositoryContract {
         entry_points.add_entry_point(utils::owner::entry_points::change_ownership());
         entry_points.add_entry_point(utils::whitelist::entry_points::add_to_whitelist());
         entry_points.add_entry_point(utils::whitelist::entry_points::remove_from_whitelist());
+        entry_points.add_entry_point(utils::repository::entry_points::set_or_update());
+        entry_points.add_entry_point(utils::repository::entry_points::get());
+        entry_points.add_entry_point(utils::repository::entry_points::delete());
         entry_points
     }
 }
@@ -241,6 +247,19 @@ mod tests {
                 address,
             )
         }
+
+        pub fn get_key_at(&self, index: u32) -> Option<String> {
+            self.env.get_dict_value(
+                self.package_hash,
+                self.data.repository.keys.values.path(),
+                index,
+            )
+        }
+
+        pub fn get_keys_length(&self) -> u32 {
+            self.env
+                .get_value(self.package_hash, self.data.repository.keys.length.path())
+        }
     }
 
     impl VariableRepositoryContractInterface for VariableRepositoryContractTest {
@@ -290,15 +309,8 @@ mod tests {
         }
 
         fn get(&mut self, key: String) -> Bytes {
-            self.env.call_contract_package(
-                self.package_hash,
-                consts::EP_GET,
-                runtime_args! {
-                    consts::PARAM_KEY => key
-                },
-            );
-            //how to return a value from call_contract_package?
-            Bytes::default()
+            self.env
+                .get_dict_value(self.package_hash, self.data.repository.storage.path(), key)
         }
 
         fn delete(&mut self, key: String) {
