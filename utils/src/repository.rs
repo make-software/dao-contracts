@@ -1,18 +1,22 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{consts, list::List, Error, Mapping};
+use crate::{
+    consts,
+    list::{OrderedCollection, Set},
+    Error, Mapping,
+};
 use casper_types::bytesrepr::Bytes;
 
 pub struct Repository {
     pub storage: Mapping<String, Option<Bytes>>,
-    pub keys: List<String>,
+    pub keys: OrderedCollection<String>,
 }
 
 impl Default for Repository {
     fn default() -> Self {
         Self {
             storage: Mapping::from(consts::NAME_STORAGE),
-            keys: List::new(consts::NAME_KEYS),
+            keys: OrderedCollection::new(consts::NAME_KEYS),
         }
     }
 }
@@ -25,7 +29,7 @@ impl Repository {
 
     pub fn set_or_update(&mut self, key: String, value: Bytes) {
         self.storage.set(&key, Some(value));
-        self.keys.add_or_update(key);
+        self.keys.add(key);
     }
 
     pub fn get(&self, key: String) -> Bytes {

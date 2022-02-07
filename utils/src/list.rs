@@ -8,12 +8,12 @@ use casper_types::{
 
 use crate::{consts, Error, Mapping, Variable};
 
-pub struct List<T> {
+pub struct OrderedCollection<T> {
     pub values: Mapping<u32, Option<T>>,
     pub length: Variable<u32>,
 }
 
-impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> List<T> {
+impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> OrderedCollection<T> {
     pub fn new(name: &str) -> Self {
         Self {
             values: Mapping::new(name.to_string()),
@@ -24,18 +24,6 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> List<T> {
     pub fn init(&mut self) {
         self.values.init();
         self.length.set(0);
-    }
-
-    pub fn add(&mut self, item: T) {
-        let length = self.length.get();
-        self.values.set(&length, Some(item));
-        self.length.set(length + 1);
-    }
-
-    pub fn add_or_update(&mut self, item: T) {
-        if !self.exists(&item) {
-            self.add(item);
-        }
     }
 
     pub fn delete(&mut self, item: T) -> bool {
@@ -97,5 +85,35 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> List<T> {
             }
         }
         false
+    }
+}
+
+pub trait Set<T> {
+    fn add(&mut self, item: T);
+}
+
+impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> Set<T>
+    for OrderedCollection<T>
+{
+    fn add(&mut self, item: T) {
+        if !self.exists(&item) {
+            let length = self.length.get();
+            self.values.set(&length, Some(item));
+            self.length.set(length + 1);
+        }
+    }
+}
+
+pub trait List<T> {
+    fn add(&mut self, item: T);
+}
+
+impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> List<T>
+    for OrderedCollection<T>
+{
+    fn add(&mut self, item: T) {
+        let length = self.length.get();
+        self.values.set(&length, Some(item));
+        self.length.set(length + 1);
     }
 }

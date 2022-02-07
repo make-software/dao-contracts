@@ -1,16 +1,19 @@
 use casper_contract::unwrap_or_revert::UnwrapOrRevert;
 use casper_types::bytesrepr::{Bytes, ToBytes};
 
-use crate::{consts, list::List};
+use crate::{
+    consts,
+    list::{List, OrderedCollection},
+};
 
 pub struct Events {
-    pub events: List<Bytes>,
+    pub events: OrderedCollection<Bytes>,
 }
 
 impl Default for Events {
     fn default() -> Self {
         Self {
-            events: List::new(consts::NAME_EVENTS),
+            events: OrderedCollection::new(consts::NAME_EVENTS),
         }
     }
 }

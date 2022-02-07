@@ -334,7 +334,7 @@ mod tests {
                 self.package_hash,
                 consts::EP_GET,
                 runtime_args! {
-                    consts::PARAM_KEY => key.clone(),
+                    consts::PARAM_KEY => key,
                 },
             );
             //we don't care about the result, but for testing purposes, is vital to execute the internal logic

@@ -28,7 +28,7 @@ mod tests {
 
         contract.set_or_update(key.clone(), value.into());
 
-        assert_eq!(contract.get_value(key.clone()), value.into());
+        assert_eq!(contract.get_value(key), value.into());
     }
 
     #[test]
@@ -42,7 +42,7 @@ mod tests {
         contract.set_or_update(key.clone(), initial_value.into());
         contract.set_or_update(key.clone(), new_value.into());
 
-        let result = contract.get_value(key.clone());
+        let result = contract.get_value(key);
         assert_eq!(result, new_value.into());
     }
 
