@@ -57,6 +57,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     }
 
     fn set_or_update(&mut self, key: String, value: Bytes) {
+        self.whitelist.ensure_whitelisted();
         self.repository.set_or_update(key, value);
     }
 
@@ -65,6 +66,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     }
 
     fn delete(&mut self, key: String) {
+        self.whitelist.ensure_whitelisted();
         self.repository.delete(key);
     }
 }
@@ -240,12 +242,31 @@ mod tests {
             }
         }
 
+        pub fn as_account(&mut self, account: Address) -> &mut Self {
+            self.env.as_account(account);
+            self
+        }
+
         pub fn is_whitelisted(&self, address: Address) -> bool {
             self.env.get_dict_value(
                 self.package_hash,
                 self.data.whitelist.whitelist.path(),
                 address,
             )
+        }
+
+        pub fn get_owner(&self) -> Option<Address> {
+            self.env
+                .get_value(self.package_hash, self.data.owner.owner.path())
+        }
+
+        pub fn get_value(&self, key: String) -> Bytes {
+            let result: Option<Bytes> = self.env.get_dict_value(
+                self.package_hash,
+                self.data.repository.storage.path(),
+                key,
+            );
+            result.unwrap()
         }
 
         pub fn get_key_at(&self, index: u32) -> Option<String> {
@@ -309,8 +330,15 @@ mod tests {
         }
 
         fn get(&mut self, key: String) -> Bytes {
-            self.env
-                .get_dict_value(self.package_hash, self.data.repository.storage.path(), key)
+            self.env.call_contract_package(
+                self.package_hash,
+                consts::EP_GET,
+                runtime_args! {
+                    consts::PARAM_KEY => key.clone(),
+                },
+            );
+            //we don't care about the result, but for testing purposes, is vital to execute the internal logic
+            Bytes::default()
         }
 
         fn delete(&mut self, key: String) {

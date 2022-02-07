@@ -329,7 +329,10 @@ mod tests {
         }
 
         pub fn event<T: FromBytes>(&self, index: u32) -> T {
-            let raw_event: Bytes = self.env.get_dict_value(self.package_hash, "events", index);
+            let raw_event: Option<Bytes> =
+                self.env
+                    .get_dict_value(self.package_hash, consts::NAME_EVENTS, index);
+            let raw_event = raw_event.unwrap();
             let (event, bytes) = T::from_bytes(&raw_event).unwrap();
             assert!(bytes.is_empty());
             event
