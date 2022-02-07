@@ -25,7 +25,7 @@ impl Repository {
 
     pub fn set_or_update(&mut self, key: String, value: Bytes) {
         self.storage.set(&key, Some(value));
-        self.keys.add(key);
+        self.keys.add_or_update(key);
     }
 
     pub fn get(&self, key: String) -> Bytes {
@@ -36,8 +36,13 @@ impl Repository {
     }
 
     pub fn delete(&mut self, key: String) {
-        self.storage.set(&key, None);
-        self.keys.remove(key);
+        let deletion_success = self.keys.delete(key.clone());
+
+        if deletion_success {
+            self.storage.set(&key, None);
+        } else {
+            runtime::revert(Error::ValueNotAvailable);
+        }
     }
 
     pub fn get_key_at(&self, index: u32) -> String {

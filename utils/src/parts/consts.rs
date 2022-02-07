@@ -25,5 +25,5 @@ pub const NAME_BALANCES: &str = "balances";
 pub const NAME_WHITELIST: &str = "whitelist";
 pub const NAME_STORAGE: &str = "storage";
 pub const NAME_KEYS: &str = "keys";
-pub const NAME_KEYS_LENGTH: &str = "keys_length";
+pub const LENGTH_SUFFIX: &str = "_length";
 pub const NAME_EVENTS: &str = "events";

@@ -47,6 +47,14 @@ mod tests {
     }
 
     #[test]
+    fn test_remove_nonexistent_item() {
+        let (env, mut contract) = setup();
+
+        env.expect_error(utils::Error::ValueNotAvailable);
+        contract.delete("aaa".to_string());
+    }
+
+    #[test]
     fn test_keys_indexing() {
         let (_, mut contract) = setup();
         let into_bytes = |val: &str| val.as_bytes().into();
