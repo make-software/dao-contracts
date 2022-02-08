@@ -1,6 +1,8 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{caller, consts, Address, Error, Variable};
+use crate::{caller, consts, emit, Address, Error, Variable};
+
+use self::events::OwnerChanged;
 
 pub struct Owner {
     pub owner: Variable<Option<Address>>,
@@ -16,11 +18,12 @@ impl Default for Owner {
 
 impl Owner {
     pub fn init(&mut self, owner: Address) {
-        self.owner.set(Some(owner));
+        self.change_ownership(owner);
     }
 
     pub fn change_ownership(&mut self, owner: Address) {
         self.owner.set(Some(owner));
+        emit(OwnerChanged { new_owner: owner });
     }
 
     pub fn ensure_owner(&self) {
@@ -47,5 +50,15 @@ pub mod entry_points {
             EntryPointAccess::Public,
             EntryPointType::Contract,
         )
+    }
+}
+
+pub mod events {
+    use crate::Address;
+    use macros::Event;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct OwnerChanged {
+        pub new_owner: Address,
     }
 }

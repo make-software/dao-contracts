@@ -1,7 +1,9 @@
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use crate::{consts, token::Token, Address, Error, Mapping};
+use crate::{consts, emit, token::Token, Address, Error, Mapping};
+
+use self::events::{TokensStaked, TokensUnstaked};
 
 pub struct TokenWithStaking {
     pub stakes: Mapping<Address, U256>,
@@ -41,12 +43,14 @@ impl TokenWithStaking {
         self.ensure_balance(&address, amount);
         self.stakes
             .set(&address, self.stakes.get(&address) + amount);
+        emit(TokensStaked { address, amount });
     }
 
     pub fn unstake(&mut self, address: Address, amount: U256) {
         self.ensure_staked_balance(&address, amount);
         self.stakes
             .set(&address, self.stakes.get(&address) - amount);
+        emit(TokensUnstaked { address, amount });
     }
 
     fn ensure_balance(&mut self, address: &Address, amount: U256) {
@@ -91,5 +95,24 @@ pub mod entry_points {
             EntryPointAccess::Public,
             EntryPointType::Contract,
         )
+    }
+}
+
+pub mod events {
+    use casper_types::U256;
+    use macros::Event;
+
+    use crate::Address;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct TokensStaked {
+        pub address: Address,
+        pub amount: U256,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct TokensUnstaked {
+        pub address: Address,
+        pub amount: U256,
     }
 }
