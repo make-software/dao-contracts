@@ -1,6 +1,6 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{caller, consts, emit, Address, Error, Mapping};
+use crate::{casper_env::{caller, emit}, consts, Address, Error, Mapping};
 
 use self::events::{AddedToWhitelist, RemovedFromWhitelist};
 

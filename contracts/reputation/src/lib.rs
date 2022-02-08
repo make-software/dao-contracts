@@ -31,8 +31,8 @@ pub struct ReputationContract {
 
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
-        utils::init_events();
-        let deployer = utils::caller();
+        utils::casper_env::init_events();
+        let deployer = utils::casper_env::caller();
         self.owner.init(deployer);
         self.whitelist.init();
         self.whitelist.add_to_whitelist(deployer);
