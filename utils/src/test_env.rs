@@ -20,6 +20,8 @@ use casper_types::{
     SecretKey, URef, U512,
 };
 
+pub use casper_execution_engine::core::execution::Error as ExecutionError;
+
 #[derive(Clone)]
 pub struct TestEnv {
     state: Arc<Mutex<TestEnvState>>,

@@ -1,7 +1,7 @@
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
-use crate::{consts, emit, token::Token, Address, Error, Mapping};
+use crate::{casper_env::emit, consts, token::Token, Address, Error, Mapping};
 
 use self::events::{TokensStaked, TokensUnstaked};
 

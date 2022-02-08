@@ -1,6 +1,9 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{caller, consts, emit, Address, Error, Variable};
+use crate::{
+    casper_env::{caller, emit},
+    consts, Address, Error, Variable,
+};
 
 use self::events::OwnerChanged;
 
