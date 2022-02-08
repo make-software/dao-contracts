@@ -1,9 +1,16 @@
 use std::convert::TryInto;
 
-use casper_contract::{contract_api::{runtime, storage}, unwrap_or_revert::UnwrapOrRevert};
-use casper_types::{bytesrepr::{FromBytes, ToBytes}, CLTyped, system::CallStackElement};
+use casper_contract::{
+    contract_api::{runtime, storage},
+    unwrap_or_revert::UnwrapOrRevert,
+};
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    system::CallStackElement,
+    CLTyped,
+};
 
-use crate::{Address, modules::events::Events};
+use crate::{modules::events::Events, Address};
 
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
     match runtime::get_key(name) {
@@ -28,7 +35,6 @@ pub fn set_key<T: ToBytes + CLTyped>(name: &str, value: T) {
         }
     }
 }
-
 
 /// Returns address based on a [`CallStackElement`].
 ///

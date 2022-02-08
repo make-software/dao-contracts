@@ -2,7 +2,7 @@ use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
 use self::events::{Burn, Mint, Transfer};
-use crate::{consts, casper_env::emit, Address, Error, Mapping, Variable};
+use crate::{casper_env::emit, consts, Address, Error, Mapping, Variable};
 
 pub struct Token {
     pub total_supply: Variable<U256>,

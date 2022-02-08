@@ -1,7 +1,13 @@
 use std::marker::PhantomData;
 
-use casper_contract::{contract_api::{storage, runtime}, unwrap_or_revert::UnwrapOrRevert};
-use casper_types::{bytesrepr::{ToBytes, FromBytes}, CLTyped, URef};
+use casper_contract::{
+    contract_api::{runtime, storage},
+    unwrap_or_revert::UnwrapOrRevert,
+};
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    CLTyped, URef,
+};
 
 use crate::casper_env::to_dictionary_key;
 

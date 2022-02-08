@@ -1,6 +1,9 @@
 use std::marker::PhantomData;
 
-use casper_types::{bytesrepr::{FromBytes, ToBytes}, CLTyped};
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    CLTyped,
+};
 
 use crate::casper_env::{get_key, set_key};
 
