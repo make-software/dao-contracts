@@ -1,7 +1,32 @@
+extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, TokenStreamExt};
 use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields};
+
+use crate::contract_interface::ContractTrait;
+
+mod caller;
+mod contract_impl;
+mod contract_interface;
+
+#[proc_macro_derive(Contract)]
+pub fn derive_contract(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+
+    let name = &input.ident;
+
+    let mut methods = TokenStream2::new();
+    methods.append_all(contract_impl::generate());
+
+    let expanded = quote! {
+        impl #name {
+            #methods
+        }
+    };
+
+    TokenStream::from(expanded)
+}
 
 #[proc_macro_derive(Event)]
 pub fn derive_events(input: TokenStream) -> TokenStream {
@@ -98,4 +123,22 @@ fn named_fields(input: DeriveInput) -> Result<Vec<proc_macro2::Ident>, TokenStre
         }
     };
     Ok(fields)
+}
+
+#[proc_macro]
+pub fn generate_contract(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as ContractTrait);
+
+    let id = &input.ident;
+
+    let interface_trait = contract_interface::generate(&input);
+    let caller = caller::generate(id);
+
+    let expanded = quote! {
+      #interface_trait
+
+      #caller
+    };
+
+    TokenStream::from(expanded)
 }

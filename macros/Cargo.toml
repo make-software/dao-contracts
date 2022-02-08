@@ -6,7 +6,16 @@ edition = "2018"
 [dependencies]
 proc-macro2 = "1.0.33"
 quote = "1.0.15"
-syn = "1.0.86"
+syn =  { version = "1.0.86", features = ["full"] }
+
+[dev-dependencies]
+trybuild = "1.0"
+casper-types = "1.4.6"
+utils = { path = "../utils" }
+
+[[test]]
+name = "tests"
+path = "tests/progress.rs"
 
 [lib]
 proc-macro = true
