@@ -18,13 +18,13 @@ mod tests {
         assert_eq!(contract.balance_of(env.get_account(0)), U256::zero());
         assert_eq!(contract.balance_of(env.get_account(1)), U256::zero());
         assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
-        contract.expect_event(
+        contract.assert_event_at(
             0,
             OwnerChanged {
                 new_owner: deployer,
             },
         );
-        contract.expect_event(1, AddedToWhitelist { address: deployer });
+        contract.assert_event_at(1, AddedToWhitelist { address: deployer });
     }
 
     #[test]
@@ -42,7 +42,7 @@ mod tests {
 
         contract.mint(recipient, total_supply);
         assert_eq!(contract.balance_of(recipient), total_supply);
-        contract.expect_event(
+        contract.assert_event_at(
             2,
             Mint {
                 recipient,
@@ -72,7 +72,7 @@ mod tests {
         contract.burn(owner, burn_amount);
         assert_eq!(contract.total_supply(), remaining_supply);
         assert_eq!(contract.balance_of(owner), remaining_supply);
-        contract.expect_event(
+        contract.assert_event_at(
             3,
             Burn {
                 owner,
@@ -122,11 +122,11 @@ mod tests {
 
         contract.add_to_whitelist(user);
         assert!(contract.is_whitelisted(user));
-        contract.expect_event(2, AddedToWhitelist { address: user });
+        contract.assert_event_at(2, AddedToWhitelist { address: user });
 
         contract.remove_from_whitelist(user);
         assert_eq!(contract.is_whitelisted(user), false);
-        contract.expect_event(3, RemovedFromWhitelist { address: user });
+        contract.assert_event_at(3, RemovedFromWhitelist { address: user });
     }
 
     #[test]
@@ -148,12 +148,12 @@ mod tests {
         contract.add_to_whitelist(user);
         contract.add_to_whitelist(user);
         assert!(contract.is_whitelisted(user));
-        contract.expect_event(2, AddedToWhitelist { address: user });
-        contract.expect_event(3, AddedToWhitelist { address: user });
+        contract.assert_event_at(2, AddedToWhitelist { address: user });
+        contract.assert_event_at(3, AddedToWhitelist { address: user });
 
         contract.remove_from_whitelist(user);
         assert_eq!(contract.is_whitelisted(user), false);
-        contract.expect_event(4, RemovedFromWhitelist { address: user });
+        contract.assert_event_at(4, RemovedFromWhitelist { address: user });
     }
 
     #[test]
@@ -179,8 +179,8 @@ mod tests {
 
         contract.change_ownership(new_owner);
         assert!(contract.is_whitelisted(new_owner));
-        contract.expect_event(2, OwnerChanged { new_owner });
-        contract.expect_event(3, AddedToWhitelist { address: new_owner });
+        contract.assert_event_at(2, OwnerChanged { new_owner });
+        contract.assert_event_at(3, AddedToWhitelist { address: new_owner });
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
 
         assert_eq!(contract.balance_of(owner), total_supply - transfer_amount);
         assert_eq!(contract.balance_of(first_recipient), transfer_amount);
-        contract.expect_event(
+        contract.assert_event_at(
             3,
             Transfer {
                 from: owner,
@@ -253,7 +253,7 @@ mod tests {
         contract.stake(account, amount_to_stake);
         assert_eq!(contract.balance_of(account), total_supply);
         assert_eq!(contract.get_staked_balance_of(account), amount_to_stake);
-        contract.expect_event(
+        contract.assert_event_at(
             3,
             TokensStaked {
                 address: account,
@@ -326,7 +326,7 @@ mod tests {
             contract.get_staked_balance_of(account),
             amount_to_stake - amount_to_unstake
         );
-        contract.expect_event(
+        contract.assert_event_at(
             4,
             TokensUnstaked {
                 address: account,

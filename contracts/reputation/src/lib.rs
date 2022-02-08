@@ -329,7 +329,7 @@ mod tests {
             event
         }
 
-        pub fn expect_event<T: FromBytes + PartialEq + Debug>(&self, index: u32, event: T) {
+        pub fn assert_event_at<T: FromBytes + PartialEq + Debug>(&self, index: u32, event: T) {
             assert_eq!(self.event::<T>(index), event);
         }
     }
