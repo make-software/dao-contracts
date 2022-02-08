@@ -81,7 +81,7 @@ events:
       - name: "value"
         cl_type: "U256"
 
-  - name: "OwnerChange"
+  - name: "OwnerChanged"
     fields:
       - name: "new_owner"
         cl_type: "Address"

@@ -3,7 +3,7 @@ mod tests {
     use casper_types::U256;
     use reputation_contract::{ReputationContractInterface, ReputationContractTest};
     use utils::{
-        owner::events::OwnerChange,
+        owner::events::OwnerChanged,
         staking::events::{TokensStaked, TokensUnstaked},
         token::events::{Burn, Mint, Transfer},
         whitelist::events::{AddedToWhitelist, RemovedFromWhitelist},
@@ -20,7 +20,7 @@ mod tests {
         assert!(contract.is_whitelisted(contract.get_owner().unwrap()));
         contract.expect_event(
             0,
-            OwnerChange {
+            OwnerChanged {
                 new_owner: deployer,
             },
         );
@@ -179,7 +179,7 @@ mod tests {
 
         contract.change_ownership(new_owner);
         assert!(contract.is_whitelisted(new_owner));
-        contract.expect_event(2, OwnerChange { new_owner });
+        contract.expect_event(2, OwnerChanged { new_owner });
         contract.expect_event(3, AddedToWhitelist { address: new_owner });
     }
 

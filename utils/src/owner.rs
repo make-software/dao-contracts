@@ -2,7 +2,7 @@ use casper_contract::contract_api::runtime;
 
 use crate::{caller, consts, emit, Address, Error, Variable};
 
-use self::events::OwnerChange;
+use self::events::OwnerChanged;
 
 pub struct Owner {
     pub owner: Variable<Option<Address>>,
@@ -23,7 +23,7 @@ impl Owner {
 
     pub fn change_ownership(&mut self, owner: Address) {
         self.owner.set(Some(owner));
-        emit(OwnerChange { new_owner: owner });
+        emit(OwnerChanged { new_owner: owner });
     }
 
     pub fn ensure_owner(&self) {
@@ -58,7 +58,7 @@ pub mod events {
     use macros::Event;
 
     #[derive(Debug, PartialEq, Event)]
-    pub struct OwnerChange {
+    pub struct OwnerChanged {
         pub new_owner: Address,
     }
 }
