@@ -1,5 +1,5 @@
 use casper_contract::unwrap_or_revert::UnwrapOrRevert;
-use casper_types::bytesrepr::{Bytes, FromBytes, ToBytes};
+use casper_types::bytesrepr::{Bytes, ToBytes};
 
 use crate::{Mapping, Variable};
 
@@ -12,7 +12,7 @@ impl Default for Events {
     fn default() -> Self {
         Self {
             events: Mapping::new(String::from("events")),
-            length: Variable::new(String::from("length")),
+            length: Variable::new(String::from("events_length")),
         }
     }
 }

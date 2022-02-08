@@ -68,10 +68,6 @@ impl TestEnv {
         self.state.lock().unwrap().get_dict_value(hash, name, key)
     }
 
-    pub fn active_account(&self) -> Address {
-        self.state.lock().unwrap().active_account()
-    }
-
     pub fn get_account(&self, n: usize) -> Address {
         self.state.lock().unwrap().get_account(n)
     }
@@ -191,6 +187,7 @@ impl TestEnvState {
                 self.context.expect_success();
             }
         }
+        self.active_account = self.get_account(0);
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -233,7 +230,7 @@ impl TestEnvState {
             .current_contract_hash()
             .unwrap();
 
-        let dictionary_seed_uref: URef = self
+        let dictionary_seed_uref: URef = *self
             .context
             .get_contract(contract_hash)
             .unwrap()
@@ -241,8 +238,7 @@ impl TestEnvState {
             .get(name)
             .unwrap()
             .as_uref()
-            .unwrap()
-            .clone();
+            .unwrap();
 
         match self.context.query_dictionary_item(
             None,
@@ -257,16 +253,12 @@ impl TestEnvState {
         }
     }
 
-    pub fn active_account(&self) -> Address {
-        Address::from(self.active_account)
-    }
-
     fn active_account_hash(&self) -> AccountHash {
-        self.active_account().as_account_hash().unwrap().clone()
+        *self.active_account.as_account_hash().unwrap()
     }
 
     pub fn get_account(&self, n: usize) -> Address {
-        self.accounts.get(n).unwrap().clone()
+        *self.accounts.get(n).unwrap()
     }
 
     pub fn as_account(&mut self, account: Address) {
