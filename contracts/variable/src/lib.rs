@@ -216,7 +216,12 @@ impl VariableRepositoryContractInterface for VariableRepositoryContractCaller {
 
 #[cfg(feature = "test-support")]
 mod tests {
-    use casper_types::{bytesrepr::Bytes, runtime_args, ContractPackageHash, RuntimeArgs};
+    use std::fmt::Debug;
+
+    use casper_types::{
+        bytesrepr::{Bytes, FromBytes},
+        runtime_args, ContractPackageHash, RuntimeArgs,
+    };
     use utils::{consts, Address, TestEnv};
 
     use crate::{
@@ -280,6 +285,23 @@ mod tests {
         pub fn get_keys_length(&self) -> u32 {
             self.env
                 .get_value(self.package_hash, self.data.repository.keys.length.path())
+        }
+
+        pub fn event<T: FromBytes>(&self, index: u32) -> T {
+            let raw_event: Option<Bytes> =
+                self.env
+                    .get_dict_value(self.package_hash, consts::NAME_EVENTS, index);
+            let raw_event = raw_event.unwrap();
+            let (event, bytes) = T::from_bytes(&raw_event).unwrap();
+            assert!(bytes.is_empty());
+            event
+        }
+
+        pub fn assert_event_at<T>(&self, index: u32, event: T)
+        where
+            T: FromBytes + PartialEq + Debug,
+        {
+            assert_eq!(self.event::<T>(index), event);
         }
     }
 

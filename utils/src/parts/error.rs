@@ -23,4 +23,5 @@ impl From<Error> for ApiError {
             Error::ValueNotAvailable => 1005,
         };
         ApiError::User(id)
+    }
 }

@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use utils::TestEnv;
+    use utils::{
+        repository::events::{ValueRemoved, ValueSet},
+        TestEnv,
+    };
     use variable_repository::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
     };
@@ -28,7 +31,36 @@ mod tests {
 
         contract.set_or_update(key.clone(), value.into());
 
-        assert_eq!(contract.get_value(key), value.into());
+        assert_eq!(contract.get_value(key.clone()), value.into());
+
+        contract.assert_event_at(
+            2,
+            ValueSet {
+                key,
+                value: value.into(),
+            },
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_remove_value() {
+        let (_, mut contract) = setup();
+
+        let key = "key".to_string();
+        let value = "some value".as_bytes();
+
+        contract.set_or_update(key.clone(), value.into());
+        contract.delete(key.clone());
+
+        contract.assert_event_at(
+            3,
+            ValueRemoved {
+                key: key.to_owned(),
+            },
+        );
+        //panic - value not available
+        contract.get_value(key);
     }
 
     #[test]
@@ -99,8 +131,9 @@ mod tests {
     #[test]
     fn test_change_ownership() {
         let (env, mut contract) = setup();
-        assert_eq!(contract.get_owner().unwrap(), env.active_account());
-        let new_owner = env.get_account(1);
+        let (owner, new_owner) = (env.get_account(0), env.get_account(1));
+        assert_eq!(contract.get_owner().unwrap(), owner);
+
         contract.change_ownership(new_owner);
         assert_eq!(contract.get_owner().unwrap(), new_owner);
 
