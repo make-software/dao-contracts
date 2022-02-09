@@ -49,3 +49,11 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         &self.name
     }
 }
+
+impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> From<&str>
+    for Mapping<K, V>
+{
+    fn from(name: &str) -> Self {
+        Mapping::new(name.to_string())
+    }
+}

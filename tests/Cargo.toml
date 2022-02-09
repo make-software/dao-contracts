@@ -5,8 +5,8 @@ edition = "2018"
 
 [dev-dependencies]
 casper-types = "1.4.6"
-reputation-contract = { path = "../contracts/reputation", default-features = false, features = [ "test-support" ] }
-utils = { path = "../utils", features = [ "test-support" ]}
+casper-dao-contracts = { path = "../contracts", default-features = false, features = [ "test-support" ] }
+casper-dao-utils = { path = "../utils", features = [ "test-support" ]}
 
 [[bin]]
 name = "reputation-tests"

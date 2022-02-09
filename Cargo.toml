@@ -2,6 +2,6 @@
 members = [
     "utils",
     "macros",
-    "contracts/reputation",
+    "contracts",
     "tests"
 ]

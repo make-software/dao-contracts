@@ -99,8 +99,8 @@ pub mod entry_points {
 }
 
 pub mod events {
+    use casper_dao_macros::Event;
     use casper_types::U256;
-    use macros::Event;
 
     use crate::Address;
 

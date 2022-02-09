@@ -3,7 +3,7 @@ extern crate alloc;
 pub mod casper_env;
 mod modules;
 mod parts;
-pub use macros;
+pub use casper_dao_macros;
 
 pub use parts::address::Address;
 pub use parts::consts;

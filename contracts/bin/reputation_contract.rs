@@ -1,9 +1,9 @@
 #![no_main]
 
 use casper_contract::contract_api::runtime;
+use casper_dao_contracts::{ReputationContract, ReputationContractInterface};
+use casper_dao_utils::{consts, Address};
 use casper_types::U256;
-use reputation_contract::{ReputationContract, ReputationContractInterface};
-use utils::{consts, Address};
 
 #[no_mangle]
 fn call() {

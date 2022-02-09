@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use casper_types::U256;
-    use reputation_contract::{ReputationContractInterface, ReputationContractTest};
-    use utils::{
+    use casper_dao_contracts::{ReputationContractInterface, ReputationContractTest};
+    use casper_dao_utils::{
         owner::events::OwnerChanged,
         staking::events::{TokensStaked, TokensUnstaked},
         token::events::{Burn, Mint, Transfer},
         whitelist::events::{AddedToWhitelist, RemovedFromWhitelist},
-        ExecutionError, TestEnv,
+        Error, ExecutionError, TestEnv,
     };
+    use casper_types::U256;
 
     #[test]
     fn test_deploy() {
@@ -56,7 +56,7 @@ mod tests {
         let (env, mut contract) = setup();
         let non_owner = env.get_account(1);
 
-        env.expect_error(utils::Error::NotWhitelisted);
+        env.expect_error(Error::NotWhitelisted);
         contract.as_account(non_owner).mint(non_owner, 10.into());
     }
 
@@ -89,7 +89,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
-        env.expect_error(utils::Error::InsufficientBalance);
+        env.expect_error(Error::InsufficientBalance);
         contract.burn(owner, burn_amount);
     }
 
@@ -98,7 +98,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(100.into());
         let (user1, user2) = (env.get_account(0), env.get_account(1));
 
-        env.expect_error(utils::Error::NotWhitelisted);
+        env.expect_error(Error::NotWhitelisted);
         contract.as_account(user2).burn(user1, 10.into());
     }
 
@@ -108,7 +108,7 @@ mod tests {
 
         contract.mint(env.get_account(0), U256::MAX);
 
-        env.expect_error(utils::Error::TotalSupplyOverflow);
+        env.expect_error(Error::TotalSupplyOverflow);
         contract.mint(env.get_account(0), U256::one());
     }
 
@@ -163,10 +163,10 @@ mod tests {
 
         contract.add_to_whitelist(user1);
 
-        env.expect_error(utils::Error::NotAnOwner);
+        env.expect_error(Error::NotAnOwner);
         contract.as_account(user1).add_to_whitelist(user2);
 
-        env.expect_error(utils::Error::NotAnOwner);
+        env.expect_error(Error::NotAnOwner);
         contract.as_account(user1).remove_from_whitelist(user2);
     }
 
@@ -212,7 +212,7 @@ mod tests {
 
         contract.mint(sender, 10.into());
 
-        env.expect_error(utils::Error::NotWhitelisted);
+        env.expect_error(Error::NotWhitelisted);
         contract
             .as_account(sender)
             .transfer_from(sender, recipient, 1.into());
@@ -226,7 +226,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let (owner, first_recipient) = (env.get_account(0), env.get_account(1));
 
-        env.expect_error(utils::Error::InsufficientBalance);
+        env.expect_error(Error::InsufficientBalance);
         contract.transfer_from(owner, first_recipient, transfer_amount);
     }
 
@@ -239,7 +239,7 @@ mod tests {
         contract.change_ownership(new_owner);
         assert_eq!(contract.get_owner().unwrap(), new_owner);
 
-        env.expect_error(utils::Error::NotAnOwner);
+        env.expect_error(Error::NotAnOwner);
         contract.change_ownership(new_owner);
     }
 
@@ -269,7 +269,7 @@ mod tests {
         let amount_to_stake = 200.into();
         let account = env.get_account(0);
 
-        env.expect_error(utils::Error::InsufficientBalance);
+        env.expect_error(Error::InsufficientBalance);
         contract.stake(account, amount_to_stake);
     }
 
@@ -278,7 +278,7 @@ mod tests {
         let (env, mut contract) = setup();
         let not_whitelisted_account = env.get_account(1);
 
-        env.expect_error(utils::Error::NotWhitelisted);
+        env.expect_error(Error::NotWhitelisted);
         contract
             .as_account(not_whitelisted_account)
             .stake(not_whitelisted_account, 1.into());
@@ -294,7 +294,7 @@ mod tests {
 
         contract.stake(owner, staked_amount);
 
-        env.expect_error(utils::Error::InsufficientBalance);
+        env.expect_error(Error::InsufficientBalance);
         contract.burn(owner, burn_amount);
     }
 
@@ -308,7 +308,7 @@ mod tests {
 
         contract.stake(owner, staked_amount);
 
-        env.expect_error(utils::Error::InsufficientBalance);
+        env.expect_error(Error::InsufficientBalance);
         contract.transfer_from(owner, recipient, transferred_amount);
     }
 
@@ -344,7 +344,7 @@ mod tests {
         let account = env.get_account(0);
 
         contract.stake(account, amount_to_stake);
-        env.expect_error(utils::Error::InsufficientBalance);
+        env.expect_error(Error::InsufficientBalance);
         contract.unstake(account, amount_to_unstake);
     }
 

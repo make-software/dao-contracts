@@ -4,11 +4,18 @@ use casper_contract::{
     contract_api::{runtime, storage},
     unwrap_or_revert::UnwrapOrRevert,
 };
+use casper_dao_utils::{
+    casper_env::{caller, init_events},
+    consts,
+    owner::Owner,
+    staking::TokenWithStaking,
+    whitelist::Whitelist,
+    Address,
+};
 use casper_types::{
     contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
     EntryPointType, EntryPoints, Group, RuntimeArgs, URef, U256,
 };
-use utils::{consts, owner::Owner, staking::TokenWithStaking, whitelist::Whitelist, Address};
 
 pub trait ReputationContractInterface {
     fn init(&mut self);
@@ -31,8 +38,8 @@ pub struct ReputationContract {
 
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
-        utils::casper_env::init_events();
-        let deployer = utils::casper_env::caller();
+        init_events();
+        let deployer = caller();
         self.owner.init(deployer);
         self.whitelist.init();
         self.whitelist.add_to_whitelist(deployer);
@@ -127,14 +134,15 @@ impl ReputationContract {
             EntryPointType::Contract,
         ));
 
-        entry_points.add_entry_point(utils::owner::entry_points::change_ownership());
-        entry_points.add_entry_point(utils::whitelist::entry_points::add_to_whitelist());
-        entry_points.add_entry_point(utils::whitelist::entry_points::remove_from_whitelist());
-        entry_points.add_entry_point(utils::staking::entry_points::mint());
-        entry_points.add_entry_point(utils::staking::entry_points::burn());
-        entry_points.add_entry_point(utils::staking::entry_points::transfer_from());
-        entry_points.add_entry_point(utils::staking::entry_points::stake());
-        entry_points.add_entry_point(utils::staking::entry_points::unstake());
+        entry_points.add_entry_point(casper_dao_utils::owner::entry_points::change_ownership());
+        entry_points.add_entry_point(casper_dao_utils::whitelist::entry_points::add_to_whitelist());
+        entry_points
+            .add_entry_point(casper_dao_utils::whitelist::entry_points::remove_from_whitelist());
+        entry_points.add_entry_point(casper_dao_utils::staking::entry_points::mint());
+        entry_points.add_entry_point(casper_dao_utils::staking::entry_points::burn());
+        entry_points.add_entry_point(casper_dao_utils::staking::entry_points::transfer_from());
+        entry_points.add_entry_point(casper_dao_utils::staking::entry_points::stake());
+        entry_points.add_entry_point(casper_dao_utils::staking::entry_points::unstake());
 
         entry_points
     }
@@ -261,11 +269,9 @@ impl ReputationContractInterface for ReputationContractCaller {
 mod tests {
     use std::fmt::Debug;
 
+    use casper_dao_utils::{consts, Address, TestEnv};
     use casper_types::bytesrepr::{Bytes, FromBytes};
     use casper_types::{runtime_args, ContractPackageHash, RuntimeArgs, U256};
-    use utils::consts;
-    use utils::Address;
-    use utils::TestEnv;
 
     use crate::{ReputationContract, ReputationContractInterface};
 
