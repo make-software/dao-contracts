@@ -1,7 +1,10 @@
+use std::slice::SliceIndex;
+
+use casper_types::EntryPoints;
 use macros::{generate_contract, Contract};
 
 #[derive(Contract)]
-struct ImportantContract {}
+pub struct ImportantContract {}
 
 generate_contract!(
     trait ImportantContractInterface {
@@ -12,6 +15,10 @@ generate_contract!(
 );
 
 fn main() {
-    ImportantContract::install();
-    ImportantContract::entry_points();
+    let ep: EntryPoints = ImportantContract::entry_points();
+
+    assert_eq!(ep.keys().count(), 3);
+    assert!(ep.has_entry_point("init"));
+    assert!(ep.has_entry_point("mint"));
+    assert!(ep.has_entry_point("burn"));
 }

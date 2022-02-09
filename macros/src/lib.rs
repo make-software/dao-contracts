@@ -9,6 +9,7 @@ use crate::contract_interface::ContractTrait;
 mod caller;
 mod contract_impl;
 mod contract_interface;
+mod entry_points;
 
 #[proc_macro_derive(Contract)]
 pub fn derive_contract(item: TokenStream) -> TokenStream {
@@ -133,8 +134,11 @@ pub fn generate_contract(item: TokenStream) -> TokenStream {
 
     let interface_trait = contract_interface::generate(&input);
     let caller = caller::generate(id);
+    let entry_points = entry_points::generate(&input);
 
     let expanded = quote! {
+      #entry_points
+
       #interface_trait
 
       #caller
