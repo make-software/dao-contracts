@@ -13,4 +13,4 @@ name = "reputation-tests"
 path = "src/reputation_tests.rs"
 bench = false
 doctest = false
-
+doc = false

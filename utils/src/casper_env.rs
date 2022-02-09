@@ -10,7 +10,7 @@ use casper_types::{
     CLTyped,
 };
 
-use crate::{modules::events::Events, Address};
+use crate::{events::Events, Address};
 
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
     match runtime::get_key(name) {

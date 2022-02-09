@@ -17,8 +17,30 @@ use casper_types::{
     EntryPointType, EntryPoints, Group, RuntimeArgs, URef, U256,
 };
 
+/// Interface of the Reputation Contract.
+/// 
+/// It should be implemented by [`ReputationContract`], [`ReputationContractCaller`] and [`ReputationContractTest`].
 pub trait ReputationContractInterface {
+    /// Constructor method.
+    ///
+    /// It should initialized the contract elements:
+    /// * Events.
+    /// * Named keys of [`TokenWithStaking`], [`Owner`] and [`Whitelist`].
+    /// * Set [`caller`] as the owner of the contract.
+    /// * Add [`caller`] to the whitelist.
+    /// 
+    /// It emits [OwnerChanged](casper_dao_utils::owner::events::OwnerChanged) and 
+    /// [AddedToWhitelist](casper_dao_utils::whitelist::events::AddedToWhitelist) events.
     fn init(&mut self);
+
+    /// Mint new tokens.
+    /// 
+    /// Add `amount` of new tokens to the balance of the `recipient`.
+    /// 
+    /// Only whitelisted addresses should be permited to call this method.
+    /// It throws [NotWhitelisted](casper_dao_utils::Error::NotWhitelisted) otherwise.
+    /// 
+    /// It emits [Mint](casper_dao_utils::token::events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U256);
     fn burn(&mut self, owner: Address, amount: U256);
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
