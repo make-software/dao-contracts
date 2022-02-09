@@ -32,3 +32,9 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
         &self.name
     }
 }
+
+impl<T: Default + FromBytes + ToBytes + CLTyped> From<&str> for Variable<T> {
+    fn from(name: &str) -> Self {
+        Variable::new(name.to_string())
+    }
+}

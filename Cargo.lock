@@ -105,6 +105,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "casper-dao-contracts"
+version = "0.1.0"
+dependencies = [
+ "casper-contract",
+ "casper-dao-utils",
+ "casper-types",
+]
+
+[[package]]
+name = "casper-dao-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "casper-dao-utils"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "casper-contract",
+ "casper-dao-macros",
+ "casper-engine-test-support",
+ "casper-execution-engine",
+ "casper-types",
+]
+
+[[package]]
 name = "casper-engine-test-support"
 version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -621,15 +651,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -971,15 +992,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reputation-contract"
-version = "0.1.0"
-dependencies = [
- "casper-contract",
- "casper-types",
- "utils",
-]
-
-[[package]]
 name = "rusty-fork"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1149,9 +1161,9 @@ dependencies = [
 name = "tests"
 version = "0.1.0"
 dependencies = [
+ "casper-dao-contracts",
+ "casper-dao-utils",
  "casper-types",
- "reputation-contract",
- "utils",
 ]
 
 [[package]]
@@ -1239,18 +1251,6 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
-
-[[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "base64",
- "casper-contract",
- "casper-engine-test-support",
- "casper-execution-engine",
- "casper-types",
- "macros",
-]
 
 [[package]]
 name = "uuid"

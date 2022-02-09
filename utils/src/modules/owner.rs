@@ -58,7 +58,7 @@ pub mod entry_points {
 
 pub mod events {
     use crate::Address;
-    use macros::Event;
+    use casper_dao_macros::Event;
 
     #[derive(Debug, PartialEq, Event)]
     pub struct OwnerChanged {
