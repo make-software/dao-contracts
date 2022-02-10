@@ -10,6 +10,7 @@ syn =  { version = "1.0.86", features = ["full"] }
 
 [dev-dependencies]
 trybuild = "1.0"
+casper-contract = "1.4.3"
 casper-types = "1.4.6"
 utils = { path = "../utils" }
 

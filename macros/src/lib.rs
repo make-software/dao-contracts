@@ -1,15 +1,12 @@
 extern crate proc_macro;
+use contract::ContractTrait;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, TokenStreamExt};
 use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields};
 
-use crate::contract_interface::ContractTrait;
-
 mod caller;
-mod contract_impl;
-mod contract_interface;
-mod entry_points;
+mod contract;
 
 #[proc_macro_derive(Contract)]
 pub fn derive_contract(item: TokenStream) -> TokenStream {
@@ -18,7 +15,7 @@ pub fn derive_contract(item: TokenStream) -> TokenStream {
     let name = &input.ident;
 
     let mut methods = TokenStream2::new();
-    methods.append_all(contract_impl::generate());
+    methods.append_all(contract::generate_install());
 
     let expanded = quote! {
         impl #name {
@@ -132,16 +129,19 @@ pub fn generate_contract(item: TokenStream) -> TokenStream {
 
     let id = &input.ident;
 
-    let interface_trait = contract_interface::generate(&input);
-    let caller = caller::generate(id);
-    let entry_points = entry_points::generate(&input);
+    let entry_points = contract::generate_entry_points(&input);
+    let interface_trait = contract::interface::generate_trait(&input);
+    let caller_struct = caller::generate_struct(id);
+    let caller_impl = caller::generate_interface_impl(&input);
 
     let expanded = quote! {
       #entry_points
 
       #interface_trait
 
-      #caller
+      #caller_struct
+
+      #caller_impl
     };
 
     TokenStream::from(expanded)
