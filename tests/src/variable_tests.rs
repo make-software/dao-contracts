@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use utils::{
-        repository::events::{ValueRemoved, ValueSet},
-        TestEnv,
-    };
-    use variable_repository::{
+    use casper_dao_contracts::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
+    };
+    use casper_dao_utils::{
+        repository::events::{ValueRemoved, ValueSet},
+        Error, TestEnv,
     };
 
     #[test]
@@ -18,7 +18,7 @@ mod tests {
     fn test_get_uninitialized_value() {
         let (env, mut contract) = setup();
 
-        env.expect_error(utils::Error::ValueNotAvailable);
+        env.expect_error(Error::ValueNotAvailable);
         contract.get("key".to_string());
     }
 
@@ -82,7 +82,7 @@ mod tests {
     fn test_remove_nonexistent_item() {
         let (env, mut contract) = setup();
 
-        env.expect_error(utils::Error::ValueNotAvailable);
+        env.expect_error(Error::ValueNotAvailable);
         contract.delete("aaa".to_string());
     }
 
@@ -137,7 +137,7 @@ mod tests {
         contract.change_ownership(new_owner);
         assert_eq!(contract.get_owner().unwrap(), new_owner);
 
-        env.expect_error(utils::Error::NotAnOwner);
+        env.expect_error(Error::NotAnOwner);
         contract.change_ownership(new_owner);
     }
 
@@ -198,10 +198,10 @@ mod tests {
 
         contract.add_to_whitelist(user1);
 
-        env.expect_error(utils::Error::NotAnOwner);
+        env.expect_error(Error::NotAnOwner);
         contract.as_account(user1).add_to_whitelist(user2);
 
-        env.expect_error(utils::Error::NotAnOwner);
+        env.expect_error(Error::NotAnOwner);
         contract.as_account(user1).remove_from_whitelist(user2);
     }
 
@@ -210,12 +210,12 @@ mod tests {
         let (env, mut contract) = setup();
         let user = env.get_account(1);
 
-        env.expect_error(utils::Error::NotWhitelisted);
+        env.expect_error(Error::NotWhitelisted);
         contract
             .as_account(user)
             .set_or_update("key".to_string(), "value".as_bytes().into());
 
-        env.expect_error(utils::Error::NotWhitelisted);
+        env.expect_error(Error::NotWhitelisted);
         contract.as_account(user).delete("key".to_string());
     }
 

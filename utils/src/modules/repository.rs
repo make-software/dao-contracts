@@ -1,10 +1,6 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{
-    consts, emit,
-    list::{OrderedCollection, Set},
-    Error, Mapping,
-};
+use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
 use casper_types::bytesrepr::Bytes;
 
 use self::events::{ValueRemoved, ValueSet};
@@ -101,8 +97,8 @@ pub mod entry_points {
 }
 
 pub mod events {
+    use casper_dao_macros::Event;
     use casper_types::bytesrepr::Bytes;
-    use macros::Event;
 
     #[derive(Debug, PartialEq, Event)]
     pub struct ValueSet {

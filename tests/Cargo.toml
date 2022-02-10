@@ -7,7 +7,6 @@ edition = "2018"
 casper-types = "1.4.6"
 casper-dao-contracts = { path = "../contracts", default-features = false, features = [ "test-support" ] }
 casper-dao-utils = { path = "../utils", features = [ "test-support" ]}
-variable-repository = { path = "../contracts/variable", default-features = false, features = [ "test-support" ] }
 
 [[bin]]
 name = "reputation-tests"

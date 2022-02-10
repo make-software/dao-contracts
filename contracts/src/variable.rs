@@ -9,7 +9,14 @@ use casper_types::{
     EntryPointAccess, EntryPointType, EntryPoints, Group, RuntimeArgs, URef,
 };
 
-use utils::{consts, owner::Owner, repository::Repository, whitelist::Whitelist, Address};
+use casper_dao_utils::{
+    casper_env::{caller, init_events},
+    consts,
+    owner::Owner,
+    repository::Repository,
+    whitelist::Whitelist,
+    Address,
+};
 
 const PACKAGE_HASH_KEY: &str = "variable_repository_package_hash";
 
@@ -32,8 +39,8 @@ pub struct VariableRepositoryContract {
 
 impl VariableRepositoryContractInterface for VariableRepositoryContract {
     fn init(&mut self) {
-        utils::init_events();
-        let deployer = utils::caller();
+        init_events();
+        let deployer = caller();
         self.owner.init(deployer);
         self.whitelist.init();
         self.whitelist.add_to_whitelist(deployer);
@@ -114,12 +121,13 @@ impl VariableRepositoryContract {
             EntryPointType::Contract,
         ));
 
-        entry_points.add_entry_point(utils::owner::entry_points::change_ownership());
-        entry_points.add_entry_point(utils::whitelist::entry_points::add_to_whitelist());
-        entry_points.add_entry_point(utils::whitelist::entry_points::remove_from_whitelist());
-        entry_points.add_entry_point(utils::repository::entry_points::set_or_update());
-        entry_points.add_entry_point(utils::repository::entry_points::get());
-        entry_points.add_entry_point(utils::repository::entry_points::delete());
+        entry_points.add_entry_point(casper_dao_utils::owner::entry_points::change_ownership());
+        entry_points.add_entry_point(casper_dao_utils::whitelist::entry_points::add_to_whitelist());
+        entry_points
+            .add_entry_point(casper_dao_utils::whitelist::entry_points::remove_from_whitelist());
+        entry_points.add_entry_point(casper_dao_utils::repository::entry_points::set_or_update());
+        entry_points.add_entry_point(casper_dao_utils::repository::entry_points::get());
+        entry_points.add_entry_point(casper_dao_utils::repository::entry_points::delete());
         entry_points
     }
 }
@@ -218,13 +226,13 @@ impl VariableRepositoryContractInterface for VariableRepositoryContractCaller {
 mod tests {
     use std::fmt::Debug;
 
+    use casper_dao_utils::{consts, Address, TestEnv};
     use casper_types::{
         bytesrepr::{Bytes, FromBytes},
         runtime_args, ContractPackageHash, RuntimeArgs,
     };
-    use utils::{consts, Address, TestEnv};
 
-    use crate::{
+    use super::{
         VariableRepositoryContract, VariableRepositoryContractInterface, PACKAGE_HASH_KEY,
     };
 
@@ -310,7 +318,7 @@ mod tests {
             todo!()
         }
 
-        fn change_ownership(&mut self, owner: utils::Address) {
+        fn change_ownership(&mut self, owner: Address) {
             self.env.call_contract_package(
                 self.package_hash,
                 consts::EP_CHANGE_OWNERSHIP,

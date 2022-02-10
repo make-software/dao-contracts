@@ -1,9 +1,9 @@
 #![no_main]
 
 use casper_contract::contract_api::runtime;
+use casper_dao_contracts::{VariableRepositoryContract, VariableRepositoryContractInterface};
+use casper_dao_utils::{consts, Address};
 use casper_types::bytesrepr::Bytes;
-use utils::{consts, Address};
-use variable_repository::{VariableRepositoryContract, VariableRepositoryContractInterface};
 
 #[no_mangle]
 fn call() {

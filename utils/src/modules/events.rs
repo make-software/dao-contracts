@@ -1,10 +1,7 @@
 use casper_contract::unwrap_or_revert::UnwrapOrRevert;
 use casper_types::bytesrepr::{Bytes, ToBytes};
 
-use crate::{
-    consts,
-    list::{List, OrderedCollection},
-};
+use crate::{consts, List, OrderedCollection};
 
 pub struct Events {
     pub events: OrderedCollection<Bytes>,

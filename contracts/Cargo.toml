@@ -15,6 +15,15 @@ bench = false
 doctest = false
 test = false
 
+
+[[bin]]
+name = "variable"
+path = "bin/variable_repository.rs"
+bench = false
+doctest = false
+test = false
+
+
 [profile.release]
 codegen-units = 1
 lto = true
