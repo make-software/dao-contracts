@@ -117,12 +117,13 @@ dependencies = [
 name = "casper-dao-macros"
 version = "0.1.0"
 dependencies = [
+ "casper-contract",
+ "casper-dao-utils",
  "casper-types",
  "proc-macro2",
  "quote",
  "syn",
  "trybuild",
- "utils",
 ]
 
 [[package]]
@@ -658,19 +659,6 @@ dependencies = [
  "cfg-if 1.0.0",
  "serde",
  "value-bag",
-]
-
-[[package]]
-name = "macros"
-version = "0.1.0"
-dependencies = [
- "casper-contract",
- "casper-types",
- "proc-macro2",
- "quote",
- "syn",
- "trybuild",
- "utils",
 ]
 
 [[package]]

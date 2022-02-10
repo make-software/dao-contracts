@@ -1,4 +1,4 @@
-use macros::{generate_contract, Contract};
+use casper_dao_macros::{generate_contract, Contract};
 
 #[derive(Contract)]
 struct ImportantContract {}
@@ -6,8 +6,8 @@ struct ImportantContract {}
 generate_contract!(
     trait ImportantContractInterface {
         fn init(&mut self);
-        fn mint(&mut self, recipient: utils::Address, amount: casper_types::U256);
-        fn burn(&mut self, owner: utils::Address, amount: casper_types::U256);
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
+        fn burn(&mut self, owner: casper_dao_utils::Address, amount: casper_types::U256);
     }
 );
 
