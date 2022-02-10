@@ -236,7 +236,7 @@ mod tests {
         VariableRepositoryContract, VariableRepositoryContractInterface, PACKAGE_HASH_KEY,
     };
 
-    const WASM_FILE_NAME: &str = "variable_repository.wasm";
+    const WASM_FILE_NAME: &str = "variable.wasm";
 
     pub struct VariableRepositoryContractTest {
         env: TestEnv,
