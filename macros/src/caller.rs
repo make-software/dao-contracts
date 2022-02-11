@@ -1,14 +1,11 @@
-use proc_macro2::{Ident, Span, TokenStream};
+use crate::contract::{utils, ContractTrait};
+use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
-use syn::TraitItemMethod;
 
-use crate::contract::{self, ContractTrait};
-
-pub fn generate_struct(ident: &Ident) -> TokenStream {
-    let caller_ident = generate_ident(ident);
-
+pub fn generate_struct(input: &ContractTrait) -> TokenStream {
+    let ident = &input.caller_ident;
     quote! {
-      struct #caller_ident {
+      struct #ident {
         contract_package_hash: casper_types::ContractPackageHash,
       }
     }
@@ -16,7 +13,7 @@ pub fn generate_struct(ident: &Ident) -> TokenStream {
 
 pub fn generate_interface_impl(input: &ContractTrait) -> TokenStream {
     let ident = &input.ident;
-    let caller_ident = generate_ident(ident);
+    let caller_ident = &input.caller_ident;
     let methods = build_methods(input);
 
     quote! {
@@ -26,17 +23,12 @@ pub fn generate_interface_impl(input: &ContractTrait) -> TokenStream {
     }
 }
 
-fn generate_ident(base_ident: &Ident) -> Ident {
-    let caller_name = format!("{}Caller", base_ident);
-    Ident::new(&caller_name, Span::call_site())
-}
-
 fn build_methods(input: &ContractTrait) -> TokenStream {
     let mut stream = TokenStream::new();
     stream.append_all(input.methods.iter().map(|method| {
         let sig = &method.sig;
         let ident = &sig.ident;
-        let args = generate_args(method);
+        let args = utils::generate_method_args(method);
         quote! {
             #sig {
                 let _: () = casper_contract::contract_api::runtime::call_versioned_contract(
@@ -51,23 +43,5 @@ fn build_methods(input: &ContractTrait) -> TokenStream {
 
     quote! {
         #stream
-    }
-}
-
-fn generate_args(method: &TraitItemMethod) -> TokenStream {
-    let method_idents = contract::utils::collect_arg_idents(method);
-    let mut args = TokenStream::new();
-    args.append_all(method_idents.iter().map(|ident| {
-        quote! {
-            named_args.insert(stringify!(#ident), #ident).unwrap();
-        }
-    }));
-
-    quote! {
-        {
-            let mut named_args = casper_types::RuntimeArgs::new();
-            #args
-            named_args
-        }
     }
 }

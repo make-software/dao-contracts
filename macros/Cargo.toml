@@ -12,7 +12,7 @@ syn =  { version = "1.0.86", features = ["full"] }
 trybuild = "1.0"
 casper-contract = "1.4.3"
 casper-types = "1.4.6"
-casper-dao-utils = { path = "../utils" }
+casper-dao-utils = { path = "../utils", features = ["test-support"] }
 
 [[test]]
 name = "tests"

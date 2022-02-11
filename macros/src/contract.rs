@@ -1,13 +1,15 @@
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
-use syn::{braced, token, Token, TraitItemMethod};
+use syn::{braced, Token, TraitItemMethod};
 
 #[derive(Debug)]
 pub struct ContractTrait {
     pub trait_token: Token![trait],
     pub ident: Ident,
-    pub brace_token: token::Brace,
+    pub contract_ident: Ident,
+    pub caller_ident: Ident,
+    pub contract_test_ident: Ident,
     pub methods: Vec<TraitItemMethod>,
 }
 
@@ -16,17 +18,27 @@ impl Parse for ContractTrait {
         let content;
         let trait_token: Token![trait] = input.parse()?;
         let ident: Ident = input.parse()?;
-        let brace_token = braced!(content in input);
+        let _brace_token = braced!(content in input);
 
         let mut methods = Vec::new();
         while !content.is_empty() {
             methods.push(content.parse()?);
         }
 
+        let name = ident.to_string();
+        let parts: Vec<&str> = name.split("Interface").collect();
+        let name = parts.first().unwrap();
+
+        let contract_ident = Ident::new(name, Span::call_site());
+        let caller_ident = Ident::new(&format!("{}Caller", name), Span::call_site());
+        let contract_test_ident = Ident::new(&format!("{}Test", name), Span::call_site());
+
         Ok(ContractTrait {
             trait_token,
             ident,
-            brace_token,
+            contract_ident,
+            caller_ident,
+            contract_test_ident,
             methods,
         })
     }
@@ -41,16 +53,12 @@ pub fn generate_install() -> TokenStream {
 }
 
 pub fn generate_entry_points(contract_trait: &ContractTrait) -> TokenStream {
-    let name = contract_trait.ident.to_string();
-    let parts: Vec<&str> = name.split("Interface").collect();
-    let name = parts.first().unwrap();
-    let ident = Ident::new(name, Span::call_site());
-
     let mut add_entry_points = TokenStream::new();
     add_entry_points.append_all(contract_trait.methods.iter().map(create_entry_point));
+    let contract_ident = &contract_trait.contract_ident;
 
     quote! {
-        impl #ident {
+        impl #contract_ident {
             pub fn entry_points() -> casper_types::EntryPoints {
                 let mut entry_points = casper_types::EntryPoints::new();
                 #add_entry_points
@@ -132,7 +140,8 @@ pub mod interface {
 }
 
 pub mod utils {
-    use proc_macro2::Ident;
+    use proc_macro2::{Ident, TokenStream};
+    use quote::{quote, TokenStreamExt};
     use syn::{FnArg, Pat, TraitItemMethod, Type, TypePath};
 
     pub fn collect_type_paths(method: &TraitItemMethod) -> Vec<&TypePath> {
@@ -170,5 +179,32 @@ pub mod utils {
                 }
             })
             .collect()
+    }
+
+    pub fn generate_method_args(method: &TraitItemMethod) -> TokenStream {
+        let method_idents = collect_arg_idents(method);
+        let mut args = TokenStream::new();
+        args.append_all(method_idents.iter().map(|ident| {
+            quote! {
+                named_args.insert(stringify!(#ident), #ident).unwrap();
+            }
+        }));
+
+        quote! {
+            {
+                let mut named_args = casper_types::RuntimeArgs::new();
+                #args
+                named_args
+            }
+        }
+    }
+
+    pub fn generate_empty_args() -> TokenStream {
+        quote! {
+            {
+                let mut named_args = casper_types::RuntimeArgs::new();
+                named_args
+            }
+        }
     }
 }

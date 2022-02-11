@@ -1,6 +1,6 @@
-use casper_dao_macros::Contract;
+use casper_dao_macros::CasperContract;
 
-#[derive(Contract)]
+#[derive(CasperContract)]
 #[allow(dead_code)]
 struct ImportantContract {}
 

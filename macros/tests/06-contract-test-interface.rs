@@ -1,4 +1,5 @@
 use casper_dao_macros::{casper_contract_interface, CasperContract};
+use casper_dao_utils::TestEnv;
 use casper_types::{account::AccountHash, ContractPackageHash};
 
 #[derive(Default, CasperContract)]
@@ -12,15 +13,15 @@ trait ImportantContractInterface {
 }
 
 fn main() {
-    ImportantContract::install();
-    ImportantContract::entry_points();
-
-    let mut caller = ImportantContractCaller {
-        contract_package_hash: ContractPackageHash::new([0; 32]),
+    let mut contract_test = ImportantContractTest {
+        env: TestEnv::new(),
+        package_hash: ContractPackageHash::new([0; 32]),
+        data: ImportantContract {},
     };
+
     let address = casper_dao_utils::Address::Account(AccountHash::new([0; 32]));
 
-    caller.init();
-    caller.mint(address, casper_types::U256::one());
-    caller.burn(address, casper_types::U256::one());
+    contract_test.init();
+    contract_test.mint(address, casper_types::U256::one());
+    contract_test.burn(address, casper_types::U256::one());
 }

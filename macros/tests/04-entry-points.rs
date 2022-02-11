@@ -1,18 +1,15 @@
-use std::slice::SliceIndex;
-
-use casper_dao_macros::{generate_contract, Contract};
+use casper_dao_macros::{casper_contract_interface, CasperContract};
 use casper_types::EntryPoints;
 
-#[derive(Contract)]
+#[derive(Default, CasperContract)]
 pub struct ImportantContract {}
 
-generate_contract!(
-    trait ImportantContractInterface {
-        fn init(&mut self);
-        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
-        fn burn(&mut self, owner: casper_dao_utils::Address, amount: casper_types::U256);
-    }
-);
+#[casper_contract_interface]
+trait ImportantContractInterface {
+    fn init(&mut self);
+    fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
+    fn burn(&mut self, owner: casper_dao_utils::Address, amount: casper_types::U256);
+}
 
 fn main() {
     let ep: EntryPoints = ImportantContract::entry_points();
