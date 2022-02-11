@@ -1,6 +1,6 @@
-use casper_dao_macros::{casper_contract_interface, CasperContract};
+use casper_dao_macros::casper_contract_interface;
 
-#[derive(Default, CasperContract)]
+#[derive(Default)]
 struct ImportantContract {}
 
 #[casper_contract_interface]

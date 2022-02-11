@@ -28,6 +28,17 @@ pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
                     data: #contract_ident::default(),
                 }
             }
+
+            pub fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
+                let raw_event: casper_types::bytesrepr::Bytes = self.env.get_dict_value(self.package_hash, "events", index);
+                let (event, bytes) = T::from_bytes(&raw_event).unwrap();
+                assert!(bytes.is_empty());
+                event
+            }
+
+            pub fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: u32, event: T) {
+                assert_eq!(self.event::<T>(index), event);
+            }
         }
     }
 }

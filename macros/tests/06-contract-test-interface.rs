@@ -1,8 +1,8 @@
-use casper_dao_macros::{casper_contract_interface, CasperContract};
+use casper_dao_macros::casper_contract_interface;
 use casper_dao_utils::TestEnv;
 use casper_types::{account::AccountHash, ContractPackageHash};
 
-#[derive(Default, CasperContract)]
+#[derive(Default)]
 pub struct ImportantContract {}
 
 #[casper_contract_interface]

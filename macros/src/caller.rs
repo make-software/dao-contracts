@@ -8,6 +8,14 @@ pub fn generate_struct(input: &ContractTrait) -> TokenStream {
       struct #ident {
         contract_package_hash: casper_types::ContractPackageHash,
       }
+
+      impl #ident {
+        pub fn at(contract_package_hash: casper_types::ContractPackageHash) -> Self {
+            #ident {
+                contract_package_hash,
+            }
+        }
+      }
     }
 }
 
@@ -33,7 +41,7 @@ fn build_methods(input: &ContractTrait) -> TokenStream {
             #sig {
                 let _: () = casper_contract::contract_api::runtime::call_versioned_contract(
                     self.contract_package_hash,
-                    None,
+                    std::option::Option::None,
                     stringify!(#ident),
                     #args,
                 );

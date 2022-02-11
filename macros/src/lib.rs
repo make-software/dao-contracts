@@ -9,24 +9,6 @@ mod caller;
 mod contract;
 mod contract_test;
 
-#[proc_macro_derive(CasperContract)]
-pub fn derive_contract(item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as DeriveInput);
-
-    let name = &input.ident;
-
-    let mut methods = TokenStream2::new();
-    methods.append_all(contract::generate_install());
-
-    let expanded = quote! {
-        impl #name {
-            #methods
-        }
-    };
-
-    TokenStream::from(expanded)
-}
-
 #[proc_macro_derive(Event)]
 pub fn derive_events(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -128,7 +110,8 @@ fn named_fields(input: DeriveInput) -> Result<Vec<proc_macro2::Ident>, TokenStre
 pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ContractTrait);
 
-    let entry_points = contract::generate_entry_points(&input);
+    let contract_install = contract::generate_install(&input);
+    let contract_entry_points = contract::generate_entry_points(&input);
     let interface_trait = contract::interface::generate_trait(&input);
     let caller_struct = caller::generate_struct(&input);
     let caller_impl = caller::generate_interface_impl(&input);
@@ -137,7 +120,9 @@ pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> Token
     let contract_test_interface = contract_test::generate_test_interface(&input);
 
     let expanded = quote! {
-      #entry_points
+      #contract_install
+
+      #contract_entry_points
 
       #interface_trait
 

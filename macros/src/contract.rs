@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
@@ -44,10 +45,23 @@ impl Parse for ContractTrait {
     }
 }
 
-pub fn generate_install() -> TokenStream {
-    quote! {
-        pub fn install() {
+pub fn generate_install(input: &ContractTrait) -> TokenStream {
+    let ident = &input.contract_ident;
+    let caller_ident = &input.caller_ident;
+    let package_hash = format!("{}_package_hash", ident.to_string().to_case(Case::Snake));
 
+    quote! {
+        impl #ident {
+            pub fn install() {
+                casper_dao_utils::casper_env::install_contract(
+                    #package_hash,
+                    #ident::entry_points(),
+                    |contract_package_hash| {
+                        let mut contract_instance = #caller_ident::at(contract_package_hash);
+                        contract_instance.init();
+                    }
+                );
+            }
         }
     }
 }

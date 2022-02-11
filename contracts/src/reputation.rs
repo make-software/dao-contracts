@@ -1,11 +1,6 @@
-use std::collections::BTreeSet;
-
-use casper_contract::{
-    contract_api::{runtime, storage},
-    unwrap_or_revert::UnwrapOrRevert,
-};
+use casper_contract::contract_api::runtime::{self};
 use casper_dao_utils::{
-    casper_env::{caller, init_events},
+    casper_env::{caller, init_events, install_contract},
     consts,
     owner::Owner,
     staking::TokenWithStaking,
@@ -13,8 +8,8 @@ use casper_dao_utils::{
     Address,
 };
 use casper_types::{
-    contracts::NamedKeys, runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess,
-    EntryPointType, EntryPoints, Group, RuntimeArgs, URef, U256,
+    runtime_args, CLTyped, ContractPackageHash, EntryPoint, EntryPointAccess, EntryPointType,
+    EntryPoints, Group, RuntimeArgs, U256,
 };
 
 pub trait ReputationContractInterface {
@@ -90,38 +85,14 @@ impl ReputationContractInterface for ReputationContract {
 
 impl ReputationContract {
     pub fn install() {
-        // Create a new contract package hash for the contract.
-        let (contract_package_hash, _) = storage::create_contract_package_at_hash();
-        runtime::put_key(
+        install_contract(
             "reputation_contract_package_hash",
-            contract_package_hash.into(),
-        );
-
-        let init_access: URef = storage::create_contract_user_group(
-            contract_package_hash,
-            "init",
-            1,
-            Default::default(),
-        )
-        .unwrap_or_revert()
-        .pop()
-        .unwrap_or_revert();
-
-        storage::add_contract_version(
-            contract_package_hash,
             ReputationContract::entry_points(),
-            NamedKeys::new(),
+            |contract_package_hash| {
+                let mut contract_instance = ReputationContractCaller::at(contract_package_hash);
+                contract_instance.init()
+            },
         );
-
-        // Call contrustor method.
-        let mut contract_instance = ReputationContractCaller::at(contract_package_hash);
-        contract_instance.init();
-
-        // Revoke access to init.
-        let mut urefs = BTreeSet::new();
-        urefs.insert(init_access);
-        storage::remove_contract_user_group_urefs(contract_package_hash, "init", urefs)
-            .unwrap_or_revert();
     }
 
     pub fn entry_points() -> EntryPoints {
