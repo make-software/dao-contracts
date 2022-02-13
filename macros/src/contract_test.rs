@@ -1,5 +1,5 @@
 use crate::contract::utils;
-use crate::contract::ContractTrait;
+use crate::parser::ContractTrait;
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;

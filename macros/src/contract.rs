@@ -1,58 +1,8 @@
-use convert_case::{Case, Casing};
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::{quote, TokenStreamExt};
-use syn::parse::{Parse, ParseStream};
-use syn::{braced, Token, TraitItemMethod};
+use syn::TraitItemMethod;
 
-#[derive(Debug)]
-pub struct ContractTrait {
-    pub trait_token: Token![trait],
-    pub ident: Ident,
-    pub contract_ident: Ident,
-    pub caller_ident: Ident,
-    pub contract_test_ident: Ident,
-    pub methods: Vec<TraitItemMethod>,
-    pub package_hash: String,
-    pub wasm_file_name: String,
-}
-
-impl Parse for ContractTrait {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let content;
-
-        let _pub_token: Result<Token![pub], _> = input.parse();
-        let trait_token: Token![trait] = input.parse()?;
-        let ident: Ident = input.parse()?;
-        let _brace_token = braced!(content in input);
-
-        let mut methods = Vec::new();
-        while !content.is_empty() {
-            methods.push(content.parse()?);
-        }
-
-        let name = ident.to_string();
-        let parts: Vec<&str> = name.split("Interface").collect();
-        let name = parts.first().unwrap();
-
-        let contract_ident = Ident::new(name, Span::call_site());
-        let caller_ident = Ident::new(&format!("{}Caller", name), Span::call_site());
-        let contract_test_ident = Ident::new(&format!("{}Test", name), Span::call_site());
-
-        let package_hash = format!("{}_package_hash", name.to_case(Case::Snake));
-        let wasm_file_name = format!("{}.wasm", name.to_case(Case::Snake));
-
-        Ok(ContractTrait {
-            trait_token,
-            ident,
-            contract_ident,
-            caller_ident,
-            contract_test_ident,
-            methods,
-            package_hash,
-            wasm_file_name,
-        })
-    }
-}
+use crate::parser::ContractTrait;
 
 pub fn generate_install(input: &ContractTrait) -> TokenStream {
     let ident = &input.contract_ident;

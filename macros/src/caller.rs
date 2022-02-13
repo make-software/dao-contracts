@@ -1,4 +1,4 @@
-use crate::contract::{utils, ContractTrait};
+use crate::{contract::utils, parser::ContractTrait};
 use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 

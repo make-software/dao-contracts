@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 use syn::{Data, DataStruct, DeriveInput, Fields};
 
-pub fn generate(input: DeriveInput) -> TokenStream {
+pub fn expand_derive_events(input: DeriveInput) -> TokenStream {
     let struct_ident = input.ident.clone();
     let fields = match named_fields(input) {
         Ok(fields) => fields,
