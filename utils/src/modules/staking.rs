@@ -65,39 +65,6 @@ impl TokenWithStaking {
     }
 }
 
-pub mod entry_points {
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
-
-    pub use crate::token::entry_points::{burn, mint, transfer_from};
-    use crate::{consts, Address};
-
-    pub fn stake() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_STAKE,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn unstake() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_UNSTAKE,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     use casper_dao_macros::Event;
     use casper_types::U256;

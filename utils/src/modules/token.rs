@@ -70,52 +70,6 @@ impl Token {
     }
 }
 
-pub mod entry_points {
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
-
-    use crate::{consts, Address};
-
-    pub fn mint() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_MINT,
-            vec![
-                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn burn() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_BURN,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn transfer_from() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_TRANSFER_FROM,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     use casper_dao_macros::Event;
     use casper_types::U256;
