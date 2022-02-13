@@ -2,7 +2,6 @@ use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
-use syn::token::Token;
 use syn::{braced, Token, TraitItemMethod};
 
 #[derive(Debug)]
@@ -13,6 +12,8 @@ pub struct ContractTrait {
     pub caller_ident: Ident,
     pub contract_test_ident: Ident,
     pub methods: Vec<TraitItemMethod>,
+    pub package_hash: String,
+    pub wasm_file_name: String,
 }
 
 impl Parse for ContractTrait {
@@ -37,6 +38,9 @@ impl Parse for ContractTrait {
         let caller_ident = Ident::new(&format!("{}Caller", name), Span::call_site());
         let contract_test_ident = Ident::new(&format!("{}Test", name), Span::call_site());
 
+        let package_hash = format!("{}_package_hash", name.to_case(Case::Snake));
+        let wasm_file_name = format!("{}.wasm", name.to_case(Case::Snake));
+
         Ok(ContractTrait {
             trait_token,
             ident,
@@ -44,6 +48,8 @@ impl Parse for ContractTrait {
             caller_ident,
             contract_test_ident,
             methods,
+            package_hash,
+            wasm_file_name,
         })
     }
 }
@@ -51,7 +57,7 @@ impl Parse for ContractTrait {
 pub fn generate_install(input: &ContractTrait) -> TokenStream {
     let ident = &input.contract_ident;
     let caller_ident = &input.caller_ident;
-    let package_hash = format!("{}_package_hash", ident.to_string().to_case(Case::Snake));
+    let package_hash = &input.package_hash;
 
     quote! {
         impl #ident {

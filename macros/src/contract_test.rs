@@ -7,8 +7,9 @@ use quote::TokenStreamExt;
 pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
-
     let args = utils::generate_empty_args();
+    let wasm_file_name = &input.wasm_file_name;
+    let package_hash = &input.package_hash;
 
     quote! {
 
@@ -20,8 +21,8 @@ pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
 
         impl #contract_test_ident {
             pub fn new(env: &casper_dao_utils::TestEnv) -> #contract_test_ident {
-                env.deploy_wasm_file("reputation_contract.wasm", #args);
-                let package_hash = env.get_contract_package_hash("reputation_contract_package_hash");
+                env.deploy_wasm_file(#wasm_file_name, #args);
+                let package_hash = env.get_contract_package_hash(#package_hash);
                 #contract_test_ident {
                     env: env.clone(),
                     package_hash,
