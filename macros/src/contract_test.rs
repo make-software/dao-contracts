@@ -12,13 +12,14 @@ pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
     let package_hash = &input.package_hash;
 
     quote! {
-
+        #[cfg(feature = "test-support")]
         pub struct #contract_test_ident {
             env: casper_dao_utils::TestEnv,
             package_hash: casper_types::ContractPackageHash,
             data: #contract_ident,
         }
 
+        #[cfg(feature = "test-support")]
         impl #contract_test_ident {
             pub fn new(env: &casper_dao_utils::TestEnv) -> #contract_test_ident {
                 env.deploy_wasm_file(#wasm_file_name, #args);
@@ -55,6 +56,7 @@ pub fn generate_test_interface(input: &ContractTrait) -> TokenStream {
     let methods = build_methods(input);
 
     quote! {
+      #[cfg(feature = "test-support")]
       impl #ident for #contract_test_ident {
         #methods
       }
