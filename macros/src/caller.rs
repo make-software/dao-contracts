@@ -5,7 +5,7 @@ use quote::{quote, TokenStreamExt};
 pub fn generate_struct(input: &ContractTrait) -> TokenStream {
     let ident = &input.caller_ident;
     quote! {
-      struct #ident {
+      pub struct #ident {
         contract_package_hash: casper_types::ContractPackageHash,
       }
 

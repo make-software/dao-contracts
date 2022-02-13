@@ -2,6 +2,7 @@ use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
+use syn::token::Token;
 use syn::{braced, Token, TraitItemMethod};
 
 #[derive(Debug)]
@@ -17,6 +18,8 @@ pub struct ContractTrait {
 impl Parse for ContractTrait {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
+
+        let _pub_token: Result<Token![pub], _> = input.parse();
         let trait_token: Token![trait] = input.parse()?;
         let ident: Ident = input.parse()?;
         let _brace_token = braced!(content in input);
@@ -146,7 +149,7 @@ pub mod interface {
         methods.append_all(&model.methods);
 
         quote! {
-            trait #id {
+            pub trait #id {
                 #methods
             }
         }

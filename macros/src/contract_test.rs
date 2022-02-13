@@ -29,6 +29,11 @@ pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
                 }
             }
 
+            pub fn as_account(&mut self, account: casper_dao_utils::Address) -> &mut Self {
+                self.env.as_account(account);
+                self
+            }
+
             pub fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
                 let raw_event: casper_types::bytesrepr::Bytes = self.env.get_dict_value(self.package_hash, "events", index);
                 let (event, bytes) = T::from_bytes(&raw_event).unwrap();
