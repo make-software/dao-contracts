@@ -37,14 +37,28 @@ fn build_methods(input: &ContractTrait) -> TokenStream {
         let sig = &method.sig;
         let ident = &sig.ident;
         let args = utils::generate_method_args(method);
-        quote! {
-            #sig {
+
+        if &ident.to_string() == "init" {
+            quote! {
+              #sig {
                 let _: () = casper_contract::contract_api::runtime::call_versioned_contract(
-                    self.contract_package_hash,
-                    std::option::Option::None,
-                    stringify!(#ident),
-                    #args,
+                  self.contract_package_hash,
+                  std::option::Option::None,
+                  stringify!(#ident),
+                  #args,
                 );
+              }
+            }
+        } else {
+            quote! {
+                #sig {
+                    casper_contract::contract_api::runtime::call_versioned_contract(
+                        self.contract_package_hash,
+                        std::option::Option::None,
+                        stringify!(#ident),
+                        #args,
+                    )
+                }
             }
         }
     }));

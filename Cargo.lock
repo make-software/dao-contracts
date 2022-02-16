@@ -118,7 +118,6 @@ name = "casper-dao-macros"
 version = "0.1.0"
 dependencies = [
  "casper-contract",
- "casper-dao-utils",
  "casper-types",
  "convert_case",
  "proc-macro2",

@@ -3,6 +3,7 @@ use crate::parser::ContractTrait;
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
+use syn::ReturnType;
 
 pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
     let contract_ident = &input.contract_ident;
@@ -37,7 +38,8 @@ pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
             }
 
             pub fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
-                let raw_event: casper_types::bytesrepr::Bytes = self.env.get_dict_value(self.package_hash, "events", index);
+                let raw_event: std::option::Option<casper_types::bytesrepr::Bytes> = self.env.get_dict_value(self.package_hash, "events", index);
+                let raw_event = raw_event.unwrap();
                 let (event, bytes) = T::from_bytes(&raw_event).unwrap();
                 assert!(bytes.is_empty());
                 event
@@ -69,6 +71,20 @@ fn build_methods(input: &ContractTrait) -> TokenStream {
         let sig = &method.sig;
         let ident = &sig.ident;
         let args = utils::generate_method_args(method);
+
+        let mut return_value = TokenStream::new();
+        //solves only the simplest but the most common case, consider handling arrys, tuples, generics
+        return_value.append_all(match &sig.output {
+            ReturnType::Default => quote! {},
+            ReturnType::Type(_, ty) => {
+                let unboxed_ty = &**ty;
+                match unboxed_ty {
+                    syn::Type::Path(path) => quote! { #path::default() },
+                    _ => quote! {},
+                }
+            }
+        });
+
         quote! {
             #sig {
                 self.env.call_contract_package(
@@ -76,6 +92,7 @@ fn build_methods(input: &ContractTrait) -> TokenStream {
                     stringify!(#ident),
                     #args,
                 );
+                #return_value
             }
         }
     }));
