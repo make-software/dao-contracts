@@ -8,13 +8,12 @@ proc-macro2 = "1.0.33"
 quote = "1.0.15"
 syn =  { version = "1.0.86", features = ["full"] }
 convert_case = "0.5.0"
-project-root = "0.2.2"
-marked-yaml = "0.2.0"
 
 [dev-dependencies]
 trybuild = "1.0"
 casper-contract = "1.4.3"
 casper-types = "1.4.6"
+# circular dep
 # casper-dao-utils = { path = "../utils", features = ["test-support"] }
 
 [[test]]

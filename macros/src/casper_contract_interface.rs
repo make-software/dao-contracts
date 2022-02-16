@@ -1,7 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::contract::{self};
+use crate::casper_contract;
+use crate::contract;
 use crate::parser::ContractTrait;
 use crate::{caller, contract_test};
 
@@ -14,6 +15,8 @@ pub fn expand_casper_contract_interface(input: ContractTrait) -> TokenStream {
 
     let contract_test_impl = contract_test::generate_test_implementation(&input);
     let contract_test_interface = contract_test::generate_test_interface(&input);
+
+    let contract_macro = casper_contract::generate_macro(&input);
 
     quote! {
       #contract_install
@@ -29,5 +32,7 @@ pub fn expand_casper_contract_interface(input: ContractTrait) -> TokenStream {
       #contract_test_impl
 
       #contract_test_interface
+
+      #contract_macro
     }
 }

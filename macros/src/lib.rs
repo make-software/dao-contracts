@@ -1,6 +1,5 @@
 extern crate proc_macro;
 
-use marked_yaml::types::MarkedScalarNode;
 use parser::ContractTrait;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
@@ -23,9 +22,4 @@ pub fn derive_events(input: TokenStream) -> TokenStream {
 pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ContractTrait);
     casper_contract_interface::expand_casper_contract_interface(input).into()
-}
-
-#[proc_macro]
-pub fn casper_contract(_item: TokenStream) -> TokenStream {
-    casper_contract::extend_casper_contract("reputation_contract_schema.yaml").into()
 }
