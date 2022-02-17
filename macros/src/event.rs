@@ -88,11 +88,7 @@ fn named_fields(input: DeriveInput) -> Result<Vec<proc_macro2::Ident>, TokenStre
             .into_iter()
             .map(|x| x.ident.unwrap())
             .collect::<Vec<_>>(),
-        _ => {
-            return Err(TokenStream::from(
-                quote! { compile_error!("Expected a struct with named fields."); },
-            ))
-        }
+        _ => return Err(quote! { compile_error!("Expected a struct with named fields."); }),
     };
     Ok(fields)
 }

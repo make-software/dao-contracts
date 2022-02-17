@@ -60,7 +60,7 @@ fn create_entry_point(method: &TraitItemMethod) -> TokenStream {
 }
 
 fn build_group(method_ident: &Ident) -> TokenStream {
-    if method_ident.to_string() == "init" {
+    if &*method_ident.to_string() == "init" {
         quote! {
             casper_types::EntryPointAccess::Groups(vec![casper_types::Group::new("init")])
         }

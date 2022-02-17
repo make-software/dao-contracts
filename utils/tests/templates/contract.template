@@ -1,4 +1,6 @@
 mod contract {
+    #![allow(dead_code)]
+    #![allow(unused_variables)]
     impl ImportantContract {
         pub fn install() {
             casper_dao_utils::casper_env::install_contract(

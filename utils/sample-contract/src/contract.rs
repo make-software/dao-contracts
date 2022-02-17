@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 #[casper_dao_utils::casper_dao_macros::casper_contract_interface]
 pub trait ImportantContractInterface {
     fn init(&mut self);

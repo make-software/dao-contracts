@@ -14,8 +14,8 @@ pub fn generate_macro(input: &ContractTrait) -> TokenStream {
             .to_case(convert_case::Case::Snake)
     );
 
-    let install = generate_install(&input);
-    let interface_methods = generate_interface_methods(&input);
+    let install = generate_install(input);
+    let interface_methods = generate_interface_methods(input);
 
     quote! {
         #[macro_export]

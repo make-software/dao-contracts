@@ -88,7 +88,7 @@ pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
 pub fn install_contract(
     package_hash: &str,
     entry_points: EntryPoints,
-    initializer: impl FnOnce(ContractPackageHash) -> (),
+    initializer: impl FnOnce(ContractPackageHash),
 ) {
     // Create a new contract package hash for the contract.
     let (contract_package_hash, _) = storage::create_contract_package_at_hash();
