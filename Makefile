@@ -9,7 +9,7 @@ build-contracts:
 test: build-contracts
 	cp target/wasm32-unknown-unknown/release/reputation_contract.wasm tests/wasm
 	cp target/wasm32-unknown-unknown/release/variable.wasm tests/wasm
-	cargo test -p tests
+	cargo test --test integration
 clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
 
