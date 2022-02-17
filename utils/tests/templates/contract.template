@@ -1,0 +1,217 @@
+mod contract {
+    impl ImportantContract {
+        pub fn install() {
+            casper_dao_utils::casper_env::install_contract(
+                "important_contract_package_hash",
+                ImportantContract::entry_points(),
+                |contract_package_hash| {
+                    let mut contract_instance = ImportantContractCaller::at(contract_package_hash);
+                    contract_instance.init();
+                },
+            );
+        }
+    }
+    impl ImportantContract {
+        pub fn entry_points() -> casper_types::EntryPoints {
+            let mut entry_points = casper_types::EntryPoints::new();
+            entry_points.add_entry_point(casper_types::EntryPoint::new(
+                "init",
+                {
+                    let mut params: Vec<casper_types::Parameter> = Vec::new();
+                    params
+                },
+                <() as casper_types::CLTyped>::cl_type(),
+                casper_types::EntryPointAccess::Groups(<[_]>::into_vec(box [
+                    casper_types::Group::new("init"),
+                ])),
+                casper_types::EntryPointType::Contract,
+            ));
+            entry_points.add_entry_point(casper_types::EntryPoint::new(
+                "mint",
+                {
+                    let mut params: Vec<casper_types::Parameter> = Vec::new();
+                    params.push(casper_types::Parameter::new(
+                        "recipient",
+                        <casper_dao_utils::Address as casper_types::CLTyped>::cl_type(),
+                    ));
+                    params.push(casper_types::Parameter::new(
+                        "amount",
+                        <casper_types::U256 as casper_types::CLTyped>::cl_type(),
+                    ));
+                    params
+                },
+                <() as casper_types::CLTyped>::cl_type(),
+                casper_types::EntryPointAccess::Public,
+                casper_types::EntryPointType::Contract,
+            ));
+            entry_points.add_entry_point(casper_types::EntryPoint::new(
+                "balance_of",
+                {
+                    let mut params: Vec<casper_types::Parameter> = Vec::new();
+                    params.push(casper_types::Parameter::new(
+                        "to",
+                        <casper_dao_utils::Address as casper_types::CLTyped>::cl_type(),
+                    ));
+                    params
+                },
+                <() as casper_types::CLTyped>::cl_type(),
+                casper_types::EntryPointAccess::Public,
+                casper_types::EntryPointType::Contract,
+            ));
+            entry_points
+        }
+    }
+    pub trait ImportantContractInterface {
+        fn init(&mut self);
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
+        fn balance_of(&mut self, to: casper_dao_utils::Address) -> casper_types::U256;
+    }
+    pub struct ImportantContractCaller {
+        contract_package_hash: casper_types::ContractPackageHash,
+    }
+    impl ImportantContractCaller {
+        pub fn at(contract_package_hash: casper_types::ContractPackageHash) -> Self {
+            ImportantContractCaller {
+                contract_package_hash,
+            }
+        }
+    }
+    impl ImportantContractInterface for ImportantContractCaller {
+        fn init(&mut self) {
+            let _: () = casper_contract::contract_api::runtime::call_versioned_contract(
+                self.contract_package_hash,
+                std::option::Option::None,
+                "init",
+                {
+                    let mut named_args = casper_types::RuntimeArgs::new();
+                    named_args
+                },
+            );
+        }
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256) {
+            casper_contract::contract_api::runtime::call_versioned_contract(
+                self.contract_package_hash,
+                std::option::Option::None,
+                "mint",
+                {
+                    let mut named_args = casper_types::RuntimeArgs::new();
+                    named_args.insert("recipient", recipient).unwrap();
+                    named_args.insert("amount", amount).unwrap();
+                    named_args
+                },
+            )
+        }
+        fn balance_of(&mut self, to: casper_dao_utils::Address) -> casper_types::U256 {
+            casper_contract::contract_api::runtime::call_versioned_contract(
+                self.contract_package_hash,
+                std::option::Option::None,
+                "balance_of",
+                {
+                    let mut named_args = casper_types::RuntimeArgs::new();
+                    named_args.insert("to", to).unwrap();
+                    named_args
+                },
+            )
+        }
+    }
+    #[cfg(feature = "test-support")]
+    pub struct ImportantContractTest {
+        env: casper_dao_utils::TestEnv,
+        package_hash: casper_types::ContractPackageHash,
+        data: ImportantContract,
+    }
+    #[cfg(feature = "test-support")]
+    impl ImportantContractTest {
+        pub fn new(env: &casper_dao_utils::TestEnv) -> ImportantContractTest {
+            env.deploy_wasm_file("important_contract.wasm", {
+                let mut named_args = casper_types::RuntimeArgs::new();
+                named_args
+            });
+            let package_hash = env.get_contract_package_hash("important_contract_package_hash");
+            ImportantContractTest {
+                env: env.clone(),
+                package_hash,
+                data: ImportantContract::default(),
+            }
+        }
+        pub fn as_account(&mut self, account: casper_dao_utils::Address) -> &mut Self {
+            self.env.as_account(account);
+            self
+        }
+        pub fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
+            let raw_event: std::option::Option<casper_types::bytesrepr::Bytes> =
+                self.env.get_dict_value(self.package_hash, "events", index);
+            let raw_event = raw_event.unwrap();
+            let (event, bytes) = T::from_bytes(&raw_event).unwrap();
+            if !bytes.is_empty() {
+                ::core::panicking::panic("assertion failed: bytes.is_empty()")
+            };
+            event
+        }
+        pub fn assert_event_at<
+            T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug,
+        >(
+            &self,
+            index: u32,
+            event: T,
+        ) {
+            {
+                match (&self.event::<T>(index), &event) {
+                    (left_val, right_val) => {
+                        if !(*left_val == *right_val) {
+                            let kind = ::core::panicking::AssertKind::Eq;
+                            ::core::panicking::assert_failed(
+                                kind,
+                                &*left_val,
+                                &*right_val,
+                                ::core::option::Option::None,
+                            );
+                        }
+                    }
+                }
+            };
+        }
+    }
+    #[cfg(feature = "test-support")]
+    impl ImportantContractInterface for ImportantContractTest {
+        fn init(&mut self) {
+            self.env.call_contract_package(self.package_hash, "init", {
+                let mut named_args = casper_types::RuntimeArgs::new();
+                named_args
+            });
+        }
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256) {
+            self.env.call_contract_package(self.package_hash, "mint", {
+                let mut named_args = casper_types::RuntimeArgs::new();
+                named_args.insert("recipient", recipient).unwrap();
+                named_args.insert("amount", amount).unwrap();
+                named_args
+            });
+        }
+        fn balance_of(&mut self, to: casper_dao_utils::Address) -> casper_types::U256 {
+            self.env
+                .call_contract_package(self.package_hash, "balance_of", {
+                    let mut named_args = casper_types::RuntimeArgs::new();
+                    named_args.insert("to", to).unwrap();
+                    named_args
+                });
+            casper_types::U256::default()
+        }
+    }
+    pub struct ImportantContract {}
+    #[automatically_derived]
+    #[allow(unused_qualifications)]
+    impl ::core::default::Default for ImportantContract {
+        #[inline]
+        fn default() -> ImportantContract {
+            ImportantContract {}
+        }
+    }
+    impl ImportantContractInterface for ImportantContract {
+        fn init(&mut self) {}
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256) {}
+        fn balance_of(&mut self, to: casper_dao_utils::Address) -> casper_types::U256 {
+            casper_types::U256::default()
+        }
+    }
+}

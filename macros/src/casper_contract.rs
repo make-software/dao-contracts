@@ -35,7 +35,7 @@ fn generate_install(contract: &ContractTrait) -> TokenStream {
     quote! {
         #[no_mangle]
         fn call() {
-            casper_dao_contracts::#contract_ident::install();
+            #contract_ident::install();
         }
     }
 }
@@ -48,13 +48,13 @@ fn generate_interface_methods(contract: &ContractTrait) -> TokenStream {
     methods.append_all(contract.methods.iter().map(|method| {
         let ident = &method.sig.ident;
         let (casper_args, punctuated_args) = parse_args(method);
-    
+
         quote! {
             #[no_mangle]
             fn #ident() {
                 #casper_args
-                let mut contract = casper_dao_contracts::#contract_ident::default();
-                casper_dao_contracts::#contract_interface_ident::#ident(&mut contract, #punctuated_args);
+                let mut contract = #contract_ident::default();
+                #contract_interface_ident::#ident(&mut contract, #punctuated_args);
             }
         }
     }));

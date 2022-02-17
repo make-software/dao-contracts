@@ -117,13 +117,10 @@ dependencies = [
 name = "casper-dao-macros"
 version = "0.1.0"
 dependencies = [
- "casper-contract",
- "casper-types",
  "convert_case",
  "proc-macro2",
  "quote",
  "syn",
- "trybuild",
 ]
 
 [[package]]
@@ -137,6 +134,7 @@ dependencies = [
  "casper-execution-engine",
  "casper-types",
  "lazy_static",
+ "trybuild",
 ]
 
 [[package]]
@@ -1027,6 +1025,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73b4b750c782965c211b42f022f59af1fbceabdd026623714f104152f1ec149f"
 
 [[package]]
+name = "sample-contract"
+version = "0.1.0"
+dependencies = [
+ "casper-contract",
+ "casper-dao-utils",
+ "casper-types",
+]
+
+[[package]]
 name = "schemars"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1265,9 +1272,9 @@ dependencies = [
 
 [[package]]
 name = "trybuild"
-version = "1.0.55"
+version = "1.0.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "099a24e67e2b4083a6d0beb5a98e274c3160edfb879d71cd2cd14da93786a93b"
+checksum = "2d60539445867cdd9680b2bfe2d0428f1814b7d5c9652f09d8d3eae9d19308db"
 dependencies = [
  "glob",
  "once_cell",

@@ -1,8 +1,7 @@
 use casper_dao_macros::casper_contract_interface;
-use casper_types::ContractPackageHash;
 
 #[derive(Default)]
-pub struct ImportantContract {}
+struct ImportantContract {}
 
 #[casper_contract_interface]
 trait ImportantContractInterface {
@@ -12,10 +11,6 @@ trait ImportantContractInterface {
 }
 
 fn main() {
-    ImportantContract::install();
-    ImportantContract::entry_points();
-
-    let _caller = ImportantContractCaller {
-        contract_package_hash: ContractPackageHash::new([0; 32]),
-    };
+    // no wasm file :(
+    // ImportantContract::install();
 }

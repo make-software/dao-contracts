@@ -12,6 +12,13 @@ casper-dao-macros = { path = "../macros" }
 casper-engine-test-support = { version = "2.0.3", features = ["test-support"], optional = true }
 casper-execution-engine = { version = "1.4.4", optional = true }
 
+[dev-dependencies]
+trybuild = "1.0"
+
+[[test]]
+name = "tests"
+path = "tests/macro_test.rs"
+
 [features]
 default = [ "casper-contract/default", "casper-contract/std" ]
 test-support = [ "casper-engine-test-support", "casper-execution-engine" ]
