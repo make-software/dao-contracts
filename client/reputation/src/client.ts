@@ -58,11 +58,11 @@ class Client extends CasperContractClient {
    * @param hash Contract hash (raw hex string as well as `hash-` prefixed format is supported).
    */
   public async setContractHash(hash: string) {
-    const properHash = hash.startsWith("hash-") ? hash.slice(5) : hash;
+    const hashWithoutPrefix = hash.startsWith("hash-") ? hash.slice(5) : hash;
     const { contractPackageHash, namedKeys } = await setClient(
       this.nodeAddress,
-      properHash,
-      ["todo"]
+      hashWithoutPrefix,
+      ["mint", "burn", 'transfer_from', 'change_ownership','add_to_whitelist','remove_from_whitelist','stake','unstake']
     );
     this.contractHash = hash;
     this.contractPackageHash = contractPackageHash;

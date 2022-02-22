@@ -23,33 +23,35 @@ const KEYS = Keys.Ed25519.parseKeyFiles(
 
 const test = async () => {
   const daoReputation = new DaoReputationJSClient(
-    NODE_ADDRESS!,
-    CHAIN_NAME!,
-    EVENT_STREAM_ADDRESS!
+    NODE_ADDRESS,
+    CHAIN_NAME,
+    EVENT_STREAM_ADDRESS
   );
 
   console.log(`... Try install`);
 
   const installDeployHash = await daoReputation.install(
     KEYS,
-    INSTALL_PAYMENT_AMOUNT!,
-    WASM_PATH!
+    INSTALL_PAYMENT_AMOUNT,
+    WASM_PATH
   );
 
-  console.log(`... Contract installation deployHash: ${installDeployHash}`);
+  console.log(`... Contract deploy is pending, waiting for next block finalisation (deployHash: ${installDeployHash})`);
 
-  if (installDeployHash == null) {
-    return;
-  }
+  const deploy = await getDeploy(NODE_ADDRESS, installDeployHash);
 
-  await getDeploy(NODE_ADDRESS!, installDeployHash);
+  console.log(`... Deploy is settled which means contract is installed successfully.`);
 
-  console.log(`... Contract installed successfully.`);
+  let accountInfo = await utils.getAccountInfo(NODE_ADDRESS, KEYS.publicKey);
 
-  let accountInfo = await utils.getAccountInfo(NODE_ADDRESS!, KEYS.publicKey);
+  const contractHash = await utils.getAccountNamedKeyValue(
+    accountInfo,
+    `reputation_contract_package_hash`
+  );
 
-  console.log(`... Account Info: `);
-  console.log(JSON.stringify(accountInfo, null, 2));
+  console.log(`... Here is your Contract Hash: ${contractHash}`);
+
+  daoReputation.setContractHash('contractHash');
 };
 
 test();

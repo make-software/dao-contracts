@@ -43,7 +43,7 @@ export const getDeploy = async (NODE_URL: string, deployHash: string) => {
       }
     } else {
       i--;
-      await sleep(1000);
+      await sleep(3000);
       continue;
     }
   }
