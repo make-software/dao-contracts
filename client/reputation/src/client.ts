@@ -48,7 +48,8 @@ class Client extends CasperContractClient {
       );
     } catch (error) {
       console.error(error);
-    }
+      return Promise.reject(error);
+    }    
   }
 
   /**
