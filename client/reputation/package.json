@@ -1,0 +1,31 @@
+{
+  "name": "xxx-reputation-js-client",
+  "version": "0.1.0",
+  "description": "> TODO: description",
+  "author": "Piotr Witek <piotr@make.services>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "casper-js-client-helper": "1.0.0",
+    "casper-js-sdk": "2.8.0"
+  },
+  "devDependencies": {
+    "dotenv": "16.0.0",
+    "ts-node": "10.5.0",
+    "typescript": "4.5.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dist": "npm run clean && npm run build",
+    "clean": "rm -rf dist/",
+    "build": "tsc -p tsconfig.build.json",
+    "e2e:install": "sudo ts-node ./e2e/install.ts"
+  }
+}
