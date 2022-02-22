@@ -26,6 +26,6 @@
     "dist": "npm run clean && npm run build",
     "clean": "rm -rf dist/",
     "build": "tsc -p tsconfig.build.json",
-    "e2e:install": "sudo ts-node ./e2e/install.ts"
+    "e2e:install": "ts-node ./e2e/install.ts"
   }
 }
