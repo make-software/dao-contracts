@@ -1,9 +1,9 @@
 {
-  "name": "xxx-reputation-js-client",
+  "name": "dao-reputation-js-client",
   "version": "0.1.0",
-  "description": "> TODO: description",
+  "description": "This JavaScript client gives you an easy way to install and interact with the DAO Reputation contract.",
   "author": "Piotr Witek <piotr@make.services>",
-  "homepage": "",
+  "homepage": "https://make.services",
   "license": "ISC",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
