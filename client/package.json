@@ -1,7 +1,7 @@
 {
-  "name": "dao-reputation-js-client",
+  "name": "dao-contracts-js-client",
   "version": "0.1.0",
-  "description": "This JavaScript client gives you an easy way to install and interact with the DAO Reputation contract.",
+  "description": "This JavaScript client gives you an easy way to install and interact with the DAO smart contract.",
   "author": "Piotr Witek <piotr@make.services>",
   "homepage": "https://make.services",
   "license": "ISC",
@@ -11,6 +11,7 @@
     "dist"
   ],
   "dependencies": {
+    "@open-rpc/client-js": "1.7.1",
     "casper-js-client-helper": "1.0.0",
     "casper-js-sdk": "2.8.0"
   },
@@ -26,6 +27,6 @@
     "dist": "npm run clean && npm run build",
     "clean": "rm -rf dist/",
     "build": "tsc -p tsconfig.build.json",
-    "e2e:install": "ts-node ./e2e/install.ts"
+    "e2e:reputation": "ts-node ./e2e/e2e-reputation.ts"
   }
 }

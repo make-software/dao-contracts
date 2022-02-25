@@ -1,4 +1,4 @@
-export enum DAOReputationEvents {
+export enum ReputationContractEvents {
   Transfer = "transfer",
   Mint = "mint",
   Burn = "burn",
