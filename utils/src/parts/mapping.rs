@@ -11,6 +11,10 @@ use casper_types::{
 
 use crate::casper_env::to_dictionary_key;
 
+/// Data structure for storing key-value pairs.
+/// 
+/// It's is a wrapper on top of Casper's dictionary.
+/// The main difference is that Mapping returns default value, if the value doesn't exists. 
 pub struct Mapping<K, V> {
     name: String,
     key_ty: PhantomData<K>,

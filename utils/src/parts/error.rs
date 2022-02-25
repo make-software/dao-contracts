@@ -1,8 +1,6 @@
 use casper_types::ApiError;
 
-#[cfg(feature = "test-support")]
-pub use casper_execution_engine::core::execution::Error as ExecutionError;
-
+/// All possible errors that can be raised by from the utils crate. 
 pub enum Error {
     NotAnOwner,
     OwnerIsNotInitialized,

@@ -1,7 +1,3 @@
-//! Taken from: https://raw.githubusercontent.com/casper-ecosystem/erc20/master/erc20/src/address.rs
-//! TODO: Check that with CasperLabs.
-
-//! Implementation of an `Address` which refers either an account hash, or a contract hash.
 use alloc::vec::Vec;
 use casper_types::{
     account::AccountHash,
@@ -11,7 +7,8 @@ use casper_types::{
 
 /// An enum representing an [`AccountHash`] or a [`ContractPackageHash`].
 /// 
-/// IT is used everywhere.
+/// It is taken from [`CasperLabs's ERC20`](https://raw.githubusercontent.com/casper-ecosystem/erc20/master/erc20/src/address.rs).
+/// It is copied instead of imported for the flexebility.
 #[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum Address {
     /// Represents an account hash.
