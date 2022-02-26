@@ -15,7 +15,8 @@ use crate::casper_env::to_dictionary_key;
 /// Data structure for storing key-value pairs.
 /// 
 /// It's is a wrapper on top of Casper's dictionary.
-/// The main difference is that Mapping returns default value, if the value doesn't exists. 
+/// The main difference is that Mapping returns default value, if the value doesn't exists
+/// and it stores dictionary's URef for later use. 
 pub struct Mapping<K, V> {
     name: String,
     key_ty: PhantomData<K>,
@@ -27,6 +28,7 @@ lazy_static! {
 }
 
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K, V> {
+    /// Create new Mapping instance.
     pub fn new(name: String) -> Self {
         Mapping {
             name,
@@ -35,18 +37,26 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         }
     }
 
+    /// Create dictionary's URef.
     pub fn init(&self) {
         storage::new_dictionary(&self.name).unwrap_or_revert();
     }
 
+    /// Read `key` from the storage or return default value.
     pub fn get(&self, key: &K) -> V {
         storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
             .unwrap_or_revert()
             .unwrap_or_default()
     }
 
+    /// Set `value` under `key` to the storage. It overrides by default.
     pub fn set(&self, key: &K, value: V) {
         storage::dictionary_put(self.get_uref(), &to_dictionary_key(key), value);
+    }
+
+    /// Return the named key path to the dictionarie's URef.
+    pub fn path(&self) -> &str {
+        &self.name
     }
 
     fn get_uref(&self) -> URef {
@@ -62,9 +72,6 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         }
     }
 
-    pub fn path(&self) -> &str {
-        &self.name
-    }
 }
 
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> From<&str>
