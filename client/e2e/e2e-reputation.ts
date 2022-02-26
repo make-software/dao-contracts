@@ -1,10 +1,14 @@
-import { utils } from 'casper-js-client-helper';
-import { Keys } from 'casper-js-sdk';
-import { config } from 'dotenv';
+import { utils } from "casper-js-client-helper";
+import { Keys } from "casper-js-sdk";
+import { config } from "dotenv";
 
-import { installReputationContract, ReputationContractJSClient } from '../src';
-import { createRpcClient } from '../src/common/rpc-client';
-import { getAccountInfo, getAccountNamedKeyValue, waitForDeploy } from './utils';
+import { installReputationContract, ReputationContractJSClient } from "../src";
+import { createRpcClient } from "../src/common/rpc-client";
+import {
+  getAccountInfo,
+  getAccountNamedKeyValue,
+  waitForDeploy,
+} from "./utils";
 
 config({ path: "./.env.js-client" });
 
@@ -38,19 +42,18 @@ const test = async () => {
   );
 
   await waitForDeploy(NODE_ADDRESS, installDeployHash);
-
-  console.log(
-    `... Deploy is settled which means contract is installed successfully.`
-  );
-
   let accountInfo = await getAccountInfo(NODE_ADDRESS, ownerKeys.publicKey);
-
   const contractPackageHash = await getAccountNamedKeyValue(
     accountInfo,
     `reputation_contract_package_hash`
   );
+  if (!contractPackageHash) {
+    throw Error("Contract not installed correctly!");
+  }
 
+  console.log(`... Ccontract installed successfully.`);
   console.log(` - Contract Package Hash: ${contractPackageHash}`);
+  
 
   const stateRootHash = await utils.getStateRootHash(NODE_ADDRESS);
   const rpcClient = createRpcClient(NODE_ADDRESS);
@@ -61,19 +64,18 @@ const test = async () => {
   );
 
   const contractHash = res.ContractPackage.versions[0].contract_hash;
-  console.log(contractHash);
   const contractHashWithHashPrefix = contractHash.replace("contract-", "hash-");
-  console.log(contractHashWithHashPrefix);
 
   // Initialize contract client
   const reputationContract = new ReputationContractJSClient(
     NODE_ADDRESS,
     CHAIN_NAME,
-    EVENT_STREAM_ADDRESS,
+    contractHashWithHashPrefix,
     contractPackageHash,
-    contractHashWithHashPrefix
+    EVENT_STREAM_ADDRESS
   );
 
+  console.log(`\n`);
   console.log(`... Testing named keys getters ...`);
 
   const owner = await reputationContract.getOwner();
@@ -82,22 +84,22 @@ const test = async () => {
   const total_supply = await reputationContract.getTotalSupply();
   console.log(` - Total Supply: ${total_supply}`);
 
-  const balances = await reputationContract.getBalanceOf(
-    recipientKeys.publicKey
-  );
+  const balances = await reputationContract.getBalanceOf(ownerKeys.publicKey);
   console.log(` - Balances: ${balances}`);
 
-  const stakes = await reputationContract.getStakeOf(recipientKeys.publicKey);
+  const stakes = await reputationContract.getStakeOf(ownerKeys.publicKey);
   console.log(` - Stakes: ${stakes}`);
 
   const whitelist = await reputationContract.getWhitelistOf(
-    recipientKeys.publicKey
+    ownerKeys.publicKey
   );
   console.log(` - Whitelist: ${whitelist}`);
 
+  console.log(`\n`);
   console.log(`... Testing deploys ...`);
 
-  console.log("... mint");
+  console.log(`\n`);
+  console.log(" - mint deploy sent");
 
   const mintAmount = "200000000000";
   const deployHashMint = await reputationContract.mint(
@@ -108,36 +110,153 @@ const test = async () => {
   );
   await waitForDeploy(NODE_ADDRESS, deployHashMint);
   const totalSupplyEqMint =
-    mintAmount === (await reputationContract.getTotalSupply());
+    mintAmount === (await reputationContract.getTotalSupply()).toString();
 
   console.log(
     ` - Total supply equals mint: ${totalSupplyEqMint ? "Success" : "Failed"}`
   );
 
-  console.log("... burn");
+  console.log(`\n`);
+  console.log(" - burn deploy sent");
 
   const burnAmount = "100000000000";
-  const deployHashBurn = await reputationContract.burn(
+  const burnDeployHash = await reputationContract.burn(
     ownerKeys,
     ownerKeys.publicKey,
     burnAmount,
     DEPLOY_PAYMENT_AMOUNT
   );
-  await waitForDeploy(NODE_ADDRESS, deployHashBurn);
-  const totalSupplySubtractedByBurn =
+  await waitForDeploy(NODE_ADDRESS, burnDeployHash);
+  const totalSupplyEqMintSubtractedByBurn =
     (Number(mintAmount) - Number(burnAmount)).toString() ===
-    (await reputationContract.getTotalSupply());
+    (await reputationContract.getTotalSupply()).toString();
 
   console.log(
-    ` - Total supply equals zero: ${totalSupplyEqMint ? "Success" : "Failed"}`
+    ` - Total supply equals mint subtracted by burn: ${
+      totalSupplyEqMintSubtractedByBurn ? "Success" : "Failed"
+    }`
   );
 
-  console.log("... transfer_from");
-  console.log("... change_ownership");
-  console.log("... add_to_whitelist");
-  console.log("... remove_from_whitelist");
-  console.log("... stake");
-  console.log("... unstake");
+  console.log(`\n`);
+  console.log(" - transfer_from deploy sent");
+
+  const transferAmount = "10000000";
+  const transferDeployHash = await reputationContract.transferFrom(
+    ownerKeys,
+    ownerKeys.publicKey,
+    recipientKeys.publicKey,
+    transferAmount,
+    DEPLOY_PAYMENT_AMOUNT
+  );
+  await waitForDeploy(NODE_ADDRESS, transferDeployHash);
+  // FIXME: @maciej balance named-key returns a simple string while total-supply returns a Big number representation, both of them can represent the same number. I would suggest to have balance also return a Big number representation so they are consistent.
+  const recipientBalanceEqTransferAmount =
+    transferAmount ===
+    (await reputationContract.getBalanceOf(recipientKeys.publicKey));
+
+  console.log(
+    ` - Recipient balance received transfer: ${
+      recipientBalanceEqTransferAmount ? "Success" : "Failed"
+    }`
+  );
+
+  console.log(`\n`);
+  console.log(" - add_to_whitelist deploy sent");
+
+  const whitelistAddDeployHash = await reputationContract.addToWhitelist(
+    ownerKeys,
+    recipientKeys.publicKey,
+    DEPLOY_PAYMENT_AMOUNT
+  );
+  await waitForDeploy(NODE_ADDRESS, whitelistAddDeployHash);
+  const recipientAddedToTheWhitelist =
+    'true' === (await reputationContract.getWhitelistOf(recipientKeys.publicKey));
+
+  console.log(
+    ` - Recipient is added to the whitelist: ${
+      recipientAddedToTheWhitelist ? "Success" : "Failed"
+    }`
+  );
+
+  console.log(`\n`);
+  console.log(" - remove_from_whitelist deploy sent");
+
+  const whitelistRemoveDeployHash =
+    await reputationContract.removeFromWhitelist(
+      ownerKeys,
+      recipientKeys.publicKey,
+      DEPLOY_PAYMENT_AMOUNT
+    );
+  await waitForDeploy(NODE_ADDRESS, whitelistRemoveDeployHash);
+  const recipientRemovedFromTheWhitelist =
+    'false' ===
+    (await reputationContract.getWhitelistOf(recipientKeys.publicKey));
+
+  console.log(
+    ` - Recipient is removed from the whitelist: ${
+      recipientRemovedFromTheWhitelist ? "Success" : "Failed"
+    }`
+  );
+
+  console.log(`\n`);
+  console.log(" - stake deploy sent");
+
+  const stakeAmount = "10000000";
+  const stakeDeployHash = await reputationContract.stake(
+    ownerKeys,
+    ownerKeys.publicKey,
+    stakeAmount,
+    DEPLOY_PAYMENT_AMOUNT
+  );
+  await waitForDeploy(NODE_ADDRESS, stakeDeployHash);
+  const stakeAmountWasStaked =
+    stakeAmount ===
+    (await reputationContract.getStakeOf(ownerKeys.publicKey));
+
+  console.log(
+    ` - Requested amount was staked: ${
+      stakeAmountWasStaked ? "Success" : "Failed"
+    }`
+  );
+
+  console.log(`\n`);
+  console.log(" - unstake deploy sent");
+
+  const unstakeDeployHash = await reputationContract.unstake(
+    ownerKeys,
+    ownerKeys.publicKey,
+    stakeAmount,
+    DEPLOY_PAYMENT_AMOUNT
+  );
+  await waitForDeploy(NODE_ADDRESS, unstakeDeployHash);
+  const stakeAmountWasUnstaked =
+    '0' === (await reputationContract.getStakeOf(ownerKeys.publicKey));
+
+  console.log(
+    ` - Requested amount was unstaked: ${
+      stakeAmountWasUnstaked ? "Success" : "Failed"
+    }`
+  );
+
+  console.log(`\n`);
+  console.log(" - change_ownership deploy sent");
+
+  const changeOwnerDeployHash = await reputationContract.changeOwnership(
+    ownerKeys,
+    recipientKeys.publicKey,
+    DEPLOY_PAYMENT_AMOUNT
+  );
+  await waitForDeploy(NODE_ADDRESS, changeOwnerDeployHash);
+  // FIXME: @maciej @jan I couldn't found any better way to read the value from this CLType, it's not consumer friendly, I guess that is the result of parsing in casper-js-sdk? Isn't there any cleaner way to do it?
+  const newOwner = (await reputationContract.getOwner())['val'].data.data;
+  const ownerChangedToRecipient =
+  Buffer.from(recipientKeys.publicKey.toAccountHash()).toString('hex') === Buffer.from(newOwner).toString('hex');
+
+  console.log(
+    ` - Owner changed to recipient: ${
+      ownerChangedToRecipient ? "Success" : "Failed"
+    }`
+  );
 };
 
 test();

@@ -70,3 +70,25 @@ export const getAccountNamedKeyValue = (accountInfo: any, namedKey: string) => {
   }
   return undefined;
 };
+
+export const encodeAccountHashStrAsKey = (accountHashStr: string) => {
+  const str = accountHashStr.startsWith("account-hash-")
+    ? accountHashStr.replace("account-hash-", "00")
+    : "00" + accountHashStr;
+  return Buffer.from(str, "hex").toString("base64");
+};
+
+export const createDictionaryGetter = async (
+  contractClient: any,
+  path: string,
+  account: CLPublicKey
+) => {
+  const key = encodeAccountHashStrAsKey(account.toAccountHashStr());
+  try {
+    const result = await contractClient.queryContractDictionary(path, key);
+    return result.value().toString();
+  } catch (err) {
+    if (err.message.includes("ValueNotFound")) return;
+    else throw err;
+  }
+};

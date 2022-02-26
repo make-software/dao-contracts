@@ -8,6 +8,10 @@ import {
   Keys,
   RuntimeArgs,
 } from "casper-js-sdk";
+import {
+  createDictionaryGetter,
+  encodeAccountHashStrAsKey,
+} from "../../e2e/utils";
 
 import { DEFAULT_TTL } from "../common/constants";
 import { createRpcClient } from "../common/rpc-client";
@@ -56,38 +60,29 @@ export class ReputationContractJSClient extends CasperContractClient {
    * Returns balance of the specified account
    */
   public async getBalanceOf(account: CLPublicKey) {
-    const key = Buffer.from(account.toAccountHash()).toString("base64");
-    console.log(key);
-    const result = await this.contractClient.queryContractDictionary(
+    return await createDictionaryGetter(
+      this.contractClient,
       "balances",
-      key
+      account
     );
-    const maybeValue = result.value().unwrap();
-    return maybeValue.value().toString();
   }
 
   /**
    * Returns whitelist status of the specified account
    */
   public async getWhitelistOf(account: CLPublicKey) {
-    const result = await this.contractClient.queryContractDictionary(
+    return await createDictionaryGetter(
+      this.contractClient,
       "whitelist",
-      account.toAccountHashStr().slice(13)
+      account
     );
-    const maybeValue = result.value().unwrap();
-    return maybeValue.value().toString();
   }
 
   /**
    * Returns stake of the specified account
    */
   public async getStakeOf(account: CLPublicKey) {
-    const result = await this.contractClient.queryContractDictionary(
-      "stakes",
-      account.toAccountHashStr().slice(13)
-    );
-    const maybeValue = result.value().unwrap();
-    return maybeValue.value().toString();
+    return await createDictionaryGetter(this.contractClient, "stakes", account);
   }
 
   /**
