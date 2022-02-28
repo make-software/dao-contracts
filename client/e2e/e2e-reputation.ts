@@ -1,8 +1,13 @@
 import { utils } from "casper-js-client-helper";
-import { Keys } from "casper-js-sdk";
+import { EventName, EventStream, Keys } from "casper-js-sdk";
 import { config } from "dotenv";
 
-import { installReputationContract, ReputationContractJSClient } from "../src";
+import {
+  installReputationContract,
+  ReputationContractEventParser,
+  ReputationContractEvents,
+  ReputationContractJSClient,
+} from "../src";
 import { createRpcClient } from "../src/common/rpc-client";
 import {
   getAccountInfo,
@@ -51,9 +56,38 @@ const test = async () => {
     throw Error("Contract not installed correctly!");
   }
 
-  console.log(`... Ccontract installed successfully.`);
+  console.log(`... Contract installed successfully.`);
   console.log(` - Contract Package Hash: ${contractPackageHash}`);
-  
+
+  /** Register to event stream */
+
+  const es = new EventStream(EVENT_STREAM_ADDRESS!);
+  es.subscribe(EventName.DeployProcessed, (event) => {
+    const parsedEvents = ReputationContractEventParser(
+      {
+        contractPackageHash,
+        eventNames: [
+          ReputationContractEvents.AddedToWhitelist,
+          ReputationContractEvents.Burn,
+          ReputationContractEvents.Transfer,
+          ReputationContractEvents.Mint,
+          ReputationContractEvents.RemovedFromWhitelist,
+          ReputationContractEvents.OwnerChanged,
+        ],
+      },
+      event
+    );
+
+    if (parsedEvents && parsedEvents.success) {
+      console.log("*** EVENT START ***");
+      console.log(parsedEvents.data);
+      console.log("*** EVENT END ***");
+    }
+  });
+  es.start();
+  console.log(
+    ` - Registered JS event parser to the event stream: ${contractPackageHash}`
+  );
 
   const stateRootHash = await utils.getStateRootHash(NODE_ADDRESS);
   const rpcClient = createRpcClient(NODE_ADDRESS);
@@ -170,7 +204,8 @@ const test = async () => {
   );
   await waitForDeploy(NODE_ADDRESS, whitelistAddDeployHash);
   const recipientAddedToTheWhitelist =
-    'true' === (await reputationContract.getWhitelistOf(recipientKeys.publicKey));
+    "true" ===
+    (await reputationContract.getWhitelistOf(recipientKeys.publicKey));
 
   console.log(
     ` - Recipient is added to the whitelist: ${
@@ -189,7 +224,7 @@ const test = async () => {
     );
   await waitForDeploy(NODE_ADDRESS, whitelistRemoveDeployHash);
   const recipientRemovedFromTheWhitelist =
-    'false' ===
+    "false" ===
     (await reputationContract.getWhitelistOf(recipientKeys.publicKey));
 
   console.log(
@@ -210,8 +245,7 @@ const test = async () => {
   );
   await waitForDeploy(NODE_ADDRESS, stakeDeployHash);
   const stakeAmountWasStaked =
-    stakeAmount ===
-    (await reputationContract.getStakeOf(ownerKeys.publicKey));
+    stakeAmount === (await reputationContract.getStakeOf(ownerKeys.publicKey));
 
   console.log(
     ` - Requested amount was staked: ${
@@ -230,7 +264,7 @@ const test = async () => {
   );
   await waitForDeploy(NODE_ADDRESS, unstakeDeployHash);
   const stakeAmountWasUnstaked =
-    '0' === (await reputationContract.getStakeOf(ownerKeys.publicKey));
+    "0" === (await reputationContract.getStakeOf(ownerKeys.publicKey));
 
   console.log(
     ` - Requested amount was unstaked: ${
@@ -248,9 +282,10 @@ const test = async () => {
   );
   await waitForDeploy(NODE_ADDRESS, changeOwnerDeployHash);
   // FIXME: @maciej @jan I couldn't found any better way to read the value from this CLType, it's not consumer friendly, I guess that is the result of parsing in casper-js-sdk? Isn't there any cleaner way to do it?
-  const newOwner = (await reputationContract.getOwner())['val'].data.data;
+  const newOwner = (await reputationContract.getOwner())["val"].data.data;
   const ownerChangedToRecipient =
-  Buffer.from(recipientKeys.publicKey.toAccountHash()).toString('hex') === Buffer.from(newOwner).toString('hex');
+    Buffer.from(recipientKeys.publicKey.toAccountHash()).toString("hex") ===
+    Buffer.from(newOwner).toString("hex");
 
   console.log(
     ` - Owner changed to recipient: ${
