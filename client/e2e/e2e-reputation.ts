@@ -183,7 +183,9 @@ const test = async () => {
     DEPLOY_PAYMENT_AMOUNT
   );
   await waitForDeploy(NODE_ADDRESS, transferDeployHash);
-  // FIXME: @maciej balance named-key returns a simple string while total-supply returns a Big number representation, both of them can represent the same number. I would suggest to have balance also return a Big number representation so they are consistent.
+  // `balance` named-key returns a simple string type while `total_supply` named-key returns a Big number representation,
+  // both of them conceptually represent a token amount. I would like to suggest to have 
+  // balance return the same representation as total so they are consistent, would be easier to consume by users
   const recipientBalanceEqTransferAmount =
     transferAmount ===
     (await reputationContract.getBalanceOf(recipientKeys.publicKey));
@@ -281,7 +283,8 @@ const test = async () => {
     DEPLOY_PAYMENT_AMOUNT
   );
   await waitForDeploy(NODE_ADDRESS, changeOwnerDeployHash);
-  // FIXME: @maciej @jan I couldn't found any better way to read the value from this CLType, it's not consumer friendly, I guess that is the result of parsing in casper-js-sdk? Isn't there any cleaner way to do it?
+  // It's not dev-friendly but I couldn't find any better way to read the value from this CLType,
+  // that is a result of parsing `ts-results` inside the `casper-js-sdk`? Is there any cleaner way to fix it?
   const newOwner = (await reputationContract.getOwner())["val"].data.data;
   const ownerChangedToRecipient =
     Buffer.from(recipientKeys.publicKey.toAccountHash()).toString("hex") ===
