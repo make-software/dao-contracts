@@ -15,7 +15,7 @@ import {
   waitForDeploy,
 } from "./utils";
 
-config({ path: "./.env.js-client" });
+process.env.NODE_ENV === undefined && config({ path: "./.env.js-client" });
 
 const {
   CHAIN_NAME,
