@@ -3,7 +3,7 @@ import { EventName, EventStream, Keys } from "casper-js-sdk";
 import { config } from "dotenv";
 
 import {
-  installReputationContract,
+  createInstallReputationContractDeploy,
   ReputationContractEventParser,
   ReputationContractEvents,
   ReputationContractJSClient,
@@ -38,14 +38,15 @@ const recipientKeys = Keys.Ed25519.parseKeyFiles(
 const test = async () => {
   console.log(`... Try install ...`);
 
-  const installDeployHash = await installReputationContract(
+  const installDeploy = createInstallReputationContractDeploy(
     CHAIN_NAME,
     NODE_ADDRESS,
-    ownerKeys,
     INSTALL_PAYMENT_AMOUNT,
-    WASM_PATH
+    WASM_PATH,
+    ownerKeys
   );
 
+  const installDeployHash = await installDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, installDeployHash);
   let accountInfo = await getAccountInfo(NODE_ADDRESS, ownerKeys.publicKey);
   const contractPackageHash = await getAccountNamedKeyValue(
@@ -132,34 +133,40 @@ const test = async () => {
   console.log(`\n`);
   console.log(`... Testing deploys ...`);
 
+  /** MINT DEPLOY */
+
   console.log(`\n`);
-  console.log(" - mint deploy sent");
+  console.log(" - mint deploy");
 
   const mintAmount = "200000000000";
-  const deployHashMint = await reputationContract.mint(
-    ownerKeys,
+  const mintDeploy = reputationContract.createDeployMint(
     ownerKeys.publicKey,
     mintAmount,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
-  await waitForDeploy(NODE_ADDRESS, deployHashMint);
+  const mintDeployHash = await mintDeploy.send(NODE_ADDRESS);
+  await waitForDeploy(NODE_ADDRESS, mintDeployHash);
   const totalSupplyEqMint =
     mintAmount === (await reputationContract.getTotalSupply()).toString();
 
   console.log(
-    ` - Total supply equals mint: ${totalSupplyEqMint ? "Success" : "Failed"}`
+    ` - Total supply equals mint: ${totalSupplyEqMint ? "SUCCESS!" : "FAILED!"}`
   );
+
+  /** BURN DEPLOY */
 
   console.log(`\n`);
-  console.log(" - burn deploy sent");
+  console.log(" - burn deploy");
 
   const burnAmount = "100000000000";
-  const burnDeployHash = await reputationContract.burn(
-    ownerKeys,
+  const burnDeploy = reputationContract.createDeployBurn(
     ownerKeys.publicKey,
     burnAmount,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
+  const burnDeployHash = await burnDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, burnDeployHash);
   const totalSupplyEqMintSubtractedByBurn =
     (Number(mintAmount) - Number(burnAmount)).toString() ===
@@ -167,24 +174,27 @@ const test = async () => {
 
   console.log(
     ` - Total supply equals mint subtracted by burn: ${
-      totalSupplyEqMintSubtractedByBurn ? "Success" : "Failed"
+      totalSupplyEqMintSubtractedByBurn ? "SUCCESS!" : "FAILED!"
     }`
   );
 
+  /** TRANSFER_FROM DEPLOY */
+
   console.log(`\n`);
-  console.log(" - transfer_from deploy sent");
+  console.log(" - transfer_from deploy");
 
   const transferAmount = "10000000";
-  const transferDeployHash = await reputationContract.transferFrom(
-    ownerKeys,
+  const transferDeploy = reputationContract.createDeployTransferFrom(
     ownerKeys.publicKey,
     recipientKeys.publicKey,
     transferAmount,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
+  const transferDeployHash = await transferDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, transferDeployHash);
   // `balance` named-key returns a simple string type while `total_supply` named-key returns a Big number representation,
-  // both of them conceptually represent a token amount. I would like to suggest to have 
+  // both of them conceptually represent a token amount. I would like to suggest to have
   // balance return the same representation as total so they are consistent, would be easier to consume by users
   const recipientBalanceEqTransferAmount =
     transferAmount ===
@@ -192,18 +202,21 @@ const test = async () => {
 
   console.log(
     ` - Recipient balance received transfer: ${
-      recipientBalanceEqTransferAmount ? "Success" : "Failed"
+      recipientBalanceEqTransferAmount ? "SUCCESS!" : "FAILED!"
     }`
   );
 
-  console.log(`\n`);
-  console.log(" - add_to_whitelist deploy sent");
+  /** ADD_TO_WHITELIST DEPLOY */
 
-  const whitelistAddDeployHash = await reputationContract.addToWhitelist(
-    ownerKeys,
+  console.log(`\n`);
+  console.log(" - add_to_whitelist deploy");
+
+  const whitelistAddDeploy = reputationContract.createDeployAddToWhitelist(
     recipientKeys.publicKey,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
+  const whitelistAddDeployHash = await whitelistAddDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, whitelistAddDeployHash);
   const recipientAddedToTheWhitelist =
     "true" ===
@@ -211,19 +224,24 @@ const test = async () => {
 
   console.log(
     ` - Recipient is added to the whitelist: ${
-      recipientAddedToTheWhitelist ? "Success" : "Failed"
+      recipientAddedToTheWhitelist ? "SUCCESS!" : "FAILED!"
     }`
   );
 
-  console.log(`\n`);
-  console.log(" - remove_from_whitelist deploy sent");
+  /** REMOVE_FROM_WHITELIST DEPLOY */
 
-  const whitelistRemoveDeployHash =
-    await reputationContract.removeFromWhitelist(
-      ownerKeys,
+  console.log(`\n`);
+  console.log(" - remove_from_whitelist deploy");
+
+  const whitelistRemoveDeploy =
+    reputationContract.createDeployRemoveFromWhitelist(
       recipientKeys.publicKey,
-      DEPLOY_PAYMENT_AMOUNT
+      DEPLOY_PAYMENT_AMOUNT,
+      ownerKeys
     );
+  const whitelistRemoveDeployHash = await whitelistRemoveDeploy.send(
+    NODE_ADDRESS
+  );
   await waitForDeploy(NODE_ADDRESS, whitelistRemoveDeployHash);
   const recipientRemovedFromTheWhitelist =
     "false" ===
@@ -231,57 +249,66 @@ const test = async () => {
 
   console.log(
     ` - Recipient is removed from the whitelist: ${
-      recipientRemovedFromTheWhitelist ? "Success" : "Failed"
+      recipientRemovedFromTheWhitelist ? "SUCCESS!" : "FAILED!"
     }`
   );
 
+  /** STAKE DEPLOY */
+
   console.log(`\n`);
-  console.log(" - stake deploy sent");
+  console.log(" - stake deploy");
 
   const stakeAmount = "10000000";
-  const stakeDeployHash = await reputationContract.stake(
-    ownerKeys,
+  const stakeDeploy = reputationContract.createDeployStake(
     ownerKeys.publicKey,
     stakeAmount,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
+  const stakeDeployHash = await stakeDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, stakeDeployHash);
   const stakeAmountWasStaked =
     stakeAmount === (await reputationContract.getStakeOf(ownerKeys.publicKey));
 
   console.log(
     ` - Requested amount was staked: ${
-      stakeAmountWasStaked ? "Success" : "Failed"
+      stakeAmountWasStaked ? "SUCCESS!" : "FAILED!"
     }`
   );
 
-  console.log(`\n`);
-  console.log(" - unstake deploy sent");
+  /** UNSTAKE DEPLOY */
 
-  const unstakeDeployHash = await reputationContract.unstake(
-    ownerKeys,
+  console.log(`\n`);
+  console.log(" - unstake deploy");
+
+  const unstakeDeploy = reputationContract.createDeployUnstake(
     ownerKeys.publicKey,
     stakeAmount,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
+  const unstakeDeployHash = await unstakeDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, unstakeDeployHash);
   const stakeAmountWasUnstaked =
     "0" === (await reputationContract.getStakeOf(ownerKeys.publicKey));
 
   console.log(
     ` - Requested amount was unstaked: ${
-      stakeAmountWasUnstaked ? "Success" : "Failed"
+      stakeAmountWasUnstaked ? "SUCCESS!" : "FAILED!"
     }`
   );
 
-  console.log(`\n`);
-  console.log(" - change_ownership deploy sent");
+  /** CHANGE_OWNERSHIP DEPLOY */
 
-  const changeOwnerDeployHash = await reputationContract.changeOwnership(
-    ownerKeys,
+  console.log(`\n`);
+  console.log(" - change_ownership deploy");
+
+  const changeOwnerDeploy = reputationContract.createDeployChangeOwnership(
     recipientKeys.publicKey,
-    DEPLOY_PAYMENT_AMOUNT
+    DEPLOY_PAYMENT_AMOUNT,
+    ownerKeys
   );
+  const changeOwnerDeployHash = await changeOwnerDeploy.send(NODE_ADDRESS);
   await waitForDeploy(NODE_ADDRESS, changeOwnerDeployHash);
   // It's not dev-friendly but I couldn't find any better way to read the value from this CLType,
   // that is a result of parsing `ts-results` inside the `casper-js-sdk`? Is there any cleaner way to fix it?
@@ -292,7 +319,7 @@ const test = async () => {
 
   console.log(
     ` - Owner changed to recipient: ${
-      ownerChangedToRecipient ? "Success" : "Failed"
+      ownerChangedToRecipient ? "SUCCESS!" : "FAILED!"
     }`
   );
 };

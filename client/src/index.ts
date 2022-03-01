@@ -3,10 +3,10 @@ import {
   ReputationContractEventParser,
 } from "./reputation/events";
 import { ReputationContractJSClient } from "./reputation/client";
-import { installReputationContract } from "./reputation/install";
+import { createInstallReputationContractDeploy } from "./reputation/install";
 
 export {
-  installReputationContract,
+  createInstallReputationContractDeploy,
   ReputationContractJSClient,
   ReputationContractEvents,
   ReputationContractEventParser,
