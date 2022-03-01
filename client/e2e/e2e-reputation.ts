@@ -1,6 +1,9 @@
 import { utils } from "casper-js-client-helper";
 import { EventName, EventStream, Keys } from "casper-js-sdk";
-import { config } from "dotenv";
+
+if (process.env.NODE_ENV !== 'ci') {
+  require('dotenv').config({ path: "./.env.reputation", debug: true });
+}
 
 import {
   createInstallReputationContractDeploy,
@@ -15,10 +18,8 @@ import {
   waitForDeploy,
 } from "./utils";
 
-process.env.NODE_ENV === undefined && config({ path: "./.env.js-client" });
-console.log(process.env);
-
 const {
+  NODE_ENV,
   CHAIN_NAME,
   NODE_ADDRESS,
   EVENT_STREAM_ADDRESS,
@@ -27,6 +28,17 @@ const {
   INSTALL_PAYMENT_AMOUNT,
   DEPLOY_PAYMENT_AMOUNT,
 } = process.env;
+
+console.log("testing env variables", {
+  NODE_ENV,
+  CHAIN_NAME,
+  NODE_ADDRESS,
+  EVENT_STREAM_ADDRESS,
+  WASM_PATH,
+  NCTL_USERS_FOLDER_PATH,
+  INSTALL_PAYMENT_AMOUNT,
+  DEPLOY_PAYMENT_AMOUNT,
+});
 
 const ownerKeys = Keys.Ed25519.parseKeyFiles(
   `${NCTL_USERS_FOLDER_PATH}/user-1/public_key.pem`,

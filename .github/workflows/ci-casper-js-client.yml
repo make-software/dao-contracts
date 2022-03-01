@@ -16,6 +16,16 @@ on:
     paths-ignore:
       - "**.md"
 
+env:
+  NODE_ENV: ci
+  CHAIN_NAME: casper-net-1
+  NODE_ADDRESS: http://localhost:11101/rpc
+  EVENT_STREAM_ADDRESS: http://localhost:18101/events/main
+  WASM_PATH: /target/wasm32-unknown-unknown/release/reputation_contract.wasm
+  INSTALL_PAYMENT_AMOUNT: 200000000000
+  DEPLOY_PAYMENT_AMOUNT: 200000000000
+  NCTL_USERS_FOLDER_PATH: /tmp/net-1/users
+
 jobs:
   run-e2e:
     # The type of runner that the job will run on
@@ -41,7 +51,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: rustfmt, clippy
       - run: sudo apt update && sudo apt install -y build-essential && sudo apt-get install wabt
       - run: make prepare
       - run: make build-contracts
@@ -49,13 +58,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '14'
-      - run: cd client && npm install && sudo npm run e2e:reputation
-        env:
-          NODE_ENV: ci
-          CHAIN_NAME: casper-net-1
-          NODE_ADDRESS: http://localhost:11101/rpc
-          EVENT_STREAM_ADDRESS: http://localhost:18101/events/main
-          WASM_PATH: /target/wasm32-unknown-unknown/release/reputation_contract.wasm
-          INSTALL_PAYMENT_AMOUNT: 200000000000
-          DEPLOY_PAYMENT_AMOUNT: 200000000000
-          NCTL_USERS_FOLDER_PATH: /tmp/net-1/users
+      - name: Fix keys permission
+      - run: sudo chown runner $NCTL_USERS_FOLDER_PATH/*/*
+      - run: cd client && npm install && NODE_ENV=ci npm run e2e:reputation
