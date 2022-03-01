@@ -16,6 +16,7 @@ import {
 } from "./utils";
 
 process.env.NODE_ENV === undefined && config({ path: "./.env.js-client" });
+console.log(process.env);
 
 const {
   CHAIN_NAME,

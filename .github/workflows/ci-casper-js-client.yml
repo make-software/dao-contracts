@@ -57,5 +57,5 @@ jobs:
           EVENT_STREAM_ADDRESS: http://localhost:18101/events/main
           WASM_PATH: /target/wasm32-unknown-unknown/release/reputation_contract.wasm
           INSTALL_PAYMENT_AMOUNT: 200000000000
-          DEPLOY_PAYMENT_AMOUNT: 20000000000
+          DEPLOY_PAYMENT_AMOUNT: 200000000000
           NCTL_USERS_FOLDER_PATH: /tmp/net-1/users
