@@ -47,35 +47,44 @@ jobs:
     steps:
       - name: Fix keys permission
         run: sudo chown runner $NCTL_USERS_FOLDER_PATH/*/*
-      
+
       - name: Checkout
         uses: actions/checkout@v2
-      
-      - name: Wasm Build Cache
+
+      - name: Cache Build Wasm
         id: wasm-cache
         uses: actions/cache@v1
         with:
-          path: target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      
+          restore-keys: ${{ runner.os }}-cargo-
+          path: |
+            /home/runner/.cargo/bin
+            /home/runner/.cargo/git
+            /home/runner/.cargo/registry/cache
+            /home/runner/.cargo/registry/index
+            target
+
       - name: Build Wasm
         if: steps.wasm-cache.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
         with:
+          toolchain: stable
           profile: minimal
-      - uses: Swatinem/rust-cache@v1
-        if: steps.wasm-cache.outputs.cache-hit != 'true'
+          components: rustfmt, clippy
       - run: sudo apt update && sudo apt install -y build-essential && sudo apt-get install wabt
         if: steps.wasm-cache.outputs.cache-hit != 'true'
       - run: make prepare
         if: steps.wasm-cache.outputs.cache-hit != 'true'
       - run: make build-contracts
         if: steps.wasm-cache.outputs.cache-hit != 'true'
-    
+
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
-      
-      - name: E2E Reputation Results
-        run: cd client && npm install && NODE_ENV=ci npm run e2e:reputation
+          node-version: "14"
+
+      - name: Npm Install
+        run: cd client && npm install
+
+      - name: E2E Test Report - Reputation Contract Client
+        run: cd client && NODE_ENV=ci npm run e2e:reputation

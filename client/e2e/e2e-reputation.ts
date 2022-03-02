@@ -1,8 +1,8 @@
 import { utils } from "casper-js-client-helper";
 import { EventName, EventStream, Keys } from "casper-js-sdk";
 
-if (process.env.NODE_ENV !== 'ci') {
-  require('dotenv').config({ path: "./.env.reputation", debug: true });
+if (process.env.NODE_ENV !== "ci") {
+  require("dotenv").config({ path: "./.env.reputation", debug: true });
 }
 
 import {
@@ -337,4 +337,6 @@ const test = async () => {
   );
 };
 
-test();
+test().then(() => {
+  process.exit(0);
+});
