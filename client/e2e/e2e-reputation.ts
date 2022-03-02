@@ -16,6 +16,7 @@ import {
   getAccountInfo,
   getAccountNamedKeyValue,
   waitForDeploy,
+  assert
 } from "./utils";
 
 const {
@@ -128,20 +129,25 @@ const test = async () => {
 
   const owner = await reputationContract.getOwner();
   console.log(` - Owner: ${owner}`);
+  assert(owner != null);
 
   const total_supply = await reputationContract.getTotalSupply();
   console.log(` - Total Supply: ${total_supply}`);
+  assert(total_supply == '0');
 
-  const balances = await reputationContract.getBalanceOf(ownerKeys.publicKey);
-  console.log(` - Balances: ${balances}`);
+  const balance = await reputationContract.getBalanceOf(ownerKeys.publicKey);
+  console.log(` - Balance: ${balance}`);
+  assert(balance === undefined);
 
-  const stakes = await reputationContract.getStakeOf(ownerKeys.publicKey);
-  console.log(` - Stakes: ${stakes}`);
+  const stake = await reputationContract.getStakeOf(ownerKeys.publicKey);
+  console.log(` - Stake: ${stake}`);
+  assert(stake === undefined);
 
   const whitelist = await reputationContract.getWhitelistOf(
     ownerKeys.publicKey
   );
   console.log(` - Whitelist: ${whitelist}`);
+  assert(whitelist === 'true');
 
   console.log(`\n`);
   console.log(`... Testing deploys ...`);
@@ -166,6 +172,7 @@ const test = async () => {
   console.log(
     ` - Total supply equals mint: ${totalSupplyEqMint ? "SUCCESS!" : "FAILED!"}`
   );
+  assert(totalSupplyEqMint);
 
   /** BURN DEPLOY */
 
@@ -190,6 +197,7 @@ const test = async () => {
       totalSupplyEqMintSubtractedByBurn ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(totalSupplyEqMintSubtractedByBurn);
 
   /** TRANSFER_FROM DEPLOY */
 
@@ -218,6 +226,7 @@ const test = async () => {
       recipientBalanceEqTransferAmount ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(recipientBalanceEqTransferAmount);
 
   /** ADD_TO_WHITELIST DEPLOY */
 
@@ -240,6 +249,7 @@ const test = async () => {
       recipientAddedToTheWhitelist ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(recipientAddedToTheWhitelist);
 
   /** REMOVE_FROM_WHITELIST DEPLOY */
 
@@ -265,6 +275,7 @@ const test = async () => {
       recipientRemovedFromTheWhitelist ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(recipientRemovedFromTheWhitelist);
 
   /** STAKE DEPLOY */
 
@@ -288,6 +299,7 @@ const test = async () => {
       stakeAmountWasStaked ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(stakeAmountWasStaked);
 
   /** UNSTAKE DEPLOY */
 
@@ -310,6 +322,7 @@ const test = async () => {
       stakeAmountWasUnstaked ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(stakeAmountWasUnstaked);
 
   /** CHANGE_OWNERSHIP DEPLOY */
 
@@ -335,6 +348,7 @@ const test = async () => {
       ownerChangedToRecipient ? "SUCCESS!" : "FAILED!"
     }`
   );
+  assert(ownerChangedToRecipient);
 };
 
 test().then(() => {

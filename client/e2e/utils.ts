@@ -8,6 +8,12 @@ export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+export const assert = (val: any) => {
+  if (!Boolean(val)) {
+    throw Error('Test failed!')
+  }
+}
+
 export const getDeploy = async (NODE_ADDRESS: string, deployHash: string) => {
   const client = new CasperClient(NODE_ADDRESS);
   let i = 300;
