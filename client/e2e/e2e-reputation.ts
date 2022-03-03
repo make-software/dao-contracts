@@ -2,7 +2,7 @@ import { utils } from "casper-js-client-helper";
 import { EventName, EventStream, Keys } from "casper-js-sdk";
 
 if (process.env.NODE_ENV !== "ci") {
-  require("dotenv").config({ path: "./.env.reputation", debug: true });
+  require("dotenv").config({ path: "./.env", debug: true });
 }
 
 import {
@@ -24,7 +24,7 @@ const {
   CHAIN_NAME,
   NODE_ADDRESS,
   EVENT_STREAM_ADDRESS,
-  WASM_PATH,
+  WASM_RELEASE_PATH,
   NCTL_USERS_FOLDER_PATH,
   INSTALL_PAYMENT_AMOUNT,
   DEPLOY_PAYMENT_AMOUNT,
@@ -35,7 +35,7 @@ console.log("testing env variables", {
   CHAIN_NAME,
   NODE_ADDRESS,
   EVENT_STREAM_ADDRESS,
-  WASM_PATH,
+  WASM_RELEASE_PATH,
   NCTL_USERS_FOLDER_PATH,
   INSTALL_PAYMENT_AMOUNT,
   DEPLOY_PAYMENT_AMOUNT,
@@ -56,7 +56,7 @@ const test = async () => {
     CHAIN_NAME,
     NODE_ADDRESS,
     INSTALL_PAYMENT_AMOUNT,
-    WASM_PATH,
+    WASM_RELEASE_PATH + '/reputation_contract.wasm',
     ownerKeys
   );
 
