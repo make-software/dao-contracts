@@ -35,8 +35,13 @@ jobs:
       # Label used to access the service container
       casper-nctl:
         # Docker Hub image
-        image: makesoftware/casper-nctl:latest
+        image: makesoftware/casper-nctl:v144-220303
         options: --name casper-nctl # -v ${{ github.workspace }}/assets:/home/casper/casper-node/utils/nctl/assets
+        env:
+          PREDEFINED_ACCOUNTS: 'true'
+          MINIMUM_ROUND_EXPONENT: '12'
+          MAXIMUM_ROUND_EXPONENT: '13'
+          DEPLOY_DELAY: '2sec'
         ports:
           # Opens RPC, REST and events ports on the host and service container
           - 11101:11101
