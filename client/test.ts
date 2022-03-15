@@ -47,7 +47,6 @@ const run = async () => {
     contractPackageHash,
     []
   );
-  // console.log(JSON.stringify(res, null, 2));
 
   const ch = res.ContractPackage.versions[0].contract_hash;
   const contractHash = ch.replace("contract-", "hash-");
@@ -70,51 +69,7 @@ const run = async () => {
     }`,
     '\n'
   );
-  console.log('test')
 
-  return;
-  //****************
-  // Mint
-  //****************
-  // const mintAmount = "1000000000";
-  // const deployHash = await reputationContract.mint(
-  //   ownerKeys,
-  //   ownerKeys.publicKey,
-  //   mintAmount,
-  //   DEPLOY_PAYMENT_AMOUNT
-  // );
-  // await waitForDeploy(NODE_ADDRESS, deployHash);
-
-  // const transferAmount = "10000000";
-  // const deployHash = await reputationContract.transferFrom(
-  //   ownerKeys,
-  //   ownerKeys.publicKey,
-  //   recipientKeys.publicKey,
-  //   transferAmount,
-  //   DEPLOY_PAYMENT_AMOUNT
-  // );
-  // await waitForDeploy(NODE_ADDRESS, deployHash);
-
-  // const total_supply = await reputationContract.getTotalSupply();
-  // console.log(` - Total Supply: ${total_supply}`);
-  const balance = await reputationContract.getBalanceOf(
-    recipientKeys.publicKey
-  );
-  console.log(` - Balances: ${balance}`);
-
-  // const deployHash = await reputationContract.addToWhitelist(
-  //   ownerKeys,
-  //   ownerKeys.publicKey,
-  //   DEPLOY_PAYMENT_AMOUNT
-  // );
-  // await waitForDeploy(NODE_ADDRESS, deployHash);
-  const whitelist = await reputationContract.getWhitelistOf(
-    recipientKeys.publicKey
-  );
-  console.log(` - Whitelist: ${whitelist}`);
-
-  const stake = await reputationContract.getStakeOf(recipientKeys.publicKey);
-  console.log(` - Stakes: ${stake}`);
   return;
 };
 
