@@ -1,3 +1,5 @@
+//! Token with staking powers.
+
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
@@ -5,6 +7,7 @@ use crate::{casper_env::emit, consts, token::Token, Address, Error, Mapping};
 
 use self::events::{TokensStaked, TokensUnstaked};
 
+/// The TokenWithStaking module.
 pub struct TokenWithStaking {
     pub stakes: Mapping<Address, U256>,
     pub token: Token,
@@ -20,25 +23,30 @@ impl Default for TokenWithStaking {
 }
 
 impl TokenWithStaking {
+    /// Initialize the module.
     pub fn init(&mut self) {
         self.stakes.init();
         self.token.init();
     }
 
+    /// Mint new tokens. See [`Token::mint`](Token::mint).
     pub fn mint(&mut self, recipient: Address, amount: U256) {
         self.token.mint(recipient, amount);
     }
 
+    /// Burn unstaked tokens. See [`Token::burn`](Token::burn)
     pub fn burn(&mut self, owner: Address, amount: U256) {
         self.ensure_balance(&owner, amount);
         self.token.burn(owner, amount);
     }
 
+    /// Transfer unstaked tokens. See [`Token::raw_transfer`](Token::raw_transfer)
     pub fn raw_transfer(&mut self, sender: Address, recipient: Address, amount: U256) {
         self.ensure_balance(&sender, amount);
         self.token.raw_transfer(sender, recipient, amount);
     }
 
+    /// Stake `amount` of tokens for the `address`. It decrements `address`'s balance by `amount`.
     pub fn stake(&mut self, address: Address, amount: U256) {
         self.ensure_balance(&address, amount);
         self.stakes
@@ -46,6 +54,7 @@ impl TokenWithStaking {
         emit(TokensStaked { address, amount });
     }
 
+    /// Unstake `amount` of tokens for the `address`. It increments `address`'s balance by `amount`.
     pub fn unstake(&mut self, address: Address, amount: U256) {
         self.ensure_staked_balance(&address, amount);
         self.stakes
@@ -66,11 +75,12 @@ impl TokenWithStaking {
 }
 
 pub mod entry_points {
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
-
+    //! Entry points definitions.
     pub use crate::token::entry_points::{burn, mint, transfer_from};
     use crate::{consts, Address};
+    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
 
+    /// Public `stake` entry point. Corresponds to [`stake`](super::TokenWithStaking::stake).
     pub fn stake() -> EntryPoint {
         EntryPoint::new(
             consts::EP_STAKE,
@@ -84,6 +94,7 @@ pub mod entry_points {
         )
     }
 
+    /// Public `unstake` entry point. Corresponds to [`unstake`](super::TokenWithStaking::unstake).
     pub fn unstake() -> EntryPoint {
         EntryPoint::new(
             consts::EP_UNSTAKE,
@@ -99,17 +110,19 @@ pub mod entry_points {
 }
 
 pub mod events {
+    //! Events definitions.
+    use crate::Address;
     use casper_dao_macros::Event;
     use casper_types::U256;
 
-    use crate::Address;
-
+    /// Informs tokens have been staked.
     #[derive(Debug, PartialEq, Event)]
     pub struct TokensStaked {
         pub address: Address,
         pub amount: U256,
     }
 
+    /// Informs tokens have been unstaked.
     #[derive(Debug, PartialEq, Event)]
     pub struct TokensUnstaked {
         pub address: Address,

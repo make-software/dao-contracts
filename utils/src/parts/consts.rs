@@ -1,3 +1,5 @@
+//! Useful constants for common strings.
+
 pub const EP_INIT: &str = "init";
 pub const EP_MINT: &str = "mint";
 pub const EP_BURN: &str = "burn";

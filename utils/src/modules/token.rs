@@ -1,9 +1,12 @@
+//! Token module with balances and total supply.
+
 use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
 use self::events::{Burn, Mint, Transfer};
 use crate::{casper_env::emit, consts, Address, Error, Mapping, Variable};
 
+/// The Token module.
 pub struct Token {
     pub total_supply: Variable<U256>,
     pub balances: Mapping<Address, U256>,
@@ -19,11 +22,18 @@ impl Default for Token {
 }
 
 impl Token {
+    /// Initialize the module.
     pub fn init(&mut self) {
         self.balances.init();
         self.total_supply.set(U256::zero());
     }
 
+    /// Mint new tokens.
+    ///
+    /// Add `amount` of new tokens to the balance of the `recipient` and
+    /// increment the total supply.
+    ///
+    /// It emits [`Mint`](events::Mint) event.
     pub fn mint(&mut self, recipient: Address, amount: U256) {
         let (new_supply, is_overflowed) = self.total_supply.get().overflowing_add(amount);
         if is_overflowed {
@@ -40,6 +50,12 @@ impl Token {
         });
     }
 
+    /// Burn existing tokens.
+    ///
+    /// Remove `amount` of existing tokens from the balance of the `owner`
+    /// and decrement the total supply.
+    ///
+    /// It emits [`Burn`](events::Burn) event.
     pub fn burn(&mut self, owner: Address, amount: U256) {
         self.total_supply.set(self.total_supply.get() - amount);
         self.balances
@@ -50,6 +66,9 @@ impl Token {
         });
     }
 
+    /// Transfer `amount` of tokens from `owner` to `recipient`.
+    ///
+    /// It emits [`Transfer`](events::Transfer) event.
     pub fn raw_transfer(&mut self, sender: Address, recipient: Address, amount: U256) {
         self.balances
             .set(&sender, self.balances.get(&sender) - amount);
@@ -63,6 +82,9 @@ impl Token {
         });
     }
 
+    /// Assert `address` has at least `amount` of tokens.
+    ///
+    /// Revert otherwise.
     pub fn ensure_balance(&mut self, address: &Address, amount: U256) {
         if self.balances.get(address) < amount {
             runtime::revert(Error::InsufficientBalance);
@@ -71,10 +93,11 @@ impl Token {
 }
 
 pub mod entry_points {
+    //! Entry points definitions.
+    use crate::{consts, Address};
     use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
 
-    use crate::{consts, Address};
-
+    /// Public `mint` entry point. Corresponds to [`mint`](super::Token::mint).
     pub fn mint() -> EntryPoint {
         EntryPoint::new(
             consts::EP_MINT,
@@ -88,6 +111,7 @@ pub mod entry_points {
         )
     }
 
+    /// Public `burn` entry point. Corresponds to [`burn`](super::Token::burn).
     pub fn burn() -> EntryPoint {
         EntryPoint::new(
             consts::EP_BURN,
@@ -101,6 +125,7 @@ pub mod entry_points {
         )
     }
 
+    /// Public `transfer_from` entry point. Corresponds to [`raw_transfer`](super::Token::raw_transfer).
     pub fn transfer_from() -> EntryPoint {
         EntryPoint::new(
             consts::EP_TRANSFER_FROM,
