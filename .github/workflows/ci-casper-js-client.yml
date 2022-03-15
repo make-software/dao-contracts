@@ -1,0 +1,95 @@
+name: ci-casper-js-client
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - develop
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches:
+      - master
+      - develop
+      - feature/*
+    paths-ignore:
+      - "**.md"
+
+env:
+  NODE_ENV: ci
+  WASM_RELEASE_PATH: ${{ github.workspace }}/target/wasm32-unknown-unknown/release
+  NCTL_USERS_FOLDER_PATH: /tmp/net-1/users
+  CHAIN_NAME: casper-net-1
+  NODE_ADDRESS: http://localhost:11101/rpc
+  EVENT_STREAM_ADDRESS: http://localhost:18101/events/main
+  INSTALL_PAYMENT_AMOUNT: 200000000000
+  DEPLOY_PAYMENT_AMOUNT: 200000000000
+
+jobs:
+  run-e2e:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      casper-nctl:
+        # Docker Hub image
+        image: makesoftware/casper-nctl:v144-220303
+        options: --name casper-nctl # -v ${{ github.workspace }}/assets:/home/casper/casper-node/utils/nctl/assets
+        env:
+          PREDEFINED_ACCOUNTS: 'true'
+          MINIMUM_ROUND_EXPONENT: '12'
+          MAXIMUM_ROUND_EXPONENT: '13'
+          DEPLOY_DELAY: '2sec'
+        ports:
+          # Opens RPC, REST and events ports on the host and service container
+          - 11101:11101
+          - 14101:14101
+          - 18101:18101
+        volumes:
+          - /tmp:/home/casper/casper-node/utils/nctl/assets
+    steps:
+      - name: Fix keys permission
+        run: sudo chown runner $NCTL_USERS_FOLDER_PATH/*/*
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache Build Wasm
+        id: wasm-cache
+        uses: actions/cache@v1
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+          path: |
+            /home/runner/.cargo/bin
+            /home/runner/.cargo/git
+            /home/runner/.cargo/registry/cache
+            /home/runner/.cargo/registry/index
+            target
+
+      - name: Build Wasm
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+      - run: sudo apt update && sudo apt install -y build-essential && sudo apt-get install wabt
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+      - run: make prepare
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+      - run: make build-contracts
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Npm Install
+        run: cd client && npm install
+
+      - name: E2E Test Report - Reputation Contract Client
+        run: cd client && NODE_ENV=ci npm run e2e:reputation
