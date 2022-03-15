@@ -22,18 +22,21 @@ use casper_types::{
 
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
 
+/// CasperVM based testing environment.
 #[derive(Clone)]
 pub struct TestEnv {
     state: Arc<Mutex<TestEnvState>>,
 }
 
 impl TestEnv {
+    /// Create new TestEnv.
     pub fn new() -> TestEnv {
         TestEnv {
             state: Arc::new(Mutex::new(TestEnvState::new())),
         }
     }
 
+    /// Deploy new wasm file.
     pub fn deploy_wasm_file(&self, session_code: &str, session_args: RuntimeArgs) {
         self.state
             .lock()
@@ -41,6 +44,7 @@ impl TestEnv {
             .deploy_wasm_file(session_code, session_args);
     }
 
+    /// Call already deployed contract.
     pub fn call_contract_package(
         &mut self,
         hash: ContractPackageHash,
@@ -53,14 +57,17 @@ impl TestEnv {
             .call_contract_package(hash, entry_point, args);
     }
 
+    /// Read [`ContractPackageHash`] from the active user's named keys.
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
         self.state.lock().unwrap().get_contract_package_hash(name)
     }
 
+    /// Read [`casper_types::CLValue`] from the contract's named keys.
     pub fn get_value<T: FromBytes + CLTyped>(&self, hash: ContractPackageHash, name: &str) -> T {
         self.state.lock().unwrap().get_value(hash, name)
     }
 
+    /// Read [`casper_types::CLValue`] from the contract's dictionary.
     pub fn get_dict_value<K: ToBytes + CLTyped, V: FromBytes + CLTyped + Default>(
         &self,
         hash: ContractPackageHash,
@@ -70,18 +77,22 @@ impl TestEnv {
         self.state.lock().unwrap().get_dict_value(hash, name, key)
     }
 
+    /// Get account by index.
     pub fn get_account(&self, n: usize) -> Address {
         self.state.lock().unwrap().get_account(n)
     }
 
+    /// Set the account context.
     pub fn as_account(&self, account: Address) {
         self.state.lock().unwrap().as_account(account);
     }
 
+    /// Set the [`ApiError`] expected to occur.
     pub fn expect_error<T: Into<ApiError>>(&self, error: T) {
         self.state.lock().unwrap().expect_error(error);
     }
 
+    /// Set the [`execution::Error`] expected to occur.
     pub fn expect_execution_error(&self, error: execution::Error) {
         self.state.lock().unwrap().expect_execution_error(error);
     }

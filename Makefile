@@ -23,4 +23,4 @@ clean:
 	rm -rf tests/wasm/*.wasm
 
 docs:
-	cargo doc --features test-support --no-deps
+	cargo doc --features test-support --no-deps --open

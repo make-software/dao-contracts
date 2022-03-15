@@ -7,12 +7,14 @@ use casper_types::{
 
 use crate::casper_env::{get_key, set_key};
 
+/// Data structure for storing a single value.
 pub struct Variable<T> {
     name: String,
     ty: PhantomData<T>,
 }
 
 impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
+    /// Create a new Variable instance.
     pub fn new(name: String) -> Self {
         Variable {
             name,
@@ -20,14 +22,17 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
         }
     }
 
+    /// Read from the storage or return default value.
     pub fn get(&self) -> T {
         get_key(&self.name).unwrap_or_default()
     }
 
+    /// Store `value` to the storage.
     pub fn set(&mut self, value: T) {
         set_key(&self.name, value);
     }
 
+    /// Return the named key path to the variable's URef.
     pub fn path(&self) -> &str {
         &self.name
     }

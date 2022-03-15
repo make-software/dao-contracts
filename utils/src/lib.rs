@@ -15,7 +15,7 @@ pub use modules::owner;
 pub use modules::staking;
 pub use modules::token;
 pub use modules::whitelist;
-pub use modules::events;
+use modules::Events;
 
 #[cfg(feature = "test-support")]
 mod test_env;

@@ -3,6 +3,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, TokenStreamExt};
 use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields};
 
+/// Derive events on top of any struct.
 #[proc_macro_derive(Event)]
 pub fn derive_events(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

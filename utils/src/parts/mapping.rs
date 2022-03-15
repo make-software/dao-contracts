@@ -13,10 +13,10 @@ use lazy_static::lazy_static;
 use crate::casper_env::to_dictionary_key;
 
 /// Data structure for storing key-value pairs.
-/// 
+///
 /// It's is a wrapper on top of Casper's dictionary.
 /// The main difference is that Mapping returns default value, if the value doesn't exists
-/// and it stores dictionary's URef for later use. 
+/// and it stores dictionary's URef for later use.
 pub struct Mapping<K, V> {
     name: String,
     key_ty: PhantomData<K>,
@@ -71,7 +71,6 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
             }
         }
     }
-
 }
 
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> From<&str>

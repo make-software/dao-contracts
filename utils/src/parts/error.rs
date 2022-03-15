@@ -1,6 +1,6 @@
 use casper_types::ApiError;
 
-/// All possible errors that can be raised by from the utils crate. 
+/// All possible errors that can be raised by the utils crate.
 pub enum Error {
     NotAnOwner,
     OwnerIsNotInitialized,

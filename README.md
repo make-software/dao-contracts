@@ -1,44 +1,29 @@
-# contracts
+# MVPR DAO for Casper
 
-Voting contract
-    data:
-    - voting_address - Address
+Reusable smart contracts for building DAOs on top of Casper.
 
-Reputation contract
-    data:
-    - reputation_address - Address
-    - owner - Address
-    - whitelist - Vec<Address>
+Repository contains following modules:
+- `contract` provides smart contracts implementation,
+- `utils` and `macros` makes writing code easier,
+- `tests` contain integration tests,
+- `client` implements a JavaScript client for smart contracts interactions.
 
-    methods:
-        only_onwer:
-        - change_onwership(new_owner: Address) 
-        - add_to_whitelist(addr: Address)
-        - remove_from_whitelist(addr: Address)
-          
-        whitelist_only:
-        - mint
-        - burn
-        - transfer_from
-        - stake
+## Build contracts
+Build `WASM` files.
 
-Variable Repository
-    data:
-        ...
-    
-    methods:
-        only_onwer:
-        - change_onwership(new_owner: Address) 
-        - add_to_whitelist(addr: Address)
-        - remove_from_whitelist(addr: Address)
-        
-        whitelist_only:
-        - set_string(name: String, value: String)
-        - set_u256(name: String, value: U256)
+```bash
+$ make build-contracts
+```
 
-        all:
-        - get_string(name: String) -> String
-        - get_u256(name: String) -> U256
+## Test
+Run integration tests.
 
-Master Voting Contract:
-    - vote for whitelist changes.
+```bash
+$ make test
+```
+
+## Docs
+Generate `rustdoc`. Opens a new browser window.
+```bash
+$ make docs
+```
