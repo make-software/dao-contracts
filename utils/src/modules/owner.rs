@@ -14,6 +14,7 @@ pub struct Owner {
     pub owner: Variable<Option<Address>>,
 }
 
+
 impl Default for Owner {
     fn default() -> Self {
         Self {
