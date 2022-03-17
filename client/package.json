@@ -1,0 +1,32 @@
+{
+  "name": "dao-contracts-js-client",
+  "version": "0.1.0",
+  "description": "This JavaScript client gives you an easy way to install and interact with the DAO smart contract.",
+  "author": "Piotr Witek <piotr@make.services>",
+  "homepage": "https://make.services",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@open-rpc/client-js": "1.7.1",
+    "casper-js-client-helper": "1.0.0",
+    "casper-js-sdk": "2.8.0"
+  },
+  "devDependencies": {
+    "dotenv": "16.0.0",
+    "ts-node": "10.5.0",
+    "typescript": "4.5.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dist": "npm run clean && npm run build",
+    "clean": "rm -rf dist/",
+    "build": "tsc -p tsconfig.build.json",
+    "e2e:reputation": "ts-node ./e2e/e2e-reputation.ts"
+  }
+}

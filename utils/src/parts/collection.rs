@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, hash::Hash};
 
 use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
 use casper_types::{
@@ -6,17 +6,19 @@ use casper_types::{
     CLTyped,
 };
 
-use crate::{consts, Error, Mapping, Variable};
+use crate::{consts, Error, Variable};
+
+use super::mapping::IndexedMapping;
 
 pub struct OrderedCollection<T> {
-    pub values: Mapping<u32, Option<T>>,
+    pub values: IndexedMapping<T>,
     pub length: Variable<u32>,
 }
 
-impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> OrderedCollection<T> {
+impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> OrderedCollection<T> {
     pub fn new(name: &str) -> Self {
         Self {
-            values: Mapping::new(name.to_string()),
+            values: IndexedMapping::new(name.to_string()),
             length: Variable::new(format!("{}{}", name, consts::LENGTH_SUFFIX)),
         }
     }
@@ -28,7 +30,7 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> OrderedColl
 
     pub fn delete(&mut self, item: T) -> bool {
         let length = self.length.get();
-        let (is_deleted, item_index) = self.delete_item(item);
+        let (is_deleted, item_index) = self.values.remove(item);
 
         if !is_deleted {
             return false;
@@ -49,42 +51,23 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> OrderedColl
         if index > self.length.get() - 1 {
             runtime::revert(Error::ValueNotAvailable);
         }
-        self.values.get(&index).unwrap_or_revert()
+        self.values.get(index).unwrap_or_revert()
     }
 
     pub fn size(&self) -> u32 {
         self.length.get()
     }
 
-    fn delete_item(&mut self, item: T) -> (bool, u32) {
-        let length = self.length.get();
-        for idx in 0..length {
-            if let Some(value) = self.values.get(&idx) {
-                if value == item {
-                    self.values.set(&idx, None);
-                    return (true, idx);
-                }
-            }
-        }
-        (false, length)
-    }
-
     fn move_item(&mut self, from: u32, to: u32) {
-        let value = self.values.get(&from);
-        self.values.set(&to, value);
-        self.values.set(&from, None);
+        let value = self.values.get(from).unwrap();
+        self.values.set(to, value);
+        self.values.unset(from);
     }
 
-    fn exists(&self, item: &T) -> bool {
+    fn _add(&mut self, item: T) {
         let length = self.length.get();
-        for idx in 0..length {
-            if let Some(value) = self.values.get(&idx) {
-                if value == *item {
-                    return true;
-                }
-            }
-        }
-        false
+        self.values.set(length, item);
+        self.length.set(length + 1);
     }
 }
 
@@ -92,14 +75,12 @@ pub trait Set<T> {
     fn add(&mut self, item: T);
 }
 
-impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> Set<T>
+impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> Set<T>
     for OrderedCollection<T>
 {
     fn add(&mut self, item: T) {
-        if !self.exists(&item) {
-            let length = self.length.get();
-            self.values.set(&length, Some(item));
-            self.length.set(length + 1);
+        if !self.values.contains(&item) {
+            self._add(item);
         }
     }
 }
@@ -108,12 +89,10 @@ pub trait List<T> {
     fn add(&mut self, item: T);
 }
 
-impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug> List<T>
+impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> List<T>
     for OrderedCollection<T>
 {
     fn add(&mut self, item: T) {
-        let length = self.length.get();
-        self.values.set(&length, Some(item));
-        self.length.set(length + 1);
+        self._add(item);
     }
 }
