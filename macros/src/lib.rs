@@ -12,6 +12,7 @@ mod contract_test;
 mod event;
 mod parser;
 
+/// Derive events on top of any struct.
 #[proc_macro_derive(Event)]
 pub fn derive_events(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

@@ -22,3 +22,6 @@ lint: clippy
 clean:
 	cargo clean
 	rm -rf tests/wasm/*.wasm
+
+docs:
+	cargo doc --features test-support --no-deps --open
