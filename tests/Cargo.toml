@@ -2,20 +2,15 @@
 name = "tests"
 version = "0.1.0"
 edition = "2018"
+autotests = false
+autobenches = false
 
 [dev-dependencies]
 casper-types = "1.4.6"
 casper-dao-contracts = { path = "../contracts", default-features = false, features = [ "test-support" ] }
 casper-dao-utils = { path = "../utils", features = [ "test-support" ]}
 
-[[bin]]
-name = "reputation-tests"
-path = "src/reputation_tests.rs"
-bench = false
-doctest = false
-
-[[bin]]
-name = "variable-tests"
-path = "src/variable_tests.rs"
-bench = false
-doctest = false
+[[test]]
+name = "integration"
+path = "lib.rs"
+harness = true
