@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{hash_map::IntoIter, HashMap};
 
-use casper_contract::contract_api::runtime;
+use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
 
 use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
 use casper_types::{
@@ -29,12 +29,10 @@ impl Repository {
         self.storage.init();
         self.keys.init();
 
-        RepositoryDefaults::default()
-            .values
-            .into_iter()
-            .for_each(|(key, value)| {
-                self.set_or_update(key, Bytes::from(value.to_bytes().unwrap()))
-            });
+        RepositoryDefaults::into_iter().for_each(|(key, value)| {
+            let bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+            self.set_or_update(key, bytes);
+        });
     }
 
     pub fn set_or_update(&mut self, key: String, value: Bytes) {
@@ -54,6 +52,16 @@ impl Repository {
 
 pub struct RepositoryDefaults {
     pub values: HashMap<String, Box<dyn ToBytes>>,
+}
+
+impl RepositoryDefaults {
+    pub fn len() -> u32 {
+        RepositoryDefaults::default().values.len() as u32
+    }
+
+    fn into_iter() -> IntoIter<String, Box<dyn ToBytes>> {
+        RepositoryDefaults::default().values.into_iter()
+    }
 }
 
 impl Default for RepositoryDefaults {
