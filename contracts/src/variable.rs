@@ -63,6 +63,9 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 }
 
 #[cfg(feature = "test-support")]
+use casper_dao_utils::repository::RepositoryDefaults;
+
+#[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {
     pub fn is_whitelisted(&self, address: Address) -> bool {
         self.env.get_dict_value(
@@ -95,5 +98,20 @@ impl VariableRepositoryContractTest {
     pub fn get_keys_length(&self) -> u32 {
         self.env
             .get_value(self.package_hash, self.data.repository.keys.length.path())
+    }
+
+    pub fn get_non_default_key_at(&self, index: u32) -> Option<String> {
+        self.env.get_dict_value(
+            self.package_hash,
+            self.data.repository.keys.values.path(),
+            RepositoryDefaults::len() + index,
+        )
+    }
+
+    pub fn get_non_default_keys_length(&self) -> u32 {
+        let count: u32 = self
+            .env
+            .get_value(self.package_hash, self.data.repository.keys.length.path());
+        count - RepositoryDefaults::len()
     }
 }

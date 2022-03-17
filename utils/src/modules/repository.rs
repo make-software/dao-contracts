@@ -1,7 +1,10 @@
 use casper_contract::contract_api::runtime;
 
 use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
-use casper_types::bytesrepr::Bytes;
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    U256,
+};
 
 use self::events::ValueSet;
 
@@ -23,6 +26,10 @@ impl Repository {
     pub fn init(&mut self) {
         self.storage.init();
         self.keys.init();
+
+        for (key, value) in RepositoryDefaults::default().items() {
+            self.set_or_update(key, value);
+        }
     }
 
     pub fn set_or_update(&mut self, key: String, value: Bytes) {
@@ -37,6 +44,51 @@ impl Repository {
             Some(value) => value,
             None => runtime::revert(Error::ValueNotAvailable),
         }
+    }
+}
+pub struct RepositoryDefaults {
+    pub items: Vec<(String, Bytes)>,
+}
+
+impl RepositoryDefaults {
+    #[cfg(not(feature = "test-support"))]
+    pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
+        use casper_contract::unwrap_or_revert::UnwrapOrRevert;
+        let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        self.items.push((String::from(key), value));
+    }
+
+    #[cfg(feature = "test-support")]
+    pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
+        let value: Bytes = Bytes::from(value.to_bytes().unwrap());
+        self.items.push((String::from(key), value));
+    }
+
+    pub fn items(self) -> Vec<(String, Bytes)> {
+        self.items
+    }
+
+    #[cfg(feature = "test-support")]
+    pub fn len() -> u32 {
+        RepositoryDefaults::default().items.len() as u32
+    }
+}
+
+impl Default for RepositoryDefaults {
+    fn default() -> Self {
+        let mut items = RepositoryDefaults { items: vec![] };
+        items.push(consts::DEFAULT_POLICING_RATE, U256::from(300));
+        items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(10));
+        items.push(consts::FORUM_KYC_REQUIRED, true);
+        items.push(consts::FORMAL_VOTING_QUORUM, U256::from(500));
+        items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(50));
+        items.push(consts::VOTING_QUORUM, U256::from(200));
+        items.push(consts::FORMAL_VOTING_TIME, U256::from(432000000));
+        items.push(consts::INFORMAL_VOTING_TIME, U256::from(86400000));
+        items.push(consts::VOTING_TIME, U256::from(172800000));
+        items.push(consts::MINIMUM_GOVERNANCE_REPUTATION, U256::from(100));
+        items.push(consts::MINIMUM_VOTING_REPUTATION, U256::from(10));
+        items
     }
 }
 
