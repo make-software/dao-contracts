@@ -4,7 +4,7 @@ use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
     casper_env::{caller, init_events},
     owner::Owner,
-    repository::{Repository, RepositoryDefaults},
+    repository::Repository,
     whitelist::Whitelist,
     Address,
 };
@@ -61,6 +61,9 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         self.repository.get(key)
     }
 }
+
+#[cfg(feature = "test-support")]
+use casper_dao_utils::repository::RepositoryDefaults;
 
 #[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {

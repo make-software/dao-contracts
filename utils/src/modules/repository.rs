@@ -1,6 +1,4 @@
-use std::collections::{hash_map::IntoIter, HashMap};
-
-use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
+use casper_contract::contract_api::runtime;
 
 use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
 use casper_types::{
@@ -29,10 +27,9 @@ impl Repository {
         self.storage.init();
         self.keys.init();
 
-        RepositoryDefaults::into_iter().for_each(|(key, value)| {
-            let bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
-            self.set_or_update(key, bytes);
-        });
+        for (key, value) in RepositoryDefaults::default().items() {
+            self.set_or_update(key, value);
+        }
     }
 
     pub fn set_or_update(&mut self, key: String, value: Bytes) {
@@ -49,63 +46,49 @@ impl Repository {
         }
     }
 }
-
 pub struct RepositoryDefaults {
-    pub values: HashMap<String, Box<dyn ToBytes>>,
+    pub items: Vec<(String, Bytes)>,
 }
 
 impl RepositoryDefaults {
-    pub fn len() -> u32 {
-        RepositoryDefaults::default().values.len() as u32
+    #[cfg(not(feature = "test-support"))]
+    pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
+        use casper_contract::unwrap_or_revert::UnwrapOrRevert;
+        let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        self.items.push((String::from(key), value));
     }
 
-    fn into_iter() -> IntoIter<String, Box<dyn ToBytes>> {
-        RepositoryDefaults::default().values.into_iter()
+    #[cfg(feature = "test-support")]
+    pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
+        let value: Bytes = Bytes::from(value.to_bytes().unwrap());
+        self.items.push((String::from(key), value));
+    }
+
+    pub fn items(self) -> Vec<(String, Bytes)> {
+        self.items
+    }
+
+    #[cfg(feature = "test-support")]
+    pub fn len() -> u32 {
+        RepositoryDefaults::default().items.len() as u32
     }
 }
 
 impl Default for RepositoryDefaults {
     fn default() -> Self {
-        let mut values: HashMap<String, Box<dyn ToBytes>> = HashMap::new();
-        values.insert(
-            consts::DEFAULT_POLICING_RATE.to_string(),
-            Box::new(U256::from(300)),
-        );
-        values.insert(
-            consts::REPUTATION_CONVERSION_RATE.to_string(),
-            Box::new(U256::from(10)),
-        );
-        values.insert(consts::FORUM_KYC_REQUIRED.to_string(), Box::new(true));
-        values.insert(
-            consts::FORMAL_VOTING_QUORUM.to_string(),
-            Box::new(U256::from(500)),
-        );
-        values.insert(
-            consts::INFORMAL_VOTING_QUORUM.to_string(),
-            Box::new(U256::from(50)),
-        );
-        values.insert(consts::VOTING_QUORUM.to_string(), Box::new(U256::from(200)));
-        values.insert(
-            consts::FORMAL_VOTING_TIME.to_string(),
-            Box::new(U256::from(432000000)),
-        );
-        values.insert(
-            consts::INFORMAL_VOTING_TIME.to_string(),
-            Box::new(U256::from(86400000)),
-        );
-        values.insert(
-            consts::VOTING_TIME.to_string(),
-            Box::new(U256::from(172800000)),
-        );
-        values.insert(
-            consts::MINIMUM_GOVERNANCE_REPUTATION.to_string(),
-            Box::new(U256::from(100)),
-        );
-        values.insert(
-            consts::MINIMUM_VOTING_REPUTATION.to_string(),
-            Box::new(U256::from(10)),
-        );
-        Self { values }
+        let mut items = RepositoryDefaults { items: vec![] };
+        items.push(consts::DEFAULT_POLICING_RATE, U256::from(300));
+        items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(10));
+        items.push(consts::FORUM_KYC_REQUIRED, true);
+        items.push(consts::FORMAL_VOTING_QUORUM, U256::from(500));
+        items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(50));
+        items.push(consts::VOTING_QUORUM, U256::from(200));
+        items.push(consts::FORMAL_VOTING_TIME, U256::from(432000000));
+        items.push(consts::INFORMAL_VOTING_TIME, U256::from(86400000));
+        items.push(consts::VOTING_TIME, U256::from(172800000));
+        items.push(consts::MINIMUM_GOVERNANCE_REPUTATION, U256::from(100));
+        items.push(consts::MINIMUM_VOTING_REPUTATION, U256::from(10));
+        items
     }
 }
 
