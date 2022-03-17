@@ -13,4 +13,9 @@ name = "reputation-tests"
 path = "src/reputation_tests.rs"
 bench = false
 doctest = false
-doc = false
+
+[[bin]]
+name = "variable-tests"
+path = "src/variable_tests.rs"
+bench = false
+doctest = false

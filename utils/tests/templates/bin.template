@@ -1,0 +1,29 @@
+#![feature(prelude_import)]
+#![no_main]
+#[prelude_import]
+use std::prelude::rust_2018::*;
+#[macro_use]
+extern crate std;
+use sample_contract::{ImportantContract, ImportantContractInterface};
+#[no_mangle]
+fn call() {
+    ImportantContract::install();
+}
+#[no_mangle]
+fn init() {
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::init(&mut contract);
+}
+#[no_mangle]
+fn mint() {
+    let recipient = casper_contract::contract_api::runtime::get_named_arg("recipient");
+    let amount = casper_contract::contract_api::runtime::get_named_arg("amount");
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::mint(&mut contract, recipient, amount);
+}
+#[no_mangle]
+fn balance_of() {
+    let to = casper_contract::contract_api::runtime::get_named_arg("to");
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::balance_of(&mut contract, to);
+}

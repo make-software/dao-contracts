@@ -4,54 +4,54 @@ entry_points:
   - name: "mint"
     arguments:
       - name: "recipient"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "casper_types::U256"
 
   - name: "burn"
     arguments:
       - name: "owner"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "casper_types::U256"
 
   - name: "transfer_from"
     arguments:
       - name: "owner"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
       - name: "recipient"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "casper_types::U256"
 
   - name: "change_ownership"
     arguments:
       - name: "owner"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
 
   - name: "add_to_whitelist"
     arguments:
       - name: "address"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
 
   - name: "remove_from_whitelist"
     arguments:
       - name: "address"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
 
   - name: "stake"
     arguments:
       - name: "address"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "casper_types::U256"
 
   - name: "unstake"
     arguments:
       - name: "address"
-        cl_type: "Address"
+        cl_type: "casper_dao_utils::Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "casper_types::U256"
 
 events_config:
   dictionary_named_key: "events"

@@ -1,6 +1,4 @@
-//! Interact with the CasperVM inside the contract.
-
-use std::convert::TryInto;
+use std::{collections::BTreeSet, convert::TryInto};
 
 use casper_contract::{
     contract_api::{runtime, storage},
@@ -8,8 +6,9 @@ use casper_contract::{
 };
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
+    contracts::NamedKeys,
     system::CallStackElement,
-    CLTyped,
+    CLTyped, ContractPackageHash, EntryPoints, URef,
 };
 
 use crate::{Address, Events};
@@ -89,4 +88,31 @@ pub fn emit<T: ToBytes>(event: T) {
 pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap_or_revert();
     base64::encode(&preimage)
+}
+
+pub fn install_contract(
+    package_hash: &str,
+    entry_points: EntryPoints,
+    initializer: impl FnOnce(ContractPackageHash),
+) {
+    // Create a new contract package hash for the contract.
+    let (contract_package_hash, _) = storage::create_contract_package_at_hash();
+    runtime::put_key(package_hash, contract_package_hash.into());
+
+    let init_access: URef =
+        storage::create_contract_user_group(contract_package_hash, "init", 1, Default::default())
+            .unwrap_or_revert()
+            .pop()
+            .unwrap_or_revert();
+
+    storage::add_contract_version(contract_package_hash, entry_points, NamedKeys::new());
+
+    // Call contrustor method.
+    initializer(contract_package_hash);
+
+    // Revoke access to init.
+    let mut urefs = BTreeSet::new();
+    urefs.insert(init_access);
+    storage::remove_contract_user_group_urefs(contract_package_hash, "init", urefs)
+        .unwrap_or_revert();
 }

@@ -7,6 +7,7 @@ pub enum Error {
     NotWhitelisted,
     InsufficientBalance,
     TotalSupplyOverflow,
+    ValueNotAvailable,
 }
 
 impl From<Error> for ApiError {
@@ -17,6 +18,7 @@ impl From<Error> for ApiError {
             Error::NotWhitelisted => 1002,
             Error::InsufficientBalance => 1003,
             Error::TotalSupplyOverflow => 1004,
+            Error::ValueNotAvailable => 1005,
         };
         ApiError::User(id)
     }

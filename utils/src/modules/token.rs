@@ -92,55 +92,6 @@ impl Token {
     }
 }
 
-pub mod entry_points {
-    //! Entry points definitions.
-    use crate::{consts, Address};
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
-
-    /// Public `mint` entry point. Corresponds to [`mint`](super::Token::mint).
-    pub fn mint() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_MINT,
-            vec![
-                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    /// Public `burn` entry point. Corresponds to [`burn`](super::Token::burn).
-    pub fn burn() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_BURN,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    /// Public `transfer_from` entry point. Corresponds to [`raw_transfer`](super::Token::raw_transfer).
-    pub fn transfer_from() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_TRANSFER_FROM,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_RECIPIENT, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     use casper_dao_macros::Event;
     use casper_types::U256;

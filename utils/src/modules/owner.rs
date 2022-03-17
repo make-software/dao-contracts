@@ -46,23 +46,6 @@ impl Owner {
     }
 }
 
-pub mod entry_points {
-    //! Entry points definitions.
-    use crate::{consts, Address};
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter};
-
-    /// Public `change_ownership` entry point. Corresponds to [`change_ownership`](super::Owner::change_ownership).
-    pub fn change_ownership() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_CHANGE_OWNERSHIP,
-            vec![Parameter::new(consts::PARAM_OWNER, Address::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     //! Events definitions.
     use crate::Address;

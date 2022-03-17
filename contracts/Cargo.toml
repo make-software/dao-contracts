@@ -16,6 +16,13 @@ doctest = false
 test = false
 doc = false
 
+[[bin]]
+name = "variable_repository_contract"
+path = "bin/variable_repository.rs"
+bench = false
+doctest = false
+test = false
+
 [profile.release]
 codegen-units = 1
 lto = true

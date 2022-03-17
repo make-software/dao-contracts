@@ -74,41 +74,6 @@ impl TokenWithStaking {
     }
 }
 
-pub mod entry_points {
-    //! Entry points definitions.
-    pub use crate::token::entry_points::{burn, mint, transfer_from};
-    use crate::{consts, Address};
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter, U256};
-
-    /// Public `stake` entry point. Corresponds to [`stake`](super::TokenWithStaking::stake).
-    pub fn stake() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_STAKE,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    /// Public `unstake` entry point. Corresponds to [`unstake`](super::TokenWithStaking::unstake).
-    pub fn unstake() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_UNSTAKE,
-            vec![
-                Parameter::new(consts::PARAM_OWNER, Address::cl_type()),
-                Parameter::new(consts::PARAM_AMOUNT, U256::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     //! Events definitions.
     use crate::Address;

@@ -48,35 +48,6 @@ impl Whitelist {
     }
 }
 
-pub mod entry_points {
-    //! Entry points definitions.
-
-    use crate::{consts, Address};
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter};
-
-    /// Public `add_to_whitelist` entry point. Corresponds to [`add_to_whitelist`](super::Whitelist::add_to_whitelist).
-    pub fn add_to_whitelist() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_ADD_TO_WHITELIST,
-            vec![Parameter::new(consts::PARAM_ADDRESS, Address::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    /// Public `remove_from_whitelist` entry point. Corresponds to [`remove_from_whitelist`](super::Whitelist::remove_from_whitelist).
-    pub fn remove_from_whitelist() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_REMOVE_FROM_WHITELIST,
-            vec![Parameter::new(consts::PARAM_ADDRESS, Address::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     //! Events definitions.
     use crate::Address;
