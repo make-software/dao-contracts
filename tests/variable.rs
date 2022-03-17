@@ -3,12 +3,67 @@ mod tests {
     use casper_dao_contracts::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
     };
-    use casper_dao_utils::{repository::events::ValueSet, Error, TestEnv};
+    use casper_dao_utils::{
+        consts,
+        repository::{events::ValueSet, RepositoryDefaults},
+        Error, TestEnv,
+    };
+    use casper_types::{
+        bytesrepr::{Bytes, ToBytes},
+        U256,
+    };
 
     #[test]
     fn test_deploy() {
         let (env, contract) = setup();
         assert!(contract.is_whitelisted(env.get_account(0)));
+
+        let bytes = |x: u32| Bytes::from(U256::from(x).to_bytes().unwrap());
+
+        assert_eq!(
+            bytes(300),
+            contract.get_value(consts::DEFAULT_POLICING_RATE.to_string())
+        );
+        assert_eq!(
+            bytes(10),
+            contract.get_value(consts::REPUTATION_CONVERSION_RATE.to_string())
+        );
+        assert_eq!(
+            Bytes::from(true.to_bytes().unwrap()),
+            contract.get_value(consts::FORUM_KYC_REQUIRED.to_string())
+        );
+        assert_eq!(
+            bytes(500),
+            contract.get_value(consts::FORMAL_VOTING_QUORUM.to_string())
+        );
+        assert_eq!(
+            bytes(50),
+            contract.get_value(consts::INFORMAL_VOTING_QUORUM.to_string())
+        );
+        assert_eq!(
+            bytes(200),
+            contract.get_value(consts::VOTING_QUORUM.to_string())
+        );
+        assert_eq!(
+            bytes(432000000),
+            contract.get_value(consts::FORMAL_VOTING_TIME.to_string())
+        );
+        assert_eq!(
+            bytes(86400000),
+            contract.get_value(consts::INFORMAL_VOTING_TIME.to_string())
+        );
+        assert_eq!(
+            bytes(172800000),
+            contract.get_value(consts::VOTING_TIME.to_string())
+        );
+        assert_eq!(
+            bytes(100),
+            contract.get_value(consts::MINIMUM_GOVERNANCE_REPUTATION.to_string())
+        );
+        assert_eq!(
+            bytes(10),
+            contract.get_value(consts::MINIMUM_VOTING_REPUTATION.to_string())
+        );
     }
 
     #[test]
@@ -30,8 +85,9 @@ mod tests {
 
         assert_eq!(contract.get_value(key.clone()), value.into());
 
+        let default_values_count = RepositoryDefaults::default().values.len() as u32;
         contract.assert_event_at(
-            2,
+            default_values_count + 2,
             ValueSet {
                 key,
                 value: value.into(),
@@ -68,10 +124,10 @@ mod tests {
         contract.set_or_update(key_third.to_string(), into_bytes("cc"));
         //state: [("first", "aa"), ("second", "bb"), ("thrid", "cc")]
 
-        assert_eq!(contract.get_keys_length(), 3);
-        assert_eq!(&contract.get_key_at(0).unwrap(), key_first);
-        assert_eq!(&contract.get_key_at(1).unwrap(), key_second);
-        assert_eq!(&contract.get_key_at(2).unwrap(), key_third);
+        assert_eq!(contract.get_non_default_keys_length(), 3);
+        assert_eq!(&contract.get_non_default_key_at(0).unwrap(), key_first);
+        assert_eq!(&contract.get_non_default_key_at(1).unwrap(), key_second);
+        assert_eq!(&contract.get_non_default_key_at(2).unwrap(), key_third);
     }
 
     #[test]

@@ -4,7 +4,7 @@ use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
     casper_env::{caller, init_events},
     owner::Owner,
-    repository::Repository,
+    repository::{Repository, RepositoryDefaults},
     whitelist::Whitelist,
     Address,
 };
@@ -95,5 +95,22 @@ impl VariableRepositoryContractTest {
     pub fn get_keys_length(&self) -> u32 {
         self.env
             .get_value(self.package_hash, self.data.repository.keys.length.path())
+    }
+
+    pub fn get_non_default_key_at(&self, index: u32) -> Option<String> {
+        let default_values_count = RepositoryDefaults::default().values.len() as u32;
+        self.env.get_dict_value(
+            self.package_hash,
+            self.data.repository.keys.values.path(),
+            default_values_count + index,
+        )
+    }
+
+    pub fn get_non_default_keys_length(&self) -> u32 {
+        let default_values_count = RepositoryDefaults::default().values.len() as u32;
+        let count: u32 = self
+            .env
+            .get_value(self.package_hash, self.data.repository.keys.length.path());
+        count - default_values_count
     }
 }

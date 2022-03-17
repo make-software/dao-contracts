@@ -10,8 +10,6 @@ use casper_types::{
 
 use self::events::ValueSet;
 
-const BASE: u32 = 1000;
-
 pub struct Repository {
     pub storage: Mapping<String, Option<Bytes>>,
     pub keys: OrderedCollection<String>,
@@ -31,7 +29,7 @@ impl Repository {
         self.storage.init();
         self.keys.init();
 
-        RepositoryDefaults::new()
+        RepositoryDefaults::default()
             .values
             .into_iter()
             .for_each(|(key, value)| {
@@ -54,12 +52,12 @@ impl Repository {
     }
 }
 
-struct RepositoryDefaults {
+pub struct RepositoryDefaults {
     pub values: HashMap<String, Box<dyn ToBytes>>,
 }
 
-impl RepositoryDefaults {
-    pub fn new() -> RepositoryDefaults {
+impl Default for RepositoryDefaults {
+    fn default() -> Self {
         let mut values: HashMap<String, Box<dyn ToBytes>> = HashMap::new();
         values.insert(
             consts::DEFAULT_POLICING_RATE.to_string(),
@@ -81,7 +79,7 @@ impl RepositoryDefaults {
         values.insert(consts::VOTING_QUORUM.to_string(), Box::new(U256::from(200)));
         values.insert(
             consts::FORMAL_VOTING_TIME.to_string(),
-            Box::new(U256::from(432000)),
+            Box::new(U256::from(432000000)),
         );
         values.insert(
             consts::INFORMAL_VOTING_TIME.to_string(),
