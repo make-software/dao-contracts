@@ -3,10 +3,7 @@ mod tests {
     use casper_dao_contracts::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
     };
-    use casper_dao_utils::{
-        repository::events::{ValueRemoved, ValueSet},
-        Error, TestEnv,
-    };
+    use casper_dao_utils::{repository::events::ValueSet, Error, TestEnv};
 
     #[test]
     fn test_deploy() {
@@ -43,27 +40,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn test_remove_value() {
-        let (_, mut contract) = setup();
-
-        let key = "key".to_string();
-        let value = "some value".as_bytes();
-
-        contract.set_or_update(key.clone(), value.into());
-        contract.delete(key.clone());
-
-        contract.assert_event_at(
-            3,
-            ValueRemoved {
-                key: key.to_owned(),
-            },
-        );
-        //panic - value not available
-        contract.get_value(key);
-    }
-
-    #[test]
     fn test_update_value() {
         let (_, mut contract) = setup();
 
@@ -79,14 +55,6 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_nonexistent_item() {
-        let (env, mut contract) = setup();
-
-        env.expect_error(Error::ValueNotAvailable);
-        contract.delete("aaa".to_string());
-    }
-
-    #[test]
     fn test_keys_indexing() {
         let (_, mut contract) = setup();
         let into_bytes = |val: &str| val.as_bytes().into();
@@ -94,7 +62,6 @@ mod tests {
         let key_first = "first";
         let key_second = "second";
         let key_third = "third";
-        let key_fourth = "fourth";
 
         contract.set_or_update(key_first.to_string(), into_bytes("aa"));
         contract.set_or_update(key_second.to_string(), into_bytes("bb"));
@@ -105,27 +72,6 @@ mod tests {
         assert_eq!(&contract.get_key_at(0).unwrap(), key_first);
         assert_eq!(&contract.get_key_at(1).unwrap(), key_second);
         assert_eq!(&contract.get_key_at(2).unwrap(), key_third);
-
-        contract.delete(key_first.to_string());
-        //state: [("thrid", "cc"), ("second", "bb")]
-
-        assert_eq!(contract.get_keys_length(), 2);
-        assert_eq!(&contract.get_key_at(0).unwrap(), key_third);
-        assert_eq!(contract.get_key_at(2), None);
-
-        //continuous indexing after deletion
-        contract.set_or_update(key_fourth.to_string(), into_bytes("dd"));
-        //state: [("third", "cc"), ("second", "bb"), ("fourth", "dd")]
-
-        assert_eq!(contract.get_keys_length(), 3);
-        assert_eq!(&contract.get_key_at(2).unwrap(), key_fourth);
-
-        //the key remains the same - does not increase the length
-        contract.set_or_update(key_third.to_string(), into_bytes("new value"));
-        //state: [("thrid", "new value"), ("second", "bb"),  ("fourth", "dd")]
-
-        assert_eq!(contract.get_keys_length(), 3);
-        assert_eq!(&contract.get_key_at(0).unwrap(), key_third);
     }
 
     #[test]
@@ -216,7 +162,9 @@ mod tests {
             .set_or_update("key".to_string(), "value".as_bytes().into());
 
         env.expect_error(Error::NotWhitelisted);
-        contract.as_account(user).delete("key".to_string());
+        contract
+            .as_account(user)
+            .set_or_update("key".to_string(), "value".as_bytes().into());
     }
 
     #[test]

@@ -17,7 +17,6 @@ pub trait VariableRepositoryContractInterface {
     fn remove_from_whitelist(&mut self, address: Address);
     fn set_or_update(&mut self, key: String, value: Bytes);
     fn get(&mut self, key: String) -> Bytes;
-    fn delete(&mut self, key: String);
 }
 
 #[derive(Default)]
@@ -60,11 +59,6 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 
     fn get(&mut self, key: String) -> Bytes {
         self.repository.get(key)
-    }
-
-    fn delete(&mut self, key: String) {
-        self.whitelist.ensure_whitelisted();
-        self.repository.delete(key);
     }
 }
 

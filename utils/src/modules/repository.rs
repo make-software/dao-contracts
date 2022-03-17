@@ -3,7 +3,7 @@ use casper_contract::contract_api::runtime;
 use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
 use casper_types::bytesrepr::Bytes;
 
-use self::events::{ValueRemoved, ValueSet};
+use self::events::ValueSet;
 
 pub struct Repository {
     pub storage: Mapping<String, Option<Bytes>>,
@@ -38,21 +38,6 @@ impl Repository {
             None => runtime::revert(Error::ValueNotAvailable),
         }
     }
-
-    pub fn delete(&mut self, key: String) {
-        let deletion_success = self.keys.delete(key.clone());
-        if deletion_success {
-            self.storage.set(&key, None);
-            let event = ValueRemoved { key };
-            emit(event);
-        } else {
-            runtime::revert(Error::ValueNotAvailable);
-        }
-    }
-
-    pub fn get_key_at(&self, index: u32) -> String {
-        self.keys.get(index)
-    }
 }
 
 pub mod entry_points {
@@ -84,16 +69,6 @@ pub mod entry_points {
             EntryPointType::Contract,
         )
     }
-
-    pub fn delete() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_DELETE,
-            vec![Parameter::new(consts::PARAM_KEY, String::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
 }
 
 pub mod events {
@@ -104,10 +79,5 @@ pub mod events {
     pub struct ValueSet {
         pub key: String,
         pub value: Bytes,
-    }
-
-    #[derive(Debug, PartialEq, Event)]
-    pub struct ValueRemoved {
-        pub key: String,
     }
 }
