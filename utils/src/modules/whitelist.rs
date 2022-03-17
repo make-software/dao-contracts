@@ -41,32 +41,6 @@ impl Whitelist {
     }
 }
 
-pub mod entry_points {
-    use casper_types::{CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter};
-
-    use crate::{consts, Address};
-
-    pub fn add_to_whitelist() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_ADD_TO_WHITELIST,
-            vec![Parameter::new(consts::PARAM_ADDRESS, Address::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn remove_from_whitelist() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_REMOVE_FROM_WHITELIST,
-            vec![Parameter::new(consts::PARAM_ADDRESS, Address::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
     use crate::Address;
     use casper_dao_macros::Event;

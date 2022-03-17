@@ -1,0 +1,20 @@
+[package]
+name = "sample-contract"
+version = "0.1.0"
+edition = "2018"
+
+[[bin]]
+name = "casper_contract"
+path = "src/casper_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[dependencies]
+casper-contract = "1.4.3"
+casper-types = "1.4.6"
+casper-dao-utils = { path = ".." }
+
+[features]
+default = [ "casper-contract/default", "casper-contract/std", "casper-contract/test-support" ]
+test-support = [ "casper-dao-utils/test-support", "casper-contract/test-support" ]

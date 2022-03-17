@@ -16,7 +16,7 @@ doctest = false
 test = false
 
 [[bin]]
-name = "variable"
+name = "variable_repository_contract"
 path = "bin/variable_repository.rs"
 bench = false
 doctest = false

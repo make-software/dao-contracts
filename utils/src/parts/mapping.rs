@@ -1,7 +1,8 @@
 use std::{
-    collections::hash_map::DefaultHasher,
+    collections::{hash_map::DefaultHasher, BTreeMap},
     hash::{Hash, Hasher},
     marker::PhantomData,
+    sync::Mutex,
 };
 
 use casper_contract::{
@@ -10,8 +11,9 @@ use casper_contract::{
 };
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
-    CLTyped, URef,
+    CLTyped, Key, URef,
 };
+use lazy_static::lazy_static;
 
 use crate::casper_env::to_dictionary_key;
 
@@ -19,6 +21,10 @@ pub struct Mapping<K, V> {
     name: String,
     key_ty: PhantomData<K>,
     value_ty: PhantomData<V>,
+}
+
+lazy_static! {
+    static ref SEEDS: Mutex<BTreeMap<String, URef>> = Mutex::new(BTreeMap::new());
 }
 
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K, V> {
@@ -45,8 +51,16 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
     }
 
     fn get_uref(&self) -> URef {
-        let key = runtime::get_key(&self.name).unwrap_or_revert();
-        *key.as_uref().unwrap_or_revert()
+        let mut seeds = SEEDS.lock().unwrap();
+        match seeds.get(&self.name) {
+            Some(seed) => *seed,
+            None => {
+                let key: Key = runtime::get_key(&self.name).unwrap_or_revert();
+                let seed: URef = *key.as_uref().unwrap_or_revert();
+                seeds.insert(self.name.clone(), seed);
+                seed
+            }
+        }
     }
 
     pub fn path(&self) -> &str {
@@ -70,8 +84,8 @@ pub struct IndexedMapping<V> {
 impl<V: ToBytes + FromBytes + CLTyped + Default + Hash> IndexedMapping<V> {
     pub fn new(name: String) -> Self {
         IndexedMapping {
-            mapping: Mapping::new(name.to_string()),
-            index: Index::new(name.to_string()),
+            mapping: Mapping::new(name.clone()),
+            index: Index::new(name),
         }
     }
 
