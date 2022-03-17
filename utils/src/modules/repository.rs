@@ -1,4 +1,4 @@
-use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
+use casper_contract::contract_api::runtime;
 
 use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
 use casper_types::{
@@ -51,8 +51,16 @@ pub struct RepositoryDefaults {
 }
 
 impl RepositoryDefaults {
+    #[cfg(not(feature = "test-support"))]
     pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
+        use casper_contract::unwrap_or_revert::UnwrapOrRevert;
         let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        self.items.push((String::from(key), value));
+    }
+
+    #[cfg(feature = "test-support")]
+    pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
+        let value: Bytes = Bytes::from(value.to_bytes().unwrap());
         self.items.push((String::from(key), value));
     }
 
