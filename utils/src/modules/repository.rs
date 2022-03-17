@@ -50,8 +50,6 @@ pub struct RepositoryDefaults {
     pub items: Vec<(String, Bytes)>,
 }
 
-impl RepositoryDefaults {}
-
 impl RepositoryDefaults {
     pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
         let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
