@@ -1,4 +1,4 @@
-use std::{array::IntoIter, collections::HashMap};
+use std::collections::HashMap;
 
 use casper_contract::contract_api::runtime;
 
@@ -62,38 +62,41 @@ impl RepositoryDefaults {
     pub fn new() -> RepositoryDefaults {
         let mut values: HashMap<String, Box<dyn ToBytes>> = HashMap::new();
         values.insert(
-            "default_policing_rate".to_string(),
+            consts::DEFAULT_POLICING_RATE.to_string(),
             Box::new(U256::from(300)),
         );
         values.insert(
-            "reputation_conversion_rate".to_string(),
+            consts::REPUTATION_CONVERSION_RATE.to_string(),
             Box::new(U256::from(10)),
         );
-        values.insert("forum_kyc_required".to_string(), Box::new(true));
+        values.insert(consts::FORUM_KYC_REQUIRED.to_string(), Box::new(true));
         values.insert(
-            "formal_voting_quorum".to_string(),
+            consts::FORMAL_VOTING_QUORUM.to_string(),
             Box::new(U256::from(500)),
         );
         values.insert(
-            "informal_voting_quorum".to_string(),
+            consts::INFORMAL_VOTING_QUORUM.to_string(),
             Box::new(U256::from(50)),
         );
-        values.insert("voting_quorum".to_string(), Box::new(U256::from(200)));
+        values.insert(consts::VOTING_QUORUM.to_string(), Box::new(U256::from(200)));
         values.insert(
-            "formal_voting_time".to_string(),
+            consts::FORMAL_VOTING_TIME.to_string(),
             Box::new(U256::from(432000)),
         );
         values.insert(
-            "informal_voting_time".to_string(),
+            consts::INFORMAL_VOTING_TIME.to_string(),
             Box::new(U256::from(86400000)),
         );
-        values.insert("voting_time".to_string(), Box::new(U256::from(172800000)));
         values.insert(
-            "minimum_governance_reputation".to_string(),
+            consts::VOTING_TIME.to_string(),
+            Box::new(U256::from(172800000)),
+        );
+        values.insert(
+            consts::MINIMUM_GOVERNANCE_REPUTATION.to_string(),
             Box::new(U256::from(100)),
         );
         values.insert(
-            "minimum_voting_reputation".to_string(),
+            consts::MINIMUM_VOTING_REPUTATION.to_string(),
             Box::new(U256::from(10)),
         );
         Self { values }
