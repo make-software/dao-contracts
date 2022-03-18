@@ -15,7 +15,7 @@ pub trait VariableRepositoryContractInterface {
     fn change_ownership(&mut self, owner: Address);
     fn add_to_whitelist(&mut self, address: Address);
     fn remove_from_whitelist(&mut self, address: Address);
-    fn set_or_update(&mut self, key: String, value: Bytes);
+    fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
     fn get(&mut self, key: String) -> Bytes;
 }
 
@@ -52,9 +52,9 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         self.whitelist.remove_from_whitelist(address);
     }
 
-    fn set_or_update(&mut self, key: String, value: Bytes) {
+    fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {
         self.whitelist.ensure_whitelisted();
-        self.repository.set_or_update(key, value);
+        self.repository.update_at(key, value, activation_time);
     }
 
     fn get(&mut self, key: String) -> Bytes {
@@ -80,11 +80,11 @@ impl VariableRepositoryContractTest {
             .get_value(self.package_hash, self.data.owner.owner.path())
     }
 
-    pub fn get_value(&self, key: String) -> Bytes {
-        let result: Option<Bytes> =
+    pub fn get_value(&self, key: String) -> (Bytes, Option<(Bytes, u64)>) {
+        let result: (Bytes, Option<(Bytes, u64)>) =
             self.env
                 .get_dict_value(self.package_hash, self.data.repository.storage.path(), key);
-        result.unwrap()
+        result
     }
 
     pub fn get_key_at(&self, index: u32) -> Option<String> {

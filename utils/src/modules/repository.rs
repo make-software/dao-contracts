@@ -1,15 +1,15 @@
 use casper_contract::contract_api::runtime;
 
-use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
+use crate::{casper_env::emit, consts, Mapping, OrderedCollection, Set};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    U256,
+    BlockTime, U256,
 };
 
-use self::events::ValueSet;
+use self::events::ValueUpdated;
 
 pub struct Repository {
-    pub storage: Mapping<String, Option<Bytes>>,
+    pub storage: Mapping<String, (Bytes, Option<(Bytes, u64)>)>,
     pub keys: OrderedCollection<String>,
 }
 
@@ -28,23 +28,66 @@ impl Repository {
         self.keys.init();
 
         for (key, value) in RepositoryDefaults::default().items() {
-            self.set_or_update(key, value);
+            self.update_at(key, value, None);
         }
     }
 
-    pub fn set_or_update(&mut self, key: String, value: Bytes) {
-        self.storage.set(&key, Some(value.to_owned()));
+    pub fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {
+        let mode = Repository::resolve_update_mode(activation_time);
+        let (current, _) = self.storage.get(&key);
+        let new_value = match mode {
+            UpdateMode::SetFuture => (current, Some((value.clone(), activation_time.unwrap()))),
+            UpdateMode::ClearFuture => (current, None),
+            UpdateMode::Current => (value.clone(), None),
+        };
+        self.storage.set(&key, new_value);
         self.keys.add(key.to_owned());
-        let event = ValueSet { key, value };
-        emit(event);
+
+        emit(ValueUpdated {
+            key,
+            value,
+            activation_time,
+        });
     }
 
     pub fn get(&self, key: String) -> Bytes {
-        match self.storage.get(&key) {
-            Some(value) => value,
-            None => runtime::revert(Error::ValueNotAvailable),
+        let (current, future) = self.storage.get_or_revert(&key);
+        match future {
+            Some((value, activation_time)) => {
+                if runtime::get_blocktime() > BlockTime::new(activation_time) {
+                    value
+                } else {
+                    current
+                }
+            }
+            None => current,
         }
     }
+
+    fn set(&mut self, key: String, value: Bytes) {
+        self.update_at(key, value, None);
+    }
+
+    fn resolve_update_mode(activation_time: Option<u64>) -> UpdateMode {
+        match activation_time {
+            Some(time) => {
+                let blocktime = runtime::get_blocktime();
+                if BlockTime::new(time) > blocktime {
+                    UpdateMode::SetFuture
+                } else {
+                    UpdateMode::ClearFuture
+                }
+            }
+            None => UpdateMode::Current,
+        }
+    }
+}
+
+#[derive(Debug)]
+enum UpdateMode {
+    SetFuture,
+    ClearFuture,
+    Current,
 }
 pub struct RepositoryDefaults {
     pub items: Vec<(String, Bytes)>,
@@ -128,8 +171,9 @@ pub mod events {
     use casper_types::bytesrepr::Bytes;
 
     #[derive(Debug, PartialEq, Event)]
-    pub struct ValueSet {
+    pub struct ValueUpdated {
         pub key: String,
         pub value: Bytes,
+        pub activation_time: Option<u64>,
     }
 }
