@@ -1,6 +1,5 @@
-use casper_contract::contract_api::runtime;
-
 use crate::{casper_env::emit, consts, Mapping, OrderedCollection, Set};
+use casper_contract::contract_api::runtime;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     BlockTime, U256,
@@ -28,7 +27,7 @@ impl Repository {
         self.keys.init();
 
         for (key, value) in RepositoryDefaults::default().items() {
-            self.update_at(key, value, None);
+            self.set(key, value);
         }
     }
 
@@ -71,8 +70,7 @@ impl Repository {
     fn resolve_update_mode(activation_time: Option<u64>) -> UpdateMode {
         match activation_time {
             Some(time) => {
-                let blocktime = runtime::get_blocktime();
-                if BlockTime::new(time) > blocktime {
+                if BlockTime::new(time) > runtime::get_blocktime() {
                     UpdateMode::SetFuture
                 } else {
                     UpdateMode::ClearFuture

@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::{borrow::BorrowMut, time::Duration};
+
     use casper_dao_contracts::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
     };
@@ -95,10 +97,7 @@ mod tests {
         let key = "key".to_string();
         let value = "some value".as_bytes();
 
-        contract.update_at(key.clone(), value.into(), None);
-
-        let (current, _) = contract.get_value(key.clone());
-        assert_eq!(current, value.into());
+        set_initial_value(contract.borrow_mut(), key.clone(), value.into());
 
         contract.assert_event_at(
             RepositoryDefaults::len() + 2,
@@ -108,6 +107,63 @@ mod tests {
                 activation_time: None,
             },
         );
+    }
+
+    #[test]
+    fn test_updating_value() {
+        let (env, mut contract) = setup();
+
+        let key = "key".to_string();
+        let initial_value = "initial value".as_bytes();
+
+        let one_day = Duration::from_secs(60 * 60 * 24);
+        let two_days = 2 * one_day;
+
+        // The initial blocktime is 0
+        set_initial_value(
+            contract.borrow_mut(),
+            key.clone(),
+            "initial value".as_bytes().into(),
+        );
+        env.advance_blocktime_by(one_day.as_secs());
+        // If the activation_time is passed and is greater than the current block time,
+        // the future part of values should be updated.
+        let second_value = "aaa".as_bytes();
+        // blocktime < activation_time
+        contract.update_at(key.clone(), second_value.into(), Some(two_days.as_secs()));
+        let (current_value, future_value) = contract.get_value(key.clone());
+        assert_eq!(current_value, initial_value.into());
+        assert_eq!(future_value.unwrap().0, second_value.into());
+        // If no activation_time is passed, only the current value should be updated,
+        // the future part of values should be set to None.
+        let third_value = "bbb".as_bytes();
+        contract.update_at(key.clone(), third_value.into(), None);
+        let (current_value, future_value) = contract.get_value(key.clone());
+        assert_eq!(current_value, third_value.into());
+        assert_eq!(future_value, None);
+    }
+
+    #[test]
+    fn test_updating_value_after_activation_time_expired() {
+        let (env, mut contract) = setup();
+
+        let key = "key".to_string();
+        let initial_value = "initial value".as_bytes();
+        let second_value = "next value".as_bytes();
+
+        let one_day = Duration::from_secs(60 * 60 * 24);
+        let two_days = 2 * one_day;
+
+        // The initial blocktime is 0
+        set_initial_value(contract.borrow_mut(), key.clone(), initial_value.into());
+        env.advance_blocktime_by(two_days.as_secs());
+        // If the activation_time is passed and is less than the current block time,
+        // the future part of values should be set to None.
+        // blocktime > activation_time
+        contract.update_at(key.clone(), second_value.into(), Some(one_day.as_secs()));
+        let (current_value, future_value) = contract.get_value(key.clone());
+        assert_eq!(current_value, initial_value.into());
+        assert_eq!(future_value, None);
     }
 
     #[test]
@@ -222,35 +278,37 @@ mod tests {
         contract.as_account(user1).remove_from_whitelist(user2);
     }
 
-    // #[test]
-    // fn test_whitelisted_only_has_write_access() {
-    //     let (env, mut contract) = setup();
-    //     let user = env.get_account(1);
+    #[test]
+    fn test_whitelisted_only_has_write_access() {
+        let (env, mut contract) = setup();
+        let user = env.get_account(1);
 
-    //     env.expect_error(Error::NotWhitelisted);
-    //     contract
-    //         .as_account(user)
-    //         .set_or_update("key".to_string(), "value".as_bytes().into());
+        env.expect_error(Error::NotWhitelisted);
+        contract
+            .as_account(user)
+            .update_at("key".to_string(), "value".as_bytes().into(), None);
+    }
 
-    //     env.expect_error(Error::NotWhitelisted);
-    //     contract
-    //         .as_account(user)
-    //         .set_or_update("key".to_string(), "value".as_bytes().into());
-    // }
+    #[test]
+    fn test_anyone_can_read_data() {
+        let (env, mut contract) = setup();
+        let user = env.get_account(1);
 
-    // #[test]
-    // fn test_anyone_can_read_data() {
-    //     let (env, mut contract) = setup();
-    //     let user = env.get_account(1);
-
-    //     contract.set_or_update("key".to_string(), "value".as_bytes().into());
-    //     contract.as_account(user).get("key".to_string());
-    // }
+        contract.update_at("key".to_string(), "value".as_bytes().into(), None);
+        contract.as_account(user).get("key".to_string());
+    }
 
     fn setup() -> (TestEnv, VariableRepositoryContractTest) {
         let env = TestEnv::new();
         let contract = VariableRepositoryContractTest::new(&env);
 
         (env, contract)
+    }
+
+    fn set_initial_value(contract: &mut VariableRepositoryContractTest, key: String, value: Bytes) {
+        contract.update_at(key.clone(), value.clone(), None);
+        let (current_value, future_value) = contract.get_value(key.clone());
+        assert_eq!(current_value, value);
+        assert_eq!(future_value, None);
     }
 }

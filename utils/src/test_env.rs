@@ -96,6 +96,11 @@ impl TestEnv {
     pub fn expect_execution_error(&self, error: execution::Error) {
         self.state.lock().unwrap().expect_execution_error(error);
     }
+
+    /// Increases the current value of blocktime
+    pub fn advance_blocktime_by(&self, seconds: u64) {
+        self.state.lock().unwrap().blocktime += seconds;
+    }
 }
 
 impl Default for TestEnv {
@@ -109,6 +114,7 @@ pub struct TestEnvState {
     active_account: Address,
     context: InMemoryWasmTestBuilder,
     expected_error: Option<execution::Error>,
+    blocktime: u64,
 }
 
 impl TestEnvState {
@@ -148,6 +154,7 @@ impl TestEnvState {
             context: builder,
             accounts,
             expected_error: None,
+            blocktime: 0,
         }
     }
 
@@ -161,7 +168,9 @@ impl TestEnvState {
             .with_session_code(session_code, args)
             .build();
 
-        let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item).build();
+        let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
+            .with_block_time(self.blocktime)
+            .build();
         self.context.exec(execute_request).commit().expect_success();
     }
 
@@ -178,7 +187,9 @@ impl TestEnvState {
             .with_stored_versioned_contract_by_hash(hash.value(), None, entry_point, args)
             .build();
 
-        let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item).build();
+        let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
+            .with_block_time(self.blocktime)
+            .build();
         self.context.exec(execute_request).commit();
 
         if let Some(expected_error) = self.expected_error.clone() {
