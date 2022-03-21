@@ -138,7 +138,7 @@ mod tests {
         // the future part of values should be set to None.
         let third_value = "bbb".as_bytes();
         contract.update_at(key.clone(), third_value.into(), None);
-        let (current_value, future_value) = contract.get_value(key.clone());
+        let (current_value, future_value) = contract.get_value(key);
         assert_eq!(current_value, third_value.into());
         assert_eq!(future_value, None);
     }
@@ -161,7 +161,7 @@ mod tests {
         // the future part of values should be set to None.
         // blocktime > activation_time
         contract.update_at(key.clone(), second_value.into(), Some(one_day.as_secs()));
-        let (current_value, future_value) = contract.get_value(key.clone());
+        let (current_value, future_value) = contract.get_value(key);
         assert_eq!(current_value, initial_value.into());
         assert_eq!(future_value, None);
     }
@@ -307,7 +307,7 @@ mod tests {
 
     fn set_initial_value(contract: &mut VariableRepositoryContractTest, key: String, value: Bytes) {
         contract.update_at(key.clone(), value.clone(), None);
-        let (current_value, future_value) = contract.get_value(key.clone());
+        let (current_value, future_value) = contract.get_value(key);
         assert_eq!(current_value, value);
         assert_eq!(future_value, None);
     }
