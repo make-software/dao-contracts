@@ -2,9 +2,9 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::TraitItemMethod;
 
-use crate::parser::CasperContract;
+use crate::parser::CasperContractItem;
 
-pub fn generate_code(input: &CasperContract) -> TokenStream {
+pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let contract_install = generate_install(input);
     let contract_entry_points = generate_entry_points(input);
 
@@ -14,7 +14,7 @@ pub fn generate_code(input: &CasperContract) -> TokenStream {
     }
 }
 
-fn generate_install(input: &CasperContract) -> TokenStream {
+fn generate_install(input: &CasperContractItem) -> TokenStream {
     let contract_ident = &input.contract_ident;
     let caller_ident = &input.caller_ident;
     let package_hash = &input.package_hash;
@@ -39,7 +39,7 @@ fn generate_install(input: &CasperContract) -> TokenStream {
     }
 }
 
-fn generate_entry_points(contract_trait: &CasperContract) -> TokenStream {
+fn generate_entry_points(contract_trait: &CasperContractItem) -> TokenStream {
     let contract_ident = &contract_trait.contract_ident;
     let mut add_entry_points = TokenStream::new();
     add_entry_points.append_all(contract_trait.trait_methods.iter().map(build_entry_point));
@@ -108,11 +108,11 @@ fn build_params(method: &TraitItemMethod) -> TokenStream {
 }
 
 pub mod interface {
-    use super::CasperContract;
+    use super::CasperContractItem;
     use proc_macro2::TokenStream;
     use quote::{quote, TokenStreamExt};
 
-    pub fn generate_code(model: &CasperContract) -> TokenStream {
+    pub fn generate_code(model: &CasperContractItem) -> TokenStream {
         let id = &model.ident;
 
         let mut methods = TokenStream::new();
@@ -127,7 +127,7 @@ pub mod interface {
 }
 
 pub mod utils {
-    use crate::parser::CasperContract;
+    use crate::parser::CasperContractItem;
     use proc_macro2::{Ident, Span, TokenStream};
     use quote::{format_ident, quote, TokenStreamExt};
     use syn::{punctuated::Punctuated, token, FnArg, Pat, Token, TraitItemMethod, Type, TypePath};
@@ -199,7 +199,7 @@ pub mod utils {
     }
 
     pub fn find_method<'a>(
-        input: &'a CasperContract,
+        input: &'a CasperContractItem,
         method_name: &str,
     ) -> Option<&'a TraitItemMethod> {
         input

@@ -3,10 +3,10 @@ use quote::quote;
 
 use crate::casper_contract;
 use crate::contract;
-use crate::parser::CasperContract;
+use crate::parser::CasperContractItem;
 use crate::{caller, contract_test};
 
-pub fn generate_code(input: CasperContract) -> TokenStream {
+pub fn generate_code(input: CasperContractItem) -> TokenStream {
     let contract_impl = contract::generate_code(&input);
     let contract_interface_trait = contract::interface::generate_code(&input);
     let caller = caller::generate_code(&input);

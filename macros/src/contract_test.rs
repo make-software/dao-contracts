@@ -1,11 +1,11 @@
 use crate::contract::utils;
-use crate::parser::CasperContract;
+use crate::parser::CasperContractItem;
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
 use syn::ReturnType;
 
-pub fn generate_code(input: &CasperContract) -> TokenStream {
+pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let contract_test_interface = generate_test_interface(input);
     let contract_test_impl = generate_test_implementation(input);
 
@@ -15,7 +15,7 @@ pub fn generate_code(input: &CasperContract) -> TokenStream {
     }
 }
 
-fn generate_test_implementation(input: &CasperContract) -> TokenStream {
+fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
     let args = utils::generate_empty_args();
@@ -62,7 +62,7 @@ fn generate_test_implementation(input: &CasperContract) -> TokenStream {
     }
 }
 
-fn generate_test_interface(input: &CasperContract) -> TokenStream {
+fn generate_test_interface(input: &CasperContractItem) -> TokenStream {
     let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);
@@ -75,7 +75,7 @@ fn generate_test_interface(input: &CasperContract) -> TokenStream {
     }
 }
 
-fn build_methods(input: &CasperContract) -> TokenStream {
+fn build_methods(input: &CasperContractItem) -> TokenStream {
     let mut stream = TokenStream::new();
     stream.append_all(input.trait_methods.iter().map(|method| {
         let sig = &method.sig;
