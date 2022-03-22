@@ -36,11 +36,3 @@ mod test {
         assert_eq!(recovered, value);
     }
 }
-
-// fn into()
-
-// let into_v = |bytes: Bytes| {
-//     let (v, rest) = V::from_bytes(&bytes).unwrap();
-//     assert!(rest.is_empty());
-//     v
-// };
