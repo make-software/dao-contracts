@@ -189,7 +189,7 @@ pub mod utils {
 
     pub fn find_method<'a>(
         input: &'a ContractTrait,
-        method_name: &'static str,
+        method_name: &str,
     ) -> Option<&'a TraitItemMethod> {
         input
             .methods
