@@ -117,11 +117,10 @@ pub mod interface {
 }
 
 pub mod utils {
+    use crate::parser::ContractTrait;
     use proc_macro2::{Ident, Span, TokenStream};
     use quote::{format_ident, quote, TokenStreamExt};
     use syn::{punctuated::Punctuated, token, FnArg, Pat, Token, TraitItemMethod, Type, TypePath};
-
-    use crate::parser::ContractTrait;
 
     pub fn collect_type_paths(method: &TraitItemMethod) -> Vec<&TypePath> {
         method
