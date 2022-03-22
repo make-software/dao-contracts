@@ -9,6 +9,9 @@ pub fn generate_install(input: &ContractTrait) -> TokenStream {
     let caller_ident = &input.caller_ident;
     let package_hash = &input.package_hash;
 
+    let init_method = utils::find_method(input, "init").unwrap();
+    let (args_stream, punctuated_args) = utils::parse_casper_args(init_method);
+
     quote! {
         impl #ident {
             pub fn install() {
@@ -17,7 +20,8 @@ pub fn generate_install(input: &ContractTrait) -> TokenStream {
                     #ident::entry_points(),
                     |contract_package_hash| {
                         let mut contract_instance = #caller_ident::at(contract_package_hash);
-                        contract_instance.init();
+                        #args_stream
+                        contract_instance.init( #punctuated_args );
                     }
                 );
             }
@@ -113,9 +117,11 @@ pub mod interface {
 }
 
 pub mod utils {
-    use proc_macro2::{Ident, TokenStream};
-    use quote::{quote, TokenStreamExt};
-    use syn::{FnArg, Pat, TraitItemMethod, Type, TypePath};
+    use proc_macro2::{Ident, Span, TokenStream};
+    use quote::{format_ident, quote, TokenStreamExt};
+    use syn::{punctuated::Punctuated, token, FnArg, Pat, Token, TraitItemMethod, Type, TypePath};
+
+    use crate::parser::ContractTrait;
 
     pub fn collect_type_paths(method: &TraitItemMethod) -> Vec<&TypePath> {
         method
@@ -179,5 +185,37 @@ pub mod utils {
                 named_args
             }
         }
+    }
+
+    pub fn find_method<'a>(
+        input: &'a ContractTrait,
+        method_name: &str,
+    ) -> Option<&'a TraitItemMethod> {
+        input
+            .methods
+            .iter()
+            .find(|method| method.sig.ident == *method_name)
+    }
+
+    pub fn parse_casper_args(
+        method: &TraitItemMethod,
+    ) -> (TokenStream, Punctuated<Ident, Token![,]>) {
+        let comma = token::Comma([Span::call_site()]);
+
+        let mut punctuated_args: Punctuated<Ident, Token![,]> = Punctuated::new();
+        let mut casper_args = TokenStream::new();
+
+        collect_arg_idents(method)
+            .iter()
+            .for_each(|ident| {
+                punctuated_args.push_value(format_ident!("{}", ident));
+                punctuated_args.push_punct(comma);
+
+                casper_args.append_all(quote! {
+                    let #ident = casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
+                });
+            });
+
+        (casper_args, punctuated_args)
     }
 }
