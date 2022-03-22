@@ -6,32 +6,21 @@ use crate::contract;
 use crate::parser::CasperContract;
 use crate::{caller, contract_test};
 
-pub fn expand_casper_contract_interface(input: CasperContract) -> TokenStream {
-    let contract_install = contract::generate_install(&input);
-    let contract_entry_points = contract::generate_entry_points(&input);
-    let interface_trait = contract::interface::generate_trait(&input);
-    let caller_struct = caller::generate_struct(&input);
-    let caller_impl = caller::generate_interface_impl(&input);
-
-    let contract_test_impl = contract_test::generate_test_implementation(&input);
-    let contract_test_interface = contract_test::generate_test_interface(&input);
-
-    let contract_macro = casper_contract::generate_macro(&input);
+pub fn generate_code(input: CasperContract) -> TokenStream {
+    let contract_impl = contract::generate_code(&input);
+    let contract_interface_trait = contract::interface::generate_code(&input);
+    let caller = caller::generate_code(&input);
+    let contract_test = contract_test::generate_code(&input);
+    let contract_macro = casper_contract::generate_code(&input);
 
     quote! {
-      #contract_install
+      #contract_impl
 
-      #contract_entry_points
+      #contract_interface_trait
 
-      #interface_trait
+      #caller
 
-      #caller_struct
-
-      #caller_impl
-
-      #contract_test_impl
-
-      #contract_test_interface
+      #contract_test
 
       #contract_macro
     }

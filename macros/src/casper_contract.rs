@@ -4,7 +4,7 @@ use quote::{format_ident, quote, TokenStreamExt};
 
 use crate::{contract::utils, parser::CasperContract};
 
-pub fn generate_macro(input: &CasperContract) -> TokenStream {
+pub fn generate_code(input: &CasperContract) -> TokenStream {
     let macro_ident = format_ident!(
         "{}",
         &input

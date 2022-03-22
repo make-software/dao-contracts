@@ -2,7 +2,17 @@ use crate::{contract::utils, parser::CasperContract};
 use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 
-pub fn generate_struct(input: &CasperContract) -> TokenStream {
+pub fn generate_code(input: &CasperContract) -> TokenStream {
+    let struct_stream = generate_struct(input);
+    let struct_impl_stream = generate_interface_impl(input);
+    quote! {
+      #struct_stream
+
+      #struct_impl_stream
+    }
+}
+
+fn generate_struct(input: &CasperContract) -> TokenStream {
     let ident = &input.caller_ident;
     quote! {
       pub struct #ident {
@@ -19,7 +29,7 @@ pub fn generate_struct(input: &CasperContract) -> TokenStream {
     }
 }
 
-pub fn generate_interface_impl(input: &CasperContract) -> TokenStream {
+fn generate_interface_impl(input: &CasperContract) -> TokenStream {
     let ident = &input.ident;
     let caller_ident = &input.caller_ident;
     let methods = build_methods(input);

@@ -22,5 +22,5 @@ pub fn derive_events(input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as CasperContract);
-    casper_contract_interface::expand_casper_contract_interface(input).into()
+    casper_contract_interface::generate_code(input).into()
 }

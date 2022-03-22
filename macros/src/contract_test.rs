@@ -5,7 +5,17 @@ use quote::quote;
 use quote::TokenStreamExt;
 use syn::ReturnType;
 
-pub fn generate_test_implementation(input: &CasperContract) -> TokenStream {
+pub fn generate_code(input: &CasperContract) -> TokenStream {
+    let contract_test_interface = generate_test_interface(input);
+    let contract_test_impl = generate_test_implementation(input);
+
+    quote! {
+        #contract_test_impl
+        #contract_test_interface
+    }
+}
+
+fn generate_test_implementation(input: &CasperContract) -> TokenStream {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
     let args = utils::generate_empty_args();
@@ -52,7 +62,7 @@ pub fn generate_test_implementation(input: &CasperContract) -> TokenStream {
     }
 }
 
-pub fn generate_test_interface(input: &CasperContract) -> TokenStream {
+fn generate_test_interface(input: &CasperContract) -> TokenStream {
     let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);

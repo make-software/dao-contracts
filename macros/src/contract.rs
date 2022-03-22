@@ -4,8 +4,18 @@ use syn::TraitItemMethod;
 
 use crate::parser::CasperContract;
 
-pub fn generate_install(input: &CasperContract) -> TokenStream {
-    let ident = &input.contract_ident;
+pub fn generate_code(input: &CasperContract) -> TokenStream {
+    let contract_install = generate_install(input);
+    let contract_entry_points = generate_entry_points(input);
+
+    quote! {
+        #contract_install
+        #contract_entry_points
+    }
+}
+
+fn generate_install(input: &CasperContract) -> TokenStream {
+    let contract_ident = &input.contract_ident;
     let caller_ident = &input.caller_ident;
     let package_hash = &input.package_hash;
 
@@ -13,11 +23,11 @@ pub fn generate_install(input: &CasperContract) -> TokenStream {
     let (args_stream, punctuated_args) = utils::parse_casper_args(init_method);
 
     quote! {
-        impl #ident {
+        impl #contract_ident {
             pub fn install() {
                 casper_dao_utils::casper_env::install_contract(
                     #package_hash,
-                    #ident::entry_points(),
+                    #contract_ident::entry_points(),
                     |contract_package_hash| {
                         let mut contract_instance = #caller_ident::at(contract_package_hash);
                         #args_stream
@@ -29,10 +39,10 @@ pub fn generate_install(input: &CasperContract) -> TokenStream {
     }
 }
 
-pub fn generate_entry_points(contract_trait: &CasperContract) -> TokenStream {
-    let mut add_entry_points = TokenStream::new();
-    add_entry_points.append_all(contract_trait.trait_methods.iter().map(create_entry_point));
+fn generate_entry_points(contract_trait: &CasperContract) -> TokenStream {
     let contract_ident = &contract_trait.contract_ident;
+    let mut add_entry_points = TokenStream::new();
+    add_entry_points.append_all(contract_trait.trait_methods.iter().map(build_entry_point));
 
     quote! {
         impl #contract_ident {
@@ -45,15 +55,15 @@ pub fn generate_entry_points(contract_trait: &CasperContract) -> TokenStream {
     }
 }
 
-fn create_entry_point(method: &TraitItemMethod) -> TokenStream {
-    let ident = &method.sig.ident;
+fn build_entry_point(method: &TraitItemMethod) -> TokenStream {
+    let method_ident = &method.sig.ident;
     let params = build_params(method);
-    let group = build_group(ident);
+    let group = build_group(method_ident);
 
     quote! {
         entry_points.add_entry_point(
             casper_types::EntryPoint::new(
-                stringify!(#ident),
+                stringify!(#method_ident),
                 #params,
                 <() as casper_types::CLTyped>::cl_type(),
                 #group,
@@ -102,7 +112,7 @@ pub mod interface {
     use proc_macro2::TokenStream;
     use quote::{quote, TokenStreamExt};
 
-    pub fn generate_trait(model: &CasperContract) -> TokenStream {
+    pub fn generate_code(model: &CasperContract) -> TokenStream {
         let id = &model.ident;
 
         let mut methods = TokenStream::new();
@@ -161,28 +171,30 @@ pub mod utils {
 
     pub fn generate_method_args(method: &TraitItemMethod) -> TokenStream {
         let method_idents = collect_arg_idents(method);
-        let mut args = TokenStream::new();
-        args.append_all(method_idents.iter().map(|ident| {
+        if method_idents.is_empty() {
             quote! {
-                named_args.insert(stringify!(#ident), #ident).unwrap();
+                casper_types::RuntimeArgs::new()
             }
-        }));
-
-        quote! {
-            {
-                let mut named_args = casper_types::RuntimeArgs::new();
-                #args
-                named_args
+        } else {
+            let mut args = TokenStream::new();
+            args.append_all(method_idents.iter().map(|ident| {
+                quote! {
+                    named_args.insert(stringify!(#ident), #ident).unwrap();
+                }
+            }));
+            quote! {
+                {
+                    let mut named_args = casper_types::RuntimeArgs::new();
+                    #args
+                    named_args
+                }
             }
         }
     }
 
     pub fn generate_empty_args() -> TokenStream {
         quote! {
-            {
-                let mut named_args = casper_types::RuntimeArgs::new();
-                named_args
-            }
+            casper_types::RuntimeArgs::new(),
         }
     }
 
