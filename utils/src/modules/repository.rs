@@ -5,7 +5,7 @@ use crate::{
 use casper_contract::contract_api::runtime;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    BlockTime, U256,
+    U256,
 };
 
 use self::events::ValueUpdated;
@@ -79,16 +79,13 @@ impl Repository {
 
     pub fn get(&self, key: String) -> Bytes {
         let (current, future) = self.storage.get_or_revert(&key);
-        match future {
-            Some((value, activation_time)) => {
-                if runtime::get_blocktime() > BlockTime::new(activation_time) {
-                    value
-                } else {
-                    current
-                }
+        let now = get_block_time();
+        if let Some((value, activation_time)) = future {
+            if now > activation_time {
+                return value;
             }
-            None => current,
         }
+        current
     }
 
     fn set(&mut self, key: String, value: Bytes) {

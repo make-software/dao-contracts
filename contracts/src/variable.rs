@@ -124,7 +124,6 @@ impl VariableRepositoryContractTest {
         let count: u32 = self
             .env
             .get_value(self.package_hash, self.data.repository.keys.length.path());
-        dbg!(count);
         count - RepositoryDefaults::len()
     }
 

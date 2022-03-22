@@ -1,3 +1,4 @@
+use pretty_assertions::assert_eq;
 use std::{
     fs,
     process::{Command, Stdio},
@@ -21,7 +22,7 @@ fn check_casper_contract_interface_output() {
         &["expand", "--lib", "contract", "--features", "test-support"],
         "tests/templates/contract.template",
     );
-    assert_eq!(expansion, template);
+    assert_eq!(template, expansion);
 }
 
 #[test]
@@ -36,7 +37,7 @@ fn check_casper_contract_bin_output() {
         ],
         "tests/templates/bin.template",
     );
-    assert_eq!(expansion, template);
+    assert_eq!(template, expansion);
 }
 
 fn expand(cmd_args: &[&str], template_path: &str) -> (String, String) {

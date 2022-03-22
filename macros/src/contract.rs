@@ -2,22 +2,36 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::TraitItemMethod;
 
-use crate::parser::ContractTrait;
+use crate::parser::CasperContractItem;
 
-pub fn generate_install(input: &ContractTrait) -> TokenStream {
-    let ident = &input.contract_ident;
+pub fn generate_code(input: &CasperContractItem) -> TokenStream {
+    let contract_install = generate_install(input);
+    let contract_entry_points = generate_entry_points(input);
+
+    quote! {
+        #contract_install
+        #contract_entry_points
+    }
+}
+
+fn generate_install(input: &CasperContractItem) -> TokenStream {
+    let contract_ident = &input.contract_ident;
     let caller_ident = &input.caller_ident;
     let package_hash = &input.package_hash;
 
+    let init_method = utils::find_method(input, "init").unwrap();
+    let (args_stream, punctuated_args) = utils::parse_casper_args(init_method);
+
     quote! {
-        impl #ident {
+        impl #contract_ident {
             pub fn install() {
                 casper_dao_utils::casper_env::install_contract(
                     #package_hash,
-                    #ident::entry_points(),
+                    #contract_ident::entry_points(),
                     |contract_package_hash| {
                         let mut contract_instance = #caller_ident::at(contract_package_hash);
-                        contract_instance.init();
+                        #args_stream
+                        contract_instance.init( #punctuated_args );
                     }
                 );
             }
@@ -25,10 +39,10 @@ pub fn generate_install(input: &ContractTrait) -> TokenStream {
     }
 }
 
-pub fn generate_entry_points(contract_trait: &ContractTrait) -> TokenStream {
-    let mut add_entry_points = TokenStream::new();
-    add_entry_points.append_all(contract_trait.methods.iter().map(create_entry_point));
+fn generate_entry_points(contract_trait: &CasperContractItem) -> TokenStream {
     let contract_ident = &contract_trait.contract_ident;
+    let mut add_entry_points = TokenStream::new();
+    add_entry_points.append_all(contract_trait.trait_methods.iter().map(build_entry_point));
 
     quote! {
         impl #contract_ident {
@@ -41,15 +55,15 @@ pub fn generate_entry_points(contract_trait: &ContractTrait) -> TokenStream {
     }
 }
 
-fn create_entry_point(method: &TraitItemMethod) -> TokenStream {
-    let ident = &method.sig.ident;
+fn build_entry_point(method: &TraitItemMethod) -> TokenStream {
+    let method_ident = &method.sig.ident;
     let params = build_params(method);
-    let group = build_group(ident);
+    let group = build_group(method_ident);
 
     quote! {
         entry_points.add_entry_point(
             casper_types::EntryPoint::new(
-                stringify!(#ident),
+                stringify!(#method_ident),
                 #params,
                 <() as casper_types::CLTyped>::cl_type(),
                 #group,
@@ -94,15 +108,15 @@ fn build_params(method: &TraitItemMethod) -> TokenStream {
 }
 
 pub mod interface {
-    use super::ContractTrait;
+    use super::CasperContractItem;
     use proc_macro2::TokenStream;
     use quote::{quote, TokenStreamExt};
 
-    pub fn generate_trait(model: &ContractTrait) -> TokenStream {
+    pub fn generate_code(model: &CasperContractItem) -> TokenStream {
         let id = &model.ident;
 
         let mut methods = TokenStream::new();
-        methods.append_all(&model.methods);
+        methods.append_all(&model.trait_methods);
 
         quote! {
             pub trait #id {
@@ -113,9 +127,10 @@ pub mod interface {
 }
 
 pub mod utils {
-    use proc_macro2::{Ident, TokenStream};
-    use quote::{quote, TokenStreamExt};
-    use syn::{FnArg, Pat, TraitItemMethod, Type, TypePath};
+    use crate::parser::CasperContractItem;
+    use proc_macro2::{Ident, Span, TokenStream};
+    use quote::{format_ident, quote, TokenStreamExt};
+    use syn::{punctuated::Punctuated, token, FnArg, Pat, Token, TraitItemMethod, Type, TypePath};
 
     pub fn collect_type_paths(method: &TraitItemMethod) -> Vec<&TypePath> {
         method
@@ -156,28 +171,62 @@ pub mod utils {
 
     pub fn generate_method_args(method: &TraitItemMethod) -> TokenStream {
         let method_idents = collect_arg_idents(method);
-        let mut args = TokenStream::new();
-        args.append_all(method_idents.iter().map(|ident| {
+        if method_idents.is_empty() {
             quote! {
-                named_args.insert(stringify!(#ident), #ident).unwrap();
+                casper_types::RuntimeArgs::new()
             }
-        }));
-
-        quote! {
-            {
-                let mut named_args = casper_types::RuntimeArgs::new();
-                #args
-                named_args
+        } else {
+            let mut args = TokenStream::new();
+            args.append_all(method_idents.iter().map(|ident| {
+                quote! {
+                    named_args.insert(stringify!(#ident), #ident).unwrap();
+                }
+            }));
+            quote! {
+                {
+                    let mut named_args = casper_types::RuntimeArgs::new();
+                    #args
+                    named_args
+                }
             }
         }
     }
 
     pub fn generate_empty_args() -> TokenStream {
         quote! {
-            {
-                let mut named_args = casper_types::RuntimeArgs::new();
-                named_args
-            }
+            casper_types::RuntimeArgs::new(),
         }
+    }
+
+    pub fn find_method<'a>(
+        input: &'a CasperContractItem,
+        method_name: &str,
+    ) -> Option<&'a TraitItemMethod> {
+        input
+            .trait_methods
+            .iter()
+            .find(|method| method.sig.ident == *method_name)
+    }
+
+    pub fn parse_casper_args(
+        method: &TraitItemMethod,
+    ) -> (TokenStream, Punctuated<Ident, Token![,]>) {
+        let comma = token::Comma([Span::call_site()]);
+
+        let mut punctuated_args: Punctuated<Ident, Token![,]> = Punctuated::new();
+        let mut casper_args = TokenStream::new();
+
+        collect_arg_idents(method)
+            .iter()
+            .for_each(|ident| {
+                punctuated_args.push_value(format_ident!("{}", ident));
+                punctuated_args.push_punct(comma);
+
+                casper_args.append_all(quote! {
+                    let #ident = casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
+                });
+            });
+
+        (casper_args, punctuated_args)
     }
 }
