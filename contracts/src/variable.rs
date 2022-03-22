@@ -1,4 +1,4 @@
-use casper_types::{bytesrepr::Bytes, RuntimeArgs, runtime_args};
+use casper_types::bytesrepr::Bytes;
 
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
@@ -66,6 +66,9 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 use casper_dao_utils::{repository::RepositoryDefaults, BytesConversion};
 
 #[cfg(feature = "test-support")]
+use casper_types::{runtime_args, RuntimeArgs};
+
+#[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {
     pub fn is_whitelisted(&self, address: Address) -> bool {
         self.env.get_dict_value(
@@ -127,10 +130,11 @@ impl VariableRepositoryContractTest {
         count - RepositoryDefaults::len()
     }
 
-    pub fn get(&mut self, key: String) -> Bytes {
+    pub fn get(&mut self, key: String) -> Result<Bytes, String> {
         let args = runtime_args! {
             "key" => key
         };
-        self.env.call_contract_package_with_ret(self.package_hash, "get", args)
+        self.env
+            .call_contract_package_with_ret(self.package_hash, "get", args)
     }
 }

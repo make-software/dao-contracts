@@ -5,13 +5,22 @@ extern crate alloc;
 
 use core::mem::MaybeUninit;
 
-use alloc::{string::String, vec::{Vec}, vec};
-use casper_contract::{contract_api::{runtime, self}, unwrap_or_revert::UnwrapOrRevert, ext_ffi};
-use casper_types::{ContractPackageHash, RuntimeArgs, bytesrepr::{Bytes, FromBytes, ToBytes}, ContractVersion, api_error, ApiError};
+use alloc::{string::String, vec::Vec};
+use casper_contract::{
+    contract_api::{self, runtime},
+    ext_ffi,
+    unwrap_or_revert::UnwrapOrRevert,
+};
+use casper_types::{
+    api_error,
+    bytesrepr::{Bytes, FromBytes, ToBytes},
+    ApiError, ContractPackageHash, ContractVersion, RuntimeArgs,
+};
 
 #[no_mangle]
 fn call() {
-    let contract_package_hash: ContractPackageHash = runtime::get_named_arg("contract_package_hash");
+    let contract_package_hash: ContractPackageHash =
+        runtime::get_named_arg("contract_package_hash");
     let entry_point: String = runtime::get_named_arg("entry_point");
     let args_bytes: Bytes = runtime::get_named_arg("args");
     let (args, _) = RuntimeArgs::from_bytes(&args_bytes).unwrap_or_revert();
@@ -27,10 +36,8 @@ fn call_versioned_contract(
 ) -> Vec<u8> {
     let (contract_package_hash_ptr, contract_package_hash_size, _bytes) =
         to_ptr(contract_package_hash);
-    let (contract_version_ptr, contract_version_size, _bytes) =
-        to_ptr(contract_version);
-    let (entry_point_name_ptr, entry_point_name_size, _bytes) =
-        to_ptr(entry_point_name);
+    let (contract_version_ptr, contract_version_size, _bytes) = to_ptr(contract_version);
+    let (entry_point_name_ptr, entry_point_name_size, _bytes) = to_ptr(entry_point_name);
     let (runtime_args_ptr, runtime_args_size, _bytes) = to_ptr(runtime_args);
 
     let bytes_written = {
@@ -55,7 +62,7 @@ fn call_versioned_contract(
 }
 
 fn deserialize_contract_result(bytes_written: usize) -> Vec<u8> {
-    let serialized_result = if bytes_written == 0 {
+    if bytes_written == 0 {
         // If no bytes were written, the host buffer hasn't been set and hence shouldn't be read.
         Vec::new()
     } else {
@@ -67,8 +74,7 @@ fn deserialize_contract_result(bytes_written: usize) -> Vec<u8> {
         };
         read_host_buffer_into(&mut dest).unwrap_or_revert();
         dest
-    };
-    serialized_result
+    }
 }
 
 fn read_host_buffer_into(dest: &mut [u8]) -> Result<usize, ApiError> {

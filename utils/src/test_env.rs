@@ -16,7 +16,7 @@ use casper_execution_engine::core::{
 };
 use casper_types::{
     account::AccountHash,
-    bytesrepr::{FromBytes, ToBytes, Bytes, self},
+    bytesrepr::{self, Bytes, FromBytes, ToBytes},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, URef, U512,
 };
@@ -64,7 +64,7 @@ impl TestEnv {
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
-    ) -> T {
+    ) -> Result<T, String> {
         self.state
             .lock()
             .unwrap()
@@ -233,18 +233,53 @@ impl TestEnvState {
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
-    ) -> T {
+    ) -> Result<T, String> {
+        let session_code = PathBuf::from("getter_proxy.wasm");
+
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();
         let args = runtime_args! {
             "contract_package_hash" => hash,
             "entry_point" => entry_point,
             "args" => Bytes::from(args_bytes)
         };
-        self.deploy_wasm_file("getter_proxy.wasm", args);
-        let account = self.active_account_hash();
-        let result: Bytes = self.get_account_value(account, "result");
-        dbg!(&result);
-        bytesrepr::deserialize(result.to_vec()).unwrap()
+
+        let deploy_item = DeployItemBuilder::new()
+            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
+            .with_authorization_keys(&[self.active_account_hash()])
+            .with_address(self.active_account_hash())
+            .with_session_code(session_code, args)
+            .build();
+
+        let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
+            .with_block_time(self.block_time)
+            .build();
+        self.context.exec(execute_request).commit();
+
+        if let Some(expected_error) = self.expected_error.clone() {
+            // If error is expected.
+            if self.context.is_error() {
+                // The execution actually ended with an error.
+                if let engine_state::Error::Exec(exec_error) = self.context.get_error().unwrap() {
+                    assert_eq!(expected_error.to_string(), exec_error.to_string());
+                    self.expected_error = None;
+                    self.active_account = self.get_account(0);
+                    Err(String::from("error already processed"))
+                } else {
+                    panic!("Unexpected engine_state error.");
+                }
+            } else {
+                panic!("Deploy expected to fail.");
+            }
+        } else {
+            // If error is not expected.
+            if self.context.is_error() {
+                Err(String::from("Expected sucess, error found"))
+            } else {
+                let account = self.active_account_hash();
+                let result: Bytes = self.get_account_value(account, "result");
+                Ok(bytesrepr::deserialize(result.to_vec()).unwrap())
+            }
+        }
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {

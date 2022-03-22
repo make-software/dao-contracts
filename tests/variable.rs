@@ -84,7 +84,7 @@ mod tests {
         let (env, mut contract) = setup();
 
         env.expect_error(Error::ValueNotAvailable);
-        contract.get(String::from(KEY));
+        let _ = contract.get(String::from(KEY));
     }
 
     // To test `update_at` entry point all possible cases should be checked.
@@ -393,11 +393,11 @@ mod tests {
     #[test]
     fn test_anyone_can_read_data() {
         let (env, mut contract) = setup();
-        // let user = env.get_account(1);
+        let user = env.get_account(1);
 
         contract.update_at(KEY, VALUE_2, None);
-        let value = contract.get(KEY.to_string());
-        assert_eq!(VALUE.convert_to_bytes(), value);
+        let value = contract.as_account(user).get(KEY.to_string()).unwrap();
+        assert_eq!(VALUE_2.convert_to_bytes(), value);
     }
 
     fn setup() -> (TestEnv, ContractWrapper) {
