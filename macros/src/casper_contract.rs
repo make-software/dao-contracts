@@ -1,11 +1,10 @@
 use convert_case::Casing;
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
-use syn::{punctuated::Punctuated, token, Token, TraitItemMethod};
 
-use crate::{contract::utils::collect_arg_idents, parser::ContractTrait};
+use crate::{contract::utils, parser::CasperContractItem};
 
-pub fn generate_macro(input: &ContractTrait) -> TokenStream {
+pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let macro_ident = format_ident!(
         "{}",
         &input
@@ -29,7 +28,7 @@ pub fn generate_macro(input: &ContractTrait) -> TokenStream {
     }
 }
 
-fn generate_install(contract: &ContractTrait) -> TokenStream {
+fn generate_install(contract: &CasperContractItem) -> TokenStream {
     let contract_ident = &contract.contract_ident;
 
     quote! {
@@ -40,14 +39,14 @@ fn generate_install(contract: &ContractTrait) -> TokenStream {
     }
 }
 
-fn generate_interface_methods(contract: &ContractTrait) -> TokenStream {
+fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
     let contract_ident = &contract.contract_ident;
     let contract_interface_ident = &contract.ident;
 
     let mut methods = TokenStream::new();
-    methods.append_all(contract.methods.iter().map(|method| {
+    methods.append_all(contract.trait_methods.iter().map(|method| {
         let ident = &method.sig.ident;
-        let (casper_args, punctuated_args) = parse_args(method);
+        let (casper_args, punctuated_args) = utils::parse_casper_args(method);
 
         quote! {
             #[no_mangle]
@@ -59,22 +58,4 @@ fn generate_interface_methods(contract: &ContractTrait) -> TokenStream {
         }
     }));
     methods
-}
-
-fn parse_args(method: &TraitItemMethod) -> (TokenStream, Punctuated<Ident, Token![,]>) {
-    let comma = token::Comma([Span::call_site()]);
-
-    let mut punctuated_args: Punctuated<Ident, Token![,]> = Punctuated::new();
-    let mut casper_args = TokenStream::new();
-
-    collect_arg_idents(method).iter().for_each(|ident| {
-        punctuated_args.push_value(format_ident!("{}", ident));
-        punctuated_args.push_punct(comma);
-
-        casper_args.append_all(quote! {
-            let #ident = casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
-        });
-    });
-
-    (casper_args, punctuated_args)
 }

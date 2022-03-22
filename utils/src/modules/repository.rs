@@ -1,15 +1,18 @@
+use crate::{
+    casper_env::{emit, get_block_time},
+    consts, Error, Mapping, OrderedCollection, Set,
+};
 use casper_contract::contract_api::runtime;
-
-use crate::{casper_env::emit, consts, Error, Mapping, OrderedCollection, Set};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
 
-use self::events::ValueSet;
+use self::events::ValueUpdated;
 
+type Record = (Bytes, Option<(Bytes, u64)>);
 pub struct Repository {
-    pub storage: Mapping<String, Option<Bytes>>,
+    pub storage: Mapping<String, Record>,
     pub keys: OrderedCollection<String>,
 }
 
@@ -28,24 +31,68 @@ impl Repository {
         self.keys.init();
 
         for (key, value) in RepositoryDefaults::default().items() {
-            self.set_or_update(key, value);
+            self.set(key, value);
         }
     }
 
-    pub fn set_or_update(&mut self, key: String, value: Bytes) {
-        self.storage.set(&key, Some(value.to_owned()));
-        self.keys.add(key.to_owned());
-        let event = ValueSet { key, value };
-        emit(event);
+    pub fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {
+        let now = get_block_time();
+        let value_for_event = value.clone();
+        let new_value: Record = match activation_time {
+            // If no activation_time provided update the record to the value from argument.
+            None => (value, None),
+
+            // If activation_time is in the past, raise an error.
+            Some(activation_time) if activation_time < now => {
+                runtime::revert(Error::ActivationTimeInPast)
+            }
+
+            // If activation time is in future.
+            Some(activation_time) => {
+                // Load the record.
+                let (current_value, current_next_value) = self.storage.get_or_revert(&key);
+                match current_next_value {
+                    // If current_next_value is not set, update it to the value from arguments.
+                    None => (current_value, Some((value, activation_time))),
+
+                    // If current_next_value is set, but it is in the past, make it a current
+                    // value and set next_value to values from arguments.
+                    Some((current_next_value, current_activation_time))
+                        if current_activation_time < now =>
+                    {
+                        (current_next_value, Some((value, activation_time)))
+                    }
+
+                    // If current_next_value is set in future, update it.
+                    Some(_) => (current_value, Some((value, activation_time))),
+                }
+            }
+        };
+        self.storage.set(&key, new_value);
+        self.keys.add(key.clone());
+        emit(ValueUpdated {
+            key,
+            value: value_for_event,
+            activation_time,
+        });
     }
 
     pub fn get(&self, key: String) -> Bytes {
-        match self.storage.get(&key) {
-            Some(value) => value,
-            None => runtime::revert(Error::ValueNotAvailable),
+        let (current, future) = self.storage.get_or_revert(&key);
+        let now = get_block_time();
+        if let Some((value, activation_time)) = future {
+            if now > activation_time {
+                return value;
+            }
         }
+        current
+    }
+
+    fn set(&mut self, key: String, value: Bytes) {
+        self.update_at(key, value, None);
     }
 }
+
 pub struct RepositoryDefaults {
     pub items: Vec<(String, Bytes)>,
 }
@@ -128,8 +175,9 @@ pub mod events {
     use casper_types::bytesrepr::Bytes;
 
     #[derive(Debug, PartialEq, Event)]
-    pub struct ValueSet {
+    pub struct ValueUpdated {
         pub key: String,
         pub value: Bytes,
+        pub activation_time: Option<u64>,
     }
 }

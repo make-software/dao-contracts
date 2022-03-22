@@ -15,7 +15,7 @@ use casper_types::{
 };
 use lazy_static::lazy_static;
 
-use crate::casper_env::to_dictionary_key;
+use crate::{casper_env::to_dictionary_key, Error};
 
 /// Data structure for storing key-value pairs.
 ///
@@ -52,6 +52,13 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
             .unwrap_or_revert()
             .unwrap_or_default()
+    }
+
+    /// Read `key` from the storage or revert if the key stores no value.
+    pub fn get_or_revert(&self, key: &K) -> V {
+        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
+            .unwrap_or_revert()
+            .unwrap_or_revert_with(Error::ValueNotAvailable)
     }
 
     /// Set `value` under `key` to the storage. It overrides by default.
