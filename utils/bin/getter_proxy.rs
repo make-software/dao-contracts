@@ -5,7 +5,7 @@ extern crate alloc;
 
 use core::mem::MaybeUninit;
 
-use alloc::{string::String, vec::{Vec}};
+use alloc::{string::String, vec::{Vec}, vec};
 use casper_contract::{contract_api::{runtime, self}, unwrap_or_revert::UnwrapOrRevert, ext_ffi};
 use casper_types::{ContractPackageHash, RuntimeArgs, bytesrepr::{Bytes, FromBytes, ToBytes}, ContractVersion, api_error, ApiError};
 

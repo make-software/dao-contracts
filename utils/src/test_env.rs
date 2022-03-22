@@ -16,7 +16,7 @@ use casper_execution_engine::core::{
 };
 use casper_types::{
     account::AccountHash,
-    bytesrepr::{FromBytes, ToBytes, Bytes},
+    bytesrepr::{FromBytes, ToBytes, Bytes, self},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, URef, U512,
 };
@@ -59,23 +59,18 @@ impl TestEnv {
     }
 
     /// Call contract and return a value.
-    pub fn call_contract_package_with<T: FromBytes>(
-        &self,
+    pub fn call_contract_package_with_ret<T: FromBytes>(
+        &mut self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
     ) -> T {
-        let args_bytes: Vec<u8> = args.to_bytes().unwrap();
-        let args = runtime_args! {
-            "contract_package_hash" => hash,
-            "entry_point" => entry_point,
-            "args" => Bytes::from(args_bytes)
-        };
-        self.deploy_wasm_file("getter_proxy.wasm", args);
-        let account = self.active_account_hash();
-        let result: Bytes = self.env.get_account_value(account, "result");
-        bytesrepr::deserialize(result.to_vec()).unwrap()
+        self.state
+            .lock()
+            .unwrap()
+            .call_contract_package_with_ret(hash, entry_point, args)
     }
+
     /// Read [`ContractPackageHash`] from the active user's named keys.
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
         self.state.lock().unwrap().get_contract_package_hash(name)
@@ -233,8 +228,8 @@ impl TestEnvState {
         self.active_account = self.get_account(0);
     }
 
-    pub fn call_contract_package_with_return_value<T: FromBytes>(
-        &self,
+    pub fn call_contract_package_with_ret<T: FromBytes>(
+        &mut self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
@@ -247,7 +242,8 @@ impl TestEnvState {
         };
         self.deploy_wasm_file("getter_proxy.wasm", args);
         let account = self.active_account_hash();
-        let result: Bytes = self.env.get_account_value(account, "result");
+        let result: Bytes = self.get_account_value(account, "result");
+        dbg!(&result);
         bytesrepr::deserialize(result.to_vec()).unwrap()
     }
 
@@ -270,6 +266,17 @@ impl TestEnvState {
 
         self.context
             .query(None, Key::Hash(contract_hash.value()), &[name.to_string()])
+            .unwrap()
+            .as_cl_value()
+            .unwrap()
+            .clone()
+            .into_t()
+            .unwrap()
+    }
+
+    pub fn get_account_value<T: FromBytes + CLTyped>(&self, hash: AccountHash, name: &str) -> T {
+        self.context
+            .query(None, Key::Account(hash), &[name.to_string()])
             .unwrap()
             .as_cl_value()
             .unwrap()

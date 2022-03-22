@@ -393,10 +393,11 @@ mod tests {
     #[test]
     fn test_anyone_can_read_data() {
         let (env, mut contract) = setup();
-        let user = env.get_account(1);
+        // let user = env.get_account(1);
 
-        contract.update_at(KEY, VALUE, None);
-        contract.as_account(user).get("key".to_string());
+        contract.update_at(KEY, VALUE_2, None);
+        let value = contract.get(KEY.to_string());
+        assert_eq!(VALUE.convert_to_bytes(), value);
     }
 
     fn setup() -> (TestEnv, ContractWrapper) {
