@@ -2,9 +2,9 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::TraitItemMethod;
 
-use crate::parser::ContractTrait;
+use crate::parser::CasperContract;
 
-pub fn generate_install(input: &ContractTrait) -> TokenStream {
+pub fn generate_install(input: &CasperContract) -> TokenStream {
     let ident = &input.contract_ident;
     let caller_ident = &input.caller_ident;
     let package_hash = &input.package_hash;
@@ -29,9 +29,9 @@ pub fn generate_install(input: &ContractTrait) -> TokenStream {
     }
 }
 
-pub fn generate_entry_points(contract_trait: &ContractTrait) -> TokenStream {
+pub fn generate_entry_points(contract_trait: &CasperContract) -> TokenStream {
     let mut add_entry_points = TokenStream::new();
-    add_entry_points.append_all(contract_trait.methods.iter().map(create_entry_point));
+    add_entry_points.append_all(contract_trait.trait_methods.iter().map(create_entry_point));
     let contract_ident = &contract_trait.contract_ident;
 
     quote! {
@@ -98,15 +98,15 @@ fn build_params(method: &TraitItemMethod) -> TokenStream {
 }
 
 pub mod interface {
-    use super::ContractTrait;
+    use super::CasperContract;
     use proc_macro2::TokenStream;
     use quote::{quote, TokenStreamExt};
 
-    pub fn generate_trait(model: &ContractTrait) -> TokenStream {
+    pub fn generate_trait(model: &CasperContract) -> TokenStream {
         let id = &model.ident;
 
         let mut methods = TokenStream::new();
-        methods.append_all(&model.methods);
+        methods.append_all(&model.trait_methods);
 
         quote! {
             pub trait #id {
@@ -117,7 +117,7 @@ pub mod interface {
 }
 
 pub mod utils {
-    use crate::parser::ContractTrait;
+    use crate::parser::CasperContract;
     use proc_macro2::{Ident, Span, TokenStream};
     use quote::{format_ident, quote, TokenStreamExt};
     use syn::{punctuated::Punctuated, token, FnArg, Pat, Token, TraitItemMethod, Type, TypePath};
@@ -187,11 +187,11 @@ pub mod utils {
     }
 
     pub fn find_method<'a>(
-        input: &'a ContractTrait,
+        input: &'a CasperContract,
         method_name: &str,
     ) -> Option<&'a TraitItemMethod> {
         input
-            .methods
+            .trait_methods
             .iter()
             .find(|method| method.sig.ident == *method_name)
     }

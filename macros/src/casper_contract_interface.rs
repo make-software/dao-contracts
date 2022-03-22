@@ -3,10 +3,10 @@ use quote::quote;
 
 use crate::casper_contract;
 use crate::contract;
-use crate::parser::ContractTrait;
+use crate::parser::CasperContract;
 use crate::{caller, contract_test};
 
-pub fn expand_casper_contract_interface(input: ContractTrait) -> TokenStream {
+pub fn expand_casper_contract_interface(input: CasperContract) -> TokenStream {
     let contract_install = contract::generate_install(&input);
     let contract_entry_points = contract::generate_entry_points(&input);
     let interface_trait = contract::interface::generate_trait(&input);

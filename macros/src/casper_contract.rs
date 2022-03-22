@@ -2,9 +2,9 @@ use convert_case::Casing;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
 
-use crate::{contract::utils, parser::ContractTrait};
+use crate::{contract::utils, parser::CasperContract};
 
-pub fn generate_macro(input: &ContractTrait) -> TokenStream {
+pub fn generate_macro(input: &CasperContract) -> TokenStream {
     let macro_ident = format_ident!(
         "{}",
         &input
@@ -28,7 +28,7 @@ pub fn generate_macro(input: &ContractTrait) -> TokenStream {
     }
 }
 
-fn generate_install(contract: &ContractTrait) -> TokenStream {
+fn generate_install(contract: &CasperContract) -> TokenStream {
     let contract_ident = &contract.contract_ident;
 
     quote! {
@@ -39,12 +39,12 @@ fn generate_install(contract: &ContractTrait) -> TokenStream {
     }
 }
 
-fn generate_interface_methods(contract: &ContractTrait) -> TokenStream {
+fn generate_interface_methods(contract: &CasperContract) -> TokenStream {
     let contract_ident = &contract.contract_ident;
     let contract_interface_ident = &contract.ident;
 
     let mut methods = TokenStream::new();
-    methods.append_all(contract.methods.iter().map(|method| {
+    methods.append_all(contract.trait_methods.iter().map(|method| {
         let ident = &method.sig.ident;
         let (casper_args, punctuated_args) = utils::parse_casper_args(method);
 

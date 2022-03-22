@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use parser::ContractTrait;
+use parser::CasperContract;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
@@ -21,6 +21,6 @@ pub fn derive_events(input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as ContractTrait);
+    let input = parse_macro_input!(item as CasperContract);
     casper_contract_interface::expand_casper_contract_interface(input).into()
 }

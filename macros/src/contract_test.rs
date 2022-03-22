@@ -1,11 +1,11 @@
 use crate::contract::utils;
-use crate::parser::ContractTrait;
+use crate::parser::CasperContract;
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
 use syn::ReturnType;
 
-pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
+pub fn generate_test_implementation(input: &CasperContract) -> TokenStream {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
     let args = utils::generate_empty_args();
@@ -52,7 +52,7 @@ pub fn generate_test_implementation(input: &ContractTrait) -> TokenStream {
     }
 }
 
-pub fn generate_test_interface(input: &ContractTrait) -> TokenStream {
+pub fn generate_test_interface(input: &CasperContract) -> TokenStream {
     let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);
@@ -65,9 +65,9 @@ pub fn generate_test_interface(input: &ContractTrait) -> TokenStream {
     }
 }
 
-fn build_methods(input: &ContractTrait) -> TokenStream {
+fn build_methods(input: &CasperContract) -> TokenStream {
     let mut stream = TokenStream::new();
-    stream.append_all(input.methods.iter().map(|method| {
+    stream.append_all(input.trait_methods.iter().map(|method| {
         let sig = &method.sig;
         let ident = &sig.ident;
         let args = utils::generate_method_args(method);
