@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::{borrow::BorrowMut, time::Duration};
+    use std::{time::Duration};
 
     use casper_dao_contracts::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
@@ -8,197 +8,294 @@ mod tests {
     use casper_dao_utils::{
         consts,
         repository::{events::ValueUpdated, RepositoryDefaults},
-        Error, TestEnv,
+        BytesConversion, Error, TestEnv,
     };
     use casper_types::{
-        bytesrepr::{Bytes, ToBytes},
         U256,
     };
 
-    #[test]
-    fn test_deploy() {
-        let (env, contract) = setup();
-        assert!(contract.is_whitelisted(env.get_account(0)));
+    static KEY: &str = "key";
+    static KEY_2: &str = "key_2";
+    static KEY_3: &str = "key_3";
+    static VALUE: u32 = 1;
+    static VALUE_2: u32 = 2;
+    static VALUE_3: u32 = 3;
 
-        let bytes_of = |x: u32| Bytes::from(U256::from(x).to_bytes().unwrap());
+    // Moments in time for interaction with activision_time param.
+    static AT_DAY_ONE: u64 = 60 * 60 * 24;
+    static AT_DAY_TWO: u64 = 2 * AT_DAY_ONE;
+    static AT_DAY_THREE: u64 = 3 * AT_DAY_ONE;
 
-        assert_eq!(
-            bytes_of(300),
-            contract
-                .get_value(consts::DEFAULT_POLICING_RATE.to_string())
-                .0
-        );
-        assert_eq!(
-            bytes_of(10),
-            contract
-                .get_value(consts::REPUTATION_CONVERSION_RATE.to_string())
-                .0
-        );
-        assert_eq!(
-            Bytes::from(true.to_bytes().unwrap()),
-            contract.get_value(consts::FORUM_KYC_REQUIRED.to_string()).0
-        );
-        assert_eq!(
-            bytes_of(500),
-            contract
-                .get_value(consts::FORMAL_VOTING_QUORUM.to_string())
-                .0
-        );
-        assert_eq!(
-            bytes_of(50),
-            contract
-                .get_value(consts::INFORMAL_VOTING_QUORUM.to_string())
-                .0
-        );
-        assert_eq!(
-            bytes_of(200),
-            contract.get_value(consts::VOTING_QUORUM.to_string()).0
-        );
-        assert_eq!(
-            bytes_of(432000000),
-            contract.get_value(consts::FORMAL_VOTING_TIME.to_string()).0
-        );
-        assert_eq!(
-            bytes_of(86400000),
-            contract
-                .get_value(consts::INFORMAL_VOTING_TIME.to_string())
-                .0
-        );
-        assert_eq!(
-            bytes_of(172800000),
-            contract.get_value(consts::VOTING_TIME.to_string()).0
-        );
-        assert_eq!(
-            bytes_of(100),
-            contract
-                .get_value(consts::MINIMUM_GOVERNANCE_REPUTATION.to_string())
-                .0
-        );
-        assert_eq!(
-            bytes_of(10),
-            contract
-                .get_value(consts::MINIMUM_VOTING_REPUTATION.to_string())
-                .0
-        );
+    // Durations for moving time.
+    static TWO_DAYS: Duration = Duration::from_secs(AT_DAY_TWO);
+
+    struct ContractWrapper {
+        contract: VariableRepositoryContractTest,
     }
 
+    impl std::ops::Deref for ContractWrapper {
+        type Target = VariableRepositoryContractTest;
+
+        fn deref(&self) -> &Self::Target {
+            &self.contract
+        }
+    }
+
+    impl std::ops::DerefMut for ContractWrapper {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.contract
+        }
+    }
+
+    impl ContractWrapper {
+        fn new(contract: VariableRepositoryContractTest) -> Self {
+            Self { contract }
+        }
+
+        pub fn update_at<K: ToString, V: BytesConversion>(
+            &mut self,
+            key: K,
+            value: V,
+            activation_time: Option<u64>,
+        ) {
+            self.contract.update_at(
+                key.to_string(),
+                value.convert_to_bytes(),
+                activation_time,
+            )
+        }
+    }
+
+    #[test]
+    fn test_deploy() {
+        use consts::*;
+        let (env, c) = setup();
+        assert!(c.is_whitelisted(env.get_account(0)));
+
+        assert_eq!(U256::from(300), c.get_value(DEFAULT_POLICING_RATE));
+        assert_eq!(U256::from(10), c.get_value(REPUTATION_CONVERSION_RATE));
+        assert_eq!(true, c.get_value::<_, bool>(FORUM_KYC_REQUIRED));
+        assert_eq!(U256::from(500), c.get_value(FORMAL_VOTING_QUORUM));
+        assert_eq!(U256::from(50), c.get_value(INFORMAL_VOTING_QUORUM));
+        assert_eq!(U256::from(200), c.get_value(VOTING_QUORUM));
+        assert_eq!(U256::from(432000000), c.get_value(FORMAL_VOTING_TIME));
+        assert_eq!(U256::from(86400000), c.get_value(INFORMAL_VOTING_TIME));
+        assert_eq!(U256::from(172800000), c.get_value(VOTING_TIME));
+        assert_eq!(U256::from(100), c.get_value(MINIMUM_GOVERNANCE_REPUTATION));
+        assert_eq!(U256::from(10), c.get_value(MINIMUM_VOTING_REPUTATION));
+    }
     #[test]
     fn test_get_uninitialized_value() {
         let (env, mut contract) = setup();
 
         env.expect_error(Error::ValueNotAvailable);
-        contract.get("key".to_string());
+        contract.get(String::from(KEY));
     }
 
+    // To test `update_at` entry point all possible cases should be checked.
+    // To find out what could happen we consider following possibilities:
+    // - current_value: not_set | set 
+    // - next_activation_time: in_past | in_future | None
+    // - arg_activation_time: in_past | in_future | None
+    //
+    // That gives 18 different scenarios.
+    // 
+    // Possibles:
+    // 1. current_value(not_set) + current_activation_time(None) + arg_activation_time(None)
+    // 2. current_value(not_set) + current_activation_time(None) + arg_activation_time(in_past)
+    // 3. current_value(not_set) + current_activation_time(None) + arg_activation_time(in_future)
+    // 4. current_value(set) + current_activation_time(None) + arg_activation_time(in_past)
+    // 5. current_value(set) + current_activation_time(None) + arg_activation_time(in_future)
+    // 6. current_value(set) + current_activation_time(None) + arg_activation_time(None)
+    // 7. current_value(set) + current_activation_time(in_past) + arg_activation_time(in_past)
+    // 8. current_value(set) + current_activation_time(in_past) + arg_activation_time(in_future)
+    // 9. current_value(set) + current_activation_time(in_past) + arg_activation_time(None)
+    // 10. current_value(set) + current_activation_time(in_future) + arg_activation_time(in_past)
+    // 11. current_value(set) + current_activation_time(in_future) + arg_activation_time(in_future)
+    // 12. current_value(set) + current_activation_time(in_future) + arg_activation_time(None)
+    
+    // Impossible to to have a the next value set without the current value.
+    // 13. current_value(not_set) + current_activation_time(in_past) + arg_activation_time(in_past)
+    // 14. current_value(not_set) + current_activation_time(in_past) + arg_activation_time(in_future)
+    // 15. current_value(not_set) + current_activation_time(in_past) + arg_activation_time(None)
+    // 16. current_value(not_set) + current_activation_time(in_future) + arg_activation_time(in_past)
+    // 17. current_value(not_set) + current_activation_time(in_future) + arg_activation_time(in_future)
+    // 18. current_value(not_set) + current_activation_time(in_future) + arg_activation_time(None)
+
     #[test]
-    fn test_set_value() {
+    fn test_update_at_1() {
+        // Given no record.
         let (_, mut contract) = setup();
 
-        let key = "key".to_string();
-        let value = "some value".as_bytes();
+        // When update_at with new value without activation time
+        contract.update_at(KEY, VALUE, None);
 
-        set_initial_value(contract.borrow_mut(), key.clone(), value.into());
+        // Then it sets a value.
+        assert_eq!(contract.get_full_value(KEY), (VALUE, None));
 
+        // And it throws an event.
         contract.assert_event_at(
             RepositoryDefaults::len() + 2,
             ValueUpdated {
-                key,
-                value: value.into(),
+                key: String::from(KEY),
+                value: VALUE.convert_to_bytes(),
                 activation_time: None,
             },
         );
     }
 
     #[test]
-    fn test_updating_value() {
+    fn test_update_at_2() {
+        // Given no record.
         let (env, mut contract) = setup();
+        env.advance_block_time_by(TWO_DAYS);
 
-        let key = "key".to_string();
-        let initial_value = "initial value".as_bytes();
-
-        let one_day = Duration::from_secs(60 * 60 * 24);
-        let two_days = 2 * one_day;
-
-        // The initial blocktime is 0
-        set_initial_value(
-            contract.borrow_mut(),
-            key.clone(),
-            "initial value".as_bytes().into(),
-        );
-        env.advance_blocktime_by(one_day.as_secs());
-        // If the activation_time is passed and is greater than the current block time,
-        // the future part of values should be updated.
-        let second_value = "aaa".as_bytes();
-        // blocktime < activation_time
-        contract.update_at(key.clone(), second_value.into(), Some(two_days.as_secs()));
-        let (current_value, future_value) = contract.get_value(key.clone());
-        assert_eq!(current_value, initial_value.into());
-        assert_eq!(future_value.unwrap().0, second_value.into());
-        // If no activation_time is passed, only the current value should be updated,
-        // the future part of values should be set to None.
-        let third_value = "bbb".as_bytes();
-        contract.update_at(key.clone(), third_value.into(), None);
-        let (current_value, future_value) = contract.get_value(key);
-        assert_eq!(current_value, third_value.into());
-        assert_eq!(future_value, None);
+        // When update_at with new value and activation_time in past.
+        // Then it throws an error.
+        env.expect_error(Error::ActivationTimeInPast);
+        contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
     }
 
     #[test]
-    fn test_updating_value_after_activation_time_expired() {
+    fn test_update_at_3() {
+        // Given no record.
         let (env, mut contract) = setup();
 
-        let key = "key".to_string();
-        let initial_value = "initial value".as_bytes();
-        let second_value = "next value".as_bytes();
-
-        let one_day = Duration::from_secs(60 * 60 * 24);
-        let two_days = 2 * one_day;
-
-        // The initial blocktime is 0
-        set_initial_value(contract.borrow_mut(), key.clone(), initial_value.into());
-        env.advance_blocktime_by(two_days.as_secs());
-        // If the activation_time is passed and is less than the current block time,
-        // the future part of values should be set to None.
-        // blocktime > activation_time
-        contract.update_at(key.clone(), second_value.into(), Some(one_day.as_secs()));
-        let (current_value, future_value) = contract.get_value(key);
-        assert_eq!(current_value, initial_value.into());
-        assert_eq!(future_value, None);
+        // When update_at with new value and activation_time in future.
+        // Then it throws an error.
+        env.expect_error(Error::ValueNotAvailable);
+        contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
     }
 
     #[test]
-    fn test_update_value() {
-        let (_, mut contract) = setup();
+    fn test_update_at_4() {
+        // Given value and no next value.
+        let (env, mut contract) = setup_with(KEY, VALUE);
+        env.advance_block_time_by(TWO_DAYS);
 
-        let key = "key".to_string();
-        let initial_value = "some value".as_bytes();
-        let new_value = "new value".as_bytes();
+        // When update_at with activation_time in past.
+        // Then it throws an error.
+        env.expect_error(Error::ActivationTimeInPast);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+    }
 
-        contract.update_at(key.clone(), initial_value.into(), None);
-        contract.update_at(key.clone(), new_value.into(), None);
+    #[test]
+    fn test_update_at_5() {
+        // Given value and no next value.
+        let (_, mut contract) = setup_with(KEY, VALUE);
+        
+        // When update_at with activation_time in future.
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        
+        // Then it updates the next value.
+        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE, Some((VALUE_2, AT_DAY_ONE))));
+    }
 
-        let (current, _) = contract.get_value(key);
-        assert_eq!(current, new_value.into());
+    #[test]
+    fn test_update_at_6() {
+        // Given value and no next value.
+        let (_, mut contract) = setup_with(KEY, VALUE);
+        
+        // When update_at with new value without activation time
+        contract.update_at(KEY, VALUE_2, None);
+
+        // Then it sets a value.
+        assert_eq!(contract.get_full_value(KEY), (VALUE_2, None));
+    }
+
+    #[test]
+    fn test_update_at_7() {
+        // Given value and next value with activation_time in past.
+        let (env, mut contract) = setup_with(KEY, VALUE);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        env.advance_block_time_by(TWO_DAYS);
+
+        // When update_at with activation_time in past.
+        // Then it throws an error.
+        env.expect_error(Error::ActivationTimeInPast);
+        contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+    }
+
+    #[test]
+    fn test_update_at_8() {
+        // Given value and next value with activation_time in past.
+        let (env, mut contract) = setup_with(KEY, VALUE);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        env.advance_block_time_by(TWO_DAYS);
+
+        // When update_at with activation_time in future.
+        contract.update_at(KEY, VALUE_3, Some(AT_DAY_THREE));
+
+        // Then it updates the current value with the current next value and
+        // sets a next value wit given activation time.
+        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE_2, Some((VALUE_3, AT_DAY_THREE))));
+    }
+
+    #[test]
+    fn test_update_at_9() {
+        // Given value and next value with activation_time in past.
+        let (env, mut contract) = setup_with(KEY, VALUE);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        env.advance_block_time_by(TWO_DAYS);
+
+        // When update_at without activation time.
+        contract.update_at(KEY, VALUE_3, None);
+
+        // Then it updates the value an clear next value.
+        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE_3, None));
+    }
+
+    #[test]
+    fn test_update_at_10() {
+        // Given value and next value with activation_time in future.
+        let (env, mut contract) = setup_with(KEY, VALUE);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_THREE));
+        env.advance_block_time_by(TWO_DAYS);
+
+        // When update_at with activation_time in past.
+        // Then it throws an error.
+        env.expect_error(Error::ActivationTimeInPast);
+        contract.update_at(KEY, VALUE_3, Some(AT_DAY_ONE));
+    }
+
+    #[test]
+    fn test_update_at_11() {
+        // Given value and next value with activation_time in future.
+        let (_, mut contract) = setup_with(KEY, VALUE);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_THREE));
+
+        // When update_at with activation_time in future.
+        contract.update_at(KEY, VALUE_3, Some(AT_DAY_TWO));
+
+        // Then it updates the current value with the current next value and
+        // sets a next value wit given activation time.
+        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE, Some((VALUE_3, AT_DAY_TWO))));
+    }
+    
+    #[test]
+    fn test_update_at_12() {
+        // Given value and next value with activation_time in future.
+        let (_, mut contract) = setup_with(KEY, VALUE);
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_THREE));
+
+        // When update_at with activation_time in future.
+        contract.update_at(KEY, VALUE_3, None);
+
+        // Then it updates the value and clears next value.
+        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE_3, None));
     }
 
     #[test]
     fn test_keys_indexing() {
         let (_, mut contract) = setup();
-        let into_bytes = |val: &str| val.as_bytes().into();
-
-        let key_first = "first";
-        let key_second = "second";
-        let key_third = "third";
-
-        contract.update_at(key_first.to_string(), into_bytes("aa"), None);
-        contract.update_at(key_second.to_string(), into_bytes("bb"), None);
-        contract.update_at(key_third.to_string(), into_bytes("cc"), None);
-        //state: [("first", "aa"), ("second", "bb"), ("thrid", "cc")]
+        contract.update_at(KEY, VALUE, None);
+        contract.update_at(KEY_2, VALUE_2, None);
+        contract.update_at(KEY_3, VALUE_3, None);
 
         assert_eq!(contract.get_non_default_keys_length(), 3);
-        assert_eq!(&contract.get_non_default_key_at(0).unwrap(), key_first);
-        assert_eq!(&contract.get_non_default_key_at(1).unwrap(), key_second);
-        assert_eq!(&contract.get_non_default_key_at(2).unwrap(), key_third);
+        assert_eq!(&contract.get_non_default_key_at(0).unwrap(), KEY);
+        assert_eq!(&contract.get_non_default_key_at(1).unwrap(), KEY_2);
+        assert_eq!(&contract.get_non_default_key_at(2).unwrap(), KEY_3);
     }
 
     #[test]
@@ -294,21 +391,23 @@ mod tests {
         let (env, mut contract) = setup();
         let user = env.get_account(1);
 
-        contract.update_at("key".to_string(), "value".as_bytes().into(), None);
+        contract.update_at(KEY, VALUE, None);
         contract.as_account(user).get("key".to_string());
     }
 
-    fn setup() -> (TestEnv, VariableRepositoryContractTest) {
+    fn setup() -> (TestEnv, ContractWrapper) {
         let env = TestEnv::new();
         let contract = VariableRepositoryContractTest::new(&env);
-
+        let contract = ContractWrapper::new(contract);
         (env, contract)
     }
 
-    fn set_initial_value(contract: &mut VariableRepositoryContractTest, key: String, value: Bytes) {
-        contract.update_at(key.clone(), value.clone(), None);
-        let (current_value, future_value) = contract.get_value(key);
-        assert_eq!(current_value, value);
-        assert_eq!(future_value, None);
+    fn setup_with<K: ToString, T: BytesConversion>(
+        key: K,
+        value: T,
+    ) -> (TestEnv, ContractWrapper) {
+        let (env, mut contract) = setup();
+        contract.update_at(key, value, None);
+        (env, contract)
     }
 }

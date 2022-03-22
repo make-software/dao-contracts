@@ -116,3 +116,7 @@ pub fn install_contract(
     storage::remove_contract_user_group_urefs(contract_package_hash, "init", urefs)
         .unwrap_or_revert();
 }
+
+pub fn get_block_time() -> u64 {
+    u64::from(runtime::get_blocktime())
+}

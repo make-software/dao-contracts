@@ -1,5 +1,6 @@
 extern crate alloc;
 
+mod bytes;
 pub mod casper_env;
 mod modules;
 mod parts;
@@ -20,6 +21,9 @@ pub use modules::staking;
 pub use modules::token;
 pub use modules::whitelist;
 use modules::Events;
+
+#[cfg(feature = "test-support")]
+pub use bytes::BytesConversion;
 
 #[cfg(feature = "test-support")]
 mod test_env;

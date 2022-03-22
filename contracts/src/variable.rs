@@ -63,7 +63,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 }
 
 #[cfg(feature = "test-support")]
-use casper_dao_utils::repository::RepositoryDefaults;
+use casper_dao_utils::{repository::RepositoryDefaults, BytesConversion};
 
 #[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {
@@ -80,11 +80,24 @@ impl VariableRepositoryContractTest {
             .get_value(self.package_hash, self.data.owner.owner.path())
     }
 
-    pub fn get_value(&self, key: String) -> (Bytes, Option<(Bytes, u64)>) {
-        let result: (Bytes, Option<(Bytes, u64)>) =
-            self.env
-                .get_dict_value(self.package_hash, self.data.repository.storage.path(), key);
-        result
+    pub fn get_value<K: ToString, V: BytesConversion>(&self, key: K) -> V {
+        let (current, future) = self.get_full_value(key);
+        assert!(future.is_none());
+        current
+    }
+
+    pub fn get_full_value<K: ToString, V: BytesConversion>(&self, key: K) -> (V, Option<(V, u64)>) {
+        let result: (Bytes, Option<(Bytes, u64)>) = self.env.get_dict_value(
+            self.package_hash,
+            self.data.repository.storage.path(),
+            key.to_string(),
+        );
+        let current: V = V::convert_from_bytes(result.0);
+        let future: Option<(V, u64)> = match result.1 {
+            Some((future, time)) => Some((V::convert_from_bytes(future), time)),
+            None => None,
+        };
+        (current, future)
     }
 
     pub fn get_key_at(&self, index: u32) -> Option<String> {
@@ -112,6 +125,7 @@ impl VariableRepositoryContractTest {
         let count: u32 = self
             .env
             .get_value(self.package_hash, self.data.repository.keys.length.path());
+        dbg!(count);
         count - RepositoryDefaults::len()
     }
 }
