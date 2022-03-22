@@ -251,7 +251,6 @@ impl TestEnvState {
         bytesrepr::deserialize(result.to_vec()).unwrap()
     }
 
-
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
         let account = self
             .context
