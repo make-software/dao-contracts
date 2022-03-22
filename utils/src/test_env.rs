@@ -1,6 +1,7 @@
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use crate::Address;
@@ -97,9 +98,9 @@ impl TestEnv {
         self.state.lock().unwrap().expect_execution_error(error);
     }
 
-    /// Increases the current value of blocktime
-    pub fn advance_blocktime_by(&self, seconds: u64) {
-        self.state.lock().unwrap().blocktime += seconds;
+    /// Increases the current value of block_time
+    pub fn advance_block_time_by(&self, seconds: Duration) {
+        self.state.lock().unwrap().block_time += seconds.as_secs();
     }
 }
 
@@ -114,7 +115,7 @@ pub struct TestEnvState {
     active_account: Address,
     context: InMemoryWasmTestBuilder,
     expected_error: Option<execution::Error>,
-    blocktime: u64,
+    block_time: u64,
 }
 
 impl TestEnvState {
@@ -154,7 +155,7 @@ impl TestEnvState {
             context: builder,
             accounts,
             expected_error: None,
-            blocktime: 0,
+            block_time: 0,
         }
     }
 
@@ -169,7 +170,7 @@ impl TestEnvState {
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
-            .with_block_time(self.blocktime)
+            .with_block_time(self.block_time)
             .build();
         self.context.exec(execute_request).commit().expect_success();
     }
@@ -188,7 +189,7 @@ impl TestEnvState {
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
-            .with_block_time(self.blocktime)
+            .with_block_time(self.block_time)
             .build();
         self.context.exec(execute_request).commit();
 
