@@ -93,10 +93,9 @@ impl VariableRepositoryContractTest {
             key.to_string(),
         );
         let current: V = V::convert_from_bytes(result.0);
-        let future: Option<(V, u64)> = match result.1 {
-            Some((future, time)) => Some((V::convert_from_bytes(future), time)),
-            None => None,
-        };
+        let future = result
+            .1
+            .map(|(future, time)| (V::convert_from_bytes(future), time));
         (current, future)
     }
 

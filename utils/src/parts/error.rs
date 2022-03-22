@@ -8,7 +8,7 @@ pub enum Error {
     InsufficientBalance,
     TotalSupplyOverflow,
     ValueNotAvailable,
-    ActivationTimeInPast
+    ActivationTimeInPast,
 }
 
 impl From<Error> for ApiError {
@@ -20,7 +20,7 @@ impl From<Error> for ApiError {
             Error::InsufficientBalance => 1003,
             Error::TotalSupplyOverflow => 1004,
             Error::ValueNotAvailable => 1005,
-            Error::ActivationTimeInPast => 1006
+            Error::ActivationTimeInPast => 1006,
         };
         ApiError::User(id)
     }

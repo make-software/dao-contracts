@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::{time::Duration};
+    use std::time::Duration;
 
     use casper_dao_contracts::{
         VariableRepositoryContractInterface, VariableRepositoryContractTest,
@@ -10,9 +10,7 @@ mod tests {
         repository::{events::ValueUpdated, RepositoryDefaults},
         BytesConversion, Error, TestEnv,
     };
-    use casper_types::{
-        U256,
-    };
+    use casper_types::U256;
 
     static KEY: &str = "key";
     static KEY_2: &str = "key_2";
@@ -58,11 +56,8 @@ mod tests {
             value: V,
             activation_time: Option<u64>,
         ) {
-            self.contract.update_at(
-                key.to_string(),
-                value.convert_to_bytes(),
-                activation_time,
-            )
+            self.contract
+                .update_at(key.to_string(), value.convert_to_bytes(), activation_time)
         }
     }
 
@@ -94,12 +89,12 @@ mod tests {
 
     // To test `update_at` entry point all possible cases should be checked.
     // To find out what could happen we consider following possibilities:
-    // - current_value: not_set | set 
+    // - current_value: not_set | set
     // - next_activation_time: in_past | in_future | None
     // - arg_activation_time: in_past | in_future | None
     //
     // That gives 18 different scenarios.
-    // 
+    //
     // Possibles:
     // 1. current_value(not_set) + current_activation_time(None) + arg_activation_time(None)
     // 2. current_value(not_set) + current_activation_time(None) + arg_activation_time(in_past)
@@ -113,7 +108,7 @@ mod tests {
     // 10. current_value(set) + current_activation_time(in_future) + arg_activation_time(in_past)
     // 11. current_value(set) + current_activation_time(in_future) + arg_activation_time(in_future)
     // 12. current_value(set) + current_activation_time(in_future) + arg_activation_time(None)
-    
+
     // Impossible to to have a the next value set without the current value.
     // 13. current_value(not_set) + current_activation_time(in_past) + arg_activation_time(in_past)
     // 14. current_value(not_set) + current_activation_time(in_past) + arg_activation_time(in_future)
@@ -183,19 +178,22 @@ mod tests {
     fn test_update_at_5() {
         // Given value and no next value.
         let (_, mut contract) = setup_with(KEY, VALUE);
-        
+
         // When update_at with activation_time in future.
         contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
-        
+
         // Then it updates the next value.
-        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE, Some((VALUE_2, AT_DAY_ONE))));
+        assert_eq!(
+            contract.get_full_value::<_, u32>(KEY),
+            (VALUE, Some((VALUE_2, AT_DAY_ONE)))
+        );
     }
 
     #[test]
     fn test_update_at_6() {
         // Given value and no next value.
         let (_, mut contract) = setup_with(KEY, VALUE);
-        
+
         // When update_at with new value without activation time
         contract.update_at(KEY, VALUE_2, None);
 
@@ -228,7 +226,10 @@ mod tests {
 
         // Then it updates the current value with the current next value and
         // sets a next value wit given activation time.
-        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE_2, Some((VALUE_3, AT_DAY_THREE))));
+        assert_eq!(
+            contract.get_full_value::<_, u32>(KEY),
+            (VALUE_2, Some((VALUE_3, AT_DAY_THREE)))
+        );
     }
 
     #[test]
@@ -269,9 +270,12 @@ mod tests {
 
         // Then it updates the current value with the current next value and
         // sets a next value wit given activation time.
-        assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE, Some((VALUE_3, AT_DAY_TWO))));
+        assert_eq!(
+            contract.get_full_value::<_, u32>(KEY),
+            (VALUE, Some((VALUE_3, AT_DAY_TWO)))
+        );
     }
-    
+
     #[test]
     fn test_update_at_12() {
         // Given value and next value with activation_time in future.
@@ -402,10 +406,7 @@ mod tests {
         (env, contract)
     }
 
-    fn setup_with<K: ToString, T: BytesConversion>(
-        key: K,
-        value: T,
-    ) -> (TestEnv, ContractWrapper) {
+    fn setup_with<K: ToString, T: BytesConversion>(key: K, value: T) -> (TestEnv, ContractWrapper) {
         let (env, mut contract) = setup();
         contract.update_at(key, value, None);
         (env, contract)

@@ -1,4 +1,7 @@
-use crate::{casper_env::{emit, get_block_time}, consts, Mapping, OrderedCollection, Set, Error};
+use crate::{
+    casper_env::{emit, get_block_time},
+    consts, Error, Mapping, OrderedCollection, Set,
+};
 use casper_contract::contract_api::runtime;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
@@ -40,12 +43,12 @@ impl Repository {
             None => (value, None),
 
             // If activation_time is in the past, raise an error.
-            Some(activation_time) if activation_time < now =>
-                runtime::revert(Error::ActivationTimeInPast),
+            Some(activation_time) if activation_time < now => {
+                runtime::revert(Error::ActivationTimeInPast)
+            }
 
             // If activation time is in future.
             Some(activation_time) => {
-
                 // Load the record.
                 let (current_value, current_next_value) = self.storage.get_or_revert(&key);
                 match current_next_value {
@@ -54,12 +57,14 @@ impl Repository {
 
                     // If current_next_value is set, but it is in the past, make it a current
                     // value and set next_value to values from arguments.
-                    Some((current_next_value, current_activation_time)) if current_activation_time < now => {
+                    Some((current_next_value, current_activation_time))
+                        if current_activation_time < now =>
+                    {
                         (current_next_value, Some((value, activation_time)))
                     }
 
                     // If current_next_value is set in future, update it.
-                    Some(_) => (current_value, Some((value, activation_time)))
+                    Some(_) => (current_value, Some((value, activation_time))),
                 }
             }
         };
