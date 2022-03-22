@@ -277,6 +277,7 @@ impl TestEnvState {
             } else {
                 let account = self.active_account_hash();
                 let result: Bytes = self.get_account_value(account, "result");
+                self.active_account = self.get_account(0);
                 Ok(bytesrepr::deserialize(result.to_vec()).unwrap())
             }
         }
