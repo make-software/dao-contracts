@@ -19,6 +19,13 @@ trybuild = "1.0"
 name = "tests"
 path = "tests/macro_test.rs"
 
+[[bin]]
+name = "getter_proxy"
+path = "bin/getter_proxy.rs"
+bench = false
+doctest = false
+test = false
+
 [features]
 default = [ "casper-contract/default", "casper-contract/std" ]
 test-support = [ "casper-engine-test-support", "casper-execution-engine" ]

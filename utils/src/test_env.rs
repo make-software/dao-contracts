@@ -16,7 +16,7 @@ use casper_execution_engine::core::{
 };
 use casper_types::{
     account::AccountHash,
-    bytesrepr::{FromBytes, ToBytes},
+    bytesrepr::{FromBytes, ToBytes, Bytes},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, URef, U512,
 };
@@ -58,6 +58,24 @@ impl TestEnv {
             .call_contract_package(hash, entry_point, args);
     }
 
+    /// Call contract and return a value.
+    pub fn call_contract_package_with<T: FromBytes>(
+        &self,
+        hash: ContractPackageHash,
+        entry_point: &str,
+        args: RuntimeArgs,
+    ) -> T {
+        let args_bytes: Vec<u8> = args.to_bytes().unwrap();
+        let args = runtime_args! {
+            "contract_package_hash" => hash,
+            "entry_point" => entry_point,
+            "args" => Bytes::from(args_bytes)
+        };
+        self.deploy_wasm_file("getter_proxy.wasm", args);
+        let account = self.active_account_hash();
+        let result: Bytes = self.env.get_account_value(account, "result");
+        bytesrepr::deserialize(result.to_vec()).unwrap()
+    }
     /// Read [`ContractPackageHash`] from the active user's named keys.
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
         self.state.lock().unwrap().get_contract_package_hash(name)
@@ -214,6 +232,25 @@ impl TestEnvState {
         }
         self.active_account = self.get_account(0);
     }
+
+    pub fn call_contract_package_with_return_value<T: FromBytes>(
+        &self,
+        hash: ContractPackageHash,
+        entry_point: &str,
+        args: RuntimeArgs,
+    ) -> T {
+        let args_bytes: Vec<u8> = args.to_bytes().unwrap();
+        let args = runtime_args! {
+            "contract_package_hash" => hash,
+            "entry_point" => entry_point,
+            "args" => Bytes::from(args_bytes)
+        };
+        self.deploy_wasm_file("getter_proxy.wasm", args);
+        let account = self.active_account_hash();
+        let result: Bytes = self.env.get_account_value(account, "result");
+        bytesrepr::deserialize(result.to_vec()).unwrap()
+    }
+
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
         let account = self

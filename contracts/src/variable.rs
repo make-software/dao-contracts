@@ -1,4 +1,4 @@
-use casper_types::bytesrepr::Bytes;
+use casper_types::{bytesrepr::Bytes, runtime_args};
 
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
@@ -126,5 +126,18 @@ impl VariableRepositoryContractTest {
             .get_value(self.package_hash, self.data.repository.keys.length.path());
         dbg!(count);
         count - RepositoryDefaults::len()
+    }
+
+    pub fn my_get(&self) -> Bytes {
+        let args_bytes: Vec<u8> = runtime_args! {}.to_bytes().unwrap();
+        let args = runtime_args! {
+            "contract_package_hash" => self.package_hash,
+            "entry_point" => "balance_of",
+            "args" => Bytes::from(args_bytes)
+        };
+        self.env.deploy_wasm_file("getter_proxy.wasm", args);
+        let account = self.env.active_account_hash();
+        let result: Bytes = self.env.get_account_value(account, "result");
+        bytesrepr::deserialize(result.to_vec()).unwrap()
     }
 }
