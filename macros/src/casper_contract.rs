@@ -58,8 +58,8 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                     use casper_contract::unwrap_or_revert::UnwrapOrRevert;
 
                     #casper_args
-                    let mut contract = #contract_ident::default();
-                    let result = #contract_interface_ident::#ident(&mut contract, #punctuated_args);
+                    let contract = #contract_ident::default();
+                    let result = #contract_interface_ident::#ident(&contract, #punctuated_args);
                     let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
                     casper_contract::contract_api::runtime::ret(result);
                 }

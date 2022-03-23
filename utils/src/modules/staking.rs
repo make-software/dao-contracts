@@ -62,6 +62,18 @@ impl TokenWithStaking {
         emit(TokensUnstaked { address, amount });
     }
 
+    pub fn total_supply(&self) -> U256 {
+        self.token.total_supply()
+    }
+
+    pub fn balance_of(&self, address: &Address) -> U256 {
+        self.token.balance_of(address)
+    }
+
+    pub fn get_stake_of(&self, address: &Address) -> U256 {
+        self.stakes.get(address)
+    }
+
     fn ensure_balance(&mut self, address: &Address, amount: U256) {
         let staked_amount = self.stakes.get(address);
         self.token.ensure_balance(address, staked_amount + amount);

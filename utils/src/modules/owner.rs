@@ -44,6 +44,10 @@ impl Owner {
             runtime::revert(Error::OwnerIsNotInitialized) // Owner is not inicialized.
         }
     }
+
+    pub fn get_owner(&self) -> Option<Address> {
+        self.owner.get()
+    }
 }
 
 pub mod events {

@@ -79,7 +79,7 @@ mod tests {
     }
     #[test]
     fn test_get_uninitialized_value() {
-        let (_, mut contract) = setup();
+        let (_, contract) = setup();
         let result = contract.get(String::from(KEY));
         assert_eq!(result, None);
     }

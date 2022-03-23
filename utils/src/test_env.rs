@@ -46,7 +46,7 @@ impl TestEnv {
 
     /// Call contract and return a value.
     pub fn call<T: FromBytes>(
-        &mut self,
+        &self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
@@ -198,7 +198,8 @@ impl TestEnvState {
             Err(parse_error(self.context.get_error().unwrap()))
         } else if has_return {
             let result: Bytes = self.get_account_value(active_account, "result");
-            Ok(bytesrepr::deserialize(result.to_vec()).unwrap())
+            dbg!(&result);
+            Ok(Some(bytesrepr::deserialize(result.to_vec()).unwrap()))
         } else {
             Ok(None)
         };

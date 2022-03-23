@@ -99,12 +99,13 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
             },
             ReturnType::Type(_, ty) => quote! {
                 pub fn #ident(#sig_inputs) -> #ty {
-                    self.env.call(
+                    let result: Result<Option<#ty>, casper_dao_utils::Error> = self.env.call::<#ty>(
                         self.package_hash,
                         stringify!(#ident),
                         #args,
                         true
-                    ).unwrap()
+                    );
+                    result.unwrap().unwrap()
                 }
             },
         }

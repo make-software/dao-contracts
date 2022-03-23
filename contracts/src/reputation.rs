@@ -111,6 +111,16 @@ pub trait ReputationContractInterface {
     /// It emits [`TokensUnstaked`](casper_dao_utils::staking::events::TokensUnstaked)
     /// event.
     fn unstake(&mut self, address: Address, amount: U256);
+
+    fn get_owner(&self) -> Option<Address>;
+
+    fn total_supply(&self) -> U256;
+
+    fn balance_of(&self, address: Address) -> U256;
+
+    fn is_whitelisted(&self, address: Address) -> bool;
+
+    fn get_staked_balance_of(&self, address: Address) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -171,38 +181,24 @@ impl ReputationContractInterface for ReputationContract {
         self.whitelist.ensure_whitelisted();
         self.token.unstake(address, amount);
     }
-}
 
-#[cfg(feature = "test-support")]
-impl ReputationContractTest {
-    pub fn get_owner(&self) -> Option<Address> {
-        self.env
-            .get_value(self.package_hash, self.data.owner.owner.path())
+    fn get_owner(&self) -> Option<Address> {
+        self.owner.get_owner()
     }
 
-    pub fn total_supply(&self) -> U256 {
-        self.env
-            .get_value(self.package_hash, self.data.token.token.total_supply.path())
+    fn total_supply(&self) -> U256 {
+        self.token.total_supply()
     }
 
-    pub fn balance_of(&self, address: Address) -> U256 {
-        self.env.get_dict_value(
-            self.package_hash,
-            self.data.token.token.balances.path(),
-            address,
-        )
+    fn balance_of(&self, address: Address) -> U256 {
+        self.token.balance_of(&address)
     }
 
-    pub fn is_whitelisted(&self, address: Address) -> bool {
-        self.env.get_dict_value(
-            self.package_hash,
-            self.data.whitelist.whitelist.path(),
-            address,
-        )
+    fn is_whitelisted(&self, address: Address) -> bool {
+        self.whitelist.is_whitelisted(&address)
     }
 
-    pub fn get_staked_balance_of(&self, address: Address) -> U256 {
-        self.env
-            .get_dict_value(self.package_hash, self.data.token.stakes.path(), address)
+    fn get_staked_balance_of(&self, address: Address) -> U256 {
+        self.token.get_stake_of(&address)
     }
 }

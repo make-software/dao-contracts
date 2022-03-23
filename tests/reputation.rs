@@ -238,7 +238,7 @@ mod tests {
     fn test_ownership() {
         let (env, mut contract) = setup();
         let (owner, new_owner) = (env.get_account(0), env.get_account(1));
-        assert_eq!(contract.get_owner().unwrap(), owner);
+        assert_eq!(contract.get_owner(), Some(owner));
 
         contract.change_ownership(new_owner).unwrap();
         assert_eq!(contract.get_owner().unwrap(), new_owner);
