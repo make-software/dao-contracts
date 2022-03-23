@@ -3,6 +3,9 @@ use crate::parser::CasperContractItem;
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
+use syn::punctuated::Punctuated;
+use syn::token::Comma;
+use syn::FnArg;
 use syn::ReturnType;
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
@@ -18,9 +21,18 @@ pub fn generate_code(input: &CasperContractItem) -> TokenStream {
 fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
-    let args = utils::generate_empty_args();
     let wasm_file_name = &input.wasm_file_name;
     let package_hash = &input.package_hash;
+
+    let init = utils::find_method(input, "init").unwrap();
+    let casper_args = utils::generate_method_args(init);
+    let mut args: Punctuated<FnArg, Comma> = Punctuated::new();
+    init.sig
+        .clone()
+        .inputs
+        .into_iter()
+        .skip(1)
+        .for_each(|arg| args.push(arg));
 
     quote! {
         #[cfg(feature = "test-support")]
@@ -32,14 +44,18 @@ fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
 
         #[cfg(feature = "test-support")]
         impl #contract_test_ident {
-            pub fn new(env: &casper_dao_utils::TestEnv) -> #contract_test_ident {
-                env.deploy_wasm_file(#wasm_file_name, #args);
+            pub fn new(env: &casper_dao_utils::TestEnv, #args) -> #contract_test_ident {
+                env.deploy_wasm_file(#wasm_file_name, #casper_args);
                 let package_hash = env.get_contract_package_hash(#package_hash);
                 #contract_test_ident {
                     env: env.clone(),
                     package_hash,
                     data: #contract_ident::default(),
                 }
+            }
+
+            pub fn get_package_hash(&self) -> casper_types::ContractPackageHash {
+                self.package_hash
             }
 
             pub fn as_account(&mut self, account: casper_dao_utils::Address) -> &mut Self {
