@@ -16,7 +16,7 @@ pub trait VariableRepositoryContractInterface {
     fn add_to_whitelist(&mut self, address: Address);
     fn remove_from_whitelist(&mut self, address: Address);
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
-    fn get(&mut self, key: String) -> Bytes;
+    fn get(&mut self, key: String) -> Option<Bytes>;
 }
 
 #[derive(Default)]
@@ -128,13 +128,5 @@ impl VariableRepositoryContractTest {
             .env
             .get_value(self.package_hash, self.data.repository.keys.length.path());
         count - RepositoryDefaults::len()
-    }
-
-    pub fn get(&mut self, key: String) -> Result<Bytes, String> {
-        let args = runtime_args! {
-            "key" => key
-        };
-        self.env
-            .call_contract_package_with_ret(self.package_hash, "get", args)
     }
 }

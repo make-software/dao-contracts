@@ -40,8 +40,10 @@ mod tests {
         let recipient = env.get_account(1);
         let total_supply = 100.into();
 
-        contract.mint(recipient, total_supply);
-        assert_eq!(contract.balance_of(recipient), total_supply);
+        contract.mint(recipient, total_supply).ok();
+        contract.mint(recipient, total_supply).err(Error::ActivationTimeInPast);
+
+        assert_eq!(contract.balance_of(recipient).ok(), total_supply);
         contract.assert_event_at(
             2,
             Mint {

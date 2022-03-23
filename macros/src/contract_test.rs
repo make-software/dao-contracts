@@ -4,6 +4,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
 use syn::ReturnType;
+use syn::Token;
+use syn::Type;
+use syn::parse_quote;
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let contract_test_interface = generate_test_interface(input);
@@ -69,7 +72,7 @@ fn generate_test_interface(input: &CasperContractItem) -> TokenStream {
 
     quote! {
       #[cfg(feature = "test-support")]
-      impl #ident for #contract_test_ident {
+      impl #contract_test_ident {
         #methods
       }
     }
@@ -81,28 +84,18 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
         let sig = &method.sig;
         let ident = &sig.ident;
         let args = utils::generate_method_args(method);
-
-        let mut return_value = TokenStream::new();
-        //solves only the simplest but the most common case, consider handling arrys, tuples, generics
-        return_value.append_all(match &sig.output {
-            ReturnType::Default => quote! {},
-            ReturnType::Type(_, ty) => {
-                let unboxed_ty = &**ty;
-                match unboxed_ty {
-                    syn::Type::Path(path) => quote! { #path::default() },
-                    _ => quote! {},
-                }
-            }
-        });
-
+        let sig_inputs = &sig.inputs;
+        let ret = match &sig.output {
+            ReturnType::Default => quote! { () },
+            ReturnType::Type(_, ty) => quote! { #ty },
+        };
         quote! {
-            #sig {
-                self.env.call_contract_package(
+            pub fn #ident(#sig_inputs) -> Result<#ret, String> {
+                self.env.call_contract_package_with_ret(
                     self.package_hash,
                     stringify!(#ident),
-                    #args,
-                );
-                #return_value
+                    #args
+                )
             }
         }
     }));

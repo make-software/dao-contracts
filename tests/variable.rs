@@ -57,7 +57,7 @@ mod tests {
             activation_time: Option<u64>,
         ) {
             self.contract
-                .update_at(key.to_string(), value.convert_to_bytes(), activation_time)
+                .update_at(key.to_string(), value.convert_to_bytes(), activation_time).unwrap()
         }
     }
 
@@ -83,8 +83,9 @@ mod tests {
     fn test_get_uninitialized_value() {
         let (env, mut contract) = setup();
 
-        env.expect_error(Error::ValueNotAvailable);
-        let _ = contract.get(String::from(KEY));
+        // env.expect_error(Error::ValueNotAvailable);
+        let result = contract.get(String::from(KEY));
+        assert_eq!(result, Err(String::from("asd")));
     }
 
     // To test `update_at` entry point all possible cases should be checked.

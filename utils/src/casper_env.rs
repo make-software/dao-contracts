@@ -8,7 +8,7 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    CLTyped, ContractPackageHash, EntryPoints, URef,
+    CLTyped, ContractPackageHash, EntryPoints, URef, ApiError,
 };
 
 use crate::{Address, Events};
@@ -119,4 +119,8 @@ pub fn install_contract(
 
 pub fn get_block_time() -> u64 {
     u64::from(runtime::get_blocktime())
+}
+
+pub fn revert<T: Into<ApiError>>(error: T) {
+    runtime::revert(error)
 }

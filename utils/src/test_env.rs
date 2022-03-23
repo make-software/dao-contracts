@@ -45,19 +45,6 @@ impl TestEnv {
             .deploy_wasm_file(session_code, session_args);
     }
 
-    /// Call already deployed contract.
-    pub fn call_contract_package(
-        &mut self,
-        hash: ContractPackageHash,
-        entry_point: &str,
-        args: RuntimeArgs,
-    ) {
-        self.state
-            .lock()
-            .unwrap()
-            .call_contract_package(hash, entry_point, args);
-    }
-
     /// Call contract and return a value.
     pub fn call_contract_package_with_ret<T: FromBytes>(
         &mut self,
@@ -186,46 +173,6 @@ impl TestEnvState {
             .with_block_time(self.block_time)
             .build();
         self.context.exec(execute_request).commit().expect_success();
-    }
-
-    pub fn call_contract_package(
-        &mut self,
-        hash: ContractPackageHash,
-        entry_point: &str,
-        args: RuntimeArgs,
-    ) {
-        let deploy_item = DeployItemBuilder::new()
-            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
-            .with_authorization_keys(&[self.active_account_hash()])
-            .with_address(self.active_account_hash())
-            .with_stored_versioned_contract_by_hash(hash.value(), None, entry_point, args)
-            .build();
-
-        let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
-            .with_block_time(self.block_time)
-            .build();
-        self.context.exec(execute_request).commit();
-
-        if let Some(expected_error) = self.expected_error.clone() {
-            // If error is expected.
-            if self.context.is_error() {
-                // The execution actually ended with an error.
-                if let engine_state::Error::Exec(exec_error) = self.context.get_error().unwrap() {
-                    assert_eq!(expected_error.to_string(), exec_error.to_string());
-                    self.expected_error = None;
-                } else {
-                    panic!("Unexpected engine_state error.");
-                }
-            } else {
-                panic!("Deploy expected to fail.");
-            }
-        } else {
-            // If error is not expected.
-            if self.context.is_error() {
-                self.context.expect_success();
-            }
-        }
-        self.active_account = self.get_account(0);
     }
 
     pub fn call_contract_package_with_ret<T: FromBytes>(

@@ -4,5 +4,6 @@ members = [
     "utils/sample-contract",
     "macros",
     "contracts",
-    "tests"
+    "tests",
+    "erc20"
 ]
