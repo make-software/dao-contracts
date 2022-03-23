@@ -57,16 +57,13 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         self.repository.update_at(key, value, activation_time);
     }
 
-    fn get(&mut self, key: String) -> Bytes {
+    fn get(&mut self, key: String) -> Option<Bytes> {
         self.repository.get(key)
     }
 }
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::{repository::RepositoryDefaults, BytesConversion};
-
-#[cfg(feature = "test-support")]
-use casper_types::{runtime_args, RuntimeArgs};
 
 #[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {

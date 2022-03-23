@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use casper_dao_contracts::{ReputationContractInterface, ReputationContractTest};
+    use casper_dao_contracts::ReputationContractTest;
     use casper_dao_utils::{
         owner::events::OwnerChanged,
         staking::events::{TokensStaked, TokensUnstaked},
         token::events::{Burn, Mint, Transfer},
         whitelist::events::{AddedToWhitelist, RemovedFromWhitelist},
-        Error, ExecutionError, TestEnv,
+        Error, TestEnv,
     };
     use casper_types::U256;
 
@@ -29,9 +29,9 @@ mod tests {
 
     #[test]
     fn test_init_cannot_be_called_twice() {
-        let (env, mut contract) = setup();
-        env.expect_execution_error(ExecutionError::InvalidContext);
-        contract.init();
+        let (_, mut contract) = setup();
+        let result = contract.init();
+        assert_eq!(result.unwrap_err(), Error::InvalidContext);
     }
 
     #[test]
@@ -40,10 +40,9 @@ mod tests {
         let recipient = env.get_account(1);
         let total_supply = 100.into();
 
-        contract.mint(recipient, total_supply).ok();
-        contract.mint(recipient, total_supply).err(Error::ActivationTimeInPast);
+        contract.mint(recipient, total_supply).unwrap();
 
-        assert_eq!(contract.balance_of(recipient).ok(), total_supply);
+        assert_eq!(contract.balance_of(recipient), total_supply);
         contract.assert_event_at(
             2,
             Mint {
@@ -58,8 +57,9 @@ mod tests {
         let (env, mut contract) = setup();
         let non_owner = env.get_account(1);
 
-        env.expect_error(Error::NotWhitelisted);
-        contract.as_account(non_owner).mint(non_owner, 10.into());
+        let result = contract.as_account(non_owner).mint(non_owner, 10.into());
+
+        assert_eq!(result.unwrap_err(), Error::NotWhitelisted);
     }
 
     #[test]
@@ -71,7 +71,7 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
-        contract.burn(owner, burn_amount);
+        contract.burn(owner, burn_amount).unwrap();
         assert_eq!(contract.total_supply(), remaining_supply);
         assert_eq!(contract.balance_of(owner), remaining_supply);
         contract.assert_event_at(
@@ -91,8 +91,8 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
-        env.expect_error(Error::InsufficientBalance);
-        contract.burn(owner, burn_amount);
+        let result = contract.burn(owner, burn_amount);
+        assert_eq!(result.unwrap_err(), Error::InsufficientBalance)
     }
 
     #[test]
@@ -100,18 +100,18 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(100.into());
         let (user1, user2) = (env.get_account(0), env.get_account(1));
 
-        env.expect_error(Error::NotWhitelisted);
-        contract.as_account(user2).burn(user1, 10.into());
+        let result = contract.as_account(user2).burn(user1, 10.into());
+        assert_eq!(result.unwrap_err(), Error::NotWhitelisted);
     }
 
     #[test]
     fn test_total_supply_overflow() {
         let (env, mut contract) = setup();
 
-        contract.mint(env.get_account(0), U256::MAX);
+        contract.mint(env.get_account(0), U256::MAX).unwrap();
 
-        env.expect_error(Error::TotalSupplyOverflow);
-        contract.mint(env.get_account(0), U256::one());
+        let result = contract.mint(env.get_account(0), U256::one());
+        assert_eq!(result.unwrap_err(), Error::TotalSupplyOverflow);
     }
 
     #[test]
@@ -122,11 +122,11 @@ mod tests {
         assert!(contract.is_whitelisted(owner));
         assert_eq!(contract.is_whitelisted(user), false);
 
-        contract.add_to_whitelist(user);
+        contract.add_to_whitelist(user).unwrap();
         assert!(contract.is_whitelisted(user));
         contract.assert_event_at(2, AddedToWhitelist { address: user });
 
-        contract.remove_from_whitelist(user);
+        contract.remove_from_whitelist(user).unwrap();
         assert_eq!(contract.is_whitelisted(user), false);
         contract.assert_event_at(3, RemovedFromWhitelist { address: user });
     }
@@ -138,7 +138,7 @@ mod tests {
 
         assert_eq!(contract.is_whitelisted(user), false);
 
-        contract.remove_from_whitelist(user);
+        contract.remove_from_whitelist(user).unwrap();
         assert_eq!(contract.is_whitelisted(user), false);
     }
 
@@ -147,13 +147,13 @@ mod tests {
         let (env, mut contract) = setup();
         let user = env.get_account(1);
 
-        contract.add_to_whitelist(user);
-        contract.add_to_whitelist(user);
+        contract.add_to_whitelist(user).unwrap();
+        contract.add_to_whitelist(user).unwrap();
         assert!(contract.is_whitelisted(user));
         contract.assert_event_at(2, AddedToWhitelist { address: user });
         contract.assert_event_at(3, AddedToWhitelist { address: user });
 
-        contract.remove_from_whitelist(user);
+        contract.remove_from_whitelist(user).unwrap();
         assert_eq!(contract.is_whitelisted(user), false);
         contract.assert_event_at(4, RemovedFromWhitelist { address: user });
     }
@@ -163,13 +163,13 @@ mod tests {
         let (env, mut contract) = setup();
         let (user1, user2) = (env.get_account(1), env.get_account(2));
 
-        contract.add_to_whitelist(user1);
+        contract.add_to_whitelist(user1).unwrap();
 
-        env.expect_error(Error::NotAnOwner);
-        contract.as_account(user1).add_to_whitelist(user2);
+        let result = contract.as_account(user1).add_to_whitelist(user2);
+        assert_eq!(result.unwrap_err(), Error::NotAnOwner);
 
-        env.expect_error(Error::NotAnOwner);
-        contract.as_account(user1).remove_from_whitelist(user2);
+        let result = contract.as_account(user1).remove_from_whitelist(user2);
+        assert_eq!(result.unwrap_err(), Error::NotAnOwner);
     }
 
     #[test]
@@ -179,7 +179,7 @@ mod tests {
 
         assert!(contract.is_whitelisted(owner));
 
-        contract.change_ownership(new_owner);
+        contract.change_ownership(new_owner).unwrap();
         assert!(contract.is_whitelisted(new_owner));
         contract.assert_event_at(2, OwnerChanged { new_owner });
         contract.assert_event_at(3, AddedToWhitelist { address: new_owner });
@@ -193,7 +193,9 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let (owner, first_recipient) = (env.get_account(0), env.get_account(1));
 
-        contract.transfer_from(owner, first_recipient, transfer_amount);
+        contract
+            .transfer_from(owner, first_recipient, transfer_amount)
+            .unwrap();
 
         assert_eq!(contract.balance_of(owner), total_supply - transfer_amount);
         assert_eq!(contract.balance_of(first_recipient), transfer_amount);
@@ -212,12 +214,12 @@ mod tests {
         let (env, mut contract) = setup();
         let (sender, recipient) = (env.get_account(1), env.get_account(2));
 
-        contract.mint(sender, 10.into());
+        contract.mint(sender, 10.into()).unwrap();
 
-        env.expect_error(Error::NotWhitelisted);
-        contract
+        let result = contract
             .as_account(sender)
             .transfer_from(sender, recipient, 1.into());
+        assert_eq!(result.unwrap_err(), Error::NotWhitelisted);
     }
 
     #[test]
@@ -228,8 +230,8 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let (owner, first_recipient) = (env.get_account(0), env.get_account(1));
 
-        env.expect_error(Error::InsufficientBalance);
-        contract.transfer_from(owner, first_recipient, transfer_amount);
+        let result = contract.transfer_from(owner, first_recipient, transfer_amount);
+        assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
     }
 
     #[test]
@@ -238,11 +240,11 @@ mod tests {
         let (owner, new_owner) = (env.get_account(0), env.get_account(1));
         assert_eq!(contract.get_owner().unwrap(), owner);
 
-        contract.change_ownership(new_owner);
+        contract.change_ownership(new_owner).unwrap();
         assert_eq!(contract.get_owner().unwrap(), new_owner);
 
-        env.expect_error(Error::NotAnOwner);
-        contract.change_ownership(new_owner);
+        let result = contract.change_ownership(new_owner);
+        assert_eq!(result.unwrap_err(), Error::NotAnOwner);
     }
 
     #[test]
@@ -252,7 +254,7 @@ mod tests {
         let amount_to_stake = 10.into();
         let account = env.get_account(0);
 
-        contract.stake(account, amount_to_stake);
+        contract.stake(account, amount_to_stake).unwrap();
         assert_eq!(contract.balance_of(account), total_supply);
         assert_eq!(contract.get_staked_balance_of(account), amount_to_stake);
         contract.assert_event_at(
@@ -271,8 +273,8 @@ mod tests {
         let amount_to_stake = 200.into();
         let account = env.get_account(0);
 
-        env.expect_error(Error::InsufficientBalance);
-        contract.stake(account, amount_to_stake);
+        let result = contract.stake(account, amount_to_stake);
+        assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
     }
 
     #[test]
@@ -280,10 +282,10 @@ mod tests {
         let (env, mut contract) = setup();
         let not_whitelisted_account = env.get_account(1);
 
-        env.expect_error(Error::NotWhitelisted);
-        contract
+        let result = contract
             .as_account(not_whitelisted_account)
             .stake(not_whitelisted_account, 1.into());
+        assert_eq!(result.unwrap_err(), Error::NotWhitelisted);
     }
 
     #[test]
@@ -294,10 +296,10 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let owner = env.get_account(0);
 
-        contract.stake(owner, staked_amount);
+        contract.stake(owner, staked_amount).unwrap();
 
-        env.expect_error(Error::InsufficientBalance);
-        contract.burn(owner, burn_amount);
+        let result = contract.burn(owner, burn_amount);
+        assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
     }
 
     #[test]
@@ -308,10 +310,10 @@ mod tests {
         let (env, mut contract) = setup_with_initial_supply(total_supply);
         let (owner, recipient) = (env.get_account(0), env.get_account(1));
 
-        contract.stake(owner, staked_amount);
+        contract.stake(owner, staked_amount).unwrap();
 
-        env.expect_error(Error::InsufficientBalance);
-        contract.transfer_from(owner, recipient, transferred_amount);
+        let result = contract.transfer_from(owner, recipient, transferred_amount);
+        assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
     }
 
     #[test]
@@ -322,8 +324,8 @@ mod tests {
         let amount_to_unstake = 4.into();
         let account = env.get_account(0);
 
-        contract.stake(account, amount_to_stake);
-        contract.unstake(account, amount_to_unstake);
+        contract.stake(account, amount_to_stake).unwrap();
+        contract.unstake(account, amount_to_unstake).unwrap();
         assert_eq!(
             contract.get_staked_balance_of(account),
             amount_to_stake - amount_to_unstake
@@ -345,9 +347,10 @@ mod tests {
         let amount_to_unstake = 60.into();
         let account = env.get_account(0);
 
-        contract.stake(account, amount_to_stake);
-        env.expect_error(Error::InsufficientBalance);
-        contract.unstake(account, amount_to_unstake);
+        contract.stake(account, amount_to_stake).unwrap();
+
+        let result = contract.unstake(account, amount_to_unstake);
+        assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
     }
 
     fn setup() -> (TestEnv, ReputationContractTest) {
@@ -359,7 +362,7 @@ mod tests {
 
     fn setup_with_initial_supply(amount: U256) -> (TestEnv, ReputationContractTest) {
         let (env, mut contract) = setup();
-        contract.mint(env.get_account(0), amount);
+        contract.mint(env.get_account(0), amount).unwrap();
 
         (env, contract)
     }

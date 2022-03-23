@@ -4,9 +4,6 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
 use syn::ReturnType;
-use syn::Token;
-use syn::Type;
-use syn::parse_quote;
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let contract_test_interface = generate_test_interface(input);
@@ -66,7 +63,6 @@ fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
 }
 
 fn generate_test_interface(input: &CasperContractItem) -> TokenStream {
-    let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);
 
@@ -85,18 +81,32 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
         let ident = &sig.ident;
         let args = utils::generate_method_args(method);
         let sig_inputs = &sig.inputs;
-        let ret = match &sig.output {
-            ReturnType::Default => quote! { () },
-            ReturnType::Type(_, ty) => quote! { #ty },
-        };
-        quote! {
-            pub fn #ident(#sig_inputs) -> Result<#ret, String> {
-                self.env.call_contract_package_with_ret(
-                    self.package_hash,
-                    stringify!(#ident),
-                    #args
-                )
-            }
+        match &sig.output {
+            ReturnType::Default => quote! {
+                pub fn #ident(#sig_inputs) -> Result<(), casper_dao_utils::Error> {
+                    let result: Result<Option<()>, casper_dao_utils::Error> = self.env.call(
+                        self.package_hash,
+                        stringify!(#ident),
+                        #args,
+                        false
+                    );
+                    match result {
+                        Ok(None) => Ok(()),
+                        Ok(Some(_)) => panic!("Unexpected value on return."),
+                        Err(err) => Err(err)
+                    }
+                }
+            },
+            ReturnType::Type(_, ty) => quote! {
+                pub fn #ident(#sig_inputs) -> #ty {
+                    self.env.call(
+                        self.package_hash,
+                        stringify!(#ident),
+                        #args,
+                        true
+                    ).unwrap()
+                }
+            },
         }
     }));
 

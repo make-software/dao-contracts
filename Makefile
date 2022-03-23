@@ -14,7 +14,7 @@ build-contracts:
 test: build-contracts prepare-proxy-getter
 	cp target/wasm32-unknown-unknown/release/reputation_contract.wasm tests/wasm
 	cp target/wasm32-unknown-unknown/release/variable_repository_contract.wasm tests/wasm
-	cargo test -p tests
+	cargo test -p tests $$TEST_NAME
 
 clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison

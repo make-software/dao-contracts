@@ -453,15 +453,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "erc20"
-version = "0.1.0"
-dependencies = [
- "casper-contract",
- "casper-dao-utils",
- "casper-types",
-]
-
-[[package]]
 name = "fastrand"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

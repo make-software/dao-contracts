@@ -8,7 +8,7 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    CLTyped, ContractPackageHash, EntryPoints, URef, ApiError,
+    ApiError, CLTyped, ContractPackageHash, EntryPoints, URef,
 };
 
 use crate::{Address, Events};

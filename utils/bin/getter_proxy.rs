@@ -24,8 +24,15 @@ fn call() {
     let entry_point: String = runtime::get_named_arg("entry_point");
     let args_bytes: Bytes = runtime::get_named_arg("args");
     let (args, _) = RuntimeArgs::from_bytes(&args_bytes).unwrap_or_revert();
-    let result: Vec<u8> = call_versioned_contract(contract_package_hash, None, &entry_point, args);
-    casper_dao_utils::casper_env::set_key("result", Bytes::from(result));
+    let has_return: bool = runtime::get_named_arg("has_return");
+    if has_return {
+        let result: Vec<u8> =
+            call_versioned_contract(contract_package_hash, None, &entry_point, args);
+        casper_dao_utils::casper_env::set_key("result", Bytes::from(result));
+    } else {
+        let _: () =
+            runtime::call_versioned_contract(contract_package_hash, None, &entry_point, args);
+    }
 }
 
 fn call_versioned_contract(

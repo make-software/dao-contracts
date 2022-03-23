@@ -4,15 +4,14 @@ use std::{
     time::Duration,
 };
 
-use crate::Address;
+use crate::{Address, Error};
 use casper_engine_test_support::{
     DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
     DEFAULT_PAYMENT,
 };
-use casper_execution_engine::core::{
-    engine_state::{self, run_genesis_request::RunGenesisRequest, GenesisAccount},
-    execution,
+use casper_execution_engine::core::engine_state::{
+    self, run_genesis_request::RunGenesisRequest, GenesisAccount,
 };
 use casper_types::{
     account::AccountHash,
@@ -46,16 +45,17 @@ impl TestEnv {
     }
 
     /// Call contract and return a value.
-    pub fn call_contract_package_with_ret<T: FromBytes>(
+    pub fn call<T: FromBytes>(
         &mut self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
-    ) -> Result<T, String> {
+        has_return: bool,
+    ) -> Result<Option<T>, Error> {
         self.state
             .lock()
             .unwrap()
-            .call_contract_package_with_ret(hash, entry_point, args)
+            .call(hash, entry_point, args, has_return)
     }
 
     /// Read [`ContractPackageHash`] from the active user's named keys.
@@ -88,16 +88,6 @@ impl TestEnv {
         self.state.lock().unwrap().as_account(account);
     }
 
-    /// Set the [`ApiError`] expected to occur.
-    pub fn expect_error<T: Into<ApiError>>(&self, error: T) {
-        self.state.lock().unwrap().expect_error(error);
-    }
-
-    /// Set the [`execution::Error`] expected to occur.
-    pub fn expect_execution_error(&self, error: execution::Error) {
-        self.state.lock().unwrap().expect_execution_error(error);
-    }
-
     /// Increases the current value of block_time
     pub fn advance_block_time_by(&self, seconds: Duration) {
         self.state.lock().unwrap().block_time += seconds.as_secs();
@@ -114,7 +104,6 @@ pub struct TestEnvState {
     accounts: Vec<Address>,
     active_account: Address,
     context: InMemoryWasmTestBuilder,
-    expected_error: Option<execution::Error>,
     block_time: u64,
 }
 
@@ -154,7 +143,6 @@ impl TestEnvState {
             active_account: accounts[0],
             context: builder,
             accounts,
-            expected_error: None,
             block_time: 0,
         }
     }
@@ -175,19 +163,21 @@ impl TestEnvState {
         self.context.exec(execute_request).commit().expect_success();
     }
 
-    pub fn call_contract_package_with_ret<T: FromBytes>(
+    pub fn call<T: FromBytes>(
         &mut self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
-    ) -> Result<T, String> {
+        has_return: bool,
+    ) -> Result<Option<T>, Error> {
         let session_code = PathBuf::from("getter_proxy.wasm");
 
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();
         let args = runtime_args! {
             "contract_package_hash" => hash,
             "entry_point" => entry_point,
-            "args" => Bytes::from(args_bytes)
+            "args" => Bytes::from(args_bytes),
+            "has_return" => has_return
         };
 
         let deploy_item = DeployItemBuilder::new()
@@ -202,32 +192,18 @@ impl TestEnvState {
             .build();
         self.context.exec(execute_request).commit();
 
-        if let Some(expected_error) = self.expected_error.clone() {
-            // If error is expected.
-            if self.context.is_error() {
-                // The execution actually ended with an error.
-                if let engine_state::Error::Exec(exec_error) = self.context.get_error().unwrap() {
-                    assert_eq!(expected_error.to_string(), exec_error.to_string());
-                    self.expected_error = None;
-                    self.active_account = self.get_account(0);
-                    Err(String::from("error already processed"))
-                } else {
-                    panic!("Unexpected engine_state error.");
-                }
-            } else {
-                panic!("Deploy expected to fail.");
-            }
+        let active_account = self.active_account_hash();
+
+        let result = if self.context.is_error() {
+            Err(parse_error(self.context.get_error().unwrap()))
+        } else if has_return {
+            let result: Bytes = self.get_account_value(active_account, "result");
+            Ok(bytesrepr::deserialize(result.to_vec()).unwrap())
         } else {
-            // If error is not expected.
-            if self.context.is_error() {
-                Err(String::from("Expected sucess, error found"))
-            } else {
-                let account = self.active_account_hash();
-                let result: Bytes = self.get_account_value(account, "result");
-                self.active_account = self.get_account(0);
-                Ok(bytesrepr::deserialize(result.to_vec()).unwrap())
-            }
-        }
+            Ok(None)
+        };
+        self.active_account = self.get_account(0);
+        result
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -315,17 +291,21 @@ impl TestEnvState {
     pub fn as_account(&mut self, account: Address) {
         self.active_account = account;
     }
-
-    pub fn expect_error<T: Into<ApiError>>(&mut self, error: T) {
-        self.expect_execution_error(execution::Error::Revert(error.into()));
-    }
-
-    pub fn expect_execution_error(&mut self, error: execution::Error) {
-        self.expected_error = Some(error);
-    }
 }
 
 fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap();
     base64::encode(&preimage)
+}
+
+fn parse_error(err: engine_state::Error) -> Error {
+    if let engine_state::Error::Exec(exec_err) = err {
+        if let ExecutionError::Revert(ApiError::User(id)) = exec_err {
+            return Error::from(id);
+        }
+        if let ExecutionError::InvalidContext = exec_err {
+            return Error::InvalidContext;
+        }
+    }
+    panic!("Unexpected error.");
 }

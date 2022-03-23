@@ -49,16 +49,18 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
 
     /// Read `key` from the storage or return default value.
     pub fn get(&self, key: &K) -> V {
-        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
-            .unwrap_or_revert()
-            .unwrap_or_default()
+        self.get_or_none(key).unwrap_or_default()
     }
 
     /// Read `key` from the storage or revert if the key stores no value.
     pub fn get_or_revert(&self, key: &K) -> V {
-        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
-            .unwrap_or_revert()
+        self.get_or_none(key)
             .unwrap_or_revert_with(Error::ValueNotAvailable)
+    }
+
+    /// Read `key` from the storage or return none.
+    pub fn get_or_none(&self, key: &K) -> Option<V> {
+        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key)).unwrap_or_revert()
     }
 
     /// Set `value` under `key` to the storage. It overrides by default.
