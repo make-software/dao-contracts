@@ -8,7 +8,11 @@ mod contract {
                 ImportantContract::entry_points(),
                 |contract_package_hash| {
                     let mut contract_instance = ImportantContractCaller::at(contract_package_hash);
-                    contract_instance.init();
+                    let first_arg =
+                        casper_contract::contract_api::runtime::get_named_arg("first_arg");
+                    let second_arg =
+                        casper_contract::contract_api::runtime::get_named_arg("second_arg");
+                    contract_instance.init(first_arg, second_arg);
                 },
             );
         }
@@ -20,6 +24,14 @@ mod contract {
                 "init",
                 {
                     let mut params: Vec<casper_types::Parameter> = Vec::new();
+                    params.push(casper_types::Parameter::new(
+                        "first_arg",
+                        <casper_types::U256 as casper_types::CLTyped>::cl_type(),
+                    ));
+                    params.push(casper_types::Parameter::new(
+                        "second_arg",
+                        <casper_types::U256 as casper_types::CLTyped>::cl_type(),
+                    ));
                     params
                 },
                 <() as casper_types::CLTyped>::cl_type(),
@@ -60,13 +72,24 @@ mod contract {
                 casper_types::EntryPointAccess::Public,
                 casper_types::EntryPointType::Contract,
             ));
+            entry_points.add_entry_point(casper_types::EntryPoint::new(
+                "argless",
+                {
+                    let mut params: Vec<casper_types::Parameter> = Vec::new();
+                    params
+                },
+                <() as casper_types::CLTyped>::cl_type(),
+                casper_types::EntryPointAccess::Public,
+                casper_types::EntryPointType::Contract,
+            ));
             entry_points
         }
     }
     pub trait ImportantContractInterface {
-        fn init(&mut self);
+        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256);
         fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
         fn balance_of(&mut self, to: casper_dao_utils::Address) -> casper_types::U256;
+        fn argless(&mut self);
     }
     pub struct ImportantContractCaller {
         contract_package_hash: casper_types::ContractPackageHash,
@@ -79,13 +102,15 @@ mod contract {
         }
     }
     impl ImportantContractInterface for ImportantContractCaller {
-        fn init(&mut self) {
+        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256) {
             let _: () = casper_contract::contract_api::runtime::call_versioned_contract(
                 self.contract_package_hash,
                 std::option::Option::None,
                 "init",
                 {
                     let mut named_args = casper_types::RuntimeArgs::new();
+                    named_args.insert("first_arg", first_arg).unwrap();
+                    named_args.insert("second_arg", second_arg).unwrap();
                     named_args
                 },
             );
@@ -115,6 +140,14 @@ mod contract {
                 },
             )
         }
+        fn argless(&mut self) {
+            casper_contract::contract_api::runtime::call_versioned_contract(
+                self.contract_package_hash,
+                std::option::Option::None,
+                "argless",
+                casper_types::RuntimeArgs::new(),
+            )
+        }
     }
     #[cfg(feature = "test-support")]
     pub struct ImportantContractTest {
@@ -125,10 +158,7 @@ mod contract {
     #[cfg(feature = "test-support")]
     impl ImportantContractTest {
         pub fn new(env: &casper_dao_utils::TestEnv) -> ImportantContractTest {
-            env.deploy_wasm_file("important_contract.wasm", {
-                let mut named_args = casper_types::RuntimeArgs::new();
-                named_args
-            });
+            env.deploy_wasm_file("important_contract.wasm", casper_types::RuntimeArgs::new());
             let package_hash = env.get_contract_package_hash("important_contract_package_hash");
             ImportantContractTest {
                 env: env.clone(),
@@ -176,9 +206,11 @@ mod contract {
     }
     #[cfg(feature = "test-support")]
     impl ImportantContractInterface for ImportantContractTest {
-        fn init(&mut self) {
+        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256) {
             self.env.call_contract_package(self.package_hash, "init", {
                 let mut named_args = casper_types::RuntimeArgs::new();
+                named_args.insert("first_arg", first_arg).unwrap();
+                named_args.insert("second_arg", second_arg).unwrap();
                 named_args
             });
         }
@@ -199,6 +231,13 @@ mod contract {
                 });
             casper_types::U256::default()
         }
+        fn argless(&mut self) {
+            self.env.call_contract_package(
+                self.package_hash,
+                "argless",
+                casper_types::RuntimeArgs::new(),
+            );
+        }
     }
     pub struct ImportantContract {}
     #[automatically_derived]
@@ -210,10 +249,11 @@ mod contract {
         }
     }
     impl ImportantContractInterface for ImportantContract {
-        fn init(&mut self) {}
+        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256) {}
         fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256) {}
         fn balance_of(&mut self, to: casper_dao_utils::Address) -> casper_types::U256 {
             casper_types::U256::default()
         }
+        fn argless(&mut self) {}
     }
 }

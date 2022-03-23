@@ -11,7 +11,6 @@ pub const EP_ADD_TO_WHITELIST: &str = "add_to_whitelist";
 pub const EP_CHANGE_OWNERSHIP: &str = "change_ownership";
 pub const EP_SET_OR_UPDATE: &str = "set_or_update";
 pub const EP_GET: &str = "get";
-pub const EP_DELETE: &str = "delete";
 
 pub const PARAM_RECIPIENT: &str = "recipient";
 pub const PARAM_AMOUNT: &str = "amount";
@@ -29,3 +28,16 @@ pub const NAME_STORAGE: &str = "storage";
 pub const NAME_KEYS: &str = "keys";
 pub const LENGTH_SUFFIX: &str = "_length";
 pub const NAME_EVENTS: &str = "events";
+
+//REPO KEYS
+pub const DEFAULT_POLICING_RATE: &str = "default_policing_rate";
+pub const REPUTATION_CONVERSION_RATE: &str = "reputation_conversion_rate";
+pub const FORUM_KYC_REQUIRED: &str = "forum_kyc_required";
+pub const FORMAL_VOTING_QUORUM: &str = "formal_voting_quorum";
+pub const INFORMAL_VOTING_QUORUM: &str = "informal_voting_quorum";
+pub const VOTING_QUORUM: &str = "voting_quorum";
+pub const FORMAL_VOTING_TIME: &str = "formal_voting_time";
+pub const INFORMAL_VOTING_TIME: &str = "informal_voting_time";
+pub const VOTING_TIME: &str = "voting_time";
+pub const MINIMUM_GOVERNANCE_REPUTATION: &str = "minimum_governance_reputation";
+pub const MINIMUM_VOTING_REPUTATION: &str = "minimum_voting_reputation";

@@ -5,18 +5,18 @@ use syn::parse::{Parse, ParseStream};
 use syn::{braced, Token, TraitItemMethod};
 
 #[derive(Debug)]
-pub struct ContractTrait {
+pub struct CasperContractItem {
     pub trait_token: Token![trait],
+    pub trait_methods: Vec<TraitItemMethod>,
     pub ident: Ident,
     pub contract_ident: Ident,
     pub caller_ident: Ident,
     pub contract_test_ident: Ident,
-    pub methods: Vec<TraitItemMethod>,
     pub package_hash: String,
     pub wasm_file_name: String,
 }
 
-impl Parse for ContractTrait {
+impl Parse for CasperContractItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
 
@@ -41,13 +41,13 @@ impl Parse for ContractTrait {
         let package_hash = format!("{}_package_hash", name.to_case(Case::Snake));
         let wasm_file_name = format!("{}.wasm", name.to_case(Case::Snake));
 
-        Ok(ContractTrait {
+        Ok(CasperContractItem {
             trait_token,
+            trait_methods: methods,
             ident,
             contract_ident,
             caller_ident,
             contract_test_ident,
-            methods,
             package_hash,
             wasm_file_name,
         })

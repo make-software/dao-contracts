@@ -11,8 +11,10 @@ fn call() {
 }
 #[no_mangle]
 fn init() {
+    let first_arg = casper_contract::contract_api::runtime::get_named_arg("first_arg");
+    let second_arg = casper_contract::contract_api::runtime::get_named_arg("second_arg");
     let mut contract = ImportantContract::default();
-    ImportantContractInterface::init(&mut contract);
+    ImportantContractInterface::init(&mut contract, first_arg, second_arg);
 }
 #[no_mangle]
 fn mint() {
@@ -26,4 +28,9 @@ fn balance_of() {
     let to = casper_contract::contract_api::runtime::get_named_arg("to");
     let mut contract = ImportantContract::default();
     ImportantContractInterface::balance_of(&mut contract, to);
+}
+#[no_mangle]
+fn argless() {
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::argless(&mut contract);
 }

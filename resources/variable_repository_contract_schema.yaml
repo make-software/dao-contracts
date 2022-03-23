@@ -15,11 +15,6 @@ entry_points:
     returns:
       - cl_type: "Bytes"
 
-  - name: "delete"
-    arguments:
-      - name: "key"
-        cl_type: "String"
-
   - name: "change_ownership"
     arguments:
       - name: "owner"
