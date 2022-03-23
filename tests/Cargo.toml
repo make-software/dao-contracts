@@ -12,5 +12,5 @@ casper-dao-utils = { path = "../utils", features = [ "test-support" ]}
 
 [[test]]
 name = "integration"
-path = "src/lib.rs"
+path = "src/integration_tests.rs"
 harness = true
