@@ -4,21 +4,25 @@ use std::{
     time::Duration,
 };
 
-use crate::Address;
+use crate::{Address, Error};
 use casper_engine_test_support::{
     DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
     DEFAULT_PAYMENT,
 };
-use casper_execution_engine::core::{
-    engine_state::{self, run_genesis_request::RunGenesisRequest, GenesisAccount},
-    execution,
+use casper_execution_engine::core::engine_state::{
+    self, run_genesis_request::RunGenesisRequest, GenesisAccount,
 };
 use casper_types::{
     account::AccountHash,
-    bytesrepr::{FromBytes, ToBytes},
+    bytesrepr::{self, Bytes, FromBytes, ToBytes},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, URef, U512,
+};
+
+use blake2::{
+    digest::{Update, VariableOutput},
+    VarBlake2b,
 };
 
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
@@ -45,17 +49,18 @@ impl TestEnv {
             .deploy_wasm_file(session_code, session_args);
     }
 
-    /// Call already deployed contract.
-    pub fn call_contract_package(
-        &mut self,
+    /// Call contract and return a value.
+    pub fn call<T: FromBytes>(
+        &self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
-    ) {
+        has_return: bool,
+    ) -> Result<Option<T>, Error> {
         self.state
             .lock()
             .unwrap()
-            .call_contract_package(hash, entry_point, args);
+            .call(hash, entry_point, args, has_return)
     }
 
     /// Read [`ContractPackageHash`] from the active user's named keys.
@@ -88,16 +93,6 @@ impl TestEnv {
         self.state.lock().unwrap().as_account(account);
     }
 
-    /// Set the [`ApiError`] expected to occur.
-    pub fn expect_error<T: Into<ApiError>>(&self, error: T) {
-        self.state.lock().unwrap().expect_error(error);
-    }
-
-    /// Set the [`execution::Error`] expected to occur.
-    pub fn expect_execution_error(&self, error: execution::Error) {
-        self.state.lock().unwrap().expect_execution_error(error);
-    }
-
     /// Increases the current value of block_time
     pub fn advance_block_time_by(&self, seconds: Duration) {
         self.state.lock().unwrap().block_time += seconds.as_secs();
@@ -114,7 +109,6 @@ pub struct TestEnvState {
     accounts: Vec<Address>,
     active_account: Address,
     context: InMemoryWasmTestBuilder,
-    expected_error: Option<execution::Error>,
     block_time: u64,
     calls_counter: u32,
 }
@@ -155,7 +149,6 @@ impl TestEnvState {
             active_account: accounts[0],
             context: builder,
             accounts,
-            expected_error: None,
             block_time: 0,
             calls_counter: 0,
         }
@@ -178,17 +171,28 @@ impl TestEnvState {
         self.context.exec(execute_request).commit().expect_success();
     }
 
-    pub fn call_contract_package(
+    pub fn call<T: FromBytes>(
         &mut self,
         hash: ContractPackageHash,
         entry_point: &str,
         args: RuntimeArgs,
-    ) {
+        has_return: bool,
+    ) -> Result<Option<T>, Error> {
+        let session_code = PathBuf::from("getter_proxy.wasm");
+
+        let args_bytes: Vec<u8> = args.to_bytes().unwrap();
+        let args = runtime_args! {
+            "contract_package_hash" => hash,
+            "entry_point" => entry_point,
+            "args" => Bytes::from(args_bytes),
+            "has_return" => has_return
+        };
+
         let deploy_item = DeployItemBuilder::new()
             .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
-            .with_stored_versioned_contract_by_hash(hash.value(), None, entry_point, args)
+            .with_session_code(session_code, args)
             .with_deploy_hash(self.next_hash())
             .build();
 
@@ -197,26 +201,18 @@ impl TestEnvState {
             .build();
         self.context.exec(execute_request).commit();
 
-        if let Some(expected_error) = self.expected_error.clone() {
-            // If error is expected.
-            if self.context.is_error() {
-                // The execution actually ended with an error.
-                if let engine_state::Error::Exec(exec_error) = self.context.get_error().unwrap() {
-                    assert_eq!(expected_error.to_string(), exec_error.to_string());
-                    self.expected_error = None;
-                } else {
-                    panic!("Unexpected engine_state error.");
-                }
-            } else {
-                panic!("Deploy expected to fail.");
-            }
+        let active_account = self.active_account_hash();
+
+        let result = if self.context.is_error() {
+            Err(parse_error(self.context.get_error().unwrap()))
+        } else if has_return {
+            let result: Bytes = self.get_account_value(active_account, "result");
+            Ok(Some(bytesrepr::deserialize(result.to_vec()).unwrap()))
         } else {
-            // If error is not expected.
-            if self.context.is_error() {
-                self.context.expect_success();
-            }
-        }
+            Ok(None)
+        };
         self.active_account = self.get_account(0);
+        result
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -238,6 +234,17 @@ impl TestEnvState {
 
         self.context
             .query(None, Key::Hash(contract_hash.value()), &[name.to_string()])
+            .unwrap()
+            .as_cl_value()
+            .unwrap()
+            .clone()
+            .into_t()
+            .unwrap()
+    }
+
+    pub fn get_account_value<T: FromBytes + CLTyped>(&self, hash: AccountHash, name: &str) -> T {
+        self.context
+            .query(None, Key::Account(hash), &[name.to_string()])
             .unwrap()
             .as_cl_value()
             .unwrap()
@@ -294,14 +301,6 @@ impl TestEnvState {
         self.active_account = account;
     }
 
-    pub fn expect_error<T: Into<ApiError>>(&mut self, error: T) {
-        self.expect_execution_error(execution::Error::Revert(error.into()));
-    }
-
-    pub fn expect_execution_error(&mut self, error: execution::Error) {
-        self.expected_error = Some(error);
-    }
-
     fn next_hash(&mut self) -> [u8; 32] {
         let seed = self.calls_counter;
         self.calls_counter += 1;
@@ -314,5 +313,29 @@ impl TestEnvState {
 
 fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap();
-    base64::encode(&preimage)
+    let hash = blake2b(preimage);
+    hex::encode(hash)
+}
+
+fn blake2b<T: AsRef<[u8]>>(data: T) -> [u8; 32] {
+    let mut result = [0; 32];
+    let mut hasher = VarBlake2b::new(32).expect("should create hasher");
+
+    hasher.update(data);
+    hasher.finalize_variable(|slice| {
+        result.copy_from_slice(slice);
+    });
+    result
+}
+
+fn parse_error(err: engine_state::Error) -> Error {
+    if let engine_state::Error::Exec(exec_err) = err {
+        if let ExecutionError::Revert(ApiError::User(id)) = exec_err {
+            return Error::from(id);
+        }
+        if let ExecutionError::InvalidContext = exec_err {
+            return Error::InvalidContext;
+        }
+    }
+    panic!("Unexpected error.");
 }

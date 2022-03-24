@@ -8,7 +8,7 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    CLTyped, ContractPackageHash, EntryPoints, URef,
+    ApiError, CLTyped, ContractPackageHash, EntryPoints, URef,
 };
 
 use crate::{Address, Events};
@@ -84,10 +84,11 @@ pub fn emit<T: ToBytes>(event: T) {
     Events::default().emit(event);
 }
 
-/// Convert any key to base64.
+/// Convert any key to hash.
 pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap_or_revert();
-    base64::encode(&preimage)
+    let bytes = runtime::blake2b(preimage);
+    hex::encode(bytes)
 }
 
 pub fn install_contract(
@@ -119,4 +120,8 @@ pub fn install_contract(
 
 pub fn get_block_time() -> u64 {
     u64::from(runtime::get_blocktime())
+}
+
+pub fn revert<T: Into<ApiError>>(error: T) {
+    runtime::revert(error)
 }

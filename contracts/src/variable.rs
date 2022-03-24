@@ -16,7 +16,7 @@ pub trait VariableRepositoryContractInterface {
     fn add_to_whitelist(&mut self, address: Address);
     fn remove_from_whitelist(&mut self, address: Address);
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
-    fn get(&mut self, key: String) -> Bytes;
+    fn get(&self, key: String) -> Option<Bytes>;
 }
 
 #[derive(Default)]
@@ -57,7 +57,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         self.repository.update_at(key, value, activation_time);
     }
 
-    fn get(&mut self, key: String) -> Bytes {
+    fn get(&self, key: String) -> Option<Bytes> {
         self.repository.get(key)
     }
 }

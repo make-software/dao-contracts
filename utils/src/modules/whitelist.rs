@@ -46,6 +46,10 @@ impl Whitelist {
             runtime::revert(Error::NotWhitelisted);
         }
     }
+
+    pub fn is_whitelisted(&self, address: &Address) -> bool {
+        self.whitelist.get(address)
+    }
 }
 
 pub mod events {

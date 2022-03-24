@@ -4,5 +4,9 @@ members = [
     "utils/sample-contract",
     "macros",
     "contracts",
-    "tests"
+    "tests",
 ]
+
+[profile.release]
+codegen-units = 1
+lto = true

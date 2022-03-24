@@ -77,15 +77,15 @@ impl Repository {
         });
     }
 
-    pub fn get(&self, key: String) -> Bytes {
-        let (current, future) = self.storage.get_or_revert(&key);
+    pub fn get(&self, key: String) -> Option<Bytes> {
+        let (current, future) = self.storage.get_or_none(&key)?;
         let now = get_block_time();
         if let Some((value, activation_time)) = future {
             if now > activation_time {
-                return value;
+                return Some(value);
             }
         }
-        current
+        Some(current)
     }
 
     fn set(&mut self, key: String, value: Bytes) {

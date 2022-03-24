@@ -79,13 +79,12 @@ fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
 }
 
 fn generate_test_interface(input: &CasperContractItem) -> TokenStream {
-    let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);
 
     quote! {
       #[cfg(feature = "test-support")]
-      impl #ident for #contract_test_ident {
+      impl #contract_test_ident {
         #methods
       }
     }
@@ -97,29 +96,34 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
         let sig = &method.sig;
         let ident = &sig.ident;
         let args = utils::generate_method_args(method);
-
-        let mut return_value = TokenStream::new();
-        //solves only the simplest but the most common case, consider handling arrys, tuples, generics
-        return_value.append_all(match &sig.output {
-            ReturnType::Default => quote! {},
-            ReturnType::Type(_, ty) => {
-                let unboxed_ty = &**ty;
-                match unboxed_ty {
-                    syn::Type::Path(path) => quote! { #path::default() },
-                    _ => quote! {},
+        let sig_inputs = &sig.inputs;
+        match &sig.output {
+            ReturnType::Default => quote! {
+                pub fn #ident(#sig_inputs) -> Result<(), casper_dao_utils::Error> {
+                    let result: Result<Option<()>, casper_dao_utils::Error> = self.env.call(
+                        self.package_hash,
+                        stringify!(#ident),
+                        #args,
+                        false
+                    );
+                    match result {
+                        Ok(None) => Ok(()),
+                        Ok(Some(_)) => panic!("Unexpected value on return."),
+                        Err(err) => Err(err)
+                    }
                 }
-            }
-        });
-
-        quote! {
-            #sig {
-                self.env.call_contract_package(
-                    self.package_hash,
-                    stringify!(#ident),
-                    #args,
-                );
-                #return_value
-            }
+            },
+            ReturnType::Type(_, ty) => quote! {
+                pub fn #ident(#sig_inputs) -> #ty {
+                    let result: Result<Option<#ty>, casper_dao_utils::Error> = self.env.call::<#ty>(
+                        self.package_hash,
+                        stringify!(#ident),
+                        #args,
+                        true
+                    );
+                    result.unwrap().unwrap()
+                }
+            },
         }
     }));
 

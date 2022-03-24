@@ -2,9 +2,7 @@
 mod tests {
     use std::time::Duration;
 
-    use casper_dao_contracts::{
-        VariableRepositoryContractInterface, VariableRepositoryContractTest,
-    };
+    use casper_dao_contracts::VariableRepositoryContractTest;
     use casper_dao_utils::{
         consts,
         repository::{events::ValueUpdated, RepositoryDefaults},
@@ -55,7 +53,7 @@ mod tests {
             key: K,
             value: V,
             activation_time: Option<u64>,
-        ) {
+        ) -> Result<(), Error> {
             self.contract
                 .update_at(key.to_string(), value.convert_to_bytes(), activation_time)
         }
@@ -81,10 +79,9 @@ mod tests {
     }
     #[test]
     fn test_get_uninitialized_value() {
-        let (env, mut contract) = setup();
-
-        env.expect_error(Error::ValueNotAvailable);
-        contract.get(String::from(KEY));
+        let (_, contract) = setup();
+        let result = contract.get(String::from(KEY));
+        assert_eq!(result, None);
     }
 
     // To test `update_at` entry point all possible cases should be checked.
@@ -123,7 +120,7 @@ mod tests {
         let (_, mut contract) = setup();
 
         // When update_at with new value without activation time
-        contract.update_at(KEY, VALUE, None);
+        contract.update_at(KEY, VALUE, None).unwrap();
 
         // Then it sets a value.
         assert_eq!(contract.get_full_value(KEY), (VALUE, None));
@@ -146,20 +143,22 @@ mod tests {
         env.advance_block_time_by(TWO_DAYS);
 
         // When update_at with new value and activation_time in past.
+        let result = contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+
         // Then it throws an error.
-        env.expect_error(Error::ActivationTimeInPast);
-        contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+        assert_eq!(result.unwrap_err(), Error::ActivationTimeInPast);
     }
 
     #[test]
     fn test_update_at_3() {
         // Given no record.
-        let (env, mut contract) = setup();
+        let (_, mut contract) = setup();
 
         // When update_at with new value and activation_time in future.
+        let result = contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+
         // Then it throws an error.
-        env.expect_error(Error::ValueNotAvailable);
-        contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+        assert_eq!(result.unwrap_err(), Error::ValueNotAvailable);
     }
 
     #[test]
@@ -169,9 +168,10 @@ mod tests {
         env.advance_block_time_by(TWO_DAYS);
 
         // When update_at with activation_time in past.
+        let result = contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+
         // Then it throws an error.
-        env.expect_error(Error::ActivationTimeInPast);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        assert_eq!(result.unwrap_err(), Error::ActivationTimeInPast);
     }
 
     #[test]
@@ -180,7 +180,7 @@ mod tests {
         let (_, mut contract) = setup_with(KEY, VALUE);
 
         // When update_at with activation_time in future.
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
 
         // Then it updates the next value.
         assert_eq!(
@@ -195,7 +195,7 @@ mod tests {
         let (_, mut contract) = setup_with(KEY, VALUE);
 
         // When update_at with new value without activation time
-        contract.update_at(KEY, VALUE_2, None);
+        contract.update_at(KEY, VALUE_2, None).unwrap();
 
         // Then it sets a value.
         assert_eq!(contract.get_full_value(KEY), (VALUE_2, None));
@@ -205,24 +205,27 @@ mod tests {
     fn test_update_at_7() {
         // Given value and next value with activation_time in past.
         let (env, mut contract) = setup_with(KEY, VALUE);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
         env.advance_block_time_by(TWO_DAYS);
 
         // When update_at with activation_time in past.
+        let result = contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+
         // Then it throws an error.
-        env.expect_error(Error::ActivationTimeInPast);
-        contract.update_at(KEY, VALUE, Some(AT_DAY_ONE));
+        assert_eq!(result.unwrap_err(), Error::ActivationTimeInPast);
     }
 
     #[test]
     fn test_update_at_8() {
         // Given value and next value with activation_time in past.
         let (env, mut contract) = setup_with(KEY, VALUE);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
         env.advance_block_time_by(TWO_DAYS);
 
         // When update_at with activation_time in future.
-        contract.update_at(KEY, VALUE_3, Some(AT_DAY_THREE));
+        contract
+            .update_at(KEY, VALUE_3, Some(AT_DAY_THREE))
+            .unwrap();
 
         // Then it updates the current value with the current next value and
         // sets a next value wit given activation time.
@@ -236,11 +239,11 @@ mod tests {
     fn test_update_at_9() {
         // Given value and next value with activation_time in past.
         let (env, mut contract) = setup_with(KEY, VALUE);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE));
+        contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
         env.advance_block_time_by(TWO_DAYS);
 
         // When update_at without activation time.
-        contract.update_at(KEY, VALUE_3, None);
+        contract.update_at(KEY, VALUE_3, None).unwrap();
 
         // Then it updates the value an clear next value.
         assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE_3, None));
@@ -250,23 +253,28 @@ mod tests {
     fn test_update_at_10() {
         // Given value and next value with activation_time in future.
         let (env, mut contract) = setup_with(KEY, VALUE);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_THREE));
+        contract
+            .update_at(KEY, VALUE_2, Some(AT_DAY_THREE))
+            .unwrap();
         env.advance_block_time_by(TWO_DAYS);
 
         // When update_at with activation_time in past.
+        let result = contract.update_at(KEY, VALUE_3, Some(AT_DAY_ONE));
+
         // Then it throws an error.
-        env.expect_error(Error::ActivationTimeInPast);
-        contract.update_at(KEY, VALUE_3, Some(AT_DAY_ONE));
+        assert_eq!(result.unwrap_err(), Error::ActivationTimeInPast);
     }
 
     #[test]
     fn test_update_at_11() {
         // Given value and next value with activation_time in future.
         let (_, mut contract) = setup_with(KEY, VALUE);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_THREE));
+        contract
+            .update_at(KEY, VALUE_2, Some(AT_DAY_THREE))
+            .unwrap();
 
         // When update_at with activation_time in future.
-        contract.update_at(KEY, VALUE_3, Some(AT_DAY_TWO));
+        contract.update_at(KEY, VALUE_3, Some(AT_DAY_TWO)).unwrap();
 
         // Then it updates the current value with the current next value and
         // sets a next value wit given activation time.
@@ -280,10 +288,12 @@ mod tests {
     fn test_update_at_12() {
         // Given value and next value with activation_time in future.
         let (_, mut contract) = setup_with(KEY, VALUE);
-        contract.update_at(KEY, VALUE_2, Some(AT_DAY_THREE));
+        contract
+            .update_at(KEY, VALUE_2, Some(AT_DAY_THREE))
+            .unwrap();
 
         // When update_at with activation_time in future.
-        contract.update_at(KEY, VALUE_3, None);
+        contract.update_at(KEY, VALUE_3, None).unwrap();
 
         // Then it updates the value and clears next value.
         assert_eq!(contract.get_full_value::<_, u32>(KEY), (VALUE_3, None));
@@ -292,9 +302,9 @@ mod tests {
     #[test]
     fn test_keys_indexing() {
         let (_, mut contract) = setup();
-        contract.update_at(KEY, VALUE, None);
-        contract.update_at(KEY_2, VALUE_2, None);
-        contract.update_at(KEY_3, VALUE_3, None);
+        contract.update_at(KEY, VALUE, None).unwrap();
+        contract.update_at(KEY_2, VALUE_2, None).unwrap();
+        contract.update_at(KEY_3, VALUE_3, None).unwrap();
 
         assert_eq!(contract.get_non_default_keys_length(), 3);
         assert_eq!(&contract.get_non_default_key_at(0).unwrap(), KEY);
@@ -308,11 +318,11 @@ mod tests {
         let (owner, new_owner) = (env.get_account(0), env.get_account(1));
         assert_eq!(contract.get_owner().unwrap(), owner);
 
-        contract.change_ownership(new_owner);
+        contract.change_ownership(new_owner).unwrap();
         assert_eq!(contract.get_owner().unwrap(), new_owner);
 
-        env.expect_error(Error::NotAnOwner);
-        contract.change_ownership(new_owner);
+        let result = contract.change_ownership(new_owner);
+        assert_eq!(result.unwrap_err(), Error::NotAnOwner)
     }
 
     #[test]
@@ -322,7 +332,7 @@ mod tests {
 
         assert!(contract.is_whitelisted(owner));
 
-        contract.change_ownership(new_owner);
+        contract.change_ownership(new_owner).unwrap();
         assert!(contract.is_whitelisted(new_owner));
     }
 
@@ -334,10 +344,10 @@ mod tests {
         assert!(contract.is_whitelisted(owner));
         assert_eq!(contract.is_whitelisted(user), false);
 
-        contract.add_to_whitelist(user);
+        contract.add_to_whitelist(user).unwrap();
         assert!(contract.is_whitelisted(user));
 
-        contract.remove_from_whitelist(user);
+        contract.remove_from_whitelist(user).unwrap();
         assert_eq!(contract.is_whitelisted(user), false);
     }
 
@@ -348,7 +358,7 @@ mod tests {
 
         assert_eq!(contract.is_whitelisted(user), false);
 
-        contract.remove_from_whitelist(user);
+        contract.remove_from_whitelist(user).unwrap();
         assert_eq!(contract.is_whitelisted(user), false);
     }
 
@@ -357,11 +367,11 @@ mod tests {
         let (env, mut contract) = setup();
         let user = env.get_account(1);
 
-        contract.add_to_whitelist(user);
-        contract.add_to_whitelist(user);
+        contract.add_to_whitelist(user).unwrap();
+        contract.add_to_whitelist(user).unwrap();
         assert!(contract.is_whitelisted(user));
 
-        contract.remove_from_whitelist(user);
+        contract.remove_from_whitelist(user).unwrap();
         assert_eq!(contract.is_whitelisted(user), false);
     }
 
@@ -370,13 +380,13 @@ mod tests {
         let (env, mut contract) = setup();
         let (user1, user2) = (env.get_account(1), env.get_account(2));
 
-        contract.add_to_whitelist(user1);
+        contract.add_to_whitelist(user1).unwrap();
 
-        env.expect_error(Error::NotAnOwner);
-        contract.as_account(user1).add_to_whitelist(user2);
+        let result = contract.as_account(user1).add_to_whitelist(user2);
+        assert_eq!(result.unwrap_err(), Error::NotAnOwner);
 
-        env.expect_error(Error::NotAnOwner);
-        contract.as_account(user1).remove_from_whitelist(user2);
+        let result = contract.as_account(user1).remove_from_whitelist(user2);
+        assert_eq!(result.unwrap_err(), Error::NotAnOwner);
     }
 
     #[test]
@@ -384,10 +394,11 @@ mod tests {
         let (env, mut contract) = setup();
         let user = env.get_account(1);
 
-        env.expect_error(Error::NotWhitelisted);
-        contract
-            .as_account(user)
-            .update_at("key".to_string(), "value".as_bytes().into(), None);
+        let result =
+            contract
+                .as_account(user)
+                .update_at("key".to_string(), "value".as_bytes().into(), None);
+        assert_eq!(result.unwrap_err(), Error::NotWhitelisted);
     }
 
     #[test]
@@ -395,8 +406,9 @@ mod tests {
         let (env, mut contract) = setup();
         let user = env.get_account(1);
 
-        contract.update_at(KEY, VALUE, None);
-        contract.as_account(user).get("key".to_string());
+        contract.update_at(KEY, VALUE_2, None).unwrap();
+        let value = contract.as_account(user).get(KEY.to_string()).unwrap();
+        assert_eq!(VALUE_2, u32::convert_from_bytes(value));
     }
 
     fn setup() -> (TestEnv, ContractWrapper) {
@@ -408,7 +420,7 @@ mod tests {
 
     fn setup_with<K: ToString, T: BytesConversion>(key: K, value: T) -> (TestEnv, ContractWrapper) {
         let (env, mut contract) = setup();
-        contract.update_at(key, value, None);
+        contract.update_at(key, value, None).unwrap();
         (env, contract)
     }
 }

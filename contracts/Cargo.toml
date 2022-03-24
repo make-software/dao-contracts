@@ -23,10 +23,6 @@ bench = false
 doctest = false
 test = false
 
-[profile.release]
-codegen-units = 1
-lto = true
-
 [features]
 default = [ "casper-contract/default", "casper-contract/std", "casper-contract/test-support" ]
 test-support = [ "casper-dao-utils/test-support", "casper-contract/test-support" ]

@@ -90,6 +90,14 @@ impl Token {
             runtime::revert(Error::InsufficientBalance);
         }
     }
+
+    pub fn total_supply(&self) -> U256 {
+        self.total_supply.get()
+    }
+
+    pub fn balance_of(&self, address: &Address) -> U256 {
+        self.balances.get(address)
+    }
 }
 
 pub mod events {

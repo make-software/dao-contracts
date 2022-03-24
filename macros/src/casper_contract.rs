@@ -47,13 +47,28 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
     methods.append_all(contract.trait_methods.iter().map(|method| {
         let ident = &method.sig.ident;
         let (casper_args, punctuated_args) = utils::parse_casper_args(method);
+        let has_return = matches!(&method.sig.output, syn::ReturnType::Type(_, _));
+        if has_return {
+            quote! {
+                #[no_mangle]
+                fn #ident() {
+                    use casper_contract::unwrap_or_revert::UnwrapOrRevert;
 
-        quote! {
-            #[no_mangle]
-            fn #ident() {
-                #casper_args
-                let mut contract = #contract_ident::default();
-                #contract_interface_ident::#ident(&mut contract, #punctuated_args);
+                    #casper_args
+                    let contract = #contract_ident::default();
+                    let result = #contract_interface_ident::#ident(&contract, #punctuated_args);
+                    let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
+                    casper_contract::contract_api::runtime::ret(result);
+                }
+            }
+        } else {
+            quote! {
+                #[no_mangle]
+                fn #ident() {
+                    #casper_args
+                    let mut contract = #contract_ident::default();
+                    #contract_interface_ident::#ident(&mut contract, #punctuated_args);
+                }
             }
         }
     }));
