@@ -1,2 +1,3 @@
 /target
 tests/wasm/*.wasm
+erc20/wasm/*.wasm

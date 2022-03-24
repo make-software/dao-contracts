@@ -1,6 +1,6 @@
 
-use casper_dao_utils::{Variable, Mapping, casper_env, Address, casper_dao_macros::casper_contract_interface};
-use casper_types::{U256, ApiError};
+use casper_dao_utils::{Error, Variable, Mapping, casper_env, Address, casper_dao_macros::casper_contract_interface};
+use casper_types::{U256};
 
 #[casper_contract_interface]
 pub trait ERC20Interface {
@@ -8,6 +8,7 @@ pub trait ERC20Interface {
     fn name(&self) -> String;
     fn symbol(&self) -> String;
     fn decimals(&self) -> u8;
+    fn total_supply(&self) -> U256;
     fn balance_of(&self, address: Address) -> U256;
     fn transfer(&mut self, recipient: Address, amount: U256);
     fn approve(&mut self, spender: Address, amount: U256);
@@ -39,6 +40,8 @@ impl Default for ERC20 {
 
 impl ERC20Interface for ERC20 {
     fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U256) {
+        self.balances.init();
+        self.allowances.init();
         self.name.set(name);
         self.symbol.set(symbol);
         self.decimals.set(decimals);
@@ -56,6 +59,10 @@ impl ERC20Interface for ERC20 {
 
     fn decimals(&self) -> u8 {
         self.decimals.get()
+    }
+
+    fn total_supply(&self) -> U256 {
+        self.total_supply.get()
     }
 
     fn balance_of(&self, address: Address) -> U256 {
@@ -88,7 +95,7 @@ impl ERC20 {
         let owner_balance = self.balances.get(&owner);
         let recipient_balance = self.balances.get(&recipient);
         if owner_balance < amount {
-            casper_env::revert(ERC20Error::InsufficientBalance);
+            casper_env::revert(Error::InsufficientBalance);
         }
         self.balances.set(&owner, owner_balance - amount);
         self.balances.set(&recipient, recipient_balance + amount);
@@ -97,25 +104,9 @@ impl ERC20 {
     pub fn spend_allowance(&mut self, owner: Address, spender: Address, amount: U256) {
         let key = (owner, spender);
         let allowance = self.allowances.get(&key);
-        if allowance < amount {
-            casper_env::revert(ERC20Error::InsufficientBalance);
+        if amount > allowance {
+            casper_env::revert(Error::InsufficientAllowance);
         }
         self.allowances.set(&key, allowance - amount);
     }
 }
-
-pub enum ERC20Error {
-    InsufficientBalance,
-    InsufficientAllowance
-}
-
-impl From<ERC20Error> for ApiError {
-    fn from(val: ERC20Error) -> Self {
-        let id = match val {
-            ERC20Error::InsufficientBalance => 404,
-            ERC20Error::InsufficientAllowance => 401,
-        };
-        ApiError::User(id)
-    }
-}
-

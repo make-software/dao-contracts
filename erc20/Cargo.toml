@@ -10,7 +10,7 @@ casper-types = "1.4.6"
 casper-dao-utils = { path = "../utils" }
 
 [[bin]]
-name = "erc20_contract"
+name = "erc_20"
 path = "src/bin.rs"
 bench = false
 doctest = false

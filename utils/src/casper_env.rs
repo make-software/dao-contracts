@@ -87,7 +87,7 @@ pub fn emit<T: ToBytes>(event: T) {
 /// Convert any key to base64.
 pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap_or_revert();
-    base64::encode(&preimage)
+    base64::encode(&preimage).chars().skip(32).take(64).collect()
 }
 
 pub fn install_contract(

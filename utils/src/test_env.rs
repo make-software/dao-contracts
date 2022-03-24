@@ -296,10 +296,11 @@ impl TestEnvState {
 
 fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap();
-    base64::encode(&preimage)
+    base64::encode(&preimage).chars().skip(16).take(16).collect()
 }
 
 fn parse_error(err: engine_state::Error) -> Error {
+    let errr = err.clone();
     if let engine_state::Error::Exec(exec_err) = err {
         if let ExecutionError::Revert(ApiError::User(id)) = exec_err {
             return Error::from(id);
@@ -308,5 +309,6 @@ fn parse_error(err: engine_state::Error) -> Error {
             return Error::InvalidContext;
         }
     }
+    dbg!(errr);
     panic!("Unexpected error.");
 }

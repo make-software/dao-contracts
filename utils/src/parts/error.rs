@@ -7,6 +7,7 @@ pub enum Error {
     OwnerIsNotInitialized,
     NotWhitelisted,
     InsufficientBalance,
+    InsufficientAllowance,
     TotalSupplyOverflow,
     ValueNotAvailable,
     ActivationTimeInPast,
@@ -17,10 +18,11 @@ pub enum Error {
 impl From<Error> for ApiError {
     fn from(val: Error) -> Self {
         let id = match val {
+            Error::InsufficientBalance => 404,
+            Error::InsufficientAllowance => 401,
             Error::NotAnOwner => 1000,
             Error::OwnerIsNotInitialized => 1001,
             Error::NotWhitelisted => 1002,
-            Error::InsufficientBalance => 1003,
             Error::TotalSupplyOverflow => 1004,
             Error::ValueNotAvailable => 1005,
             Error::ActivationTimeInPast => 1006,
@@ -34,10 +36,11 @@ impl From<Error> for ApiError {
 impl From<u16> for Error {
     fn from(val: u16) -> Self {
         match val {
+            401 => Error::InsufficientAllowance,
+            404 => Error::InsufficientBalance,
             1000 => Error::NotAnOwner,
             1001 => Error::OwnerIsNotInitialized,
             1002 => Error::NotWhitelisted,
-            1003 => Error::InsufficientBalance,
             1004 => Error::TotalSupplyOverflow,
             1005 => Error::ValueNotAvailable,
             1006 => Error::ActivationTimeInPast,
