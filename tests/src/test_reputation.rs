@@ -340,6 +340,15 @@ mod tests {
     }
 
     #[test]
+    fn test_that_contract_have_different_hashes() {
+        let env = TestEnv::new();
+        let contract1 = ReputationContractTest::new(&env);
+        let contract2 = ReputationContractTest::new(&env);
+
+        assert_ne!(contract1.get_package_hash(), contract2.get_package_hash());
+    }
+
+    #[test]
     fn test_unstake_amount_exceeding_staked_balance() {
         let total_supply = 100.into();
         let (env, mut contract) = setup_with_initial_supply(total_supply);

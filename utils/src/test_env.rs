@@ -110,6 +110,7 @@ pub struct TestEnvState {
     active_account: Address,
     context: InMemoryWasmTestBuilder,
     block_time: u64,
+    calls_counter: u32,
 }
 
 impl TestEnvState {
@@ -149,6 +150,7 @@ impl TestEnvState {
             context: builder,
             accounts,
             block_time: 0,
+            calls_counter: 0,
         }
     }
 
@@ -160,6 +162,7 @@ impl TestEnvState {
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
             .with_session_code(session_code, args)
+            .with_deploy_hash(self.next_hash())
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
@@ -190,6 +193,7 @@ impl TestEnvState {
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
             .with_session_code(session_code, args)
+            .with_deploy_hash(self.next_hash())
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
@@ -295,6 +299,15 @@ impl TestEnvState {
 
     pub fn as_account(&mut self, account: Address) {
         self.active_account = account;
+    }
+
+    fn next_hash(&mut self) -> [u8; 32] {
+        let seed = self.calls_counter;
+        self.calls_counter += 1;
+        let mut hash = [0u8; 32];
+        hash[0] = seed as u8;
+        hash[1] = (seed >> 8) as u8;
+        hash
     }
 }
 

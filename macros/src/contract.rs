@@ -192,12 +192,6 @@ pub mod utils {
         }
     }
 
-    pub fn generate_empty_args() -> TokenStream {
-        quote! {
-            casper_types::RuntimeArgs::new(),
-        }
-    }
-
     pub fn find_method<'a>(
         input: &'a CasperContractItem,
         method_name: &str,
