@@ -3,7 +3,7 @@
 // use casper_contract::contract_api::runtime;
 
 use casper_dao_utils::{
-    casper_env::{caller, emit, self},
+    casper_env::{self, caller, emit},
     consts, Address, Error, Variable,
 };
 

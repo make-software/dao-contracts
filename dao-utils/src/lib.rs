@@ -4,9 +4,9 @@ extern crate alloc;
 pub use casper_contract;
 
 mod bytes;
-mod parts;
-mod events;
 pub mod casper_env;
+mod events;
+mod parts;
 pub use casper_dao_macros;
 
 pub use parts::address::Address;
@@ -26,5 +26,3 @@ mod test_env;
 
 #[cfg(feature = "test-support")]
 pub use test_env::{ExecutionError, TestEnv};
-
-

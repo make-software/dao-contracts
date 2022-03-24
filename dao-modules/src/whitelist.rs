@@ -1,7 +1,7 @@
 //! Whitelist-based access control system.
 
 use casper_dao_utils::{
-    casper_env::{caller, emit, self},
+    casper_env::{self, caller, emit},
     consts, Address, Error, Mapping,
 };
 

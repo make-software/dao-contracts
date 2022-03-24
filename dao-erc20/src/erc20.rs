@@ -1,6 +1,7 @@
-
-use casper_dao_utils::{Error, Variable, Mapping, casper_env, Address, casper_dao_macros::casper_contract_interface};
-use casper_types::{U256};
+use casper_dao_utils::{
+    casper_dao_macros::casper_contract_interface, casper_env, Address, Error, Mapping, Variable,
+};
+use casper_types::U256;
 
 #[casper_contract_interface]
 pub trait ERC20Interface {
@@ -22,18 +23,18 @@ pub struct ERC20 {
     decimals: Variable<u8>,
     total_supply: Variable<U256>,
     balances: Mapping<Address, U256>,
-    allowances: Mapping<(Address, Address), U256>
+    allowances: Mapping<(Address, Address), U256>,
 }
 
 impl Default for ERC20 {
     fn default() -> Self {
-        Self { 
-            name: Variable::from("name"), 
+        Self {
+            name: Variable::from("name"),
             symbol: Variable::from("symbol"),
             decimals: Variable::from("decimals"),
             total_supply: Variable::from("total_supply"),
             balances: Mapping::from("balances"),
-            allowances: Mapping::from("allowances")
+            allowances: Mapping::from("allowances"),
         }
     }
 }

@@ -1,11 +1,8 @@
 use std::time::Duration;
 
 use casper_dao_contracts::VariableRepositoryContractTest;
-use casper_dao_modules::{RepositoryDefaults, events::ValueUpdated};
-use casper_dao_utils::{
-    consts,
-    BytesConversion, Error, TestEnv,
-};
+use casper_dao_modules::{events::ValueUpdated, RepositoryDefaults};
+use casper_dao_utils::{consts, BytesConversion, Error, TestEnv};
 use casper_types::U256;
 
 static KEY: &str = "key";
@@ -421,4 +418,3 @@ fn setup_with<K: ToString, T: BytesConversion>(key: K, value: T) -> (TestEnv, Co
     contract.update_at(key, value, None).unwrap();
     (env, contract)
 }
-

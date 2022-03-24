@@ -1,5 +1,5 @@
 use casper_dao_utils::{
-    casper_env::{emit, get_block_time, self},
+    casper_env::{self, emit, get_block_time},
     consts, Error, Mapping, OrderedCollection, Set,
 };
 

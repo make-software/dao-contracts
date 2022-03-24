@@ -3,7 +3,10 @@
 use casper_types::U256;
 
 use self::events::{Burn, Mint, Transfer};
-use casper_dao_utils::{casper_env::{emit, self}, consts, Address, Error, Mapping, Variable};
+use casper_dao_utils::{
+    casper_env::{self, emit},
+    consts, Address, Error, Mapping, Variable,
+};
 
 /// The Token module.
 pub struct Token {

@@ -11,7 +11,7 @@ use casper_types::{
     ApiError, CLTyped, ContractPackageHash, EntryPoints, URef,
 };
 
-use crate::{Address, events::Events};
+use crate::{events::Events, Address};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {

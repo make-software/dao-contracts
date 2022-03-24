@@ -1,10 +1,10 @@
-use casper_types::bytesrepr::Bytes;
-use casper_dao_modules::{Owner, Whitelist, Repository};
+use casper_dao_modules::{Owner, Repository, Whitelist};
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
     casper_env::{caller, init_events},
     Address,
 };
+use casper_types::bytesrepr::Bytes;
 
 #[casper_contract_interface]
 pub trait VariableRepositoryContractInterface {

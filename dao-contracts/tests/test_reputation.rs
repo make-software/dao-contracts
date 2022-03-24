@@ -1,6 +1,9 @@
 use casper_dao_contracts::ReputationContractTest;
-use casper_dao_modules::events::{OwnerChanged, AddedToWhitelist, Mint, Burn, RemovedFromWhitelist, Transfer, TokensStaked, TokensUnstaked};
-use casper_dao_utils::{TestEnv, Error};
+use casper_dao_modules::events::{
+    AddedToWhitelist, Burn, Mint, OwnerChanged, RemovedFromWhitelist, TokensStaked, TokensUnstaked,
+    Transfer,
+};
+use casper_dao_utils::{Error, TestEnv};
 use casper_types::U256;
 
 #[test]

@@ -1,9 +1,12 @@
 //! Token with staking powers.
 
-use casper_types::U256;
-use casper_dao_utils::{casper_env::{emit, self}, consts, Address, Error, Mapping};
-use crate::Token;
 use self::events::{TokensStaked, TokensUnstaked};
+use crate::Token;
+use casper_dao_utils::{
+    casper_env::{self, emit},
+    consts, Address, Error, Mapping,
+};
+use casper_types::U256;
 
 /// The TokenWithStaking module.
 pub struct TokenWithStaking {

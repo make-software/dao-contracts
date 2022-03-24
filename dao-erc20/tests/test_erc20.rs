@@ -1,6 +1,6 @@
-use casper_dao_utils::{TestEnv, Error};
-use casper_types::{U256};
 use casper_dao_erc20::ERC20Test;
+use casper_dao_utils::{Error, TestEnv};
+use casper_types::U256;
 
 static NAME: &str = "Plascoin";
 static SYMBOL: &str = "PLS";
@@ -11,10 +11,10 @@ fn setup() -> (TestEnv, ERC20Test) {
     let env = TestEnv::new();
     let token = ERC20Test::new(
         &env,
-        String::from(NAME), 
+        String::from(NAME),
         String::from(SYMBOL),
         DECIMALS,
-        U256::from(INITIAL_SUPPLY)
+        U256::from(INITIAL_SUPPLY),
     );
     (env, token)
 }
@@ -26,7 +26,10 @@ fn test_erc20_initial_state() {
     assert_eq!(token.symbol(), SYMBOL);
     assert_eq!(token.decimals(), DECIMALS);
     assert_eq!(token.total_supply(), U256::from(INITIAL_SUPPLY));
-    assert_eq!(token.balance_of(env.get_account(0)), U256::from(INITIAL_SUPPLY));
+    assert_eq!(
+        token.balance_of(env.get_account(0)),
+        U256::from(INITIAL_SUPPLY)
+    );
 }
 
 #[test]
@@ -37,7 +40,7 @@ fn test_erc20_transfer() {
     let recipient = env.get_account(1);
     let amount = U256::one();
     let initial_supply = U256::from(INITIAL_SUPPLY);
-    
+
     // When transfer more then owned.
     let result = token.transfer(recipient, initial_supply + amount);
 
@@ -46,10 +49,10 @@ fn test_erc20_transfer() {
 
     // When transfer the amount to recipient as owner.
     token.transfer(recipient, amount).unwrap();
-    
+
     // Then total supply does not change.
     assert_eq!(token.total_supply(), initial_supply);
-    
+
     // Then balance of owner is decremented.
     assert_eq!(token.balance_of(owner), initial_supply - amount);
 
@@ -66,7 +69,7 @@ fn test_erc20_transfer_from() {
     let spender = env.get_account(2);
     let amount = U256::one();
     let initial_supply = U256::from(INITIAL_SUPPLY);
-    
+
     // When spender is approved by the owner.
     token.approve(spender, amount).unwrap();
 
@@ -80,11 +83,14 @@ fn test_erc20_transfer_from() {
     assert_eq!(result.unwrap_err(), Error::InsufficientAllowance);
 
     // When spender transfers owner's tokens to recipient.
-    token.as_account(spender).transfer_from(owner, recipient, amount).unwrap();
-    
+    token
+        .as_account(spender)
+        .transfer_from(owner, recipient, amount)
+        .unwrap();
+
     // Then total supply does not change.
     assert_eq!(token.total_supply(), initial_supply);
-    
+
     // Then balance of owner is decremented.
     assert_eq!(token.balance_of(owner), initial_supply - amount);
 
