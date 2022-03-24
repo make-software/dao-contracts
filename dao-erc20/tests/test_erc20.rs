@@ -1,4 +1,7 @@
-use casper_dao_erc20::ERC20Test;
+use casper_dao_erc20::{
+    events::{Approval, Transfer},
+    ERC20Test,
+};
 use casper_dao_utils::{Error, TestEnv};
 use casper_types::U256;
 
@@ -30,6 +33,14 @@ fn test_erc20_initial_state() {
         token.balance_of(env.get_account(0)),
         U256::from(INITIAL_SUPPLY)
     );
+    token.assert_event_at(
+        0,
+        Transfer {
+            from: None,
+            to: Some(env.get_account(0)),
+            value: U256::from(INITIAL_SUPPLY),
+        },
+    );
 }
 
 #[test]
@@ -58,6 +69,16 @@ fn test_erc20_transfer() {
 
     // Then balance of recipient is incremented.
     assert_eq!(token.balance_of(recipient), amount);
+
+    // Then Transfer event is emitted.
+    token.assert_event_at(
+        1,
+        Transfer {
+            from: Some(owner),
+            to: Some(recipient),
+            value: amount,
+        },
+    );
 }
 
 #[test]
@@ -75,6 +96,16 @@ fn test_erc20_transfer_from() {
 
     // Then allowance is incremented.
     assert_eq!(token.allowance(owner, spender), amount);
+
+    // Then Approval event is emitted.
+    token.assert_event_at(
+        1,
+        Approval {
+            owner,
+            spender,
+            value: amount,
+        },
+    );
 
     // When transfer more then allowed.
     let result = token.transfer_from(owner, recipient, amount + 1);
@@ -99,6 +130,26 @@ fn test_erc20_transfer_from() {
 
     // Then allowance is decremented.
     assert_eq!(token.allowance(owner, spender), U256::zero());
+
+    // Then Transfer event is emited.
+    token.assert_event_at(
+        2,
+        Transfer {
+            from: Some(owner),
+            to: Some(recipient),
+            value: amount,
+        },
+    );
+
+    // And Approval event is emited.
+    token.assert_event_at(
+        3,
+        Approval {
+            owner,
+            spender,
+            value: U256::zero(),
+        },
+    );
 }
 
 fn main() {}
