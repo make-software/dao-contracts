@@ -1,6 +1,7 @@
+TARGET_DIR = $(shell pwd)/target
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
-CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
-CARGO_TEST = CARGO_TARGET_DIR=$(shell pwd)/target cargo test --features=test-support --no-default-features
+CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features --target-dir $(TARGET_DIR)
+CARGO_TEST = CARGO_TARGET_DIR=$(TARGET_DIR) cargo test --features=test-support --no-default-features
 
 prepare:
 	rustup target add wasm32-unknown-unknown
