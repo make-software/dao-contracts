@@ -20,6 +20,11 @@ use casper_types::{
     SecretKey, URef, U512,
 };
 
+use blake2::{
+    digest::{Update, VariableOutput},
+    VarBlake2b,
+};
+
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
 
 /// CasperVM based testing environment.
@@ -198,7 +203,6 @@ impl TestEnvState {
             Err(parse_error(self.context.get_error().unwrap()))
         } else if has_return {
             let result: Bytes = self.get_account_value(active_account, "result");
-            dbg!(&result);
             Ok(Some(bytesrepr::deserialize(result.to_vec()).unwrap()))
         } else {
             Ok(None)
@@ -296,7 +300,19 @@ impl TestEnvState {
 
 fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap();
-    base64::encode(&preimage)
+    let hash = blake2b(preimage);
+    hex::encode(hash)
+}
+
+fn blake2b<T: AsRef<[u8]>>(data: T) -> [u8; 32] {
+    let mut result = [0; 32];
+    let mut hasher = VarBlake2b::new(32).expect("should create hasher");
+
+    hasher.update(data);
+    hasher.finalize_variable(|slice| {
+        result.copy_from_slice(slice);
+    });
+    result
 }
 
 fn parse_error(err: engine_state::Error) -> Error {

@@ -11,6 +11,8 @@ lazy_static = "1.4.0"
 casper-dao-macros = { path = "../macros" }
 casper-engine-test-support = { version = "2.0.3", features = ["test-support"], optional = true }
 casper-execution-engine = { version = "1.4.4", optional = true }
+hex = "0.4.3"
+blake2 = { version = "0.9.0", default-features = false }
 
 [dev-dependencies]
 trybuild = "1.0"
