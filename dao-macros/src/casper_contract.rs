@@ -52,7 +52,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
             quote! {
                 #[no_mangle]
                 fn #ident() {
-                    use casper_contract::unwrap_or_revert::UnwrapOrRevert;
+                    use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
 
                     #casper_args
                     let contract = #contract_ident::default();

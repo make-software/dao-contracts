@@ -30,3 +30,5 @@ mod test_env;
 
 #[cfg(feature = "test-support")]
 pub use test_env::{ExecutionError, TestEnv};
+
+pub use casper_contract;

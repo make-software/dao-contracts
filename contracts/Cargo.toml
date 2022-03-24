@@ -23,6 +23,14 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "repo_voter_contract"
+path = "bin/repo_voter_contract.rs"
+bench = false
+doctest = false
+test = false
+
+
 [features]
 default = [ "casper-contract/default", "casper-contract/std", "casper-contract/test-support" ]
 test-support = [ "casper-dao-utils/test-support", "casper-contract/test-support" ]

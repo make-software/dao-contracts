@@ -5,21 +5,22 @@ edition = "2018"
 
 [dependencies]
 casper-types = "1.4.6"
-casper-dao-utils = { path = "../dao-utils" }
+casper-dao-utils = { path = "../dao-utils", default-features = false }
 
 [[bin]]
 name = "erc_20"
-path = "src/bin.rs"
+path = "bin/erc20_contract.rs"
 bench = false
 doctest = false
 test = false
 doc = false
 
 [[test]]
-name = "erc20"
-path = "src/tests.rs"
+name = "test-erc20"
+path = "tests/test_erc20.rs"
 harness = true
 
 [features]
 default = [ "test-support" ]
 test-support = [ "casper-dao-utils/test-support" ]
+wasm = [ "casper-dao-utils/wasm" ]

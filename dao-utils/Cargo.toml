@@ -30,5 +30,10 @@ doctest = false
 test = false
 
 [features]
-default = [ "casper-contract/default", "casper-contract/std" ]
-test-support = [ "casper-engine-test-support", "casper-execution-engine" ]
+default = [ "test-support" ]
+test-support = [ 
+    "casper-engine-test-support", 
+    "casper-execution-engine", 
+    "casper-contract/test-support"
+]
+wasm = [ "casper-contract/default", "casper-contract/std" ]

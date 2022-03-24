@@ -1,6 +1,6 @@
 use casper_dao_utils::{TestEnv, Error};
 use casper_types::{U256};
-use erc20::{ERC20Test};
+use casper_dao_erc20::ERC20Test;
 
 static NAME: &str = "Plascoin";
 static SYMBOL: &str = "PLS";
