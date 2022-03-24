@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::contract::{caller, casper_contract, contract, contract_test};
+use crate::contract::{caller, contract, contract_bin, contract_test};
 
 use super::parser::CasperContractItem;
 
@@ -17,7 +17,7 @@ fn generate_or_err(item: CasperContractItem) -> Result<TokenStream, syn::Error> 
     let contract_interface_trait = contract::interface::generate_code(&item);
     let caller = caller::generate_code(&item);
     let contract_test = contract_test::generate_code(&item)?;
-    let contract_macro = casper_contract::generate_code(&item);
+    let contract_macro = contract_bin::generate_code(&item);
 
     Ok(quote! {
       #contract_impl
