@@ -1,6 +1,5 @@
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
-CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown \
-				--quiet --features=wasm --no-default-features
+CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
 CARGO_TEST = CARGO_TARGET_DIR=$(shell pwd)/target cargo test --features=test-support --no-default-features
 
 prepare:
@@ -40,8 +39,6 @@ lint: clippy
 
 clean:
 	cargo clean
-	rm -rf tests/wasm/*.wasm
-	rm -rf dao-erc20/wasm/*.wasm
-
+	
 docs:
 	cargo doc --features test-support --no-deps --open

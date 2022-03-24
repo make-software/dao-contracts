@@ -1,7 +1,9 @@
 use casper_dao_utils::{
-    casper_dao_macros::casper_contract_interface, casper_env, Address, Error, Mapping, Variable,
+    casper_dao_macros::casper_contract_interface, casper_env::{self, emit}, Address, Error, Mapping, Variable,
 };
 use casper_types::U256;
+
+use self::events::Transfer;
 
 #[casper_contract_interface]
 pub trait ERC20Interface {
@@ -41,13 +43,20 @@ impl Default for ERC20 {
 
 impl ERC20Interface for ERC20 {
     fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U256) {
+        let sender = casper_env::caller();
         self.balances.init();
         self.allowances.init();
         self.name.set(name);
         self.symbol.set(symbol);
         self.decimals.set(decimals);
         self.total_supply.set(initial_supply);
-        self.balances.set(&casper_env::caller(), initial_supply);
+        self.balances.set(&sender, initial_supply);
+
+        // emit(Transfer {
+        //     from: None,
+        //     to: Some(sender),
+        //     value: initial_supply
+        // });
     }
 
     fn name(&self) -> String {
@@ -100,6 +109,12 @@ impl ERC20 {
         }
         self.balances.set(&owner, owner_balance - amount);
         self.balances.set(&recipient, recipient_balance + amount);
+
+        // emit(Transfer {
+        //     from: Some(owner),
+        //     to: Some(recipient),
+        //     value: amount
+        // });
     }
 
     pub fn spend_allowance(&mut self, owner: Address, spender: Address, amount: U256) {
@@ -109,5 +124,24 @@ impl ERC20 {
             casper_env::revert(Error::InsufficientAllowance);
         }
         self.allowances.set(&key, allowance - amount);
+    }
+}
+
+pub mod events {
+    use casper_dao_utils::{Address, casper_dao_macros::Event};
+    use casper_types::U256;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Transfer {
+        pub from: Option<Address>,
+        pub to: Option<Address>,
+        pub value: U256,
+    }
+    
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Approval {
+        pub owner: Address,
+        pub spender: Address,
+        pub value: U256,
     }
 }
