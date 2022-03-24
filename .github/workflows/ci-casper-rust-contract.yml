@@ -19,7 +19,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-
+    env:
+      CARGO_TARGET_DIR: /home/runner/work/dao-contracts/dao-contracts/target
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
