@@ -1,11 +1,8 @@
 [workspace]
 members = [
-    "utils",
-    "utils/sample-contract",
-    "macros",
-    "contracts",
-    "tests",
-    "erc20"
+    "dao-utils",
+    "dao-macros",
+    "dao-erc20"
 ]
 
 [profile.release]
