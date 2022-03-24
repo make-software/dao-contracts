@@ -1,8 +1,8 @@
 mod reputation;
-mod variable;
+mod variable_repository;
 
 pub use reputation::{ReputationContract, ReputationContractCaller, ReputationContractInterface};
-pub use variable::{
+pub use variable_repository::{
     VariableRepositoryContract, VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
 };
@@ -11,4 +11,4 @@ pub use variable::{
 pub use reputation::ReputationContractTest;
 
 #[cfg(feature = "test-support")]
-pub use variable::VariableRepositoryContractTest;
+pub use variable_repository::VariableRepositoryContractTest;

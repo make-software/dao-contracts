@@ -1,9 +1,7 @@
 //! Whitelist-based access control system.
 
-use casper_contract::contract_api::runtime;
-
-use crate::{
-    casper_env::{caller, emit},
+use casper_dao_utils::{
+    casper_env::{caller, emit, self},
     consts, Address, Error, Mapping,
 };
 
@@ -43,7 +41,7 @@ impl Whitelist {
     /// Assert the caller is on the list. Revert otherwise.
     pub fn ensure_whitelisted(&self) {
         if !self.whitelist.get(&caller()) {
-            runtime::revert(Error::NotWhitelisted);
+            casper_env::revert(Error::NotWhitelisted);
         }
     }
 
@@ -54,8 +52,8 @@ impl Whitelist {
 
 pub mod events {
     //! Events definitions.
-    use crate::Address;
-    use casper_dao_macros::Event;
+
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
 
     /// Informs new address has been added to the whitelist.
     #[derive(Debug, PartialEq, Event)]

@@ -1,10 +1,8 @@
 //! Token with staking powers.
 
-use casper_contract::contract_api::runtime;
 use casper_types::U256;
-
-use crate::{casper_env::emit, consts, token::Token, Address, Error, Mapping};
-
+use casper_dao_utils::{casper_env::{emit, self}, consts, Address, Error, Mapping};
+use crate::Token;
 use self::events::{TokensStaked, TokensUnstaked};
 
 /// The TokenWithStaking module.
@@ -81,15 +79,14 @@ impl TokenWithStaking {
 
     fn ensure_staked_balance(&mut self, address: &Address, amount: U256) {
         if self.stakes.get(address) < amount {
-            runtime::revert(Error::InsufficientBalance);
+            casper_env::revert(Error::InsufficientBalance);
         }
     }
 }
 
 pub mod events {
     //! Events definitions.
-    use crate::Address;
-    use casper_dao_macros::Event;
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
     use casper_types::U256;
 
     /// Informs tokens have been staked.

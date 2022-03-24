@@ -1,8 +1,8 @@
-use crate::{
-    casper_env::{emit, get_block_time},
+use casper_dao_utils::{
+    casper_env::{emit, get_block_time, self},
     consts, Error, Mapping, OrderedCollection, Set,
 };
-use casper_contract::contract_api::runtime;
+
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
@@ -44,7 +44,7 @@ impl Repository {
 
             // If activation_time is in the past, raise an error.
             Some(activation_time) if activation_time < now => {
-                runtime::revert(Error::ActivationTimeInPast)
+                casper_env::revert(Error::ActivationTimeInPast)
             }
 
             // If activation time is in future.
@@ -100,7 +100,7 @@ pub struct RepositoryDefaults {
 impl RepositoryDefaults {
     #[cfg(not(feature = "test-support"))]
     pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
-        use casper_contract::unwrap_or_revert::UnwrapOrRevert;
+        use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
         let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
         self.items.push((String::from(key), value));
     }
@@ -139,39 +139,8 @@ impl Default for RepositoryDefaults {
     }
 }
 
-pub mod entry_points {
-    use casper_types::{
-        bytesrepr::Bytes, CLTyped, EntryPoint, EntryPointAccess, EntryPointType, Parameter,
-    };
-
-    use crate::consts;
-
-    pub fn set_or_update() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_SET_OR_UPDATE,
-            vec![
-                Parameter::new(consts::PARAM_KEY, String::cl_type()),
-                Parameter::new(consts::PARAM_VALUE, Bytes::cl_type()),
-            ],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-
-    pub fn get() -> EntryPoint {
-        EntryPoint::new(
-            consts::EP_GET,
-            vec![Parameter::new(consts::PARAM_KEY, String::cl_type())],
-            <()>::cl_type(),
-            EntryPointAccess::Public,
-            EntryPointType::Contract,
-        )
-    }
-}
-
 pub mod events {
-    use casper_dao_macros::Event;
+    use casper_dao_utils::casper_dao_macros::Event;
     use casper_types::bytesrepr::Bytes;
 
     #[derive(Debug, PartialEq, Event)]

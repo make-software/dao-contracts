@@ -1,10 +1,9 @@
 //! Token module with balances and total supply.
 
-use casper_contract::contract_api::runtime;
 use casper_types::U256;
 
 use self::events::{Burn, Mint, Transfer};
-use crate::{casper_env::emit, consts, Address, Error, Mapping, Variable};
+use casper_dao_utils::{casper_env::{emit, self}, consts, Address, Error, Mapping, Variable};
 
 /// The Token module.
 pub struct Token {
@@ -37,7 +36,7 @@ impl Token {
     pub fn mint(&mut self, recipient: Address, amount: U256) {
         let (new_supply, is_overflowed) = self.total_supply.get().overflowing_add(amount);
         if is_overflowed {
-            runtime::revert(Error::TotalSupplyOverflow);
+            casper_env::revert(Error::TotalSupplyOverflow);
         }
 
         self.total_supply.set(new_supply);
@@ -87,7 +86,7 @@ impl Token {
     /// Revert otherwise.
     pub fn ensure_balance(&mut self, address: &Address, amount: U256) {
         if self.balances.get(address) < amount {
-            runtime::revert(Error::InsufficientBalance);
+            casper_env::revert(Error::InsufficientBalance);
         }
     }
 
@@ -101,10 +100,8 @@ impl Token {
 }
 
 pub mod events {
-    use casper_dao_macros::Event;
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
     use casper_types::U256;
-
-    use crate::Address;
 
     #[derive(Debug, PartialEq, Event)]
     pub struct Transfer {

@@ -51,7 +51,7 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
         if &ident.to_string() == "init" {
             quote! {
               #sig {
-                let _: () = casper_contract::contract_api::runtime::call_versioned_contract(
+                let _: () = casper_dao_utils::casper_contract::contract_api::runtime::call_versioned_contract(
                   self.contract_package_hash,
                   std::option::Option::None,
                   stringify!(#ident),
@@ -62,7 +62,7 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
         } else {
             quote! {
                 #sig {
-                    casper_contract::contract_api::runtime::call_versioned_contract(
+                    casper_dao_utils::casper_contract::contract_api::runtime::call_versioned_contract(
                         self.contract_package_hash,
                         std::option::Option::None,
                         stringify!(#ident),

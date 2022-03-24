@@ -11,7 +11,7 @@ use casper_types::{
     ApiError, CLTyped, ContractPackageHash, EntryPoints, URef,
 };
 
-use crate::{Address, Events};
+use crate::{Address, events::Events};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
@@ -122,6 +122,6 @@ pub fn get_block_time() -> u64 {
     u64::from(runtime::get_blocktime())
 }
 
-pub fn revert<T: Into<ApiError>>(error: T) {
-    runtime::revert(error)
+pub fn revert<T: Into<ApiError>>(error: T) -> ! {
+    runtime::revert(error);
 }

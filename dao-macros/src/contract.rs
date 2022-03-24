@@ -217,7 +217,7 @@ pub mod utils {
                 punctuated_args.push_punct(comma);
 
                 casper_args.append_all(quote! {
-                    let #ident = casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
+                    let #ident = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
                 });
             });
 

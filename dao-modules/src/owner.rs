@@ -1,9 +1,9 @@
 //! Single-owner-based access control system.
 
-use casper_contract::contract_api::runtime;
+// use casper_contract::contract_api::runtime;
 
-use crate::{
-    casper_env::{caller, emit},
+use casper_dao_utils::{
+    casper_env::{caller, emit, self},
     consts, Address, Error, Variable,
 };
 
@@ -38,10 +38,10 @@ impl Owner {
     pub fn ensure_owner(&self) {
         if let Some(owner) = self.owner.get() {
             if owner != caller() {
-                runtime::revert(Error::NotAnOwner) // User is not the owner.
+                casper_env::revert(Error::NotAnOwner) // User is not the owner.
             }
         } else {
-            runtime::revert(Error::OwnerIsNotInitialized) // Owner is not inicialized.
+            casper_env::revert(Error::OwnerIsNotInitialized) // Owner is not inicialized.
         }
     }
 
@@ -52,8 +52,7 @@ impl Owner {
 
 pub mod events {
     //! Events definitions.
-    use crate::Address;
-    use casper_dao_macros::Event;
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
 
     /// Informs the owner change.
     #[derive(Debug, PartialEq, Event)]

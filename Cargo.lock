@@ -114,6 +114,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "casper-dao-contracts"
+version = "0.1.0"
+dependencies = [
+ "casper-dao-modules",
+ "casper-dao-utils",
+ "casper-types",
+]
+
+[[package]]
 name = "casper-dao-erc20"
 version = "0.1.0"
 dependencies = [
@@ -129,6 +138,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "casper-dao-modules"
+version = "0.1.0"
+dependencies = [
+ "casper-dao-utils",
+ "casper-types",
 ]
 
 [[package]]

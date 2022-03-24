@@ -14,8 +14,6 @@ pub fn generate_code(input: CasperContractItem) -> TokenStream {
     let contract_macro = casper_contract::generate_code(&input);
 
     quote! {
-      use casper_dao_utils::casper_contract;
-
       #contract_impl
 
       #contract_interface_trait

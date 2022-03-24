@@ -2,6 +2,8 @@
 members = [
     "dao-utils",
     "dao-macros",
+    "dao-modules",
+    "dao-contracts",
     "dao-erc20"
 ]
 

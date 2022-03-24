@@ -1,0 +1,13 @@
+[package]
+name = "casper-dao-modules"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+casper-types = "1.4.6"
+casper-dao-utils = { path = "../dao-utils", default-features = false }
+
+[features]
+default = [ "test-support" ]
+test-support = [ "casper-dao-utils/test-support" ]
+wasm = [ "casper-dao-utils/wasm" ]

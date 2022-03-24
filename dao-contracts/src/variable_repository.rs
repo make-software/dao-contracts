@@ -1,11 +1,8 @@
 use casper_types::bytesrepr::Bytes;
-
+use casper_dao_modules::{Owner, Whitelist, Repository};
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
     casper_env::{caller, init_events},
-    owner::Owner,
-    repository::Repository,
-    whitelist::Whitelist,
     Address,
 };
 
@@ -63,7 +60,10 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 }
 
 #[cfg(feature = "test-support")]
-use casper_dao_utils::{repository::RepositoryDefaults, BytesConversion};
+use casper_dao_utils::BytesConversion;
+
+#[cfg(feature = "test-support")]
+use casper_dao_modules::RepositoryDefaults;
 
 #[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {

@@ -1,9 +1,7 @@
+use casper_dao_modules::{TokenWithStaking, Owner, Whitelist};
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
     casper_env::{caller, init_events},
-    owner::Owner,
-    staking::TokenWithStaking,
-    whitelist::Whitelist,
     Address,
 };
 use casper_types::U256;
