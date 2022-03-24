@@ -1,7 +1,8 @@
 TARGET_DIR = $(shell pwd)/target
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
-CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features --target-dir $(TARGET_DIR)
-CARGO_TEST = cargo test --features=test-support --no-default-features --target-dir $(TARGET_DIR)
+CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
+CARGO_JUST_TEST = cargo test --features=test-support --no-default-features
+CARGO_TEST = CARGO_TARGET_DIR=$(TARGET_DIR) $(CARGO_JUST_TEST)
 
 prepare:
 	rustup target add wasm32-unknown-unknown
@@ -43,3 +44,11 @@ clean:
 	
 docs:
 	cargo doc --features test-support --no-deps --open
+
+github-test: build-proxy-getter build-dao-contracts build-erc20
+	mkdir -p dao-contracts/wasm
+	mkdir -p dao-erc20/wasm
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cp $(OUTPUT_DIR)/*.wasm dao-erc20/wasm
+	$(CARGO_JUST_TEST) -p casper-dao-contracts --test test-reputation --test test-variable-repository
+	$(CARGO_JUST_TEST) -p casper-dao-erc20 --test test-erc20
