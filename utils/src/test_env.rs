@@ -20,6 +20,11 @@ use casper_types::{
     SecretKey, URef, U512,
 };
 
+use blake2::{
+    digest::{Update, VariableOutput},
+    VarBlake2b,
+};
+
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
 
 /// CasperVM based testing environment.
@@ -105,6 +110,7 @@ pub struct TestEnvState {
     active_account: Address,
     context: InMemoryWasmTestBuilder,
     block_time: u64,
+    calls_counter: u32,
 }
 
 impl TestEnvState {
@@ -144,6 +150,7 @@ impl TestEnvState {
             context: builder,
             accounts,
             block_time: 0,
+            calls_counter: 0,
         }
     }
 
@@ -155,6 +162,7 @@ impl TestEnvState {
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
             .with_session_code(session_code, args)
+            .with_deploy_hash(self.next_hash())
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
@@ -185,6 +193,7 @@ impl TestEnvState {
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
             .with_session_code(session_code, args)
+            .with_deploy_hash(self.next_hash())
             .build();
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
@@ -198,7 +207,6 @@ impl TestEnvState {
             Err(parse_error(self.context.get_error().unwrap()))
         } else if has_return {
             let result: Bytes = self.get_account_value(active_account, "result");
-            dbg!(&result);
             Ok(Some(bytesrepr::deserialize(result.to_vec()).unwrap()))
         } else {
             Ok(None)
@@ -292,15 +300,35 @@ impl TestEnvState {
     pub fn as_account(&mut self, account: Address) {
         self.active_account = account;
     }
+
+    fn next_hash(&mut self) -> [u8; 32] {
+        let seed = self.calls_counter;
+        self.calls_counter += 1;
+        let mut hash = [0u8; 32];
+        hash[0] = seed as u8;
+        hash[1] = (seed >> 8) as u8;
+        hash
+    }
 }
 
 fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap();
-    base64::encode(&preimage).chars().skip(16).take(16).collect()
+    let hash = blake2b(preimage);
+    hex::encode(hash)
+}
+
+fn blake2b<T: AsRef<[u8]>>(data: T) -> [u8; 32] {
+    let mut result = [0; 32];
+    let mut hasher = VarBlake2b::new(32).expect("should create hasher");
+
+    hasher.update(data);
+    hasher.finalize_variable(|slice| {
+        result.copy_from_slice(slice);
+    });
+    result
 }
 
 fn parse_error(err: engine_state::Error) -> Error {
-    let errr = err.clone();
     if let engine_state::Error::Exec(exec_err) = err {
         if let ExecutionError::Revert(ApiError::User(id)) = exec_err {
             return Error::from(id);
@@ -309,6 +337,5 @@ fn parse_error(err: engine_state::Error) -> Error {
             return Error::InvalidContext;
         }
     }
-    dbg!(errr);
     panic!("Unexpected error.");
 }

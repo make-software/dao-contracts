@@ -137,11 +137,13 @@ name = "casper-dao-utils"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "blake2",
  "casper-contract",
  "casper-dao-macros",
  "casper-engine-test-support",
  "casper-execution-engine",
  "casper-types",
+ "hex",
  "lazy_static",
  "pretty_assertions",
  "trybuild",

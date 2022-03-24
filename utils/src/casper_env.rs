@@ -84,10 +84,11 @@ pub fn emit<T: ToBytes>(event: T) {
     Events::default().emit(event);
 }
 
-/// Convert any key to base64.
+/// Convert any key to hash.
 pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap_or_revert();
-    base64::encode(&preimage).chars().skip(32).take(64).collect()
+    let bytes = runtime::blake2b(preimage);
+    hex::encode(bytes)
 }
 
 pub fn install_contract(

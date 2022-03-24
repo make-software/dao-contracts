@@ -47,10 +47,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
     methods.append_all(contract.trait_methods.iter().map(|method| {
         let ident = &method.sig.ident;
         let (casper_args, punctuated_args) = utils::parse_casper_args(method);
-        let has_return = match &method.sig.output {
-            syn::ReturnType::Default => false,
-            syn::ReturnType::Type(_, _) => true,
-        };
+        let has_return = matches!(&method.sig.output, syn::ReturnType::Type(_, _));
         if has_return {
             quote! {
                 #[no_mangle]
