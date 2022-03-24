@@ -5,6 +5,7 @@ members = [
     "macros",
     "contracts",
     "tests",
+    "erc20"
 ]
 
 [profile.release]
