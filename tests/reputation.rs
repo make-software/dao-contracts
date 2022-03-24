@@ -348,6 +348,16 @@ mod tests {
         contract.unstake(account, amount_to_unstake);
     }
 
+    #[test]
+    fn test_that_contract_have_different_hashes() {
+        let env = TestEnv::new();
+        let contract1 = ReputationContractTest::new(&env);
+        let contract2 = ReputationContractTest::new(&env);
+
+        assert_ne!(contract1.get_package_hash(), contract2.get_package_hash());
+    }
+
+
     fn setup() -> (TestEnv, ReputationContractTest) {
         let env = TestEnv::new();
         let contract = ReputationContractTest::new(&env);
