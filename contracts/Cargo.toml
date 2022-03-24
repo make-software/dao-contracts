@@ -5,7 +5,7 @@ edition = "2018"
 
 [dependencies]
 casper-contract = "1.4.3"
-casper-types = "1.4.3"
+casper-types = "1.4.6"
 casper-dao-utils = { path = "../utils" }
 
 [[bin]]
