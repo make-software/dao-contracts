@@ -116,7 +116,7 @@ pub struct TestEnvState {
     context: InMemoryWasmTestBuilder,
     expected_error: Option<execution::Error>,
     block_time: u64,
-    calls_counter: u32
+    calls_counter: u32,
 }
 
 impl TestEnvState {
@@ -157,7 +157,7 @@ impl TestEnvState {
             accounts,
             expected_error: None,
             block_time: 0,
-            calls_counter: 0
+            calls_counter: 0,
         }
     }
 
