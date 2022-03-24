@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 
-use super::{contract::utils, parser::CasperContractItem};
+use super::{parser::CasperContractItem, utils};
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let struct_stream = generate_struct(input);

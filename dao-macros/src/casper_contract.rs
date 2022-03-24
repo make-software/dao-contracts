@@ -13,14 +13,14 @@ pub fn generate_code(input: &CasperContractItem) -> TokenStream {
             .to_case(convert_case::Case::Snake)
     );
 
-    let install = generate_install(input);
+    let call = generate_call(input);
     let interface_methods = generate_interface_methods(input);
 
     quote! {
         #[macro_export]
         macro_rules! #macro_ident {
             () => {
-                #install
+                #call
 
                 #interface_methods
             };
@@ -28,7 +28,7 @@ pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     }
 }
 
-fn generate_install(contract: &CasperContractItem) -> TokenStream {
+fn generate_call(contract: &CasperContractItem) -> TokenStream {
     let contract_ident = &contract.contract_ident;
 
     quote! {
@@ -73,4 +73,47 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
         }
     }));
     methods
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use quote::quote;
+
+    use crate::contract::utils::tests::mock_valid_item;
+
+    use super::generate_code;
+
+    #[test]
+    fn generating_no_mangles_works() {
+        let item = mock_valid_item();
+        let generated = generate_code(&item);
+
+        let expected = quote! {
+            #[macro_export]
+            macro_rules! contract {
+                () => {
+                    #[no_mangle]
+                    fn call() {
+                        Contract::install();
+                    }
+
+                    #[no_mangle]
+                    fn init() {
+                        let mut contract = Contract::default();
+                        ContractTrait::init(&mut contract,);
+                    }
+
+                    #[no_mangle]
+                    fn do_something() {
+                        let amount = casper_contract::contract_api::runtime::get_named_arg(stringify!(amount));
+                        let mut contract = Contract::default();
+                        ContractTrait::do_something(&mut contract, amount,);
+                    }
+                };
+            }
+        };
+
+        assert_eq!(expected.to_string(), generated.to_string())
+    }
 }

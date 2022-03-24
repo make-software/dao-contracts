@@ -1,5 +1,4 @@
-use crate::contract::utils;
-use crate::parser::CasperContractItem;
+use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
@@ -8,23 +7,34 @@ use syn::token::Comma;
 use syn::FnArg;
 use syn::ReturnType;
 
-pub fn generate_code(input: &CasperContractItem) -> TokenStream {
-    let contract_test_interface = generate_test_interface(input);
-    let contract_test_impl = generate_test_implementation(input);
+use super::parser::CasperContractItem;
+use super::utils;
 
-    quote! {
+pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
+    let contract_test_interface = generate_test_interface(input)?;
+    let contract_test_impl = generate_test_implementation(input)?;
+
+    Ok(quote! {
         #contract_test_impl
         #contract_test_interface
-    }
+    })
 }
 
-fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
+fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
     let wasm_file_name = &input.wasm_file_name;
     let package_hash = &input.package_hash;
 
-    let init = utils::find_method(input, "init").unwrap();
+    let init = match utils::find_method(input, "init") {
+        Some(method) => method,
+        None => {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "Init method not found!!!!!!",
+            ))
+        }
+    };
     let casper_args = utils::generate_method_args(init);
     let mut args: Punctuated<FnArg, Comma> = Punctuated::new();
     init.sig
@@ -34,7 +44,7 @@ fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
         .skip(1)
         .for_each(|arg| args.push(arg));
 
-    quote! {
+    Ok(quote! {
         #[cfg(feature = "test-support")]
         pub struct #contract_test_ident {
             env: casper_dao_utils::TestEnv,
@@ -75,19 +85,20 @@ fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
                 assert_eq!(self.event::<T>(index), event);
             }
         }
-    }
+    })
 }
 
-fn generate_test_interface(input: &CasperContractItem) -> TokenStream {
+fn generate_test_interface(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
+    let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);
 
-    quote! {
+    Ok(quote! {
       #[cfg(feature = "test-support")]
       impl #contract_test_ident {
         #methods
       }
-    }
+    })
 }
 
 fn build_methods(input: &CasperContractItem) -> TokenStream {

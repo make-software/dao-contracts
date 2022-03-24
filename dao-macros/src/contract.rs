@@ -1,28 +1,37 @@
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, TokenStreamExt};
 use syn::TraitItemMethod;
 
-use crate::parser::CasperContractItem;
+use super::{parser::CasperContractItem, utils};
 
-pub fn generate_code(input: &CasperContractItem) -> TokenStream {
-    let contract_install = generate_install(input);
+pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
+    let contract_install = generate_install(input)?;
     let contract_entry_points = generate_entry_points(input);
 
-    quote! {
+    Ok(quote! {
         #contract_install
         #contract_entry_points
-    }
+    })
 }
 
-fn generate_install(input: &CasperContractItem) -> TokenStream {
+fn generate_install(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
     let contract_ident = &input.contract_ident;
     let caller_ident = &input.caller_ident;
     let package_hash = &input.package_hash;
 
-    let init_method = utils::find_method(input, "init").unwrap();
+    let init_method = match utils::find_method(input, "init") {
+        Some(method) => method,
+        None => {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "Contract has to define init() method",
+            ))
+        }
+    };
+
     let (args_stream, punctuated_args) = utils::parse_casper_args(init_method);
 
-    quote! {
+    Ok(quote! {
         impl #contract_ident {
             pub fn install() {
                 casper_dao_utils::casper_env::install_contract(
@@ -36,7 +45,7 @@ fn generate_install(input: &CasperContractItem) -> TokenStream {
                 );
             }
         }
-    }
+    })
 }
 
 fn generate_entry_points(contract_trait: &CasperContractItem) -> TokenStream {
@@ -57,7 +66,7 @@ fn generate_entry_points(contract_trait: &CasperContractItem) -> TokenStream {
 
 fn build_entry_point(method: &TraitItemMethod) -> TokenStream {
     let method_ident = &method.sig.ident;
-    let params = build_params(method);
+    let params = build_entry_point_params(method);
     let group = build_group(method_ident);
 
     quote! {
@@ -85,7 +94,7 @@ fn build_group(method_ident: &Ident) -> TokenStream {
     }
 }
 
-fn build_params(method: &TraitItemMethod) -> TokenStream {
+fn build_entry_point_params(method: &TraitItemMethod) -> TokenStream {
     let type_paths = utils::collect_type_paths(method);
     let method_idents = utils::collect_arg_idents(method);
 
@@ -150,47 +159,6 @@ pub mod utils {
                 }
             })
             .collect()
-    }
-
-    pub fn collect_arg_idents(method: &TraitItemMethod) -> Vec<&Ident> {
-        method
-            .sig
-            .inputs
-            .iter()
-            .filter_map(|arg| -> Option<&Ident> {
-                match arg {
-                    FnArg::Typed(pat_type) => match &*pat_type.pat {
-                        Pat::Ident(pat_ident) => Some(&pat_ident.ident),
-                        _ => None,
-                    },
-                    FnArg::Receiver(_) => None,
-                }
-            })
-            .collect()
-    }
-
-    pub fn generate_method_args(method: &TraitItemMethod) -> TokenStream {
-        let method_idents = collect_arg_idents(method);
-        if method_idents.is_empty() {
-            quote! {
-                casper_types::RuntimeArgs::new()
-            }
-        } else {
-            let mut args = TokenStream::new();
-            args.append_all(method_idents.iter().map(|ident| {
-                quote! {
-                    named_args.insert(stringify!(#ident), #ident).unwrap();
-                }
-            }));
-            quote! {
-                {
-                    let mut named_args = casper_types::RuntimeArgs::new();
-                    #args
-                    named_args
-                }
-            }
-        }
-    }
 
     pub fn find_method<'a>(
         input: &'a CasperContractItem,
@@ -222,5 +190,108 @@ pub mod utils {
             });
 
         (casper_args, punctuated_args)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::contract::{contract::{generate_install, generate_entry_points}, utils};
+    use pretty_assertions::assert_eq;
+    use quote::quote;
+
+    #[test]
+    fn generating_install_without_init_method_fails() {
+        let valid_item = utils::tests::mock_item_without_init();
+        let result = generate_install(&valid_item)
+            .map_err(|err| err.to_string())
+            .unwrap_err();
+        let expected = "Contract has to define init() method".to_string();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn generating_install_no_args() {
+        let valid_item = utils::tests::mock_valid_item();
+        let result = generate_install(&valid_item).unwrap().to_string();
+        let expected = quote! {
+            impl Contract {
+                pub fn install() {
+                    casper_dao_utils::casper_env::install_contract(
+                        "contract",
+                        Contract::entry_points(),
+                        |contract_package_hash| {
+                            let mut contract_instance = ContractCaller::at(contract_package_hash);
+                            contract_instance.init();
+                        }
+                    );
+                }
+            }
+        }
+        .to_string();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn generating_install_with_args() {
+        let valid_item = utils::tests::mock_item_init_with_args();
+        let result = generate_install(&valid_item).unwrap().to_string();
+        let expected = quote! {
+            impl Contract {
+                pub fn install() {
+                    casper_dao_utils::casper_env::install_contract(
+                        "contract",
+                        Contract::entry_points(),
+                        |contract_package_hash| {
+                            let mut contract_instance = ContractCaller::at(contract_package_hash);
+                            let arg1 = casper_contract::contract_api::runtime::get_named_arg(stringify!(arg1)); 
+                            let arg2 = casper_contract::contract_api::runtime::get_named_arg(stringify!(arg2)); 
+                            contract_instance.init(arg1, arg2,);
+                        }
+                    );
+                }
+            }
+        }
+        .to_string();
+        assert_eq!(expected, result);
+    }
+    
+    #[test]
+    fn generating_entry_points_works() {
+        let valid_item = utils::tests::mock_valid_item();
+        let result = generate_entry_points(&valid_item).to_string();
+        let expected = quote! {
+            impl Contract {
+                pub fn entry_points() -> casper_types::EntryPoints {
+                    let mut entry_points = casper_types::EntryPoints::new();
+                    entry_points.add_entry_point(
+                        casper_types::EntryPoint::new(
+                            stringify!(init),
+                            {
+                                let mut params: Vec<casper_types::Parameter> = Vec::new();
+                                params
+                            },
+                            <() as casper_types::CLTyped>::cl_type(),
+                            casper_types::EntryPointAccess::Groups(vec![casper_types::Group::new("init")]),
+                            casper_types::EntryPointType::Contract,
+                        )
+                    );
+                    entry_points.add_entry_point(
+                        casper_types::EntryPoint::new(
+                            stringify!(do_something),
+                            {
+                                let mut params: Vec<casper_types::Parameter> = Vec::new();
+                                params.push(casper_types::Parameter::new(stringify!(amount), <U256 as casper_types::CLTyped>::cl_type()));
+                                params
+                            },
+                            <() as casper_types::CLTyped>::cl_type(),
+                            casper_types::EntryPointAccess::Public,
+                            casper_types::EntryPointType::Contract,
+                        )
+                    );
+                    entry_points
+                }
+            }
+        }.to_string();
+        assert_eq!(expected, result);
     }
 }
