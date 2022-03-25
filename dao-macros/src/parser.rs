@@ -63,7 +63,7 @@ impl Parse for CasperContractItem {
 }
 
 fn validate_item(item: &CasperContractItem) -> Result<(), syn::Error> {
-    if let None = utils::find_method(item, "init") {
+    if utils::find_method(item, "init").is_none() {
         return Err(syn::Error::new(
             Span::call_site(),
             "Contract must define init() method",

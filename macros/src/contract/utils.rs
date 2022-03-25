@@ -92,6 +92,7 @@ pub fn parse_casper_args(method: &TraitItemMethod) -> (TokenStream, Punctuated<I
     (casper_args, punctuated_args)
 }
 
+#[cfg(test)]
 pub mod tests {
     use quote::format_ident;
     use syn::parse_quote;

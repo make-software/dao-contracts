@@ -23,7 +23,7 @@ pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Err
 fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
-    let contrustor = build_constructor(&input)?;
+    let contrustor = build_constructor(input)?;
 
     Ok(quote! {
         #[cfg(feature = "test-support")]
@@ -157,10 +157,7 @@ mod tests {
     use quote::quote;
     use syn::parse_quote;
 
-    use crate::contract::{
-        contract_test::{build_constructor, generate_test_implementation, generate_test_interface},
-        utils, CasperContractItem,
-    };
+    use crate::contract::{contract_test::build_constructor, utils, CasperContractItem};
 
     #[test]
     fn generating_test_contract_constructor_works() {
