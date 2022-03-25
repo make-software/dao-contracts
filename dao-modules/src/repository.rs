@@ -27,9 +27,6 @@ impl Default for Repository {
 
 impl Repository {
     pub fn init(&mut self) {
-        self.storage.init();
-        self.keys.init();
-
         for (key, value) in RepositoryDefaults::default().items() {
             self.set(key, value);
         }

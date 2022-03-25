@@ -16,10 +16,6 @@ impl Default for Events {
 }
 
 impl Events {
-    pub fn init(&mut self) {
-        self.events.init();
-    }
-
     pub fn emit<T: ToBytes>(&mut self, event: T) {
         let bytes: Bytes = event.to_bytes().unwrap_or_revert().into();
         self.events.add(bytes);

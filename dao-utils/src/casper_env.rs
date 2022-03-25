@@ -74,11 +74,6 @@ pub fn caller() -> Address {
     call_stack_element_to_address(second_elem)
 }
 
-/// Initialize events dictionary.
-pub fn init_events() {
-    Events::default().init();
-}
-
 /// Record event to the contract's storage.
 pub fn emit<T: ToBytes>(event: T) {
     Events::default().emit(event);

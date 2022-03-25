@@ -21,11 +21,6 @@ impl Default for Whitelist {
 }
 
 impl Whitelist {
-    /// Initialize the module.
-    pub fn init(&mut self) {
-        self.whitelist.init();
-    }
-
     /// Add new `address` to the whitelist.
     pub fn add_to_whitelist(&mut self, address: Address) {
         self.whitelist.set(&address, true);

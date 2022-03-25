@@ -1,6 +1,6 @@
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface,
-    casper_env::{self, emit, init_events},
+    casper_env::{self, emit},
     Address, Error, Mapping, Variable,
 };
 use casper_types::U256;
@@ -45,11 +45,7 @@ impl Default for ERC20 {
 
 impl ERC20Interface for ERC20 {
     fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U256) {
-        init_events();
-
         let sender = casper_env::caller();
-        self.balances.init();
-        self.allowances.init();
         self.name.set(name);
         self.symbol.set(symbol);
         self.decimals.set(decimals);

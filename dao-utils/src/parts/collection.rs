@@ -23,11 +23,6 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> Orde
         }
     }
 
-    pub fn init(&mut self) {
-        self.values.init();
-        self.length.set(0);
-    }
-
     pub fn delete(&mut self, item: T) -> bool {
         let length = self.length.get();
         let (is_deleted, item_index) = self.values.remove(item);

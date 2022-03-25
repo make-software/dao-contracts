@@ -42,11 +42,6 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         }
     }
 
-    /// Create dictionary's URef.
-    pub fn init(&self) {
-        storage::new_dictionary(&self.name).unwrap_or_revert();
-    }
-
     /// Read `key` from the storage or return default value.
     pub fn get(&self, key: &K) -> V {
         self.get_or_none(key).unwrap_or_default()
@@ -78,7 +73,13 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         match seeds.get(&self.name) {
             Some(seed) => *seed,
             None => {
-                let key: Key = runtime::get_key(&self.name).unwrap_or_revert();
+                let key: Key = match runtime::get_key(&self.name) {
+                    Some(key) => key,
+                    None => {
+                        storage::new_dictionary(&self.name).unwrap_or_revert();
+                        runtime::get_key(&self.name).unwrap_or_revert()
+                    }
+                };
                 let seed: URef = *key.as_uref().unwrap_or_revert();
                 seeds.insert(self.name.clone(), seed);
                 seed
@@ -106,11 +107,6 @@ impl<V: ToBytes + FromBytes + CLTyped + Default + Hash> IndexedMapping<V> {
             mapping: Mapping::new(name.clone()),
             index: Index::new(name),
         }
-    }
-
-    pub fn init(&self) {
-        self.mapping.init();
-        self.index.init();
     }
 
     pub fn set(&self, index: u32, value: V) {
@@ -159,10 +155,6 @@ impl Index {
         Index {
             index: Mapping::new(format!("{}{}", name, "_idx")),
         }
-    }
-
-    pub fn init(&self) {
-        self.index.init();
     }
 
     pub fn set<V: ToBytes + FromBytes + CLTyped + Default + Hash>(&self, index: u32, value: &V) {

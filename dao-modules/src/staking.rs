@@ -24,12 +24,6 @@ impl Default for TokenWithStaking {
 }
 
 impl TokenWithStaking {
-    /// Initialize the module.
-    pub fn init(&mut self) {
-        self.stakes.init();
-        self.token.init();
-    }
-
     /// Mint new tokens. See [`Token::mint`](Token::mint).
     pub fn mint(&mut self, recipient: Address, amount: U256) {
         self.token.mint(recipient, amount);

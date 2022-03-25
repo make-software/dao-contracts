@@ -1,9 +1,5 @@
 use casper_dao_modules::{Owner, Repository, Whitelist};
-use casper_dao_utils::{
-    casper_dao_macros::casper_contract_interface,
-    casper_env::{caller, init_events},
-    Address,
-};
+use casper_dao_utils::{casper_dao_macros::casper_contract_interface, casper_env::caller, Address};
 use casper_types::bytesrepr::Bytes;
 
 #[casper_contract_interface]
@@ -25,10 +21,8 @@ pub struct VariableRepositoryContract {
 
 impl VariableRepositoryContractInterface for VariableRepositoryContract {
     fn init(&mut self) {
-        init_events();
         let deployer = caller();
         self.owner.init(deployer);
-        self.whitelist.init();
         self.whitelist.add_to_whitelist(deployer);
         self.repository.init();
     }

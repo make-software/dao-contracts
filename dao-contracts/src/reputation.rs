@@ -1,9 +1,5 @@
 use casper_dao_modules::{Owner, TokenWithStaking, Whitelist};
-use casper_dao_utils::{
-    casper_dao_macros::casper_contract_interface,
-    casper_env::{caller, init_events},
-    Address,
-};
+use casper_dao_utils::{casper_dao_macros::casper_contract_interface, casper_env::caller, Address};
 use casper_types::U256;
 
 // TODO: Put it lower.
@@ -131,12 +127,9 @@ pub struct ReputationContract {
 
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
-        init_events();
         let deployer = caller();
         self.owner.init(deployer);
-        self.whitelist.init();
         self.whitelist.add_to_whitelist(deployer);
-        self.token.init();
     }
 
     fn mint(&mut self, recipient: Address, amount: U256) {

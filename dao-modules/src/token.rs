@@ -24,12 +24,6 @@ impl Default for Token {
 }
 
 impl Token {
-    /// Initialize the module.
-    pub fn init(&mut self) {
-        self.balances.init();
-        self.total_supply.set(U256::zero());
-    }
-
     /// Mint new tokens.
     ///
     /// Add `amount` of new tokens to the balance of the `recipient` and
