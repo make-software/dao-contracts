@@ -418,5 +418,3 @@ fn setup_with<K: ToString, T: BytesConversion>(key: K, value: T) -> (TestEnv, Co
     contract.update_at(key, value, None).unwrap();
     (env, contract)
 }
-
-fn main() {}

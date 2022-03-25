@@ -1,4 +1,4 @@
-TARGET_DIR = $(shell pwd)/target
+TARGET_DIR = ./target
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
 CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
 CARGO_JUST_TEST = cargo test --features=test-support --no-default-features
@@ -18,13 +18,13 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/erc_20.wasm 2>/dev/null | true
 
 test-dao-contracts: build-proxy-getter build-dao-contracts
-	$(CARGO_TEST) -p casper-dao-contracts $$TEST_NAME --test test-reputation --test test-variable-repository
+	$(CARGO_TEST) -p casper-dao-contracts $$TEST_NAME --tests
 
 build-erc20:
 	$(CARGO_BUILD) -p casper-dao-erc20
 
 test-erc20: build-proxy-getter build-erc20 
-	$(CARGO_TEST) -p casper-dao-erc20 $$TEST_NAME --test test-erc20
+	$(CARGO_TEST) -p casper-dao-erc20 $$TEST_NAME --tests
 
 build-contracts: build-dao-contracts build-erc20
 
@@ -50,5 +50,5 @@ github-test: build-proxy-getter build-dao-contracts build-erc20
 	mkdir -p dao-erc20/wasm
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cp $(OUTPUT_DIR)/*.wasm dao-erc20/wasm
-	$(CARGO_JUST_TEST) -p casper-dao-contracts --test test-reputation --test test-variable-repository
-	$(CARGO_JUST_TEST) -p casper-dao-erc20 --test test-erc20
+	$(CARGO_JUST_TEST) -p casper-dao-contracts --tests
+	$(CARGO_JUST_TEST) -p casper-dao-erc20 --tests

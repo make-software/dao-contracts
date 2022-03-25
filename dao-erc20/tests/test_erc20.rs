@@ -151,5 +151,3 @@ fn test_erc20_transfer_from() {
         },
     );
 }
-
-fn main() {}

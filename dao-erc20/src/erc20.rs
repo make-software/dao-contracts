@@ -115,7 +115,7 @@ impl ERC20 {
         let owner_balance = self.balances.get(&owner);
         let recipient_balance = self.balances.get(&recipient);
         if owner_balance < amount {
-            casper_env::revert(Error::InsufficientBalance);
+            casper_env::revert(Error::InsufficientBalance)
         }
         self.balances.set(&owner, owner_balance - amount);
         self.balances.set(&recipient, recipient_balance + amount);

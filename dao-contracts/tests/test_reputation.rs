@@ -372,4 +372,3 @@ fn setup_with_initial_supply(amount: U256) -> (TestEnv, ReputationContractTest) 
     (env, contract)
 }
 
-fn main() {}
