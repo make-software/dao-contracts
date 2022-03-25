@@ -1,0 +1,39 @@
+[package]
+name = "casper-dao-contracts"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+casper-types = "1.4.6"
+casper-dao-utils = { path = "../dao-utils", default-features = false }
+casper-dao-modules = { path = "../dao-modules", default-features = false }
+
+[[bin]]
+name = "reputation_contract"
+path = "bin/reputation_contract.rs"
+bench = false
+doctest = false
+test = false
+doc = false
+
+[[bin]]
+name = "variable_repository_contract"
+path = "bin/variable_repository_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[test]]
+name = "test-reputation"
+path = "tests/test_reputation.rs"
+harness = true
+
+[[test]]
+name = "test-variable-repository"
+path = "tests/test_variable_repository.rs"
+harness = true
+
+[features]
+default = [ "test-support" ]
+test-support = [ "casper-dao-utils/test-support", "casper-dao-modules/test-support" ]
+wasm = [ "casper-dao-utils/wasm", "casper-dao-modules/wasm" ]

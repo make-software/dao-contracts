@@ -1,2 +1,3 @@
 /target
-tests/wasm/*.wasm
+dao-contracts/wasm
+dao-erc20/wasm
