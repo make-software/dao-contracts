@@ -1,10 +1,15 @@
 use convert_case::{Case, Casing};
-use proc_macro2::Ident;
+use proc_macro2::{Ident, Span};
 use quote::format_ident;
 use syn::parse::{Parse, ParseStream};
 use syn::{braced, Token, TraitItemMethod};
 
+<<<<<<< HEAD:dao-macros/src/parser.rs
 #[derive(Debug)]
+=======
+use super::utils;
+
+>>>>>>> More tests:macros/src/contract/parser.rs
 pub struct CasperContractItem {
     pub trait_token: Token![trait],
     pub trait_methods: Vec<TraitItemMethod>,
@@ -41,7 +46,7 @@ impl Parse for CasperContractItem {
         let package_hash = format!("{}_package_hash", name.to_case(Case::Snake));
         let wasm_file_name = format!("{}.wasm", name.to_case(Case::Snake));
 
-        Ok(CasperContractItem {
+        let item = CasperContractItem {
             trait_token,
             trait_methods: methods,
             ident,
@@ -50,6 +55,20 @@ impl Parse for CasperContractItem {
             contract_test_ident,
             package_hash,
             wasm_file_name,
-        })
+        };
+        validate_item(&item)?;
+
+        Ok(item)
     }
+}
+
+fn validate_item(item: &CasperContractItem) -> Result<(), syn::Error> {
+    if let None = utils::find_method(item, "init") {
+        return Err(syn::Error::new(
+            Span::call_site(),
+            "Contract must define init() method",
+        ));
+    }
+
+    Ok(())
 }

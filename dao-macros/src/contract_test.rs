@@ -23,26 +23,7 @@ pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Err
 fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
-    let wasm_file_name = &input.wasm_file_name;
-    let package_hash = &input.package_hash;
-
-    let init = match utils::find_method(input, "init") {
-        Some(method) => method,
-        None => {
-            return Err(syn::Error::new(
-                Span::call_site(),
-                "Init method not found!!!!!!",
-            ))
-        }
-    };
-    let casper_args = utils::generate_method_args(init);
-    let mut args: Punctuated<FnArg, Comma> = Punctuated::new();
-    init.sig
-        .clone()
-        .inputs
-        .into_iter()
-        .skip(1)
-        .for_each(|arg| args.push(arg));
+    let contrustor = build_constructor(&input)?;
 
     Ok(quote! {
         #[cfg(feature = "test-support")]
@@ -54,15 +35,7 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
 
         #[cfg(feature = "test-support")]
         impl #contract_test_ident {
-            pub fn new(env: &casper_dao_utils::TestEnv, #args) -> #contract_test_ident {
-                env.deploy_wasm_file(#wasm_file_name, #casper_args);
-                let package_hash = env.get_contract_package_hash(#package_hash);
-                #contract_test_ident {
-                    env: env.clone(),
-                    package_hash,
-                    data: #contract_ident::default(),
-                }
-            }
+            #contrustor
 
             pub fn get_package_hash(&self) -> casper_types::ContractPackageHash {
                 self.package_hash
@@ -83,6 +56,42 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
 
             pub fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: u32, event: T) {
                 assert_eq!(self.event::<T>(index), event);
+            }
+        }
+    })
+}
+
+fn build_constructor(item: &CasperContractItem) -> Result<TokenStream, syn::Error> {
+    let init = match utils::find_method(item, "init") {
+        Some(method) => method,
+        None => {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "Contract has to define init() method",
+            ))
+        }
+    };
+    let casper_args = utils::generate_method_args(init);
+    let mut args: Punctuated<FnArg, Comma> = Punctuated::new();
+    init.sig
+        .clone()
+        .inputs
+        .into_iter()
+        .skip(1)
+        .for_each(|arg| args.push(arg));
+
+    let contract_test_ident = &item.contract_test_ident;
+    let wasm_file_name = &item.wasm_file_name;
+    let package_hash = &item.package_hash;
+
+    Ok(quote! {
+        pub fn new(env: &casper_dao_utils::TestEnv, #args) -> #contract_test_ident {
+            env.deploy_wasm_file(#wasm_file_name, #casper_args);
+            let package_hash = env.get_contract_package_hash(#package_hash);
+            #contract_test_ident {
+                env: env.clone(),
+                package_hash,
+                data: Default::default(),
             }
         }
     })
@@ -140,5 +149,82 @@ fn build_methods(input: &CasperContractItem) -> TokenStream {
 
     quote! {
         #stream
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use quote::quote;
+    use syn::parse_quote;
+
+    use crate::contract::{
+        contract_test::{build_constructor, generate_test_implementation, generate_test_interface},
+        utils, CasperContractItem,
+    };
+
+    #[test]
+    fn generating_test_contract_constructor_works() {
+        let item = CasperContractItem {
+            trait_methods: vec![
+                parse_quote! { fn do_something(&mut self, amount: U256); },
+                parse_quote! { fn init(&mut self); },
+            ],
+            ..utils::tests::mock_valid_item()
+        };
+
+        let expected = quote! {
+            pub fn new(env: &casper_dao_utils::TestEnv,) -> ContractTest {
+                env.deploy_wasm_file("contract_wasm", casper_types::RuntimeArgs::new());
+                let package_hash = env.get_contract_package_hash("contract");
+                ContractTest {
+                    env: env.clone(),
+                    package_hash,
+                    data: Default::default(),
+                }
+            }
+        };
+
+        pretty_assertions::assert_eq!(
+            expected.to_string(),
+            build_constructor(&item).unwrap().to_string(),
+        );
+    }
+
+    #[test]
+    fn generating_test_constructor_without_init_method_fails() {
+        let invalid_item = utils::tests::mock_item_without_init();
+        let result = build_constructor(&invalid_item)
+            .map_err(|err| err.to_string())
+            .unwrap_err();
+        let expected = "Contract has to define init() method".to_string();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn generating_test_constructor_with_args_works() {
+        let item = utils::tests::mock_item_init_with_args();
+        let expected = quote! {
+            pub fn new(env: &casper_dao_utils::TestEnv, arg1: String, arg2: String) -> ContractTest {
+                env.deploy_wasm_file(
+                    "contract_wasm",
+                    {
+                        let mut named_args = casper_types::RuntimeArgs::new();
+                        named_args.insert(stringify!(arg1), arg1).unwrap();
+                        named_args.insert(stringify!(arg2), arg2).unwrap();
+                        named_args
+                    }
+                );
+                let package_hash = env.get_contract_package_hash("contract");
+                ContractTest {
+                    env: env.clone(),
+                    package_hash,
+                    data: Default::default(),
+                }
+            }
+        };
+        pretty_assertions::assert_eq!(
+            expected.to_string(),
+            build_constructor(&item).unwrap().to_string(),
+        );
     }
 }
