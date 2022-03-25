@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use contract::CasperContractItem;
 use proc_macro::TokenStream;
-use syn::parse_macro_input;
+use syn::{parse_macro_input, DeriveInput};
 
 mod contract;
 mod event;
@@ -10,7 +10,9 @@ mod event;
 /// Derive events on top of any struct.
 #[proc_macro_derive(Event)]
 pub fn derive_events(input: TokenStream) -> TokenStream {
-    event::expand_derive_events(input)
+    let input = parse_macro_input!(input as DeriveInput);
+    event::expand_derive_events(input).into()
+}
 
 #[proc_macro_attribute]
 pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {

@@ -20,6 +20,9 @@ build-dao-contracts:
 test-dao-contracts: build-proxy-getter build-dao-contracts
 	$(CARGO_TEST) -p casper-dao-contracts $$TEST_NAME --tests
 
+test-macros:
+	cargo test -p casper-dao-macros
+
 build-erc20:
 	$(CARGO_BUILD) -p casper-dao-erc20
 
@@ -28,7 +31,7 @@ test-erc20: build-proxy-getter build-erc20
 
 build-contracts: build-dao-contracts build-erc20
 
-test: build-contracts test-dao-contracts test-erc20
+test: build-contracts test-macros test-dao-contracts test-erc20
 
 clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
@@ -52,3 +55,4 @@ github-test: build-proxy-getter build-dao-contracts build-erc20
 	cp $(OUTPUT_DIR)/*.wasm dao-erc20/wasm
 	$(CARGO_JUST_TEST) -p casper-dao-contracts --tests
 	$(CARGO_JUST_TEST) -p casper-dao-erc20 --tests
+	cargo test -p casper-dao-macros

@@ -135,64 +135,6 @@ pub mod interface {
     }
 }
 
-pub mod utils {
-    use crate::parser::CasperContractItem;
-    use proc_macro2::{Ident, Span, TokenStream};
-    use quote::{format_ident, quote, TokenStreamExt};
-    use syn::{punctuated::Punctuated, token, FnArg, Pat, Token, TraitItemMethod, Type, TypePath};
-
-    pub fn collect_type_paths(method: &TraitItemMethod) -> Vec<&TypePath> {
-        method
-            .sig
-            .inputs
-            .iter()
-            .filter_map(|arg| -> Option<&TypePath> {
-                match arg {
-                    FnArg::Typed(pat_type) => {
-                        if let Type::Path(tp) = &*pat_type.ty {
-                            Some(tp)
-                        } else {
-                            None
-                        }
-                    }
-                    FnArg::Receiver(_) => None,
-                }
-            })
-            .collect()
-
-    pub fn find_method<'a>(
-        input: &'a CasperContractItem,
-        method_name: &str,
-    ) -> Option<&'a TraitItemMethod> {
-        input
-            .trait_methods
-            .iter()
-            .find(|method| method.sig.ident == *method_name)
-    }
-
-    pub fn parse_casper_args(
-        method: &TraitItemMethod,
-    ) -> (TokenStream, Punctuated<Ident, Token![,]>) {
-        let comma = token::Comma([Span::call_site()]);
-
-        let mut punctuated_args: Punctuated<Ident, Token![,]> = Punctuated::new();
-        let mut casper_args = TokenStream::new();
-
-        collect_arg_idents(method)
-            .iter()
-            .for_each(|ident| {
-                punctuated_args.push_value(format_ident!("{}", ident));
-                punctuated_args.push_punct(comma);
-
-                casper_args.append_all(quote! {
-                    let #ident = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
-                });
-            });
-
-        (casper_args, punctuated_args)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::contract::{
@@ -246,8 +188,8 @@ mod tests {
                         Contract::entry_points(),
                         |contract_package_hash| {
                             let mut contract_instance = ContractCaller::at(contract_package_hash);
-                            let arg1 = casper_contract::contract_api::runtime::get_named_arg(stringify!(arg1));
-                            let arg2 = casper_contract::contract_api::runtime::get_named_arg(stringify!(arg2));
+                            let arg1 = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(arg1));
+                            let arg2 = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(arg2));
                             contract_instance.init(arg1, arg2,);
                         }
                     );

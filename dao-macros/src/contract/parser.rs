@@ -4,12 +4,8 @@ use quote::format_ident;
 use syn::parse::{Parse, ParseStream};
 use syn::{braced, Token, TraitItemMethod};
 
-<<<<<<< HEAD:dao-macros/src/parser.rs
-#[derive(Debug)]
-=======
 use super::utils;
 
->>>>>>> More tests:macros/src/contract/parser.rs
 pub struct CasperContractItem {
     pub trait_token: Token![trait],
     pub trait_methods: Vec<TraitItemMethod>,

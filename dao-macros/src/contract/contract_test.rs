@@ -98,7 +98,6 @@ fn build_constructor(item: &CasperContractItem) -> Result<TokenStream, syn::Erro
 }
 
 fn generate_test_interface(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
-    let ident = &input.ident;
     let contract_test_ident = &input.contract_test_ident;
     let methods = build_methods(input);
 

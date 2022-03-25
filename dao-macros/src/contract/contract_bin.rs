@@ -2,7 +2,9 @@ use convert_case::Casing;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
 
-use crate::{contract::utils, parser::CasperContractItem};
+use crate::contract::utils;
+
+use super::CasperContractItem;
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let macro_ident = format_ident!(
@@ -106,7 +108,7 @@ mod tests {
 
                     #[no_mangle]
                     fn do_something() {
-                        let amount = casper_contract::contract_api::runtime::get_named_arg(stringify!(amount));
+                        let amount = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(amount));
                         let mut contract = Contract::default();
                         ContractTrait::do_something(&mut contract, amount,);
                     }

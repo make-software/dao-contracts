@@ -80,14 +80,16 @@ pub fn parse_casper_args(method: &TraitItemMethod) -> (TokenStream, Punctuated<I
     let mut punctuated_args: Punctuated<Ident, Token![,]> = Punctuated::new();
     let mut casper_args = TokenStream::new();
 
-    collect_arg_idents(method).iter().for_each(|ident| {
-        punctuated_args.push_value(format_ident!("{}", ident));
-        punctuated_args.push_punct(comma);
+    collect_arg_idents(method)
+        .iter()
+        .for_each(|ident| {
+            punctuated_args.push_value(format_ident!("{}", ident));
+            punctuated_args.push_punct(comma);
 
-        casper_args.append_all(quote! {
-            let #ident = casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
+            casper_args.append_all(quote! {
+                let #ident = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(#ident));
+            });
         });
-    });
 
     (casper_args, punctuated_args)
 }
