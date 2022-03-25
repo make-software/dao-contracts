@@ -38,7 +38,7 @@ impl ToBytes for Vote {
         size += self.voting_id.serialized_length();
         size += self.choice.serialized_length();
         size += self.stake.serialized_length();
-        return size;
+        size
     }
 }
 

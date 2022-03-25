@@ -5,10 +5,10 @@ pub mod voting;
 pub mod events;
 pub mod addresses_collection;
 
-use casper_dao_utils::{casper_env::{revert, caller, emit, self_address}, casper_contract::{contract_api::runtime::get_blocktime, unwrap_or_revert::UnwrapOrRevert}, Variable, Address, Mapping, consts, Error};
-use casper_types::{U256, BlockTime};
+use casper_dao_utils::{casper_env::{revert, caller, emit, self_address, get_block_time}, casper_contract::{unwrap_or_revert::UnwrapOrRevert, contract_api::runtime, ext_ffi::casper_call_versioned_contract}, Variable, Address, Mapping, consts, Error};
+use casper_types::{U256, ContractHash};
 
-use self::{events::{VoteCast, VotingContractCreated, VotingCreated, InformalVotingEnded}, vote::Vote, voting::{Voting, VotingId}};
+use self::{events::{VoteCast, VotingContractCreated, VotingCreated, InformalVotingEnded, FormalVotingEnded}, vote::Vote, voting::{Voting, VotingId}};
 
 /// The Governance Voting module.
 
@@ -56,7 +56,7 @@ impl GovernanceVoting {
     pub fn create_voting(&mut self, voting: &Voting, stake: U256) {
 
         // Add Voting
-        self.votings.set(&U256::from(voting.voting_id), voting.clone());
+        self.votings.set(&voting.voting_id, voting.clone());
         self.votings_count.set(voting.voting_id + 1);
 
         // Cast first vote in favor
@@ -73,21 +73,24 @@ impl GovernanceVoting {
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
-        // is it formal or informal?
         let voting = self.votings.get(&voting_id);
+
+        // we cannot finish already completed voting
+        if voting.completed {
+            revert(Error::FinishingCompletedVotingNotAllowed)
+        }
+
+        // is it formal or informal?
         if voting.voting_id == voting.informal_voting_id {
             self.finish_informal_voting(voting);
-            return;
-        }
-        
-        if voting.voting_id == voting.formal_voting_id.unwrap() {
+        } else if voting.voting_id == voting.formal_voting_id.unwrap() {
             self.finish_formal_voting(voting);
-            return;
+        } else {
+            revert(Error::MalformedVoting)
         }
     }
     
     fn finish_informal_voting(&mut self, mut voting: Voting) {
-        // TODO: check voting time
         if !self.is_voting_in_time(&voting) {
             revert(Error::InformalVotingTimeNotReached)
         }
@@ -111,10 +114,10 @@ impl GovernanceVoting {
                 formal_voting_id: voting.formal_voting_id,
             };
             emit(event);
-        } else if voting.stake_in_favor >= voting.stake_against { // the voting passed
+        } else if self.calculate_result(&voting) { // the voting passed
             // TODO: the stake of the other voters is returned to them
             
-            // the voting is marked as completed
+            // the voting is marked as completed and saved
             voting.formal_voting_id = Some(self.votings_count.get());
             voting.completed = true;
             self.votings.set(&voting.voting_id, voting.clone());
@@ -155,23 +158,85 @@ impl GovernanceVoting {
             };
             emit(event);
         }
-
     }
 
-    fn finish_formal_voting(&mut self, voting: Voting) {
-        if BlockTime::new(voting.formal_voting_time.as_u64()) < get_blocktime() {
+    fn finish_formal_voting(&mut self, mut voting: Voting) {
+        if voting.formal_voting_time.as_u64() < get_block_time() {
             revert(Error::FormalVotingTimeNotReached)
         }
-
-        // is quorum reached
+        
         let voters = self.voters.get(&voting.voting_id);
-        if U256::from(voters.len()) < voting.informal_voting_quorum {
-            revert(Error::FormalQuorumNotReached)
-        }
+
+        if U256::from(voters.len()) < voting.informal_voting_quorum { // quorum is not reached
+            // TODO the stake of the other is returned
+            // TODO the stake of the creator is burned
+
+            // the voting is marked as completed
+            voting.completed = true;
+            self.votings.set(&voting.voting_id, voting.clone());
+
+            // emit the event
+            let event = FormalVotingEnded {
+                result: "quorum_not_reached".into(),
+                votes_count: voters.len().into(),
+                stake_in_favor: voting.stake_in_favor,
+                stake_against: voting.stake_against,
+                informal_voting_id: voting.informal_voting_id,
+                formal_voting_id: voting.formal_voting_id,
+            };
+            emit(event);
+        } else if self.calculate_result(&voting) { // the voting passed
+            // TODO: the stake of the losers is redistributed
+            
+            // the voting is marked as completed and saved
+            voting.formal_voting_id = Some(self.votings_count.get());
+            voting.completed = true;
+            self.votings.set(&voting.voting_id, voting.clone());
+
+            // emit the event
+            let event = FormalVotingEnded {
+                result: "passed".into(),
+                votes_count: voters.len().into(),
+                stake_in_favor: voting.stake_in_favor,
+                stake_against: voting.stake_against,
+                informal_voting_id: voting.informal_voting_id,
+                formal_voting_id: voting.formal_voting_id,
+            };
+            emit(event);
+
+            // perform the action
+            self.perform_action(&voting);
+        } else { // the voting did not pass
+            // TODO: the stake of the losers is redistributed
+
+            // the voting is marked as completed
+            voting.completed = true;
+            self.votings.set(&voting.voting_id, voting.clone());
+            // finally, emit the event
+            let event = FormalVotingEnded {
+                result: "rejected".into(),
+                votes_count: voters.len().into(),
+                stake_in_favor: voting.stake_in_favor,
+                stake_against: voting.stake_against,
+                informal_voting_id: voting.informal_voting_id,
+                formal_voting_id: None,
+            };
+            emit(event);
+        } 
     }
 
-    fn calculate_result(self, voting_id: VotingId) -> bool {
-        let voting = self.votings.get(&voting_id);
+    fn perform_action(&mut self, voting: &Voting) {
+        let contract_package_hash = voting.contract_to_call
+            .unwrap_or_revert()
+            .as_contract_package_hash()
+            .unwrap_or_revert()
+            .clone()
+        ;
+        
+        runtime::call_versioned_contract::<()>(contract_package_hash, None, &voting.entry_point, voting.runtime_args.clone());
+    }
+
+    fn calculate_result(&mut self, voting: &Voting) -> bool {
         if voting.stake_in_favor >= voting.stake_against {
             return true
         }
@@ -179,26 +244,15 @@ impl GovernanceVoting {
         false
     }
 
-    fn redistribute_reputation(self, voting_id: VotingId) {
-
-    }
-
-    fn perform_action(&mut self, voting_id: U256) {
-        // TODO: do the checks and perform the action
-        let mut voting = self.votings.get(&voting_id);
-
-        self.votings.set(&voting_id, voting);
-    }
-
     fn is_voting_in_time(&mut self, voting: &Voting) -> bool {
-        let voting_time: BlockTime;
+        let voting_time: u64;
         if voting.voting_id == voting.informal_voting_id {
-            voting_time = BlockTime::new(voting.informal_voting_time.as_u64());
+            voting_time = voting.informal_voting_time.as_u64();
         } else {
-            voting_time = BlockTime::new(voting.formal_voting_time.as_u64());
+            voting_time = voting.formal_voting_time.as_u64();
         }
 
-        if voting_time < get_blocktime() {
+        if voting_time < get_block_time() {
             return true
         }
 
@@ -207,12 +261,17 @@ impl GovernanceVoting {
 
     pub fn vote(&mut self, voting_id: U256, choice: bool, stake: U256) {
         let mut voting = self.votings.get(&voting_id);
+        
+        // We cannot vote on a completed voting
+        if voting.completed {
+            revert(Error::VoteOnCompletedVotingNotAllowed)
+        }
 
         // Add a vote to the list
         let vote = Vote {
             voter: caller(),
             choice: true,
-            voting_id: voting_id,
+            voting_id,
             stake,
         };
 

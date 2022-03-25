@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use casper_dao_contracts::{VariableRepositoryContractTest, ReputationContractTest, RepoVoterContractTest};
 use casper_dao_modules::{VotingId, events::{VotingContractCreated, VotingCreated, VoteCast, InformalVotingEnded}, voting::Voting, vote::Vote};
 use casper_dao_utils::{Error, TestEnv, Address};
@@ -45,7 +47,7 @@ fn test_create_voting() {
     let voting: Voting = repo_voter_contract.get_voting(vote_cast_event.voting_id);
     assert_eq!(voting.voting_id, vote_cast_event.voting_id);
     assert_eq!(voting.voting_id, U256::from(0));
-    assert_eq!(voting.informal_voting_quorum, U256::from(2));
+    assert_eq!(voting.informal_voting_quorum, U256::from(50));
     assert_eq!(voting_created_event.voting_id, voting.voting_id);
     assert_eq!(voting_created_event.creator, env.get_account(0));
     assert_eq!(voting_created_event.stake, U256::from(123));
@@ -71,29 +73,52 @@ fn test_create_voting() {
 }
 
 #[test]
-fn test_vote() {
+fn test_informal_vote_without_a_quorum() {
     // create voting
     let into_bytes = |val: &str| val.as_bytes().into();
     let (env, mut repo_voter_contract, variable_repo_contract, _reputation_token_contract) = setup();    
     let first_voting_id = U256::from(0);
     repo_voter_contract.create_voting(variable_repo_contract.address(), "variable_name".into(), into_bytes("new_value"), Some(123), U256::from(500)).unwrap();
     
-    // Single vote should not reach quorum
-    let result = repo_voter_contract.finish_voting(first_voting_id);
-    assert_eq!(result.unwrap_err(), Error::InformalQuorumNotReached);
+    let voting: Voting = repo_voter_contract.get_voting(U256::from(0));
     
-    // cast a vote as somebody else, now the quorum should be fine and informal voting should end
-    repo_voter_contract.as_account(env.get_account(1)).vote(U256::from(0), false, U256::from(500)).unwrap();
-    repo_voter_contract.finish_voting(first_voting_id).unwrap();
+    // We cannot finish voting which time didn't elapse
+    let result = repo_voter_contract.finish_voting(first_voting_id);
+    assert_eq!(result.unwrap_err(), Error::InformalVotingTimeNotReached);
 
-    repo_voter_contract.assert_event_at(0, InformalVotingEnded {
-        result: "converted_to_formal".into(),
-        votes_count: U256::from(2),
+    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time.as_u64() - env.get_current_block_time() + 100));
+    
+    // Now the time should be fine, but a single vote should not reach quorum
+    repo_voter_contract.finish_voting(first_voting_id).unwrap();
+    repo_voter_contract.assert_event_at(3, InformalVotingEnded {
+        result: "quorum_not_reached".into(),
+        votes_count: U256::from(1),
         stake_in_favor: U256::from(500),
-        stake_against: U256::from(500),
-        informal_voting_id: U256::from(0),
-        formal_voting_id: Some(U256::from(1)),
+        stake_against: U256::from(0),
+        informal_voting_id: VotingId::from(0),
+        formal_voting_id: None,
     });
+
+    // voting status should be completed
+    let voting: Voting = repo_voter_contract.get_voting(U256::from(0));
+    assert_eq!(voting.completed, true);
+    
+    // cast a vote on a finished voting should return an error
+    let result = repo_voter_contract.vote(U256::from(0), false, U256::from(500));
+    assert_eq!(result.unwrap_err(), Error::VoteOnCompletedVotingNotAllowed);
+
+    // the same goes for finishing voting
+    let result = repo_voter_contract.finish_voting(first_voting_id);
+    assert_eq!(result.unwrap_err(), Error::FinishingCompletedVotingNotAllowed);
+    
+    // repo_voter_contract.assert_event_at(0, InformalVotingEnded {
+    //     result: "converted_to_formal".into(),
+    //     votes_count: U256::from(2),
+    //     stake_in_favor: U256::from(500),
+    //     stake_against: U256::from(500),
+    //     informal_voting_id: U256::from(0),
+    //     formal_voting_id: Some(U256::from(1)),
+    // });
 }
 
 #[test]
@@ -106,11 +131,12 @@ fn test_voting_serialization() {
         stake_in_favor: U256::from(0),
         stake_against: U256::from(0),
         completed: false,
-        entry_point: "update_variable".into(),
-        runtime_args: RuntimeArgs::new(),
         formal_voting_quorum: U256::from(2),
         formal_voting_time: U256::from(2),
         informal_voting_time: U256::from(2),
+        contract_to_call: None,
+        entry_point: "update_variable".into(),
+        runtime_args: RuntimeArgs::new(),
         minimum_governance_reputation: U256::from(2),
     };
 
@@ -124,6 +150,7 @@ fn test_voting_serialization() {
     assert_eq!(voting.stake_against, voting2.stake_against);
     assert_eq!(voting.stake_in_favor, voting2.stake_in_favor);
     assert_eq!(voting.completed, voting2.completed);
+    assert_eq!(voting.contract_to_call, voting2.contract_to_call);
     assert_eq!(voting.entry_point, voting2.entry_point);
     assert_eq!(voting.runtime_args, voting2.runtime_args);
     assert_eq!(voting.formal_voting_time, voting2.formal_voting_time);

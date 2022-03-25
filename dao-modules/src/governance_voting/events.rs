@@ -26,7 +26,17 @@ pub struct VotingCreated {
 }
 
 #[derive(Debug, PartialEq, Event)]
-pub struct InformalVotingEnded{
+pub struct InformalVotingEnded {
+    pub result: String, 
+    pub votes_count: U256,
+    pub stake_in_favor: U256,
+    pub stake_against: U256,
+    pub informal_voting_id: VotingId,
+    pub formal_voting_id: Option<VotingId>,
+}
+
+#[derive(Debug, PartialEq, Event)]
+pub struct FormalVotingEnded {
     pub result: String, 
     pub votes_count: U256,
     pub stake_in_favor: U256,

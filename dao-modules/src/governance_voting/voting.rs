@@ -1,3 +1,4 @@
+use casper_dao_utils::Address;
 use casper_types::{bytesrepr::{ToBytes, FromBytes}, CLType, CLTyped, U256, RuntimeArgs};
 
 pub type VotingId = U256;
@@ -14,6 +15,7 @@ pub struct Voting {
     pub minimum_governance_reputation: U256,
     pub stake_in_favor: U256,
     pub stake_against: U256,
+    pub contract_to_call: Option<Address>,
     pub entry_point: String,
     pub runtime_args: RuntimeArgs,
     pub completed: bool,
@@ -32,6 +34,7 @@ impl ToBytes for Voting {
         vec.extend(self.minimum_governance_reputation.to_bytes()?);
         vec.extend(self.stake_in_favor.to_bytes()?);
         vec.extend(self.stake_against.to_bytes()?);
+        vec.extend(self.contract_to_call.to_bytes()?);
         vec.extend(self.entry_point.to_bytes()?);
         vec.extend(self.runtime_args.to_bytes()?);
         vec.extend(self.completed.to_bytes()?);
@@ -50,10 +53,11 @@ impl ToBytes for Voting {
         size += self.minimum_governance_reputation.serialized_length();
         size += self.stake_in_favor.serialized_length();
         size += self.stake_against.serialized_length();
+        size += self.contract_to_call.serialized_length();
         size += self.entry_point.serialized_length();
         size += self.runtime_args.serialized_length();
         size += self.completed.serialized_length();
-        return size;
+        size
     }
 }
 
@@ -69,6 +73,7 @@ impl FromBytes for Voting {
         let (minimum_governance_reputation, bytes) = FromBytes::from_bytes(bytes)?;
         let (stake_in_favor, bytes) = FromBytes::from_bytes(bytes)?;
         let (stake_against, bytes) = FromBytes::from_bytes(bytes)?;
+        let (contract_to_call, bytes) = FromBytes::from_bytes(bytes)?;
         let (entry_point, bytes) = FromBytes::from_bytes(bytes)?;
         let (runtime_args, bytes) = FromBytes::from_bytes(bytes)?;
         let (completed, bytes) = FromBytes::from_bytes(bytes)?;
@@ -83,6 +88,7 @@ impl FromBytes for Voting {
             minimum_governance_reputation,
             stake_in_favor,
             stake_against,
+            contract_to_call,
             entry_point,
             runtime_args,
             completed,

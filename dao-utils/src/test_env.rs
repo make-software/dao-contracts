@@ -97,6 +97,10 @@ impl TestEnv {
     pub fn advance_block_time_by(&self, seconds: Duration) {
         self.state.lock().unwrap().block_time += seconds.as_secs();
     }
+
+    pub fn get_current_block_time(&self) -> u64 {
+        self.state.lock().unwrap().block_time
+    }
 }
 
 impl Default for TestEnv {

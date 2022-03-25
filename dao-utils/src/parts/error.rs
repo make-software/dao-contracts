@@ -13,10 +13,12 @@ pub enum Error {
     ActivationTimeInPast,
     Unknown,
     InvalidContext,
-    InformalQuorumNotReached,
     InformalVotingTimeNotReached,
     FormalQuorumNotReached,
     FormalVotingTimeNotReached,
+    VoteOnCompletedVotingNotAllowed,
+    FinishingCompletedVotingNotAllowed,
+    MalformedVoting,
 }
 
 impl From<Error> for ApiError {
@@ -32,10 +34,12 @@ impl From<Error> for ApiError {
             Error::ActivationTimeInPast => 1006,
             Error::InvalidContext => 1099,
             Error::Unknown => 1100,
-            Error::InformalQuorumNotReached => 2100, // Voting errors start with 21xx
-            Error::InformalVotingTimeNotReached => 2101,
+            Error::InformalVotingTimeNotReached => 2101, // Voting errors start with 21xx
             Error::FormalQuorumNotReached => 2102,
             Error::FormalVotingTimeNotReached => 2103,
+            Error::VoteOnCompletedVotingNotAllowed => 2104,
+            Error::FinishingCompletedVotingNotAllowed => 2105,
+            Error::MalformedVoting => 2106,
         };
         ApiError::User(id)
     }
@@ -52,10 +56,12 @@ impl From<u16> for Error {
             1004 => Error::TotalSupplyOverflow,
             1005 => Error::ValueNotAvailable,
             1006 => Error::ActivationTimeInPast,
-            2100 => Error::InformalQuorumNotReached,
             2101 => Error::InformalVotingTimeNotReached,
             2102 => Error::FormalQuorumNotReached,
             2103 => Error::FormalVotingTimeNotReached,
+            2104 => Error::VoteOnCompletedVotingNotAllowed,
+            2105 => Error::FinishingCompletedVotingNotAllowed,
+            2106 => Error::MalformedVoting,
             _ => Error::Unknown,
         }
     }
