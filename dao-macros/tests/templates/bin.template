@@ -1,0 +1,42 @@
+#![feature(prelude_import)]
+#![no_main]
+#[prelude_import]
+use std::prelude::rust_2018::*;
+#[macro_use]
+extern crate std;
+use sample_contract::{ImportantContract, ImportantContractInterface};
+#[no_mangle]
+fn call() {
+    ImportantContract::install();
+}
+#[no_mangle]
+fn init() {
+    let first_arg =
+        casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("first_arg");
+    let second_arg =
+        casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("second_arg");
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::init(&mut contract, first_arg, second_arg);
+}
+#[no_mangle]
+fn mint() {
+    let recipient =
+        casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("recipient");
+    let amount = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("amount");
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::mint(&mut contract, recipient, amount);
+}
+#[no_mangle]
+fn balance_of() {
+    use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
+    let to = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("to");
+    let contract = ImportantContract::default();
+    let result = ImportantContractInterface::balance_of(&contract, to);
+    let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
+    casper_dao_utils::casper_contract::contract_api::runtime::ret(result);
+}
+#[no_mangle]
+fn argless() {
+    let mut contract = ImportantContract::default();
+    ImportantContractInterface::argless(&mut contract);
+}
