@@ -74,6 +74,12 @@ pub fn caller() -> Address {
     call_stack_element_to_address(second_elem)
 }
 
+/// Gets the address of the currently run contract
+pub fn self_address() -> Address {
+    let first_elem = take_call_stack_elem(0);
+    call_stack_element_to_address(first_elem)
+}
+
 /// Record event to the contract's storage.
 pub fn emit<T: ToBytes>(event: T) {
     Events::default().emit(event);

@@ -41,3 +41,11 @@ pub const INFORMAL_VOTING_TIME: &str = "informal_voting_time";
 pub const VOTING_TIME: &str = "voting_time";
 pub const MINIMUM_GOVERNANCE_REPUTATION: &str = "minimum_governance_reputation";
 pub const MINIMUM_VOTING_REPUTATION: &str = "minimum_voting_reputation";
+
+// VOTING KEYS
+pub const NAME_VARIABLE_REPO: &str = "variable_repo";
+pub const NAME_REPUTATION_TOKEN: &str = "reputation_token";
+pub const NAME_VOTINGS: &str = "votings";
+pub const NAME_VOTINGS_COUNT: &str = "votings_count";
+pub const NAME_VOTES: &str = "votes";
+pub const NAME_VOTERS: &str = "voters";
