@@ -15,6 +15,6 @@ pub mod events {
     pub use owner::events::*;
     pub use repository::events::*;
     pub use staking::events::*;
-    pub use whitelist::events::*;
     pub use token::events::*;
+    pub use whitelist::events::*;
 }
