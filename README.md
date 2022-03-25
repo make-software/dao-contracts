@@ -3,9 +3,8 @@
 Reusable smart contracts for building DAOs on top of Casper.
 
 Repository contains following modules:
-- `contract` provides smart contracts implementation,
-- `utils` and `macros` makes writing code easier,
-- `tests` contain integration tests,
+- `dao-contracts` and `dao-modules` provides smart contracts implementation,
+- `dao-utils` and `dao-macros` makes writing code easier,
 - `client` implements a JavaScript client for smart contracts interactions.
 
 ## Build contracts
