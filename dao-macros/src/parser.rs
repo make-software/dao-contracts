@@ -20,7 +20,7 @@ pub struct CasperContractItem {
 impl Debug for CasperContractItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let trait_methods = &self.trait_methods;
-        let trait_methods = quote!{ #(#trait_methods)* }.to_string();
+        let trait_methods = quote! { #(#trait_methods)* }.to_string();
         f.debug_struct("CasperContractItem")
             .field("trait_token", &"trait")
             .field("trait_methods", &trait_methods)
