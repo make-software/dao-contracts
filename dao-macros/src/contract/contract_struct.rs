@@ -199,7 +199,7 @@ mod tests {
         .to_string();
         assert_eq!(expected, result);
     }
-    
+
     #[test]
     fn generating_entry_points_works() {
         let valid_item = utils::tests::mock_valid_item();
