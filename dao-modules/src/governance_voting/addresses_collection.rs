@@ -26,6 +26,6 @@
 
 // impl Default for OrderedCollection<Address> {
 //     fn default() -> Self {
-        
+
 //     }
 // }

@@ -7,7 +7,7 @@ use super::voting::VotingId;
 pub struct VotingContractCreated {
     pub repo_voter: Address,
     pub variable_repo: Address,
-    pub reputation_token: Address
+    pub reputation_token: Address,
 }
 
 #[derive(Debug, PartialEq, Event)]
@@ -15,19 +15,19 @@ pub struct VoteCast {
     pub voter: Address,
     pub voting_id: U256,
     pub choice: bool,
-    pub stake: U256
+    pub stake: U256,
 }
 
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingCreated {
     pub creator: Address,
     pub voting_id: U256,
-    pub stake: U256
+    pub stake: U256,
 }
 
 #[derive(Debug, PartialEq, Event)]
 pub struct InformalVotingEnded {
-    pub result: String, 
+    pub result: String,
     pub votes_count: U256,
     pub stake_in_favor: U256,
     pub stake_against: U256,
@@ -37,7 +37,7 @@ pub struct InformalVotingEnded {
 
 #[derive(Debug, PartialEq, Event)]
 pub struct FormalVotingEnded {
-    pub result: String, 
+    pub result: String,
     pub votes_count: U256,
     pub stake_in_favor: U256,
     pub stake_against: U256,
