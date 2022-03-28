@@ -26,6 +26,7 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
       - run: sudo apt update && sudo apt install -y build-essential
+      - run: cargo install cargo-expand
       - run: make prepare
       - run: make check-lint
       - run: make github-test
