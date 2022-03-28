@@ -1,6 +1,6 @@
 use casper_dao_modules::{Owner, Repository, Whitelist};
-use casper_dao_utils::{casper_dao_macros::casper_contract_interface, casper_env::caller, Address};
-use casper_types::bytesrepr::Bytes;
+use casper_dao_utils::{casper_dao_macros::casper_contract_interface, casper_env::{caller, revert}, Address, casper_contract::unwrap_or_revert::UnwrapOrRevert, Error};
+use casper_types::bytesrepr::{Bytes, FromBytes};
 
 #[casper_contract_interface]
 pub trait VariableRepositoryContractInterface {
@@ -50,6 +50,18 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 
     fn get(&self, key: String) -> Option<Bytes> {
         self.repository.get(key)
+    }
+}
+
+impl VariableRepositoryContract {
+    pub fn get_variable<T: FromBytes>(repository_address: Address, key: &str) -> T {
+        let variable_repo_caller = VariableRepositoryContractCaller::at(repository_address.as_contract_package_hash().unwrap_or_revert().clone());
+        let variable = variable_repo_caller.get(key.into()).unwrap_or_revert();
+        let (variable, bytes) = <T>::from_bytes(&variable).unwrap_or_revert();
+        if bytes.len() > 0 {
+            revert(Error::ValueNotAvailable)
+        }
+        variable
     }
 }
 

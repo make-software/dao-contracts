@@ -1,8 +1,8 @@
-use casper_dao_modules::{vote::Vote, GovernanceVoting, VotingId, voting::Voting};
-use casper_dao_utils::{casper_dao_macros::casper_contract_interface, Address, consts, casper_contract::{unwrap_or_revert::UnwrapOrRevert, contract_api::runtime::get_blocktime}, Error, casper_env::revert};
-use casper_types::{U256, bytesrepr::{Bytes, FromBytes}, RuntimeArgs, runtime_args};
+use casper_dao_modules::{GovernanceVoting, VotingId, voting::Voting};
+use casper_dao_utils::{casper_dao_macros::casper_contract_interface, Address, consts};
+use casper_types::{U256, bytesrepr::{Bytes}, RuntimeArgs, runtime_args};
 
-use crate::{VariableRepositoryContractCaller, VariableRepositoryContractInterface};
+use crate::{VariableRepositoryContract};
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
@@ -23,24 +23,14 @@ impl RepoVoterContractInterface for RepoVoterContract {
     }
 
     fn create_voting(&mut self, variable_repo_to_edit: Address, key: String, value: Bytes, activation_time: Option<u64>, stake: U256) {
-        let variable_repo_caller = VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address().as_contract_package_hash().unwrap_or_revert().clone());
-        let get_u265_variable = |v: &str| -> U256 {
-            let variable = variable_repo_caller.get(v.into()).unwrap_or_revert();
-            let (variable, bytes) = U256::from_bytes(&variable).unwrap_or_revert();
-            if bytes.len() > 0 {
-                revert(Error::ValueNotAvailable)
-            }
-            variable
-        };
-
         let voting = Voting {
             voting_id: self.voting.votings_count.get(),
             informal_voting_id: self.voting.votings_count.get(),
             formal_voting_id: None,
-            formal_voting_quorum: get_u265_variable(consts::FORMAL_VOTING_TIME),
-            formal_voting_time: get_u265_variable(consts::FORMAL_VOTING_TIME),
-            informal_voting_quorum: get_u265_variable(consts::INFORMAL_VOTING_QUORUM),
-            informal_voting_time: get_u265_variable(consts::INFORMAL_VOTING_TIME),
+            formal_voting_quorum: VariableRepositoryContract::get_variable(self.voting.get_variable_repo_address(), consts::FORMAL_VOTING_TIME),
+            formal_voting_time: VariableRepositoryContract::get_variable(self.voting.get_variable_repo_address(), consts::FORMAL_VOTING_TIME),
+            informal_voting_quorum: VariableRepositoryContract::get_variable(self.voting.get_variable_repo_address(), consts::INFORMAL_VOTING_QUORUM),
+            informal_voting_time: VariableRepositoryContract::get_variable(self.voting.get_variable_repo_address(), consts::INFORMAL_VOTING_TIME),
             stake_in_favor: U256::from(0),
             stake_against: U256::from(0),
             completed: false,
@@ -51,7 +41,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
                 "value" => value,
                 "activation_time" => activation_time,
             },    
-            minimum_governance_reputation: get_u265_variable(consts::MINIMUM_GOVERNANCE_REPUTATION),
+            minimum_governance_reputation: VariableRepositoryContract::get_variable(self.voting.get_variable_repo_address(), consts::MINIMUM_GOVERNANCE_REPUTATION),
         };
         self.voting.create_voting(&voting, stake);
     }
@@ -66,7 +56,10 @@ impl RepoVoterContractInterface for RepoVoterContract {
 }
 
 #[cfg(feature = "test-support")]
+use casper_dao_modules::vote::Vote;
+#[cfg(feature = "test-support")]
 impl RepoVoterContractTest {
+    
     pub fn get_variable_repo_address(&self) -> Address {
         let address: Option<Address> = self
             .env

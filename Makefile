@@ -1,4 +1,4 @@
-TARGET_DIR = ./target
+TARGET_DIR = $(shell pwd)/target
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
 CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
 CARGO_JUST_TEST = cargo test --features=test-support --no-default-features

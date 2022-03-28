@@ -5,8 +5,8 @@ pub mod voting;
 pub mod events;
 pub mod addresses_collection;
 
-use casper_dao_utils::{casper_env::{revert, caller, emit, self_address, get_block_time}, casper_contract::{unwrap_or_revert::UnwrapOrRevert, contract_api::runtime, ext_ffi::casper_call_versioned_contract}, Variable, Address, Mapping, consts, Error};
-use casper_types::{U256, ContractHash};
+use casper_dao_utils::{casper_env::{revert, caller, emit, self_address, get_block_time}, casper_contract::{unwrap_or_revert::UnwrapOrRevert, contract_api::runtime}, Variable, Address, Mapping, consts, Error};
+use casper_types::{U256};
 
 use self::{events::{VoteCast, VotingContractCreated, VotingCreated, InformalVotingEnded, FormalVotingEnded}, vote::Vote, voting::{Voting, VotingId}};
 
@@ -58,18 +58,18 @@ impl GovernanceVoting {
         // Add Voting
         self.votings.set(&voting.voting_id, voting.clone());
         self.votings_count.set(voting.voting_id + 1);
-
-        // Cast first vote in favor
-        self.vote(voting.voting_id, true, stake);
-
+        
         // Emit the event
         let event = VotingCreated {
             creator: caller(),
             voting_id: voting.voting_id,
             stake,
         };
-
+        
         emit(event);
+
+        // Cast first vote in favor
+        self.vote(voting.voting_id, true, stake);
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
@@ -121,16 +121,8 @@ impl GovernanceVoting {
             voting.formal_voting_id = Some(self.votings_count.get());
             voting.completed = true;
             self.votings.set(&voting.voting_id, voting.clone());
-
-            // the voting is converted to a formal one
-            voting.voting_id = voting.formal_voting_id.unwrap();
-            voting.completed = false;
-
-            // and created with an initial stake
-            let creator_address = voters.first().unwrap().unwrap();
-            self.create_voting(&voting, self.votes.get(&(voting.informal_voting_id, creator_address)).stake);
-
-            // finally, emit the event
+            
+            // emit the event
             let event = InformalVotingEnded {
                 result: "converted_to_formal".into(),
                 votes_count: voters.len().into(),
@@ -140,6 +132,15 @@ impl GovernanceVoting {
                 formal_voting_id: voting.formal_voting_id,
             };
             emit(event);
+
+            // the voting is converted to a formal one
+            voting.voting_id = voting.formal_voting_id.unwrap();
+            voting.completed = false;
+
+            // and created with an initial stake
+            let creator_address = voters.first().unwrap().unwrap();
+            self.create_voting(&voting, self.votes.get(&(voting.informal_voting_id, creator_address)).stake);
+
         } else { // the voting did not pass
             // TODO: the stake of the creator of the vote is burned
             // TODO: the stake of other voters is returned to them
@@ -167,7 +168,7 @@ impl GovernanceVoting {
         
         let voters = self.voters.get(&voting.voting_id);
 
-        if U256::from(voters.len()) < voting.informal_voting_quorum { // quorum is not reached
+        if U256::from(voters.len()) < voting.formal_voting_quorum { // quorum is not reached
             // TODO the stake of the other is returned
             // TODO the stake of the creator is burned
 
