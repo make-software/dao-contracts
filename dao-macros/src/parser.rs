@@ -1,10 +1,11 @@
+use std::fmt::Debug;
+
 use convert_case::{Case, Casing};
 use proc_macro2::Ident;
-use quote::format_ident;
+use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream};
 use syn::{braced, Token, TraitItemMethod};
 
-#[derive(Debug)]
 pub struct CasperContractItem {
     pub trait_token: Token![trait],
     pub trait_methods: Vec<TraitItemMethod>,
@@ -14,6 +15,23 @@ pub struct CasperContractItem {
     pub contract_test_ident: Ident,
     pub package_hash: String,
     pub wasm_file_name: String,
+}
+
+impl Debug for CasperContractItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let trait_methods = &self.trait_methods;
+        let trait_methods = quote! { #(#trait_methods)* }.to_string();
+        f.debug_struct("CasperContractItem")
+            .field("trait_token", &"trait")
+            .field("trait_methods", &trait_methods)
+            .field("ident", &self.ident)
+            .field("contract_ident", &self.contract_ident)
+            .field("caller_ident", &self.caller_ident)
+            .field("contract_test_ident", &self.contract_test_ident)
+            .field("package_hash", &self.package_hash)
+            .field("wasm_file_name", &self.wasm_file_name)
+            .finish()
+    }
 }
 
 impl Parse for CasperContractItem {
