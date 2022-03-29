@@ -10,7 +10,7 @@ use casper_dao_utils::{
     casper_env::{caller, emit, get_block_time, revert, self_address},
     consts, Address, Error, Mapping, Variable,
 };
-use casper_types::U256;
+use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use self::{
     events::{
@@ -253,6 +253,23 @@ impl GovernanceVoting {
             &voting.entry_point,
             voting.runtime_args.clone(),
         );
+    }
+
+    fn _transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
+        let contract_package_hash = *self
+            .reputation_token
+            .get()
+            .unwrap()
+            .as_contract_package_hash()
+            .unwrap_or_revert();
+
+        let args: RuntimeArgs = runtime_args! {
+            "owner" => owner,
+            "recipient" => recipient,
+            "amount" => amount,
+        };
+
+        runtime::call_versioned_contract::<()>(contract_package_hash, None, "transfer", args);
     }
 
     fn calculate_result(&mut self, voting: &Voting) -> bool {

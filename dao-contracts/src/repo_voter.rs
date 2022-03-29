@@ -4,7 +4,7 @@ use casper_dao_utils::{
 };
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
-use crate::VariableRepositoryContract;
+use crate::VariableRepositoryContractCaller;
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
@@ -39,26 +39,24 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        let informal_voting_time: U256 = VariableRepositoryContract::get_variable(
-            self.voting.get_variable_repo_address(),
-            consts::INFORMAL_VOTING_TIME,
-        );
-        let informal_voting_quorum = VariableRepositoryContract::get_variable(
-            self.voting.get_variable_repo_address(),
-            consts::INFORMAL_VOTING_QUORUM,
-        );
-        let formal_voting_time = VariableRepositoryContract::get_variable(
-            self.voting.get_variable_repo_address(),
-            consts::FORMAL_VOTING_TIME,
-        );
-        let formal_voting_quorum = VariableRepositoryContract::get_variable(
-            self.voting.get_variable_repo_address(),
-            consts::FORMAL_VOTING_QUORUM,
-        );
-        let minimum_governance_reputation = VariableRepositoryContract::get_variable(
-            self.voting.get_variable_repo_address(),
-            consts::MINIMUM_GOVERNANCE_REPUTATION,
-        );
+        let variable_repo_package_hash = *self
+            .voting
+            .get_variable_repo_address()
+            .as_contract_package_hash()
+            .unwrap();
+        let informal_voting_time: U256 =
+            VariableRepositoryContractCaller::at(variable_repo_package_hash)
+                .get_variable(consts::INFORMAL_VOTING_TIME);
+        let informal_voting_quorum =
+            VariableRepositoryContractCaller::at(variable_repo_package_hash)
+                .get_variable(consts::INFORMAL_VOTING_QUORUM);
+        let formal_voting_time = VariableRepositoryContractCaller::at(variable_repo_package_hash)
+            .get_variable(consts::FORMAL_VOTING_TIME);
+        let formal_voting_quorum = VariableRepositoryContractCaller::at(variable_repo_package_hash)
+            .get_variable(consts::FORMAL_VOTING_QUORUM);
+        let minimum_governance_reputation =
+            VariableRepositoryContractCaller::at(variable_repo_package_hash)
+                .get_variable(consts::MINIMUM_GOVERNANCE_REPUTATION);
 
         let voting = Voting {
             voting_id: self.voting.votings_count.get(),

@@ -78,6 +78,11 @@ fn generate_test_implementation(input: &CasperContractItem) -> TokenStream {
             pub fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: u32, event: T) {
                 assert_eq!(self.event::<T>(index), event);
             }
+
+            pub fn assert_last_event<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, event: T) {
+                let length: u32 = self.env.get_value(self.package_hash, "events_length");
+                assert_eq!(self.event::<T>(length - 1), event);
+            }
         }
     }
 }

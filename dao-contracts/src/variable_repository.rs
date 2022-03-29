@@ -58,14 +58,9 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     }
 }
 
-impl VariableRepositoryContract {
-    pub fn get_variable<T: FromBytes>(repository_address: Address, key: &str) -> T {
-        let variable_repo_caller = VariableRepositoryContractCaller::at(
-            *repository_address
-                .as_contract_package_hash()
-                .unwrap_or_revert(),
-        );
-        let variable = variable_repo_caller.get(key.into()).unwrap_or_revert();
+impl VariableRepositoryContractCaller {
+    pub fn get_variable<T: FromBytes>(self, key: &str) -> T {
+        let variable = self.get(key.into()).unwrap_or_revert();
         let (variable, bytes) = <T>::from_bytes(&variable).unwrap_or_revert();
         if !bytes.is_empty() {
             revert(Error::ValueNotAvailable)

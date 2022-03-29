@@ -415,17 +415,14 @@ fn test_formal_vote_completed() {
 
     // Now the time should be fine, the result should be completed
     repo_voter_contract.finish_voting(voting_id).unwrap();
-    repo_voter_contract.assert_event_at(
-        9,
-        FormalVotingEnded {
-            result: "passed".into(),
-            votes_count: U256::from(2),
-            stake_in_favor: U256::from(1500),
-            stake_against: U256::from(0),
-            informal_voting_id: VotingId::from(0),
-            formal_voting_id: Some(voting_id),
-        },
-    );
+    repo_voter_contract.assert_last_event(FormalVotingEnded {
+        result: "passed".into(),
+        votes_count: U256::from(2),
+        stake_in_favor: U256::from(1500),
+        stake_against: U256::from(0),
+        informal_voting_id: VotingId::from(0),
+        formal_voting_id: Some(voting_id),
+    });
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
@@ -443,9 +440,25 @@ fn into_bytes(val: &str) -> Bytes {
     val.as_bytes().into()
 }
 
-fn prepare_variable_repo(
-    mut variable_repo_contract: VariableRepositoryContractTest,
-) -> VariableRepositoryContractTest {
+fn setup() -> (
+    TestEnv,
+    RepoVoterContractTest,
+    VariableRepositoryContractTest,
+    ReputationContractTest,
+) {
+    let env = TestEnv::new();
+    let mut variable_repo_contract = VariableRepositoryContractTest::new(&env);
+    let mut reputation_token_contract = ReputationContractTest::new(&env);
+    let repo_voter_contract = RepoVoterContractTest::new(
+        &env,
+        Address::from(variable_repo_contract.get_package_hash()),
+        Address::from(reputation_token_contract.get_package_hash()),
+    );
+
+    variable_repo_contract
+        .add_to_whitelist(repo_voter_contract.address())
+        .unwrap();
+
     variable_repo_contract
         .update_at(
             consts::INFORMAL_VOTING_QUORUM.into(),
@@ -460,26 +473,19 @@ fn prepare_variable_repo(
             None,
         )
         .unwrap();
-    variable_repo_contract
-}
 
-fn setup() -> (
-    TestEnv,
-    RepoVoterContractTest,
-    VariableRepositoryContractTest,
-    ReputationContractTest,
-) {
-    let env = TestEnv::new();
-    let mut variable_repo_contract = VariableRepositoryContractTest::new(&env);
-    let reputation_token_contract = ReputationContractTest::new(&env);
-    let repo_voter_contract = RepoVoterContractTest::new(
-        &env,
-        Address::from(variable_repo_contract.get_package_hash()),
-        Address::from(reputation_token_contract.get_package_hash()),
-    );
-
-    variable_repo_contract
+    reputation_token_contract
         .add_to_whitelist(repo_voter_contract.address())
+        .unwrap();
+
+    reputation_token_contract
+        .mint(env.get_account(0), 10000.into())
+        .unwrap();
+    reputation_token_contract
+        .mint(env.get_account(1), 10000.into())
+        .unwrap();
+    reputation_token_contract
+        .mint(env.get_account(2), 10000.into())
         .unwrap();
 
     (
@@ -497,7 +503,6 @@ fn create_voting() -> (
     ReputationContractTest,
 ) {
     let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) = setup();
-    let variable_repo_contract = prepare_variable_repo(variable_repo_contract);
     repo_voter_contract
         .create_voting(
             Address::from(variable_repo_contract.get_package_hash()),
