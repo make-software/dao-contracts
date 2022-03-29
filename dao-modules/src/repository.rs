@@ -11,7 +11,7 @@ use casper_types::{
 
 use self::events::ValueUpdated;
 
-type Record = (Bytes, Option<(Bytes, u64)>);
+pub type Record = (Bytes, Option<(Bytes, u64)>);
 
 #[derive(Instance)]
 pub struct Repository {
@@ -77,6 +77,10 @@ impl Repository {
             }
         }
         Some(current)
+    }
+
+    pub fn get_full_value(&self, key: String) -> Option<Record> {
+        self.storage.get_or_none(&key)
     }
 
     fn set(&mut self, key: String, value: Bytes) {

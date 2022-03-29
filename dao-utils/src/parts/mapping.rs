@@ -9,18 +9,13 @@ use casper_contract::{
     contract_api::{runtime, storage},
     unwrap_or_revert::UnwrapOrRevert,
 };
-use casper_dao_macros::Instance;
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped, Key, URef,
 };
 use lazy_static::lazy_static;
 
-use crate::{
-    casper_env::{hash_key, to_dictionary_key},
-    instance::Instanced,
-    Error,
-};
+use crate::{casper_env::to_dictionary_key, instance::Instanced, Error};
 
 /// Data structure for storing key-value pairs.
 ///
@@ -95,7 +90,7 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
 
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Instanced for Mapping<K, V> {
     fn instance(namespace: &str) -> Self {
-        Mapping::new(hash_key(namespace))
+        namespace.into()
     }
 }
 

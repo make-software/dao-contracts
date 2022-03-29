@@ -49,6 +49,6 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> From<&str> for Variable<T> {
 
 impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for Variable<T> {
     fn instance(namespace: &str) -> Self {
-        Variable::new(crate::casper_env::hash_key(namespace))
+        namespace.into()
     }
 }

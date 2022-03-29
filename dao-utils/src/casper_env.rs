@@ -86,12 +86,6 @@ pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     hex::encode(bytes)
 }
 
-/// Convert any key to hash.
-pub fn hash_key(key: &str) -> String {
-    let preimage = key.to_string();
-    hex::encode(preimage)
-}
-
 pub fn install_contract(
     package_hash: &str,
     entry_points: EntryPoints,

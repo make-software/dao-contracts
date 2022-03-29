@@ -5,7 +5,7 @@ mod token;
 mod whitelist;
 
 pub use owner::Owner;
-pub use repository::{Repository, RepositoryDefaults};
+pub use repository::{Record, Repository, RepositoryDefaults};
 pub use staking::TokenWithStaking;
 pub use token::Token;
 pub use whitelist::Whitelist;

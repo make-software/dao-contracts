@@ -1,12 +1,11 @@
 use std::{fmt::Debug, hash::Hash};
 
-use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped,
 };
 
-use crate::{consts, instance::Instanced, Error, Variable};
+use crate::{consts, instance::Instanced, Variable};
 
 use super::mapping::IndexedMapping;
 
@@ -42,11 +41,8 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> Orde
         true
     }
 
-    pub fn get(&self, index: u32) -> T {
-        if index > self.length.get() - 1 {
-            runtime::revert(Error::ValueNotAvailable);
-        }
-        self.values.get(index).unwrap_or_revert()
+    pub fn get(&self, index: u32) -> Option<T> {
+        self.values.get(index)
     }
 
     pub fn size(&self) -> u32 {
