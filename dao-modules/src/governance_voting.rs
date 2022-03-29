@@ -187,14 +187,14 @@ impl GovernanceVoting {
 
         let voters = self.voters.get(&voting.voting_id);
 
+        // the voting is marked as completed
+        voting.completed = true;
+        self.votings.set(&voting.voting_id, voting.clone());
+
         if U256::from(voters.len()) < voting.formal_voting_quorum {
             // quorum is not reached
             // TODO the stake of the other is returned
             // TODO the stake of the creator is burned
-
-            // the voting is marked as completed
-            voting.completed = true;
-            self.votings.set(&voting.voting_id, voting.clone());
 
             // emit the event
             let event = FormalVotingEnded {
@@ -209,11 +209,6 @@ impl GovernanceVoting {
         } else if self.calculate_result(&voting) {
             // the voting passed
             // TODO: the stake of the losers is redistributed
-
-            // the voting is marked as completed and saved
-            voting.formal_voting_id = Some(self.votings_count.get());
-            voting.completed = true;
-            self.votings.set(&voting.voting_id, voting.clone());
 
             // emit the event
             let event = FormalVotingEnded {
@@ -232,17 +227,14 @@ impl GovernanceVoting {
             // the voting did not pass
             // TODO: the stake of the losers is redistributed
 
-            // the voting is marked as completed
-            voting.completed = true;
-            self.votings.set(&voting.voting_id, voting.clone());
-            // finally, emit the event
+            // emit the event
             let event = FormalVotingEnded {
                 result: "rejected".into(),
                 votes_count: voters.len().into(),
                 stake_in_favor: voting.stake_in_favor,
                 stake_against: voting.stake_against,
                 informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: None,
+                formal_voting_id: voting.formal_voting_id,
             };
             emit(event);
         }
@@ -287,22 +279,33 @@ impl GovernanceVoting {
             revert(Error::VoteOnCompletedVotingNotAllowed)
         }
 
-        // Add a vote to the list
-        let vote = Vote {
-            voter: caller(),
-            choice: true,
-            voting_id,
-            stake,
-        };
+        let mut vote = self.votes.get(&(voting_id, caller()));
 
+        match vote.voter {
+            Some(_) => {
+                // If already voted, update an existing vote
+                vote.choice = choice;
+                vote.stake += stake;
+            }
+            None => {
+                // Otherwise, create a new vote
+                vote = Vote {
+                    voter: Some(caller()),
+                    choice: true,
+                    voting_id,
+                    stake,
+                };
+                let mut voters = self.voters.get(&voting_id);
+                // Add a voter to the list
+                voters.push(Some(caller()));
+                self.voters.set(&voting_id, voters);
+            }
+        }
+
+        // Add a vote to the list
         self.votes.set(&(voting_id, caller()), vote);
 
-        // Add a voter to the list
-        let mut voters = self.voters.get(&voting_id);
-        voters.push(Some(caller()));
-
-        self.voters.set(&voting_id, voters);
-
+        // update voting
         match choice {
             true => voting.stake_in_favor += stake,
             false => voting.stake_against += stake,

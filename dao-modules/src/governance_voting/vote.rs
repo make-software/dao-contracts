@@ -1,6 +1,5 @@
 use casper_dao_utils::Address;
 use casper_types::{
-    account::AccountHash,
     bytesrepr::{FromBytes, ToBytes},
     CLType, CLTyped, U256,
 };
@@ -9,7 +8,7 @@ use super::voting::VotingId;
 
 #[derive(Debug)]
 pub struct Vote {
-    pub voter: Address,
+    pub voter: Option<Address>,
     pub voting_id: VotingId,
     pub choice: bool,
     pub stake: U256,
@@ -18,7 +17,7 @@ pub struct Vote {
 impl Default for Vote {
     fn default() -> Self {
         Self {
-            voter: Address::Account(AccountHash::default()),
+            voter: None,
             voting_id: U256::from(0),
             choice: false,
             stake: U256::from(0),

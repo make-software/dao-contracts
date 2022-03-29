@@ -66,7 +66,7 @@ fn test_voting_serialization() {
 fn test_vote_serialization() {
     let env = TestEnv::new();
     let vote = Vote {
-        voter: env.get_account(0),
+        voter: Some(env.get_account(0)),
         voting_id: U256::from(123),
         choice: true,
         stake: U256::from(456),
@@ -135,7 +135,7 @@ fn test_create_voting() {
     // check if first vote was created correctly
     let vote: Vote = repo_voter_contract.get_vote(voting.voting_id, env.get_account(0));
     assert_eq!(vote.voting_id, voting.voting_id);
-    assert_eq!(vote.voter, env.get_account(0));
+    assert_eq!(vote.voter, Some(env.get_account(0)));
     assert_eq!(vote.choice, true);
     assert_eq!(vote.stake, U256::from(500));
 
@@ -230,7 +230,7 @@ fn test_informal_voting_rejected() {
         .vote(voting_id, false, U256::from(500))
         .unwrap();
     repo_voter_contract
-        .as_account(env.get_account(1))
+        .as_account(env.get_account(2))
         .vote(voting_id, false, U256::from(500))
         .unwrap();
 
@@ -358,6 +358,87 @@ fn test_formal_vote_without_a_quorum() {
     );
 }
 
+#[test]
+fn test_formal_vote_rejected() {
+    let (env, mut repo_voter_contract, _variable_repo_contract, _reputation_token_contract) =
+        create_formal_voting();
+    let voting_id = VotingId::from(1);
+    let voting: Voting = repo_voter_contract.get_voting(voting_id);
+
+    // vote to reach quorum
+    repo_voter_contract
+        .as_account(env.get_account(1))
+        .vote(voting_id, false, 1000.into())
+        .unwrap();
+
+    // advance time, so voting can be finished
+    env.advance_block_time_by(Duration::from_secs(
+        voting.formal_voting_time.as_u64() + 100,
+    ));
+
+    // Now the time should be fine, the result should be rejected
+    repo_voter_contract.finish_voting(voting_id).unwrap();
+    repo_voter_contract.assert_event_at(
+        9,
+        FormalVotingEnded {
+            result: "rejected".into(),
+            votes_count: U256::from(2),
+            stake_in_favor: U256::from(500),
+            stake_against: U256::from(1000),
+            informal_voting_id: VotingId::from(0),
+            formal_voting_id: Some(voting_id),
+        },
+    );
+
+    // voting status should be completed
+    let voting: Voting = repo_voter_contract.get_voting(voting_id);
+    assert_eq!(voting.completed, true);
+}
+
+#[test]
+fn test_formal_vote_completed() {
+    let (env, mut repo_voter_contract, variable_repo_contract, _reputation_token_contract) =
+        create_formal_voting();
+    let voting_id = VotingId::from(1);
+    let voting: Voting = repo_voter_contract.get_voting(voting_id);
+
+    // vote to reach quorum
+    repo_voter_contract
+        .as_account(env.get_account(1))
+        .vote(voting_id, true, 1000.into())
+        .unwrap();
+
+    // advance time, so voting can be finished
+    env.advance_block_time_by(Duration::from_secs(
+        voting.formal_voting_time.as_u64() + 100,
+    ));
+
+    // Now the time should be fine, the result should be completed
+    repo_voter_contract.finish_voting(voting_id).unwrap();
+    repo_voter_contract.assert_event_at(
+        9,
+        FormalVotingEnded {
+            result: "passed".into(),
+            votes_count: U256::from(2),
+            stake_in_favor: U256::from(1500),
+            stake_against: U256::from(0),
+            informal_voting_id: VotingId::from(0),
+            formal_voting_id: Some(voting_id),
+        },
+    );
+
+    // voting status should be completed
+    let voting: Voting = repo_voter_contract.get_voting(voting_id);
+    assert_eq!(voting.completed, true);
+
+    // the action should be performed
+    let bytes = variable_repo_contract.get("variable_name".into()).unwrap();
+    dbg!(bytes.clone());
+    let (variable, bytes) = String::from_bytes(&bytes).unwrap();
+    assert_eq!(bytes.len(), 0);
+    assert_eq!(variable, "new_value");
+}
+
 fn into_bytes(val: &str) -> Bytes {
     val.as_bytes().into()
 }
@@ -373,6 +454,13 @@ fn prepare_variable_repo(
         )
         .unwrap();
     variable_repo_contract
+        .update_at(
+            consts::FORMAL_VOTING_QUORUM.into(),
+            U256::from(2).to_bytes().unwrap().into(),
+            None,
+        )
+        .unwrap();
+    variable_repo_contract
 }
 
 fn setup() -> (
@@ -382,13 +470,17 @@ fn setup() -> (
     ReputationContractTest,
 ) {
     let env = TestEnv::new();
-    let variable_repo_contract = VariableRepositoryContractTest::new(&env);
+    let mut variable_repo_contract = VariableRepositoryContractTest::new(&env);
     let reputation_token_contract = ReputationContractTest::new(&env);
     let repo_voter_contract = RepoVoterContractTest::new(
         &env,
         Address::from(variable_repo_contract.get_package_hash()),
         Address::from(reputation_token_contract.get_package_hash()),
     );
+
+    variable_repo_contract
+        .add_to_whitelist(repo_voter_contract.address())
+        .unwrap();
 
     (
         env,
@@ -410,8 +502,8 @@ fn create_voting() -> (
         .create_voting(
             Address::from(variable_repo_contract.get_package_hash()),
             "variable_name".into(),
-            into_bytes("new_value"),
-            Some(3600),
+            Bytes::from("new_value".to_string().to_bytes().unwrap()),
+            None,
             U256::from(500),
         )
         .unwrap();
@@ -440,7 +532,7 @@ fn create_formal_voting() -> (
         .vote(voting_id, true, U256::from(500))
         .unwrap();
     repo_voter_contract
-        .as_account(env.get_account(1))
+        .as_account(env.get_account(2))
         .vote(voting_id, false, U256::from(500))
         .unwrap();
 
