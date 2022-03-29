@@ -29,6 +29,7 @@ pub struct GovernanceVoting {
     pub votes: Mapping<(U256, Address), Vote>,
     pub voters: Mapping<U256, Vec<Option<Address>>>,
     pub votings_count: Variable<U256>,
+    pub dust_amount: Variable<U256>,
 }
 
 impl Default for GovernanceVoting {
@@ -40,6 +41,7 @@ impl Default for GovernanceVoting {
             votes: Mapping::from(consts::NAME_VOTES),
             voters: Mapping::from(consts::NAME_VOTERS),
             votings_count: Variable::from(consts::NAME_VOTINGS_COUNT),
+            dust_amount: Variable::from(consts::NAME_DUST_AMOUNT),
         }
     }
 }
@@ -57,6 +59,10 @@ impl GovernanceVoting {
         };
 
         emit(event);
+    }
+
+    pub fn get_dust_amount(&self) -> U256 {
+        self.dust_amount.get()
     }
 
     pub fn get_variable_repo_address(&self) -> Address {
@@ -319,6 +325,7 @@ impl GovernanceVoting {
     fn redistribute_reputation(&mut self, voting: &Voting) {
         let voters = self.voters.get(&voting.voting_id);
         let total_stake = voting.stake_in_favor + voting.stake_against;
+        let mut transferred: U256 = 0.into();
         if voting.stake_in_favor >= voting.stake_against {
             for address in voters {
                 let vote = self
@@ -331,6 +338,7 @@ impl GovernanceVoting {
                         address.unwrap_or_revert(),
                         to_transfer,
                     );
+                    transferred += to_transfer;
                 }
             }
         } else {
@@ -345,8 +353,14 @@ impl GovernanceVoting {
                         address.unwrap_or_revert(),
                         to_transfer,
                     );
+                    transferred += to_transfer;
                 }
             }
+        }
+
+        if transferred < total_stake {
+            self.dust_amount
+                .set(self.get_dust_amount() + total_stake - transferred);
         }
     }
 

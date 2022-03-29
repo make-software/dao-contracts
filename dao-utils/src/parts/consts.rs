@@ -49,3 +49,4 @@ pub const NAME_VOTINGS: &str = "votings";
 pub const NAME_VOTINGS_COUNT: &str = "votings_count";
 pub const NAME_VOTES: &str = "votes";
 pub const NAME_VOTERS: &str = "voters";
+pub const NAME_DUST_AMOUNT: &str = "dust_amount";

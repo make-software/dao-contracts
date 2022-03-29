@@ -558,6 +558,9 @@ fn test_formal_vote_completed() {
         reputation_token_contract.balance_of(env.get_account(2)),
         (10000 - 1000).into()
     );
+
+    // as the reputation was not divisible entirely, we check the dust amount
+    assert_eq!(repo_voter_contract.get_dust_amount(), 1.into());
 }
 
 fn into_bytes(val: &str) -> Bytes {

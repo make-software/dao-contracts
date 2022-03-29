@@ -19,6 +19,7 @@ pub trait RepoVoterContractInterface {
     );
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
+    fn get_dust_amount(&self) -> U256;
 }
 
 #[derive(Default)]
@@ -82,6 +83,10 @@ impl RepoVoterContractInterface for RepoVoterContract {
 
     fn finish_voting(&mut self, voting_id: VotingId) {
         self.voting.finish_voting(voting_id);
+    }
+
+    fn get_dust_amount(&self) -> U256 {
+        self.voting.get_dust_amount()
     }
 }
 
