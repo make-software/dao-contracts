@@ -6,7 +6,7 @@ use casper_types::{
     CLTyped,
 };
 
-use crate::{consts, Error, Variable};
+use crate::{consts, instance::Instanced, Error, Variable};
 
 use super::mapping::IndexedMapping;
 
@@ -89,5 +89,14 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> List
 {
     fn add(&mut self, item: T) {
         self._add(item);
+    }
+}
+
+impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for OrderedCollection<T> {
+    fn instance(namespace: &str) -> Self {
+        Self {
+            values: Instanced::instance(&format!("{}:{}", namespace, "values")),
+            length: Instanced::instance(&format!("{}:{}", namespace, "length")),
+        }
     }
 }

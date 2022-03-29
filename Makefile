@@ -1,5 +1,5 @@
-TARGET_DIR = ./target
-OUTPUT_DIR = target/wasm32-unknown-unknown/release
+TARGET_DIR = ${shell pwd}/target
+OUTPUT_DIR = ./target/wasm32-unknown-unknown/release
 CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
 CARGO_JUST_TEST = cargo test --features=test-support --no-default-features
 CARGO_TEST = CARGO_TARGET_DIR=$(TARGET_DIR) $(CARGO_JUST_TEST)
@@ -31,7 +31,7 @@ test-erc20: build-proxy-getter build-erc20
 
 build-contracts: build-dao-contracts build-erc20
 
-test: build-contracts test-macros test-dao-contracts test-erc20
+test: build-contracts test-dao-contracts test-erc20
 
 clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison

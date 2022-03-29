@@ -3,24 +3,17 @@
 use self::events::{TokensStaked, TokensUnstaked};
 use crate::Token;
 use casper_dao_utils::{
+    casper_dao_macros::Instance,
     casper_env::{self, emit},
-    consts, Address, Error, Mapping,
+    Address, Error, Mapping,
 };
 use casper_types::U256;
 
 /// The TokenWithStaking module.
+#[derive(Instance)]
 pub struct TokenWithStaking {
     pub stakes: Mapping<Address, U256>,
     pub token: Token,
-}
-
-impl Default for TokenWithStaking {
-    fn default() -> Self {
-        Self {
-            stakes: Mapping::from(consts::NAME_STAKES),
-            token: Token::default(),
-        }
-    }
 }
 
 impl TokenWithStaking {

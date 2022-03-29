@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use casper_dao_utils::casper_dao_macros::Instance;
+
 #[casper_dao_utils::casper_dao_macros::casper_contract_interface]
 pub trait ImportantContractInterface {
     fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256);
@@ -9,7 +11,7 @@ pub trait ImportantContractInterface {
     fn argless(&mut self);
 }
 
-#[derive(Default)]
+#[derive(Default, Instance)]
 pub struct ImportantContract {}
 
 impl ImportantContractInterface for ImportantContract {

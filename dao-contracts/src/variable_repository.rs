@@ -1,5 +1,9 @@
 use casper_dao_modules::{Owner, Repository, Whitelist};
-use casper_dao_utils::{casper_dao_macros::casper_contract_interface, casper_env::caller, Address};
+use casper_dao_utils::{
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::caller,
+    Address,
+};
 use casper_types::bytesrepr::Bytes;
 
 #[casper_contract_interface]
@@ -10,9 +14,10 @@ pub trait VariableRepositoryContractInterface {
     fn remove_from_whitelist(&mut self, address: Address);
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
     fn get(&self, key: String) -> Option<Bytes>;
+    fn is_whitelisted(&self, address: Address) -> bool;
 }
 
-#[derive(Default)]
+#[derive(Instance)]
 pub struct VariableRepositoryContract {
     pub owner: Owner,
     pub whitelist: Whitelist,
@@ -51,6 +56,10 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     fn get(&self, key: String) -> Option<Bytes> {
         self.repository.get(key)
     }
+
+    fn is_whitelisted(&self, address: Address) -> bool {
+        self.whitelist.is_whitelisted(&address)
+    }
 }
 
 #[cfg(feature = "test-support")]
@@ -61,14 +70,6 @@ use casper_dao_modules::RepositoryDefaults;
 
 #[cfg(feature = "test-support")]
 impl VariableRepositoryContractTest {
-    pub fn is_whitelisted(&self, address: Address) -> bool {
-        self.env.get_dict_value(
-            self.package_hash,
-            self.data.whitelist.whitelist.path(),
-            address,
-        )
-    }
-
     pub fn get_owner(&self) -> Option<Address> {
         self.env
             .get_value(self.package_hash, self.data.owner.owner.path())

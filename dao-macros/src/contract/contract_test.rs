@@ -91,7 +91,7 @@ fn build_constructor(item: &CasperContractItem) -> Result<TokenStream, syn::Erro
             #contract_test_ident {
                 env: env.clone(),
                 package_hash,
-                data: Default::default(),
+                data: casper_dao_utils::instance::Instanced::instance("instance"),
             }
         }
     })
@@ -175,7 +175,7 @@ mod tests {
                 ContractTest {
                     env: env.clone(),
                     package_hash,
-                    data: Default::default(),
+                    data: casper_dao_utils::instance::Instanced::instance("instance"),
                 }
             }
         };
@@ -214,7 +214,7 @@ mod tests {
                 ContractTest {
                     env: env.clone(),
                     package_hash,
-                    data: Default::default(),
+                    data: casper_dao_utils::instance::Instanced::instance("instance"),
                 }
             }
         };

@@ -9,13 +9,18 @@ use casper_contract::{
     contract_api::{runtime, storage},
     unwrap_or_revert::UnwrapOrRevert,
 };
+use casper_dao_macros::Instance;
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped, Key, URef,
 };
 use lazy_static::lazy_static;
 
-use crate::{casper_env::to_dictionary_key, Error};
+use crate::{
+    casper_env::{hash_key, to_dictionary_key},
+    instance::Instanced,
+    Error,
+};
 
 /// Data structure for storing key-value pairs.
 ///
@@ -88,6 +93,12 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
     }
 }
 
+impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Instanced for Mapping<K, V> {
+    fn instance(namespace: &str) -> Self {
+        Mapping::new(hash_key(namespace))
+    }
+}
+
 impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> From<&str>
     for Mapping<K, V>
 {
@@ -146,6 +157,15 @@ impl<V: ToBytes + FromBytes + CLTyped + Default + Hash> IndexedMapping<V> {
     }
 }
 
+impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for IndexedMapping<T> {
+    fn instance(namespace: &str) -> Self {
+        Self {
+            mapping: Instanced::instance(&format!("{}:{}", namespace, "mapping")),
+            index: Instanced::instance(&format!("{}:{}", namespace, "index")),
+        }
+    }
+}
+
 pub struct Index {
     index: Mapping<u64, Option<u32>>,
 }
@@ -176,5 +196,13 @@ impl Index {
         let mut hasher = DefaultHasher::new();
         value.hash(&mut hasher);
         hasher.finish()
+    }
+}
+
+impl Instanced for Index {
+    fn instance(namespace: &str) -> Self {
+        Self {
+            index: Instanced::instance(&format!("{}:{}", namespace, "index")),
+        }
     }
 }

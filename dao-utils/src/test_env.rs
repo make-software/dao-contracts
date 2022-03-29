@@ -1,12 +1,12 @@
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::Duration,
 };
 
 use crate::{Address, Error};
 use casper_engine_test_support::{
-    DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
+    utils, DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
     DEFAULT_PAYMENT,
 };
@@ -156,7 +156,17 @@ impl TestEnvState {
 
     pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) {
         let session_code = PathBuf::from(wasm_path);
-
+        println!("path {:#?}", session_code);
+        let maybe_target = std::env::var("CARGO_TARGET_DIR").ok();
+        println!("aa {:#?}", maybe_target);
+        let a = maybe_target.as_ref().map(|path| {
+            Path::new(path)
+                .join("wasm32-unknown-unknown")
+                .join("release")
+        });
+        println!("assa {:#?}", a.unwrap().exists());
+        println!("assssa {:#?}", session_code.is_relative());
+        // utils::read_wasm_file_bytes(contract_file);
         let deploy_item = DeployItemBuilder::new()
             .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
             .with_authorization_keys(&[self.active_account_hash()])
@@ -204,6 +214,7 @@ impl TestEnvState {
         let active_account = self.active_account_hash();
 
         let result = if self.context.is_error() {
+            println!("{:#?}", self.context.get_error());
             Err(parse_error(self.context.get_error().unwrap()))
         } else if has_return {
             let result: Bytes = self.get_account_value(active_account, "result");
