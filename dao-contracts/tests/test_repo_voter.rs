@@ -105,7 +105,7 @@ fn test_contract_deploy() {
 #[test]
 fn test_create_voting() {
     // Create voting
-    let (env, mut repo_voter_contract, variable_repo_contract, _reputation_token_contract) =
+    let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) =
         create_voting();
 
     // check voting event
@@ -126,8 +126,9 @@ fn test_create_voting() {
     assert_eq!(voting.voting_id, vote_cast_event.voting_id);
     assert_eq!(voting.voting_id, U256::from(0));
     assert_eq!(voting.formal_voting_time, U256::from(432000000));
+    assert_eq!(voting.formal_voting_quorum, U256::from(3));
     assert_eq!(voting.informal_voting_time, U256::from(86400000));
-    assert_eq!(voting.informal_voting_quorum, U256::from(2));
+    assert_eq!(voting.informal_voting_quorum, U256::from(3));
     assert_eq!(voting_created_event.voting_id, voting.voting_id);
     assert_eq!(voting_created_event.creator, env.get_account(0));
     assert_eq!(voting_created_event.stake, U256::from(500));
@@ -143,6 +144,16 @@ fn test_create_voting() {
     let voters = repo_voter_contract.get_voters(voting.voting_id);
     assert_eq!(voters.len(), 1);
     assert_eq!(voters.get(0).unwrap().unwrap(), env.get_account(0));
+
+    // check if the reputation was staked
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        500.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 - 500).into()
+    );
 
     // check the voting counter after creating next voting
     repo_voter_contract
@@ -175,11 +186,17 @@ fn test_informal_before_end() {
 #[test]
 fn test_informal_vote_without_a_quorum() {
     // create voting
-    let (env, mut repo_voter_contract, _variable_repo_contract, _reputation_token_contract) =
+    let (env, mut repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_voting();
 
     let voting_id = U256::from(0);
     let voting: Voting = repo_voter_contract.get_voting(U256::from(0));
+
+    // cast a vote
+    repo_voter_contract
+        .as_account(env.get_account(1))
+        .vote(voting_id, false, U256::from(500))
+        .unwrap();
 
     // advance time, so voting can be finished
     env.advance_block_time_by(Duration::from_secs(
@@ -188,17 +205,14 @@ fn test_informal_vote_without_a_quorum() {
 
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
-    repo_voter_contract.assert_event_at(
-        3,
-        InformalVotingEnded {
-            result: "quorum_not_reached".into(),
-            votes_count: U256::from(1),
-            stake_in_favor: U256::from(500),
-            stake_against: U256::from(0),
-            informal_voting_id: VotingId::from(0),
-            formal_voting_id: None,
-        },
-    );
+    repo_voter_contract.assert_last_event(InformalVotingEnded {
+        result: "quorum_not_reached".into(),
+        votes_count: U256::from(2),
+        stake_in_favor: U256::from(500),
+        stake_against: U256::from(500),
+        informal_voting_id: VotingId::from(0),
+        formal_voting_id: None,
+    });
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(U256::from(0));
@@ -214,12 +228,26 @@ fn test_informal_vote_without_a_quorum() {
         result.unwrap_err(),
         Error::FinishingCompletedVotingNotAllowed
     );
+
+    // creator's reputation should be burned and voters' returned
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        0.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 - 500).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(1)),
+        10000.into()
+    );
 }
 
 #[test]
 fn test_informal_voting_rejected() {
     // create voting
-    let (env, mut repo_voter_contract, _variable_repo_contract, _reputation_token_contract) =
+    let (env, mut repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_voting();
     let voting_id = VotingId::from(0);
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
@@ -258,12 +286,30 @@ fn test_informal_voting_rejected() {
             formal_voting_id: None,
         },
     );
+
+    // creator's reputation should be burned and voters' returned
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        0.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 - 500).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(1)),
+        10000.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(2)),
+        10000.into()
+    );
 }
 
 #[test]
 fn test_informal_voting_converted() {
     // create voting
-    let (env, repo_voter_contract, _variable_repo_contract, _reputation_token_contract) =
+    let (env, repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_formal_voting();
     let voting_id = VotingId::from(0);
 
@@ -304,6 +350,20 @@ fn test_informal_voting_converted() {
             stake: 500.into(),
         },
     );
+
+    // creator's reputation should stay staked and voters' returned
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        500.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 - 500).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(1)),
+        10000.into()
+    );
 }
 
 #[test]
@@ -318,10 +378,16 @@ fn test_formal_voting_before_end() {
 
 #[test]
 fn test_formal_vote_without_a_quorum() {
-    let (env, mut repo_voter_contract, _variable_repo_contract, _reputation_token_contract) =
+    let (env, mut repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_formal_voting();
     let voting_id = VotingId::from(1);
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
+
+    // cast a vote
+    repo_voter_contract
+        .as_account(env.get_account(1))
+        .vote(voting_id, false, U256::from(500))
+        .unwrap();
 
     // advance time, so voting can be finished
     env.advance_block_time_by(Duration::from_secs(
@@ -330,17 +396,14 @@ fn test_formal_vote_without_a_quorum() {
 
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
-    repo_voter_contract.assert_event_at(
-        8,
-        FormalVotingEnded {
-            result: "quorum_not_reached".into(),
-            votes_count: U256::from(1),
-            stake_in_favor: U256::from(500),
-            stake_against: U256::from(0),
-            informal_voting_id: VotingId::from(0),
-            formal_voting_id: Some(voting_id),
-        },
-    );
+    repo_voter_contract.assert_last_event(FormalVotingEnded {
+        result: "quorum_not_reached".into(),
+        votes_count: U256::from(2),
+        stake_in_favor: U256::from(500),
+        stake_against: U256::from(500),
+        informal_voting_id: VotingId::from(0),
+        formal_voting_id: Some(voting_id),
+    });
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
@@ -356,11 +419,25 @@ fn test_formal_vote_without_a_quorum() {
         result.unwrap_err(),
         Error::FinishingCompletedVotingNotAllowed
     );
+
+    // creator's reputation should be burned and voters' returned
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        0.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 - 500).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(1)),
+        10000.into()
+    );
 }
 
 #[test]
 fn test_formal_vote_rejected() {
-    let (env, mut repo_voter_contract, _variable_repo_contract, _reputation_token_contract) =
+    let (env, mut repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_formal_voting();
     let voting_id = VotingId::from(1);
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
@@ -370,6 +447,10 @@ fn test_formal_vote_rejected() {
         .as_account(env.get_account(1))
         .vote(voting_id, false, 1000.into())
         .unwrap();
+    repo_voter_contract
+        .as_account(env.get_account(2))
+        .vote(voting_id, false, 1000.into())
+        .unwrap();
 
     // advance time, so voting can be finished
     env.advance_block_time_by(Duration::from_secs(
@@ -377,27 +458,46 @@ fn test_formal_vote_rejected() {
     ));
 
     // Now the time should be fine, the result should be rejected
-    repo_voter_contract.finish_voting(voting_id).unwrap();
-    repo_voter_contract.assert_event_at(
-        9,
-        FormalVotingEnded {
-            result: "rejected".into(),
-            votes_count: U256::from(2),
-            stake_in_favor: U256::from(500),
-            stake_against: U256::from(1000),
-            informal_voting_id: VotingId::from(0),
-            formal_voting_id: Some(voting_id),
-        },
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        2500.into()
     );
+    repo_voter_contract.finish_voting(voting_id).unwrap();
+    repo_voter_contract.assert_last_event(FormalVotingEnded {
+        result: "rejected".into(),
+        votes_count: U256::from(3),
+        stake_in_favor: U256::from(500),
+        stake_against: U256::from(2000),
+        informal_voting_id: VotingId::from(0),
+        formal_voting_id: Some(voting_id),
+    });
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
     assert_eq!(voting.completed, true);
+
+    // creator's reputation should be transferred to voters proportionally
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        0.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 - 500).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(1)),
+        10250.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(2)),
+        10250.into()
+    );
 }
 
 #[test]
 fn test_formal_vote_completed() {
-    let (env, mut repo_voter_contract, variable_repo_contract, _reputation_token_contract) =
+    let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) =
         create_formal_voting();
     let voting_id = VotingId::from(1);
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
@@ -406,6 +506,10 @@ fn test_formal_vote_completed() {
     repo_voter_contract
         .as_account(env.get_account(1))
         .vote(voting_id, true, 1000.into())
+        .unwrap();
+    repo_voter_contract
+        .as_account(env.get_account(2))
+        .vote(voting_id, false, 1000.into())
         .unwrap();
 
     // advance time, so voting can be finished
@@ -419,9 +523,9 @@ fn test_formal_vote_completed() {
         -1,
         FormalVotingEnded {
             result: "passed".into(),
-            votes_count: U256::from(2),
+            votes_count: U256::from(3),
             stake_in_favor: U256::from(1500),
-            stake_against: U256::from(0),
+            stake_against: U256::from(1000),
             informal_voting_id: VotingId::from(0),
             formal_voting_id: Some(voting_id),
         },
@@ -433,10 +537,27 @@ fn test_formal_vote_completed() {
 
     // the action should be performed
     let bytes = variable_repo_contract.get("variable_name".into()).unwrap();
-    dbg!(bytes.clone());
     let (variable, bytes) = String::from_bytes(&bytes).unwrap();
     assert_eq!(bytes.len(), 0);
     assert_eq!(variable, "new_value");
+
+    // those who voted against' reputation should be transferred to for voters proportionally
+    assert_eq!(
+        reputation_token_contract.balance_of(repo_voter_contract.address()),
+        1.into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(0)),
+        (10000 + 333).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(1)),
+        (10000 + 666).into()
+    );
+    assert_eq!(
+        reputation_token_contract.balance_of(env.get_account(2)),
+        (10000 - 1000).into()
+    );
 }
 
 fn into_bytes(val: &str) -> Bytes {
@@ -465,14 +586,14 @@ fn setup() -> (
     variable_repo_contract
         .update_at(
             consts::INFORMAL_VOTING_QUORUM.into(),
-            U256::from(2).to_bytes().unwrap().into(),
+            U256::from(3).to_bytes().unwrap().into(),
             None,
         )
         .unwrap();
     variable_repo_contract
         .update_at(
             consts::FORMAL_VOTING_QUORUM.into(),
-            U256::from(2).to_bytes().unwrap().into(),
+            U256::from(3).to_bytes().unwrap().into(),
             None,
         )
         .unwrap();

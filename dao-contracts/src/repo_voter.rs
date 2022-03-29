@@ -44,19 +44,13 @@ impl RepoVoterContractInterface for RepoVoterContract {
             .get_variable_repo_address()
             .as_contract_package_hash()
             .unwrap();
-        let informal_voting_time: U256 =
-            VariableRepositoryContractCaller::at(variable_repo_package_hash)
-                .get_variable(consts::INFORMAL_VOTING_TIME);
-        let informal_voting_quorum =
-            VariableRepositoryContractCaller::at(variable_repo_package_hash)
-                .get_variable(consts::INFORMAL_VOTING_QUORUM);
-        let formal_voting_time = VariableRepositoryContractCaller::at(variable_repo_package_hash)
-            .get_variable(consts::FORMAL_VOTING_TIME);
-        let formal_voting_quorum = VariableRepositoryContractCaller::at(variable_repo_package_hash)
-            .get_variable(consts::FORMAL_VOTING_QUORUM);
+        let repo_caller = VariableRepositoryContractCaller::at(variable_repo_package_hash);
+        let informal_voting_time: U256 = repo_caller.get_variable(consts::INFORMAL_VOTING_TIME);
+        let informal_voting_quorum = repo_caller.get_variable(consts::INFORMAL_VOTING_QUORUM);
+        let formal_voting_time = repo_caller.get_variable(consts::FORMAL_VOTING_TIME);
+        let formal_voting_quorum = repo_caller.get_variable(consts::FORMAL_VOTING_QUORUM);
         let minimum_governance_reputation =
-            VariableRepositoryContractCaller::at(variable_repo_package_hash)
-                .get_variable(consts::MINIMUM_GOVERNANCE_REPUTATION);
+            repo_caller.get_variable(consts::MINIMUM_GOVERNANCE_REPUTATION);
 
         let voting = Voting {
             voting_id: self.voting.votings_count.get(),

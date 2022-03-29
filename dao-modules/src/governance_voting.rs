@@ -107,8 +107,9 @@ impl GovernanceVoting {
         let voters = self.voters.get(&voting.voting_id);
         if U256::from(voters.len()) < voting.informal_voting_quorum {
             // quorum is not reached
-            // TODO the stake of the other is returned
-            // TODO the stake of the creator is burned
+            // the stake of the other is returned
+            // the stake of the creator is burned
+            self.burn_creators_and_return_others_reputation(voting.voting_id);
 
             // the voting is marked as completed
             voting.completed = true;
@@ -126,7 +127,8 @@ impl GovernanceVoting {
             emit(event);
         } else if self.calculate_result(&voting) {
             // the voting passed
-            // TODO: the stake of the other voters is returned to them
+            // the stake of all voters is returned to them (creator's reputation will be staked when creating a formal voting)
+            self.return_reputation(voting.voting_id);
 
             // the voting is marked as completed and saved
             voting.formal_voting_id = Some(self.votings_count.get());
@@ -161,8 +163,9 @@ impl GovernanceVoting {
             );
         } else {
             // the voting did not pass
-            // TODO: the stake of the creator of the vote is burned
-            // TODO: the stake of other voters is returned to them
+            // the stake of the creator of the vote is burned
+            // the stake of other voters is returned to them
+            self.burn_creators_and_return_others_reputation(voting.voting_id);
 
             // the voting is marked as completed
             voting.completed = true;
@@ -193,8 +196,9 @@ impl GovernanceVoting {
 
         if U256::from(voters.len()) < voting.formal_voting_quorum {
             // quorum is not reached
-            // TODO the stake of the other is returned
-            // TODO the stake of the creator is burned
+            // the stake of the other is returned
+            // the stake of the creator is burned
+            self.burn_creators_and_return_others_reputation(voting.voting_id);
 
             // emit the event
             let event = FormalVotingEnded {
@@ -208,7 +212,8 @@ impl GovernanceVoting {
             emit(event);
         } else if self.calculate_result(&voting) {
             // the voting passed
-            // TODO: the stake of the losers is redistributed
+            // the stake of the losers is redistributed
+            self.redistribute_reputation(&voting);
 
             // emit the event
             let event = FormalVotingEnded {
@@ -225,7 +230,8 @@ impl GovernanceVoting {
             self.perform_action(&voting);
         } else {
             // the voting did not pass
-            // TODO: the stake of the losers is redistributed
+            // the stake of the losers is redistributed
+            self.redistribute_reputation(&voting);
 
             // emit the event
             let event = FormalVotingEnded {
@@ -255,7 +261,7 @@ impl GovernanceVoting {
         );
     }
 
-    fn _transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
+    fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
         let contract_package_hash = *self
             .reputation_token
             .get()
@@ -269,7 +275,79 @@ impl GovernanceVoting {
             "amount" => amount,
         };
 
-        runtime::call_versioned_contract::<()>(contract_package_hash, None, "transfer", args);
+        runtime::call_versioned_contract::<()>(contract_package_hash, None, "transfer_from", args);
+    }
+
+    fn burn_reputation(&mut self, owner: Address, amount: U256) {
+        let contract_package_hash = *self
+            .reputation_token
+            .get()
+            .unwrap()
+            .as_contract_package_hash()
+            .unwrap_or_revert();
+
+        let args: RuntimeArgs = runtime_args! {
+            "owner" => owner,
+            "amount" => amount,
+        };
+
+        runtime::call_versioned_contract::<()>(contract_package_hash, None, "burn", args);
+    }
+
+    fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
+        let voters = self.voters.get(&voting_id);
+        for (i, address) in voters.iter().enumerate() {
+            let vote = self.votes.get(&(voting_id, address.unwrap_or_revert()));
+            if i == 0 {
+                // the creator
+                self.burn_reputation(self_address(), vote.stake);
+            } else {
+                // the voters - transfer from contract to them
+                self.transfer_reputation(self_address(), address.unwrap_or_revert(), vote.stake);
+            }
+        }
+    }
+
+    fn return_reputation(&mut self, voting_id: VotingId) {
+        let voters = self.voters.get(&voting_id);
+        for address in voters.iter() {
+            let vote = self.votes.get(&(voting_id, address.unwrap_or_revert()));
+            self.transfer_reputation(self_address(), address.unwrap_or_revert(), vote.stake);
+        }
+    }
+
+    fn redistribute_reputation(&mut self, voting: &Voting) {
+        let voters = self.voters.get(&voting.voting_id);
+        let total_stake = voting.stake_in_favor + voting.stake_against;
+        if voting.stake_in_favor >= voting.stake_against {
+            for address in voters {
+                let vote = self
+                    .votes
+                    .get(&(voting.voting_id, address.unwrap_or_revert()));
+                if vote.choice {
+                    let to_transfer = total_stake * vote.stake / voting.stake_in_favor;
+                    self.transfer_reputation(
+                        self_address(),
+                        address.unwrap_or_revert(),
+                        to_transfer,
+                    );
+                }
+            }
+        } else {
+            for address in voters {
+                let vote = self
+                    .votes
+                    .get(&(voting.voting_id, address.unwrap_or_revert()));
+                if !vote.choice {
+                    let to_transfer = total_stake * vote.stake / voting.stake_against;
+                    self.transfer_reputation(
+                        self_address(),
+                        address.unwrap_or_revert(),
+                        to_transfer,
+                    );
+                }
+            }
+        }
     }
 
     fn calculate_result(&mut self, voting: &Voting) -> bool {
@@ -296,6 +374,9 @@ impl GovernanceVoting {
             revert(Error::VoteOnCompletedVotingNotAllowed)
         }
 
+        // Stake the reputation
+        self.transfer_reputation(caller(), self_address(), stake);
+
         let mut vote = self.votes.get(&(voting_id, caller()));
 
         match vote.voter {
@@ -308,7 +389,7 @@ impl GovernanceVoting {
                 // Otherwise, create a new vote
                 vote = Vote {
                     voter: Some(caller()),
-                    choice: true,
+                    choice,
                     voting_id,
                     stake,
                 };

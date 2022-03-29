@@ -59,7 +59,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 }
 
 impl VariableRepositoryContractCaller {
-    pub fn get_variable<T: FromBytes>(self, key: &str) -> T {
+    pub fn get_variable<T: FromBytes>(&self, key: &str) -> T {
         let variable = self.get(key.into()).unwrap_or_revert();
         let (variable, bytes) = <T>::from_bytes(&variable).unwrap_or_revert();
         if !bytes.is_empty() {
