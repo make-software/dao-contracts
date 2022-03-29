@@ -415,14 +415,17 @@ fn test_formal_vote_completed() {
 
     // Now the time should be fine, the result should be completed
     repo_voter_contract.finish_voting(voting_id).unwrap();
-    repo_voter_contract.assert_last_event(FormalVotingEnded {
-        result: "passed".into(),
-        votes_count: U256::from(2),
-        stake_in_favor: U256::from(1500),
-        stake_against: U256::from(0),
-        informal_voting_id: VotingId::from(0),
-        formal_voting_id: Some(voting_id),
-    });
+    repo_voter_contract.assert_event_at(
+        -1,
+        FormalVotingEnded {
+            result: "passed".into(),
+            votes_count: U256::from(2),
+            stake_in_favor: U256::from(1500),
+            stake_against: U256::from(0),
+            informal_voting_id: VotingId::from(0),
+            formal_voting_id: Some(voting_id),
+        },
+    );
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);

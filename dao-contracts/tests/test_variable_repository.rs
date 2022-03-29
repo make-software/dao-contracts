@@ -122,7 +122,7 @@ fn test_update_at_1() {
 
     // And it throws an event.
     contract.assert_event_at(
-        RepositoryDefaults::len() + 2,
+        RepositoryDefaults::len() as i32 + 2,
         ValueUpdated {
             key: String::from(KEY),
             value: VALUE.convert_to_bytes(),
