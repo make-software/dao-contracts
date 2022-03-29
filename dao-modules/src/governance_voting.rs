@@ -90,15 +90,13 @@ impl GovernanceVoting {
     pub fn finish_voting(&mut self, voting_id: VotingId) {
         let voting = self.votings.get(&voting_id);
 
-        // we cannot finish already completed voting
-        if voting.completed {
+        if !voting.can_be_completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
-        // is it formal or informal?
-        if voting.voting_id == voting.informal_voting_id {
+        if voting.is_informal() {
             self.finish_informal_voting(voting);
-        } else if voting.voting_id == voting.formal_voting_id.unwrap() {
+        } else if voting.is_formal() {
             self.finish_formal_voting(voting);
         } else {
             revert(Error::MalformedVoting)
@@ -117,8 +115,8 @@ impl GovernanceVoting {
             // the stake of the creator is burned
             self.burn_creators_and_return_others_reputation(voting.voting_id);
 
-            // the voting is marked as completed
-            voting.completed = true;
+            voting.complete();
+
             self.votings.set(&voting.voting_id, voting.clone());
 
             // emit the event
@@ -136,9 +134,10 @@ impl GovernanceVoting {
             // the stake of all voters is returned to them (creator's reputation will be staked when creating a formal voting)
             self.return_reputation(voting.voting_id);
 
-            // the voting is marked as completed and saved
+            // the voting is saved
             voting.formal_voting_id = Some(self.votings_count.get());
-            voting.completed = true;
+            voting.complete();
+
             self.votings.set(&voting.voting_id, voting.clone());
 
             // emit the event
@@ -152,12 +151,7 @@ impl GovernanceVoting {
             };
             emit(event);
 
-            // the voting is converted to a formal one
-            voting.voting_id = voting.formal_voting_id.unwrap();
-            voting.finish_time = U256::from(get_block_time() + voting.formal_voting_time.as_u64());
-            voting.stake_against = 0.into();
-            voting.stake_in_favor = 0.into();
-            voting.completed = false;
+            voting.convert_to_formal(get_block_time());
 
             // and created with an initial stake
             let creator_address = voters.first().unwrap().unwrap();
@@ -173,9 +167,10 @@ impl GovernanceVoting {
             // the stake of other voters is returned to them
             self.burn_creators_and_return_others_reputation(voting.voting_id);
 
-            // the voting is marked as completed
-            voting.completed = true;
+            voting.complete();
+
             self.votings.set(&voting.voting_id, voting.clone());
+
             // finally, emit the event
             let event = InformalVotingEnded {
                 result: "rejected".into(),
@@ -196,8 +191,7 @@ impl GovernanceVoting {
 
         let voters = self.voters.get(&voting.voting_id);
 
-        // the voting is marked as completed
-        voting.completed = true;
+        voting.complete();
         self.votings.set(&voting.voting_id, voting.clone());
 
         if U256::from(voters.len()) < voting.formal_voting_quorum {

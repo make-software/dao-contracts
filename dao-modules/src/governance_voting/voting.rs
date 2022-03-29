@@ -25,6 +25,32 @@ pub struct Voting {
     pub runtime_args: RuntimeArgs,
 }
 
+impl Voting {
+    pub fn is_formal(&self) -> bool {
+        self.formal_voting_id.is_some() && self.voting_id == self.formal_voting_id.unwrap()
+    }
+
+    pub fn is_informal(&self) -> bool {
+        self.voting_id == self.informal_voting_id
+    }
+
+    pub fn convert_to_formal(&mut self, block_time: u64) {
+        self.voting_id = self.formal_voting_id.unwrap();
+        self.finish_time = U256::from(block_time + self.formal_voting_time.as_u64());
+        self.stake_against = 0.into();
+        self.stake_in_favor = 0.into();
+        self.completed = false;
+    }
+
+    pub fn can_be_completed(&self) -> bool {
+        !self.completed
+    }
+
+    pub fn complete(&mut self) {
+        self.completed = true;
+    }
+}
+
 impl ToBytes for Voting {
     fn to_bytes(&self) -> Result<Vec<u8>, casper_types::bytesrepr::Error> {
         let mut vec = Vec::with_capacity(self.serialized_length());
