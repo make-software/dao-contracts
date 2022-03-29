@@ -11,7 +11,7 @@ pub trait ImportantContractInterface {
     fn argless(&mut self);
 }
 
-#[derive(Default, Instance)]
+#[derive(Instance)]
 pub struct ImportantContract {}
 
 impl ImportantContractInterface for ImportantContract {
