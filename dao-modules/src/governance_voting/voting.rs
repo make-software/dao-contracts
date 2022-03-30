@@ -53,6 +53,10 @@ impl Voting {
     pub fn is_in_time(&self, block_time: u64) -> bool {
         self.finish_time < block_time
     }
+
+    pub fn is_in_favor(&self) -> bool {
+        self.stake_in_favor >= self.stake_against
+    }
 }
 
 impl ToBytes for Voting {

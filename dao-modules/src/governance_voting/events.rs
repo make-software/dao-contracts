@@ -25,6 +25,10 @@ pub struct VotingCreated {
     pub stake: U256,
 }
 
+trait VotingEnded {
+    
+}
+
 #[derive(Debug, PartialEq, Event)]
 pub struct InformalVotingEnded {
     pub result: String,

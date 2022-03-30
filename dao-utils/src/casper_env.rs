@@ -8,7 +8,7 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    ApiError, CLTyped, ContractPackageHash, EntryPoints, URef,
+    ApiError, CLTyped, ContractPackageHash, EntryPoints, URef, RuntimeArgs,
 };
 
 use crate::{events::Events, Address};
@@ -90,6 +90,14 @@ pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap_or_revert();
     let bytes = runtime::blake2b(preimage);
     hex::encode(bytes)
+}
+
+/// Calls a contract method by Address
+pub fn call_contract(address: Address, entry_point: &str, runtime_args: RuntimeArgs) {
+    let contract_package_hash = address
+            .as_contract_package_hash()
+            .unwrap_or_revert();
+    runtime::call_versioned_contract::<()>(*contract_package_hash, None, entry_point, runtime_args);
 }
 
 pub fn install_contract(

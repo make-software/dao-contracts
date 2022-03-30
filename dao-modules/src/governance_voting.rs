@@ -5,8 +5,8 @@ pub mod vote;
 pub mod voting;
 
 use casper_dao_utils::{
-    casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert},
-    casper_env::{caller, emit, get_block_time, revert, self_address},
+    casper_contract::{unwrap_or_revert::UnwrapOrRevert},
+    casper_env::{caller, emit, get_block_time, revert, self_address, call_contract},
     consts, Address, Error, Mapping, Variable,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
@@ -128,7 +128,7 @@ impl GovernanceVoting {
                 formal_voting_id: voting.formal_voting_id,
             };
             emit(event);
-        } else if self.calculate_result(&voting) {
+        } else if voting.is_in_favor() {
             // the voting passed
             // the stake of all voters is returned to them (creator's reputation will be staked when creating a formal voting)
             self.return_reputation(voting.voting_id);
@@ -209,7 +209,7 @@ impl GovernanceVoting {
                 formal_voting_id: voting.formal_voting_id,
             };
             emit(event);
-        } else if self.calculate_result(&voting) {
+        } else if voting.is_in_favor() {
             // the voting passed
             // the stake of the losers is redistributed
             self.redistribute_reputation(&voting);
@@ -246,51 +246,26 @@ impl GovernanceVoting {
     }
 
     fn perform_action(&mut self, voting: &Voting) {
-        let contract_package_hash = *voting
-            .contract_to_call
-            .unwrap_or_revert()
-            .as_contract_package_hash()
-            .unwrap_or_revert();
-
-        runtime::call_versioned_contract::<()>(
-            contract_package_hash,
-            None,
-            &voting.entry_point,
-            voting.runtime_args.clone(),
-        );
+        call_contract(voting.contract_to_call.unwrap_or_revert(), &voting.entry_point, voting.runtime_args.clone());
     }
 
     fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
-        let contract_package_hash = *self
-            .reputation_token
-            .get()
-            .unwrap()
-            .as_contract_package_hash()
-            .unwrap_or_revert();
-
         let args: RuntimeArgs = runtime_args! {
             "owner" => owner,
             "recipient" => recipient,
             "amount" => amount,
         };
 
-        runtime::call_versioned_contract::<()>(contract_package_hash, None, "transfer_from", args);
+        call_contract(self.reputation_token.get().unwrap_or_revert(), "transfer_from", args);
     }
 
     fn burn_reputation(&mut self, owner: Address, amount: U256) {
-        let contract_package_hash = *self
-            .reputation_token
-            .get()
-            .unwrap()
-            .as_contract_package_hash()
-            .unwrap_or_revert();
-
         let args: RuntimeArgs = runtime_args! {
             "owner" => owner,
             "amount" => amount,
         };
 
-        runtime::call_versioned_contract::<()>(contract_package_hash, None, "burn", args);
+        call_contract(self.reputation_token.get().unwrap_or_revert(), "burn", args);
     }
 
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
@@ -318,8 +293,8 @@ impl GovernanceVoting {
     fn redistribute_reputation(&mut self, voting: &Voting) {
         let voters = self.voters.get(&voting.voting_id);
         let total_stake = voting.stake_in_favor + voting.stake_against;
-        let mut transferred: U256 = 0.into();
-        if voting.stake_in_favor >= voting.stake_against {
+        let mut transferred: U256 = U256::zero();
+        if voting.is_in_favor() {
             for address in voters {
                 let vote = self
                     .votes
@@ -351,18 +326,11 @@ impl GovernanceVoting {
             }
         }
 
+        // mark leftovers
         if transferred < total_stake {
             self.dust_amount
                 .set(self.get_dust_amount() + total_stake - transferred);
         }
-    }
-
-    fn calculate_result(&mut self, voting: &Voting) -> bool {
-        if voting.stake_in_favor >= voting.stake_against {
-            return true;
-        }
-
-        false
     }
 
     pub fn vote(&mut self, voting_id: U256, choice: bool, stake: U256) {
@@ -410,14 +378,11 @@ impl GovernanceVoting {
 
         self.votings.set(&voting_id, voting);
 
-        // Emit event
-        let event = VoteCast {
+        emit(VoteCast {
             voter: caller(),
             voting_id,
             choice,
             stake,
-        };
-
-        emit(event);
+        });
     }
 }
