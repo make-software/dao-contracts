@@ -34,12 +34,14 @@ impl Voting {
         self.voting_id == self.informal_voting_id
     }
 
-    pub fn convert_to_formal(&mut self, block_time: u64) {
-        self.voting_id = self.formal_voting_id.unwrap();
-        self.finish_time = block_time + self.formal_voting_time;
-        self.stake_against = U256::zero();
-        self.stake_in_favor = U256::zero();
-        self.completed = false;
+    pub fn convert_to_formal(&self, block_time: u64) -> Self {
+        let mut voting = self.clone();
+        voting.voting_id = self.formal_voting_id.unwrap();
+        voting.finish_time = block_time + self.formal_voting_time;
+        voting.stake_against = U256::zero();
+        voting.stake_in_favor = U256::zero();
+        voting.completed = false;
+        voting
     }
 
     pub fn can_be_completed(&self, block_time: u64) -> bool {

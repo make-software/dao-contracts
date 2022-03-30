@@ -319,7 +319,7 @@ fn test_informal_voting_converted() {
 
     // the status should be converted
     repo_voter_contract.assert_event_at(
-        5,
+        7,
         InformalVotingEnded {
             result: "converted_to_formal".into(),
             votes_count: U256::from(3),
@@ -332,7 +332,7 @@ fn test_informal_voting_converted() {
 
     // new voting should be created
     repo_voter_contract.assert_event_at(
-        6,
+        5,
         VotingCreated {
             creator: env.get_account(0),
             voting_id: VotingId::from(1),
@@ -342,7 +342,7 @@ fn test_informal_voting_converted() {
 
     // with initial vote
     repo_voter_contract.assert_event_at(
-        7,
+        6,
         VoteCast {
             voter: env.get_account(0),
             voting_id: 1.into(),
@@ -400,7 +400,7 @@ fn test_formal_vote_without_a_quorum() {
         stake_in_favor: U256::from(500),
         stake_against: U256::from(500),
         informal_voting_id: VotingId::from(0),
-        formal_voting_id: Some(voting_id),
+        formal_voting_id: voting_id,
     });
 
     // voting status should be completed
@@ -465,7 +465,7 @@ fn test_formal_vote_rejected() {
         stake_in_favor: U256::from(500),
         stake_against: U256::from(2000),
         informal_voting_id: VotingId::from(0),
-        formal_voting_id: Some(voting_id),
+        formal_voting_id: voting_id,
     });
 
     // voting status should be completed
@@ -521,7 +521,7 @@ fn test_formal_vote_completed() {
             stake_in_favor: U256::from(1500),
             stake_against: U256::from(1000),
             informal_voting_id: VotingId::from(0),
-            formal_voting_id: Some(voting_id),
+            formal_voting_id: voting_id,
         },
     );
 

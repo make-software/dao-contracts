@@ -68,6 +68,10 @@ impl GovernanceVoting {
         self.variable_repo.get().unwrap_or_revert()
     }
 
+    pub fn get_reputation_token_address(&self) -> Address {
+        self.reputation_token.get().unwrap_or_revert()
+    }
+
     pub fn create_voting(&mut self, voting: &Voting, stake: U256) {
         // Add Voting
         self.votings.set(&voting.voting_id, voting.clone());
@@ -108,6 +112,8 @@ impl GovernanceVoting {
         }
 
         let voters = self.voters.get(&voting.voting_id);
+        let result: Option<&str>;
+
         if U256::from(voters.len()) < voting.informal_voting_quorum {
             // quorum is not reached
             // the stake of the other is returned
@@ -118,16 +124,7 @@ impl GovernanceVoting {
 
             self.votings.set(&voting.voting_id, voting.clone());
 
-            // emit the event
-            let event = InformalVotingEnded {
-                result: "quorum_not_reached".into(),
-                votes_count: voters.len().into(),
-                stake_in_favor: voting.stake_in_favor,
-                stake_against: voting.stake_against,
-                informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: voting.formal_voting_id,
-            };
-            emit(event);
+            result = Some("quorum_not_reached");
         } else if voting.is_in_favor() {
             // the voting passed
             // the stake of all voters is returned to them (creator's reputation will be staked when creating a formal voting)
@@ -139,27 +136,18 @@ impl GovernanceVoting {
 
             self.votings.set(&voting.voting_id, voting.clone());
 
-            // emit the event
-            let event = InformalVotingEnded {
-                result: "converted_to_formal".into(),
-                votes_count: voters.len().into(),
-                stake_in_favor: voting.stake_in_favor,
-                stake_against: voting.stake_against,
-                informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: voting.formal_voting_id,
-            };
-            emit(event);
-
-            voting.convert_to_formal(get_block_time());
+            let formal_voting = voting.convert_to_formal(get_block_time());
 
             // and created with an initial stake
             let creator_address = voters.first().unwrap().unwrap();
             self.create_voting(
-                &voting,
+                &formal_voting,
                 self.votes
-                    .get(&(voting.informal_voting_id, creator_address))
+                    .get(&(formal_voting.informal_voting_id, creator_address))
                     .stake,
             );
+
+            result = Some("converted_to_formal");
         } else {
             // the voting did not pass
             // the stake of the creator of the vote is burned
@@ -170,17 +158,17 @@ impl GovernanceVoting {
 
             self.votings.set(&voting.voting_id, voting.clone());
 
-            // finally, emit the event
-            let event = InformalVotingEnded {
-                result: "rejected".into(),
-                votes_count: voters.len().into(),
-                stake_in_favor: voting.stake_in_favor,
-                stake_against: voting.stake_against,
-                informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: None,
-            };
-            emit(event);
+            result = Some("rejected");
         }
+
+        emit(InformalVotingEnded {
+            result: result.unwrap_or_revert().into(),
+            votes_count: voters.len().into(),
+            stake_in_favor: voting.stake_in_favor,
+            stake_against: voting.stake_against,
+            informal_voting_id: voting.informal_voting_id,
+            formal_voting_id: voting.formal_voting_id,
+        });
     }
 
     fn finish_formal_voting(&mut self, mut voting: Voting) {
@@ -192,57 +180,34 @@ impl GovernanceVoting {
 
         voting.complete();
         self.votings.set(&voting.voting_id, voting.clone());
-
+        let result: Option<&str>;
         if U256::from(voters.len()) < voting.formal_voting_quorum {
             // quorum is not reached
             // the stake of the other is returned
             // the stake of the creator is burned
             self.burn_creators_and_return_others_reputation(voting.voting_id);
-
+            result = Some("quorum_not_reached");
             // emit the event
-            let event = FormalVotingEnded {
-                result: "quorum_not_reached".into(),
-                votes_count: voters.len().into(),
-                stake_in_favor: voting.stake_in_favor,
-                stake_against: voting.stake_against,
-                informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: voting.formal_voting_id,
-            };
-            emit(event);
         } else if voting.is_in_favor() {
             // the voting passed
             // the stake of the losers is redistributed
             self.redistribute_reputation(&voting);
-
-            // emit the event
-            let event = FormalVotingEnded {
-                result: "passed".into(),
-                votes_count: voters.len().into(),
-                stake_in_favor: voting.stake_in_favor,
-                stake_against: voting.stake_against,
-                informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: voting.formal_voting_id,
-            };
-            emit(event);
-
-            // perform the action
             self.perform_action(&voting);
+            result = Some("passed");
         } else {
             // the voting did not pass
             // the stake of the losers is redistributed
             self.redistribute_reputation(&voting);
-
-            // emit the event
-            let event = FormalVotingEnded {
-                result: "rejected".into(),
-                votes_count: voters.len().into(),
-                stake_in_favor: voting.stake_in_favor,
-                stake_against: voting.stake_against,
-                informal_voting_id: voting.informal_voting_id,
-                formal_voting_id: voting.formal_voting_id,
-            };
-            emit(event);
-        }
+            result = Some("rejected");
+        };
+        emit(FormalVotingEnded {
+            result: result.unwrap_or_revert().into(),
+            votes_count: voters.len().into(),
+            stake_in_favor: voting.stake_in_favor,
+            stake_against: voting.stake_against,
+            informal_voting_id: voting.informal_voting_id,
+            formal_voting_id: voting.voting_id,
+        });
     }
 
     fn perform_action(&mut self, voting: &Voting) {
@@ -260,11 +225,7 @@ impl GovernanceVoting {
             "amount" => amount,
         };
 
-        call_contract(
-            self.reputation_token.get().unwrap_or_revert(),
-            "transfer_from",
-            args,
-        );
+        call_contract(self.get_reputation_token_address(), "transfer_from", args);
     }
 
     fn burn_reputation(&mut self, owner: Address, amount: U256) {
@@ -273,7 +234,7 @@ impl GovernanceVoting {
             "amount" => amount,
         };
 
-        call_contract(self.reputation_token.get().unwrap_or_revert(), "burn", args);
+        call_contract(self.get_reputation_token_address(), "burn", args);
     }
 
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
