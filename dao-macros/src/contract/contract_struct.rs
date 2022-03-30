@@ -102,7 +102,7 @@ fn build_entry_point_params(method: &TraitItemMethod) -> TokenStream {
     for i in 0..method_idents.len() {
         let method_ident = method_idents.get(i).unwrap();
         let type_path = type_paths.get(i).unwrap();
-        stream.append_all(quote! {
+        stream.extend(quote! {
             params.push(casper_types::Parameter::new(stringify!(#method_ident), <#type_path as casper_types::CLTyped>::cl_type()));
         });
     }

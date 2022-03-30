@@ -74,8 +74,8 @@ fn build_constructor(item: &CasperContractItem) -> Result<TokenStream, syn::Erro
     let casper_args = utils::generate_method_args(init);
     let mut args: Punctuated<FnArg, Comma> = Punctuated::new();
     init.sig
-        .clone()
         .inputs
+        .clone()
         .into_iter()
         .skip(1)
         .for_each(|arg| args.push(arg));
