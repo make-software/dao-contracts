@@ -156,7 +156,6 @@ impl TestEnvState {
 
     pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) {
         let session_code = PathBuf::from(wasm_path);
-
         let deploy_item = DeployItemBuilder::new()
             .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
             .with_authorization_keys(&[self.active_account_hash()])

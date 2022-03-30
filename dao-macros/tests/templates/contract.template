@@ -1,6 +1,7 @@
 mod contract {
     #![allow(dead_code)]
     #![allow(unused_variables)]
+    use casper_dao_utils::casper_dao_macros::Instance;
     impl ImportantContract {
         pub fn install() {
             casper_dao_utils::casper_env::install_contract(
@@ -177,7 +178,7 @@ mod contract {
             ImportantContractTest {
                 env: env.clone(),
                 package_hash,
-                data: Default::default(),
+                data: casper_dao_utils::instance::Instanced::instance("contract"),
             }
         }
         pub fn get_package_hash(&self) -> casper_types::ContractPackageHash {
@@ -296,12 +297,9 @@ mod contract {
         }
     }
     pub struct ImportantContract {}
-    #[automatically_derived]
-    #[allow(unused_qualifications)]
-    impl ::core::default::Default for ImportantContract {
-        #[inline]
-        fn default() -> ImportantContract {
-            ImportantContract {}
+    impl casper_dao_utils::instance::Instanced for ImportantContract {
+        fn instance(namespace: &str) -> Self {
+            Self {}
         }
     }
     impl ImportantContractInterface for ImportantContract {

@@ -1,5 +1,9 @@
 use casper_dao_modules::{Owner, TokenWithStaking, Whitelist};
-use casper_dao_utils::{casper_dao_macros::casper_contract_interface, casper_env::caller, Address};
+use casper_dao_utils::{
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::caller,
+    Address,
+};
 use casper_types::U256;
 
 // TODO: Put it lower.
@@ -118,7 +122,7 @@ pub trait ReputationContractInterface {
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
-#[derive(Default)]
+#[derive(Instance)]
 pub struct ReputationContract {
     pub token: TokenWithStaking,
     pub owner: Owner,

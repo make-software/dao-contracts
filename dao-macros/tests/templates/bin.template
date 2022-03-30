@@ -15,7 +15,8 @@ fn init() {
         casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("first_arg");
     let second_arg =
         casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("second_arg");
-    let mut contract = ImportantContract::default();
+    let mut contract: ImportantContract =
+        casper_dao_utils::instance::Instanced::instance("contract");
     ImportantContractInterface::init(&mut contract, first_arg, second_arg);
 }
 #[no_mangle]
@@ -23,20 +24,22 @@ fn mint() {
     let recipient =
         casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("recipient");
     let amount = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("amount");
-    let mut contract = ImportantContract::default();
+    let mut contract: ImportantContract =
+        casper_dao_utils::instance::Instanced::instance("contract");
     ImportantContractInterface::mint(&mut contract, recipient, amount);
 }
 #[no_mangle]
 fn balance_of() {
     use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
     let to = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg("to");
-    let contract = ImportantContract::default();
+    let contract: ImportantContract = casper_dao_utils::instance::Instanced::instance("contract");
     let result = ImportantContractInterface::balance_of(&contract, to);
     let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
     casper_dao_utils::casper_contract::contract_api::runtime::ret(result);
 }
 #[no_mangle]
 fn argless() {
-    let mut contract = ImportantContract::default();
+    let mut contract: ImportantContract =
+        casper_dao_utils::instance::Instanced::instance("contract");
     ImportantContractInterface::argless(&mut contract);
 }

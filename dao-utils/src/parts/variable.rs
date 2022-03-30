@@ -5,7 +5,10 @@ use casper_types::{
     CLTyped,
 };
 
-use crate::casper_env::{get_key, set_key};
+use crate::{
+    casper_env::{get_key, set_key},
+    instance::Instanced,
+};
 
 /// Data structure for storing a single value.
 pub struct Variable<T> {
@@ -41,5 +44,11 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
 impl<T: Default + FromBytes + ToBytes + CLTyped> From<&str> for Variable<T> {
     fn from(name: &str) -> Self {
         Variable::new(name.to_string())
+    }
+}
+
+impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for Variable<T> {
+    fn instance(namespace: &str) -> Self {
+        namespace.into()
     }
 }

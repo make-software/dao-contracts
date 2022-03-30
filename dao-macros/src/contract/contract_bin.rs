@@ -57,7 +57,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                     use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
 
                     #casper_args
-                    let contract = #contract_ident::default();
+                    let contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
                     let result = #contract_interface_ident::#ident(&contract, #punctuated_args);
                     let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
                     casper_dao_utils::casper_contract::contract_api::runtime::ret(result);
@@ -68,7 +68,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                 #[no_mangle]
                 fn #ident() {
                     #casper_args
-                    let mut contract = #contract_ident::default();
+                    let mut contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
                     #contract_interface_ident::#ident(&mut contract, #punctuated_args);
                 }
             }
@@ -102,14 +102,14 @@ mod tests {
 
                     #[no_mangle]
                     fn init() {
-                        let mut contract = Contract::default();
+                        let mut contract: Contract = casper_dao_utils::instance::Instanced::instance("contract");
                         ContractTrait::init(&mut contract,);
                     }
 
                     #[no_mangle]
                     fn do_something() {
                         let amount = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(amount));
-                        let mut contract = Contract::default();
+                        let mut contract: Contract = casper_dao_utils::instance::Instanced::instance("contract");
                         ContractTrait::do_something(&mut contract, amount,);
                     }
                 };

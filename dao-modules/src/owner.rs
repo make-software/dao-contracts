@@ -3,23 +3,17 @@
 // use casper_contract::contract_api::runtime;
 
 use casper_dao_utils::{
+    casper_dao_macros::Instance,
     casper_env::{self, caller, emit},
-    consts, Address, Error, Variable,
+    Address, Error, Variable,
 };
 
 use self::events::OwnerChanged;
 
 /// The Owner module.
+#[derive(Instance)]
 pub struct Owner {
     pub owner: Variable<Option<Address>>,
-}
-
-impl Default for Owner {
-    fn default() -> Self {
-        Self {
-            owner: Variable::from(consts::NAME_OWNER),
-        }
-    }
 }
 
 impl Owner {

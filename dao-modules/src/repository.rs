@@ -1,4 +1,5 @@
 use casper_dao_utils::{
+    casper_dao_macros::Instance,
     casper_env::{self, emit, get_block_time},
     consts, Error, Mapping, OrderedCollection, Set,
 };
@@ -10,19 +11,12 @@ use casper_types::{
 
 use self::events::ValueUpdated;
 
-type Record = (Bytes, Option<(Bytes, u64)>);
+pub type Record = (Bytes, Option<(Bytes, u64)>);
+
+#[derive(Instance)]
 pub struct Repository {
     pub storage: Mapping<String, Record>,
     pub keys: OrderedCollection<String>,
-}
-
-impl Default for Repository {
-    fn default() -> Self {
-        Self {
-            storage: Mapping::from(consts::NAME_STORAGE),
-            keys: OrderedCollection::new(consts::NAME_KEYS),
-        }
-    }
 }
 
 impl Repository {
@@ -83,6 +77,10 @@ impl Repository {
             }
         }
         Some(current)
+    }
+
+    pub fn get_full_value(&self, key: String) -> Option<Record> {
+        self.storage.get_or_none(&key)
     }
 
     fn set(&mut self, key: String, value: Bytes) {

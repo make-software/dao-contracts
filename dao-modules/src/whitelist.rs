@@ -1,23 +1,17 @@
 //! Whitelist-based access control system.
 
 use casper_dao_utils::{
+    casper_dao_macros::Instance,
     casper_env::{self, caller, emit},
-    consts, Address, Error, Mapping,
+    Address, Error, Mapping,
 };
 
 use self::events::{AddedToWhitelist, RemovedFromWhitelist};
 
 /// The Whitelist module.
+#[derive(Instance)]
 pub struct Whitelist {
     pub whitelist: Mapping<Address, bool>,
-}
-
-impl Default for Whitelist {
-    fn default() -> Self {
-        Self {
-            whitelist: Mapping::from(consts::NAME_WHITELIST),
-        }
-    }
 }
 
 impl Whitelist {
