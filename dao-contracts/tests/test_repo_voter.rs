@@ -24,8 +24,8 @@ fn test_voting_serialization() {
         informal_voting_id: VotingId::from(1),
         formal_voting_id: None,
         informal_voting_quorum: U256::from(2),
-        stake_in_favor: U256::from(0),
-        stake_against: U256::from(0),
+        stake_in_favor: U256::zero(),
+        stake_against: U256::zero(),
         completed: false,
         formal_voting_quorum: U256::from(2),
         formal_voting_time: 2,
@@ -113,7 +113,7 @@ fn test_create_voting() {
         1,
         VotingCreated {
             creator: env.get_account(0),
-            voting_id: U256::from(0),
+            voting_id: VotingId::zero(),
             stake: U256::from(500),
         },
     );
@@ -124,7 +124,7 @@ fn test_create_voting() {
     // check if voting was created correctly
     let voting: Voting = repo_voter_contract.get_voting(vote_cast_event.voting_id);
     assert_eq!(voting.voting_id, vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id, U256::from(0));
+    assert_eq!(voting.voting_id, VotingId::zero());
     assert_eq!(voting.formal_voting_time, 432000000);
     assert_eq!(voting.formal_voting_quorum, U256::from(3));
     assert_eq!(voting.informal_voting_time, 86400000);
@@ -167,7 +167,7 @@ fn test_create_voting() {
         .unwrap();
     let vote_cast_event: VoteCast = repo_voter_contract.event(4);
     let voting: Voting = repo_voter_contract.get_voting(vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id, U256::from(1));
+    assert_eq!(voting.voting_id, VotingId::from(1));
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn test_informal_before_end() {
         create_voting();
 
     // We cannot finish voting which time didn't elapse
-    let voting_id = VotingId::from(0);
+    let voting_id = VotingId::zero();
     let result = repo_voter_contract.finish_voting(voting_id);
 
     assert_eq!(result.unwrap_err(), Error::InformalVotingTimeNotReached);
@@ -189,8 +189,8 @@ fn test_informal_vote_without_a_quorum() {
     let (env, mut repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_voting();
 
-    let voting_id = U256::from(0);
-    let voting: Voting = repo_voter_contract.get_voting(U256::from(0));
+    let voting_id = VotingId::zero();
+    let voting: Voting = repo_voter_contract.get_voting(VotingId::zero());
 
     // cast a vote
     repo_voter_contract
@@ -210,16 +210,16 @@ fn test_informal_vote_without_a_quorum() {
         votes_count: U256::from(2),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(500),
-        informal_voting_id: VotingId::from(0),
+        informal_voting_id: VotingId::zero(),
         formal_voting_id: None,
     });
 
     // voting status should be completed
-    let voting: Voting = repo_voter_contract.get_voting(U256::from(0));
+    let voting: Voting = repo_voter_contract.get_voting(U256::zero());
     assert_eq!(voting.completed, true);
 
     // cast a vote on a finished voting should return an error
-    let result = repo_voter_contract.vote(U256::from(0), false, U256::from(500));
+    let result = repo_voter_contract.vote(U256::zero(), false, U256::from(500));
     assert_eq!(result.unwrap_err(), Error::VoteOnCompletedVotingNotAllowed);
 
     // the same goes for finishing voting
@@ -249,7 +249,7 @@ fn test_informal_voting_rejected() {
     // create voting
     let (env, mut repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_voting();
-    let voting_id = VotingId::from(0);
+    let voting_id = VotingId::zero();
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
 
     // cast votes against
@@ -282,7 +282,7 @@ fn test_informal_voting_rejected() {
             votes_count: U256::from(3),
             stake_in_favor: U256::from(500),
             stake_against: U256::from(1000),
-            informal_voting_id: VotingId::from(0),
+            informal_voting_id: VotingId::zero(),
             formal_voting_id: None,
         },
     );
@@ -311,7 +311,7 @@ fn test_informal_voting_converted() {
     // create voting
     let (env, repo_voter_contract, _variable_repo_contract, reputation_token_contract) =
         create_formal_voting();
-    let voting_id = VotingId::from(0);
+    let voting_id = VotingId::zero();
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
@@ -325,7 +325,7 @@ fn test_informal_voting_converted() {
             votes_count: U256::from(3),
             stake_in_favor: U256::from(1000),
             stake_against: U256::from(500),
-            informal_voting_id: VotingId::from(0),
+            informal_voting_id: VotingId::zero(),
             formal_voting_id: Some(VotingId::from(1)),
         },
     );
@@ -345,7 +345,7 @@ fn test_informal_voting_converted() {
         6,
         VoteCast {
             voter: env.get_account(0),
-            voting_id: 1.into(),
+            voting_id: VotingId::from(1),
             choice: true,
             stake: 500.into(),
         },
@@ -399,7 +399,7 @@ fn test_formal_vote_without_a_quorum() {
         votes_count: U256::from(2),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(500),
-        informal_voting_id: VotingId::from(0),
+        informal_voting_id: VotingId::zero(),
         formal_voting_id: voting_id,
     });
 
@@ -464,7 +464,7 @@ fn test_formal_vote_rejected() {
         votes_count: U256::from(3),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(2000),
-        informal_voting_id: VotingId::from(0),
+        informal_voting_id: VotingId::zero(),
         formal_voting_id: voting_id,
     });
 
@@ -520,7 +520,7 @@ fn test_formal_vote_completed() {
             votes_count: U256::from(3),
             stake_in_favor: U256::from(1500),
             stake_against: U256::from(1000),
-            informal_voting_id: VotingId::from(0),
+            informal_voting_id: VotingId::zero(),
             formal_voting_id: voting_id,
         },
     );
@@ -649,7 +649,7 @@ fn create_formal_voting() -> (
 ) {
     let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) =
         create_voting();
-    let voting_id = VotingId::from(0);
+    let voting_id = VotingId::zero();
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
 
     // cast votes

@@ -6,6 +6,19 @@ use casper_types::{
 
 pub type VotingId = U256;
 
+pub enum VotingResult {
+    InFavor,
+    Against,
+    QuorumNotReached,
+    Unknown,
+}
+
+pub enum VotingType {
+    Informal,
+    Formal,
+    Unknown,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct Voting {
     pub voting_id: VotingId,
@@ -26,17 +39,20 @@ pub struct Voting {
 }
 
 impl Voting {
-    pub fn is_formal(&self) -> bool {
-        Some(self.voting_id) == self.formal_voting_id
+    pub fn get_voting_type(&self) -> VotingType {
+        if Some(self.voting_id) == self.formal_voting_id {
+            VotingType::Formal
+        } else if self.voting_id == self.informal_voting_id {
+            VotingType::Informal
+        } else {
+            VotingType::Unknown
+        }
     }
 
-    pub fn is_informal(&self) -> bool {
-        self.voting_id == self.informal_voting_id
-    }
-
-    pub fn convert_to_formal(&self, block_time: u64) -> Self {
+    pub fn convert_to_formal(&self, new_voting_id: U256, block_time: u64) -> Self {
         let mut voting = self.clone();
-        voting.voting_id = self.formal_voting_id.unwrap();
+        voting.formal_voting_id = Some(new_voting_id);
+        voting.voting_id = new_voting_id;
         voting.finish_time = block_time + self.formal_voting_time;
         voting.stake_against = U256::zero();
         voting.stake_in_favor = U256::zero();
@@ -58,6 +74,30 @@ impl Voting {
 
     pub fn is_in_favor(&self) -> bool {
         self.stake_in_favor >= self.stake_against
+    }
+
+    pub fn get_result(&self, voters_number: usize) -> VotingResult {
+        match self.get_voting_type() {
+            VotingType::Informal => {
+                if voters_number < self.informal_voting_quorum.as_usize() {
+                    VotingResult::QuorumNotReached
+                } else if self.is_in_favor() {
+                    VotingResult::InFavor
+                } else {
+                    VotingResult::Against
+                }
+            }
+            VotingType::Formal => {
+                if voters_number < self.formal_voting_quorum.as_usize() {
+                    VotingResult::QuorumNotReached
+                } else if self.is_in_favor() {
+                    VotingResult::InFavor
+                } else {
+                    VotingResult::Against
+                }
+            }
+            VotingType::Unknown => VotingResult::Unknown,
+        }
     }
 }
 

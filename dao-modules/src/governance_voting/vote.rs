@@ -18,7 +18,7 @@ impl Default for Vote {
     fn default() -> Self {
         Self {
             voter: None,
-            voting_id: U256::from(0),
+            voting_id: VotingId::from(0),
             choice: false,
             stake: U256::from(0),
         }

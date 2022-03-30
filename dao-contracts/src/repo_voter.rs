@@ -1,4 +1,4 @@
-use casper_dao_modules::{voting::Voting, GovernanceVoting, VotingId};
+use casper_dao_modules::{vote::Vote, voting::Voting, GovernanceVoting, VotingId};
 use casper_dao_utils::{
     casper_dao_macros::casper_contract_interface, casper_env::get_block_time, consts, Address,
 };
@@ -20,6 +20,11 @@ pub trait RepoVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
+    fn get_variable_repo_address(&self) -> Address;
+    fn get_reputation_token_address(&self) -> Address;
+    fn get_voting(&self, voting_id: U256) -> Voting;
+    fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
+    fn get_voters(&self, voting_id: U256) -> Vec<Option<Address>>;
 }
 
 #[derive(Default)]
@@ -88,45 +93,24 @@ impl RepoVoterContractInterface for RepoVoterContract {
     fn get_dust_amount(&self) -> U256 {
         self.voting.get_dust_amount()
     }
-}
 
-#[cfg(feature = "test-support")]
-use casper_dao_modules::vote::Vote;
-#[cfg(feature = "test-support")]
-impl RepoVoterContractTest {
-    pub fn get_variable_repo_address(&self) -> Address {
-        let address: Option<Address> = self
-            .env
-            .get_value(self.package_hash, self.data.voting.variable_repo.path());
-        address.unwrap()
+    fn get_variable_repo_address(&self) -> Address {
+        self.voting.get_variable_repo_address()
     }
 
-    pub fn get_reputation_token_address(&self) -> Address {
-        let address: Option<Address> = self
-            .env
-            .get_value(self.package_hash, self.data.voting.reputation_token.path());
-        address.unwrap()
+    fn get_reputation_token_address(&self) -> Address {
+        self.voting.get_reputation_token_address()
     }
 
-    pub fn get_voting(&self, voting_id: U256) -> Voting {
-        let voting: Voting = self.env.get_dict_value(
-            self.package_hash,
-            self.data.voting.votings.path(),
-            voting_id,
-        );
-        voting
+    fn get_voting(&self, voting_id: VotingId) -> Voting {
+        self.voting.votings.get(&voting_id)
     }
 
-    pub fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
-        self.env.get_dict_value(
-            self.package_hash,
-            self.data.voting.votes.path(),
-            (voting_id, address),
-        )
+    fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
+        self.voting.votes.get(&(voting_id, address))
     }
 
-    pub fn get_voters(&self, voting_id: U256) -> Vec<Option<Address>> {
-        self.env
-            .get_dict_value(self.package_hash, self.data.voting.voters.path(), voting_id)
+    fn get_voters(&self, voting_id: U256) -> Vec<Option<Address>> {
+        self.voting.voters.get(&voting_id)
     }
 }

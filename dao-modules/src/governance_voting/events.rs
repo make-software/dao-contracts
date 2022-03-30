@@ -13,7 +13,7 @@ pub struct VotingContractCreated {
 #[derive(Debug, PartialEq, Event)]
 pub struct VoteCast {
     pub voter: Address,
-    pub voting_id: U256,
+    pub voting_id: VotingId,
     pub choice: bool,
     pub stake: U256,
 }
@@ -21,7 +21,7 @@ pub struct VoteCast {
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingCreated {
     pub creator: Address,
-    pub voting_id: U256,
+    pub voting_id: VotingId,
     pub stake: U256,
 }
 
