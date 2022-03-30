@@ -1,6 +1,6 @@
 use casper_dao_modules::{vote::Vote, voting::Voting, GovernanceVoting, VotingId};
 use casper_dao_utils::{
-    casper_dao_macros::casper_contract_interface, casper_env::get_block_time, consts, Address,
+    casper_dao_macros::{casper_contract_interface, Instance}, casper_env::get_block_time, consts, Address,
 };
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
@@ -27,7 +27,7 @@ pub trait RepoVoterContractInterface {
     fn get_voters(&self, voting_id: U256) -> Vec<Option<Address>>;
 }
 
-#[derive(Default)]
+#[derive(Instance)]
 pub struct RepoVoterContract {
     voting: GovernanceVoting,
 }

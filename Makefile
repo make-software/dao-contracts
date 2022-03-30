@@ -49,3 +49,6 @@ clean:
 	
 docs:
 	cargo doc --features test-support --no-deps --open
+
+install:
+	cargo install cargo-expand

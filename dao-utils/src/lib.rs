@@ -6,6 +6,7 @@ pub use casper_contract;
 mod bytes;
 pub mod casper_env;
 mod events;
+pub mod instance;
 mod parts;
 pub use casper_dao_macros;
 

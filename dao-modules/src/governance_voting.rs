@@ -7,7 +7,7 @@ pub mod voting;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_env::{call_contract, caller, emit, get_block_time, revert, self_address},
-    consts, Address, Error, Mapping, Variable,
+    consts, Address, Error, Mapping, Variable, casper_dao_macros::Instance,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -21,6 +21,7 @@ use self::{
 
 /// The Governance Voting module.
 
+#[derive(Instance)]
 pub struct GovernanceVoting {
     pub variable_repo: Variable<Option<Address>>,
     pub reputation_token: Variable<Option<Address>>,

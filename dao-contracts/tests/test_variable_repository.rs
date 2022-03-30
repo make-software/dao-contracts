@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use casper_dao_contracts::VariableRepositoryContractTest;
-use casper_dao_modules::events::ValueUpdated;
+use casper_dao_modules::{events::ValueUpdated, RepositoryDefaults};
 use casper_dao_utils::{consts, BytesConversion, Error, TestEnv};
-use casper_types::U256;
+use casper_types::{bytesrepr::Bytes, U256};
 
 static KEY: &str = "key";
 static KEY_2: &str = "key_2";
@@ -52,6 +52,30 @@ impl ContractWrapper {
         self.contract
             .update_at(key.to_string(), value.convert_to_bytes(), activation_time)
     }
+
+    pub fn get_value<K: ToString, V: BytesConversion>(&self, key: K) -> V {
+        let (current, future) = self.get_full_value(key);
+        assert!(future.is_none());
+        current
+    }
+
+    pub fn get_full_value<K: ToString, V: BytesConversion>(&self, key: K) -> (V, Option<(V, u64)>) {
+        let result: (Bytes, Option<(Bytes, u64)>) =
+            self.contract.get_full_value(key.to_string()).unwrap();
+        let current: V = V::convert_from_bytes(result.0);
+        let future = result
+            .1
+            .map(|(future, time)| (V::convert_from_bytes(future), time));
+        (current, future)
+    }
+
+    pub fn get_non_default_key_at(&self, index: u32) -> Option<String> {
+        self.contract.get_key_at(RepositoryDefaults::len() + index)
+    }
+
+    pub fn get_non_default_keys_length(&self) -> u32 {
+        self.contract.keys_count() - RepositoryDefaults::len()
+    }
 }
 
 #[test]
@@ -72,6 +96,7 @@ fn test_deploy() {
     assert_eq!(U256::from(100), c.get_value(MINIMUM_GOVERNANCE_REPUTATION));
     assert_eq!(U256::from(10), c.get_value(MINIMUM_VOTING_REPUTATION));
 }
+
 #[test]
 fn test_get_uninitialized_value() {
     let (_, contract) = setup();
@@ -401,6 +426,13 @@ fn test_anyone_can_read_data() {
     contract.update_at(KEY, VALUE_2, None).unwrap();
     let value = contract.as_account(user).get(KEY.to_string()).unwrap();
     assert_eq!(VALUE_2, u32::convert_from_bytes(value));
+}
+
+#[test]
+fn test_getting_key_with_nonexistent_index_returns_none() {
+    let (_, contract) = setup();
+
+    assert_eq!(contract.get_key_at(100), None);
 }
 
 fn setup() -> (TestEnv, ContractWrapper) {

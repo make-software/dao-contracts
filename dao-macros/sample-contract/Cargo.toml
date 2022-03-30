@@ -13,7 +13,7 @@ test = false
 [dependencies]
 casper-contract = "1.4.3"
 casper-types = "1.4.6"
-casper-dao-utils = { path = ".." }
+casper-dao-utils = { path = "../../dao-utils" }
 
 [features]
 default = [ "casper-contract/default", "casper-contract/std", "casper-contract/test-support" ]

@@ -1,5 +1,5 @@
 use casper_dao_utils::{
-    casper_dao_macros::casper_contract_interface,
+    casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, emit},
     Address, Error, Mapping, Variable,
 };
@@ -21,6 +21,7 @@ pub trait ERC20Interface {
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
 }
 
+#[derive(Instance)]
 pub struct ERC20 {
     name: Variable<String>,
     symbol: Variable<String>,
@@ -28,19 +29,6 @@ pub struct ERC20 {
     total_supply: Variable<U256>,
     balances: Mapping<Address, U256>,
     allowances: Mapping<(Address, Address), U256>,
-}
-
-impl Default for ERC20 {
-    fn default() -> Self {
-        Self {
-            name: Variable::from("name"),
-            symbol: Variable::from("symbol"),
-            decimals: Variable::from("decimals"),
-            total_supply: Variable::from("total_supply"),
-            balances: Mapping::from("balances"),
-            allowances: Mapping::from("allowances"),
-        }
-    }
 }
 
 impl ERC20Interface for ERC20 {

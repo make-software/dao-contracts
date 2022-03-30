@@ -1,12 +1,11 @@
 use std::{fmt::Debug, hash::Hash};
 
-use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped,
 };
 
-use crate::{consts, Error, Variable};
+use crate::{consts, instance::Instanced, Variable};
 
 use super::mapping::IndexedMapping;
 
@@ -42,11 +41,8 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> Orde
         true
     }
 
-    pub fn get(&self, index: u32) -> T {
-        if index > self.length.get() - 1 {
-            runtime::revert(Error::ValueNotAvailable);
-        }
-        self.values.get(index).unwrap_or_revert()
+    pub fn get(&self, index: u32) -> Option<T> {
+        self.values.get(index)
     }
 
     pub fn size(&self) -> u32 {
@@ -89,5 +85,14 @@ impl<T: ToBytes + FromBytes + CLTyped + Default + PartialEq + Debug + Hash> List
 {
     fn add(&mut self, item: T) {
         self._add(item);
+    }
+}
+
+impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for OrderedCollection<T> {
+    fn instance(namespace: &str) -> Self {
+        Self {
+            values: Instanced::instance(&format!("{}:{}", namespace, "values")),
+            length: Instanced::instance(&format!("{}:{}", namespace, "length")),
+        }
     }
 }

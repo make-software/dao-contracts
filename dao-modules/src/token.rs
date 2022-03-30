@@ -4,23 +4,16 @@ use casper_types::U256;
 
 use self::events::{Burn, Mint, Transfer};
 use casper_dao_utils::{
+    casper_dao_macros::Instance,
     casper_env::{self, emit},
-    consts, Address, Error, Mapping, Variable,
+    Address, Error, Mapping, Variable,
 };
 
 /// The Token module.
+#[derive(Instance)]
 pub struct Token {
     pub total_supply: Variable<U256>,
     pub balances: Mapping<Address, U256>,
-}
-
-impl Default for Token {
-    fn default() -> Self {
-        Self {
-            total_supply: Variable::from(consts::NAME_TOTAL_SUPPLY),
-            balances: Mapping::from(consts::NAME_BALANCES),
-        }
-    }
 }
 
 impl Token {

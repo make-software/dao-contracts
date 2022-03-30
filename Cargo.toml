@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "dao-utils",
+    "dao-macros/sample-contract",
     "dao-macros",
     "dao-modules",
     "dao-contracts",
