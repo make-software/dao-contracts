@@ -15,6 +15,12 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/variable_repository_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_20.wasm 2>/dev/null | true
 
+test-dao-contracts: build-proxy-getter build-dao-contracts
+	$(CARGO_TEST) -p casper-dao-contracts $$TEST_NAME --tests
+
+test-macros:
+	cargo test -p casper-dao-macros
+
 build-erc20:
 	$(CARGO_BUILD) -p casper-dao-erc20
 

@@ -14,14 +14,6 @@ casper-execution-engine = { version = "1.4.4", optional = true }
 hex = "0.4.3"
 blake2 = { version = "0.9.0", default-features = false }
 
-[dev-dependencies]
-trybuild = "1.0"
-pretty_assertions = "1.2.0"
-
-[[test]]
-name = "tests"
-path = "tests/macro_test.rs"
-
 [[bin]]
 name = "getter_proxy"
 path = "bin/getter_proxy.rs"
