@@ -62,15 +62,16 @@ impl Default for ERC721 {
 
 impl ERC721Interface for ERC721 {
     fn init(&mut self, name: String, symbol: String) {
-        todo!()
+        self.name.set(name);
+        self.symbol.set(symbol);
     }
 
     fn name(&self) -> String {
-        todo!()
+        self.name.get()
     }
 
     fn symbol(&self) -> String {
-        todo!()
+        self.symbol.get()
     }
 
     fn owner_of(&self, token_id: TokenId) -> Address {

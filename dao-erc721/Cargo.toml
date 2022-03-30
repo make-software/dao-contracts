@@ -1,5 +1,5 @@
 [package]
-name = "dao-erc721"
+name = "casper-dao-erc721"
 version = "0.1.0"
 edition = "2018"
 
@@ -10,12 +10,17 @@ casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 
 [[bin]]
-name = "erc_20"
-path = "bin/erc20_contract.rs"
+name = "erc_721"
+path = "bin/erc721_contract.rs"
 bench = false
 doctest = false
 test = false
 doc = false
+
+[[test]]
+name = "test-erc721"
+path = "tests/test_erc721.rs"
+harness = true
 
 [features]
 default = [ "test-support" ]

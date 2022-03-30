@@ -131,6 +131,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "casper-dao-erc721"
+version = "0.1.0"
+dependencies = [
+ "casper-dao-utils",
+ "casper-types",
+]
+
+[[package]]
 name = "casper-dao-macros"
 version = "0.1.0"
 dependencies = [
@@ -364,14 +372,6 @@ dependencies = [
  "rand_core 0.5.1",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "dao-erc721"
-version = "0.1.0"
-dependencies = [
- "casper-dao-utils",
- "casper-types",
 ]
 
 [[package]]

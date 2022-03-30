@@ -1,3 +1,4 @@
 /target
 dao-contracts/wasm
 dao-erc20/wasm
+dao-erc721/wasm
