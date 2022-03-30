@@ -1,8 +1,9 @@
 use casper_dao_modules::{Owner, Record, Repository, Whitelist};
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
-    Address, Error, casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    Address, Error,
 };
 use casper_types::bytesrepr::{Bytes, FromBytes};
 

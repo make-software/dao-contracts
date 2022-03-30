@@ -6,8 +6,9 @@ pub mod voting;
 
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::Instance,
     casper_env::{call_contract, caller, emit, get_block_time, revert, self_address},
-    consts, Address, Error, Mapping, Variable, casper_dao_macros::Instance,
+    Address, Error, Mapping, Variable,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -30,20 +31,6 @@ pub struct GovernanceVoting {
     pub voters: Mapping<U256, Vec<Option<Address>>>,
     pub votings_count: Variable<U256>,
     pub dust_amount: Variable<U256>,
-}
-
-impl Default for GovernanceVoting {
-    fn default() -> Self {
-        Self {
-            variable_repo: Variable::from(consts::NAME_VARIABLE_REPO),
-            reputation_token: Variable::from(consts::NAME_REPUTATION_TOKEN),
-            votings: Mapping::from(consts::NAME_VOTINGS),
-            votes: Mapping::from(consts::NAME_VOTES),
-            voters: Mapping::from(consts::NAME_VOTERS),
-            votings_count: Variable::from(consts::NAME_VOTINGS_COUNT),
-            dust_amount: Variable::from(consts::NAME_DUST_AMOUNT),
-        }
-    }
 }
 
 impl GovernanceVoting {
