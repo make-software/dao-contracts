@@ -46,7 +46,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
             .as_contract_package_hash()
             .unwrap();
         let repo_caller = VariableRepositoryContractCaller::at(variable_repo_package_hash);
-        let informal_voting_time: U256 = repo_caller.get_variable(consts::INFORMAL_VOTING_TIME);
+        let informal_voting_time = repo_caller.get_variable(consts::INFORMAL_VOTING_TIME);
         let informal_voting_quorum = repo_caller.get_variable(consts::INFORMAL_VOTING_QUORUM);
         let formal_voting_time = repo_caller.get_variable(consts::FORMAL_VOTING_TIME);
         let formal_voting_quorum = repo_caller.get_variable(consts::FORMAL_VOTING_QUORUM);
@@ -56,9 +56,9 @@ impl RepoVoterContractInterface for RepoVoterContract {
         let voting = Voting {
             voting_id: self.voting.votings_count.get(),
             completed: false,
-            stake_in_favor: U256::from(0),
-            stake_against: U256::from(0),
-            finish_time: U256::from(get_block_time() + informal_voting_time.as_u64()),
+            stake_in_favor: U256::zero(),
+            stake_against: U256::zero(),
+            finish_time: get_block_time() + informal_voting_time,
             informal_voting_id: self.voting.votings_count.get(),
             formal_voting_id: None,
             formal_voting_quorum,

@@ -1,6 +1,5 @@
 //! Governance Voting module.
 
-pub mod addresses_collection;
 pub mod events;
 pub mod vote;
 pub mod voting;
@@ -90,7 +89,7 @@ impl GovernanceVoting {
     pub fn finish_voting(&mut self, voting_id: VotingId) {
         let voting = self.votings.get(&voting_id);
 
-        if !voting.can_be_completed() {
+        if voting.completed {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
@@ -104,7 +103,7 @@ impl GovernanceVoting {
     }
 
     fn finish_informal_voting(&mut self, mut voting: Voting) {
-        if !self.is_voting_in_time(&voting) {
+        if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
 
@@ -185,7 +184,7 @@ impl GovernanceVoting {
     }
 
     fn finish_formal_voting(&mut self, mut voting: Voting) {
-        if !self.is_voting_in_time(&voting) {
+        if !voting.is_in_time(get_block_time()) {
             revert(Error::FormalVotingTimeNotReached)
         }
 
@@ -360,14 +359,6 @@ impl GovernanceVoting {
 
     fn calculate_result(&mut self, voting: &Voting) -> bool {
         if voting.stake_in_favor >= voting.stake_against {
-            return true;
-        }
-
-        false
-    }
-
-    fn is_voting_in_time(&mut self, voting: &Voting) -> bool {
-        if voting.finish_time.as_u64() < get_block_time() {
             return true;
         }
 

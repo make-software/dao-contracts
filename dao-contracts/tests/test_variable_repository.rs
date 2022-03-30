@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use casper_dao_contracts::VariableRepositoryContractTest;
-use casper_dao_modules::{events::ValueUpdated, RepositoryDefaults};
+use casper_dao_modules::events::ValueUpdated;
 use casper_dao_utils::{consts, BytesConversion, Error, TestEnv};
 use casper_types::U256;
 
@@ -66,9 +66,9 @@ fn test_deploy() {
     assert_eq!(U256::from(500), c.get_value(FORMAL_VOTING_QUORUM));
     assert_eq!(U256::from(50), c.get_value(INFORMAL_VOTING_QUORUM));
     assert_eq!(U256::from(200), c.get_value(VOTING_QUORUM));
-    assert_eq!(U256::from(432000000), c.get_value(FORMAL_VOTING_TIME));
-    assert_eq!(U256::from(86400000), c.get_value(INFORMAL_VOTING_TIME));
-    assert_eq!(U256::from(172800000), c.get_value(VOTING_TIME));
+    assert_eq!(432000000u64, c.get_value::<_, u64>(FORMAL_VOTING_TIME));
+    assert_eq!(86400000u64, c.get_value::<_, u64>(INFORMAL_VOTING_TIME));
+    assert_eq!(172800000u64, c.get_value::<_, u64>(VOTING_TIME));
     assert_eq!(U256::from(100), c.get_value(MINIMUM_GOVERNANCE_REPUTATION));
     assert_eq!(U256::from(10), c.get_value(MINIMUM_VOTING_REPUTATION));
 }
@@ -121,14 +121,11 @@ fn test_update_at_1() {
     assert_eq!(contract.get_full_value(KEY), (VALUE, None));
 
     // And it throws an event.
-    contract.assert_event_at(
-        RepositoryDefaults::len() as i32 + 2,
-        ValueUpdated {
-            key: String::from(KEY),
-            value: VALUE.convert_to_bytes(),
-            activation_time: None,
-        },
-    );
+    contract.assert_last_event(ValueUpdated {
+        key: String::from(KEY),
+        value: VALUE.convert_to_bytes(),
+        activation_time: None,
+    });
 }
 
 #[test]

@@ -98,7 +98,7 @@ impl TestEnv {
         self.state.lock().unwrap().block_time += seconds.as_secs();
     }
 
-    pub fn get_current_block_time(&self) -> u64 {
+    pub fn get_block_time(&self) -> u64 {
         self.state.lock().unwrap().block_time
     }
 }

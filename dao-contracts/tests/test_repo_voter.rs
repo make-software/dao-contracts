@@ -28,13 +28,13 @@ fn test_voting_serialization() {
         stake_against: U256::from(0),
         completed: false,
         formal_voting_quorum: U256::from(2),
-        formal_voting_time: U256::from(2),
-        informal_voting_time: U256::from(2),
+        formal_voting_time: 2,
+        informal_voting_time: 2,
         contract_to_call: None,
         entry_point: "update_variable".into(),
         runtime_args: RuntimeArgs::new(),
         minimum_governance_reputation: U256::from(2),
-        finish_time: U256::from(123),
+        finish_time: 123,
     };
 
     let (voting2, _bytes) = Voting::from_bytes(&voting.to_bytes().unwrap()).unwrap();
@@ -125,9 +125,9 @@ fn test_create_voting() {
     let voting: Voting = repo_voter_contract.get_voting(vote_cast_event.voting_id);
     assert_eq!(voting.voting_id, vote_cast_event.voting_id);
     assert_eq!(voting.voting_id, U256::from(0));
-    assert_eq!(voting.formal_voting_time, U256::from(432000000));
+    assert_eq!(voting.formal_voting_time, 432000000);
     assert_eq!(voting.formal_voting_quorum, U256::from(3));
-    assert_eq!(voting.informal_voting_time, U256::from(86400000));
+    assert_eq!(voting.informal_voting_time, 86400000);
     assert_eq!(voting.informal_voting_quorum, U256::from(3));
     assert_eq!(voting_created_event.voting_id, voting.voting_id);
     assert_eq!(voting_created_event.creator, env.get_account(0));
@@ -200,7 +200,7 @@ fn test_informal_vote_without_a_quorum() {
 
     // advance time, so voting can be finished
     env.advance_block_time_by(Duration::from_secs(
-        voting.informal_voting_time.as_u64() - env.get_current_block_time() + 100,
+        voting.informal_voting_time - env.get_block_time() + 100,
     ));
 
     // Now the time should be fine, but a single vote should not reach quorum
@@ -264,7 +264,7 @@ fn test_informal_voting_rejected() {
 
     // fast-forward
     env.advance_block_time_by(Duration::from_secs(
-        voting.informal_voting_time.as_u64() - env.get_current_block_time() + 100,
+        voting.informal_voting_time - env.get_block_time() + 100,
     ));
 
     // finish voting
@@ -390,9 +390,7 @@ fn test_formal_vote_without_a_quorum() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(
-        voting.formal_voting_time.as_u64() + 100,
-    ));
+    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time + 100));
 
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
@@ -453,9 +451,7 @@ fn test_formal_vote_rejected() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(
-        voting.formal_voting_time.as_u64() + 100,
-    ));
+    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time + 100));
 
     // Now the time should be fine, the result should be rejected
     assert_eq!(
@@ -513,9 +509,7 @@ fn test_formal_vote_completed() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(
-        voting.formal_voting_time.as_u64() + 100,
-    ));
+    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time + 100));
 
     // Now the time should be fine, the result should be completed
     repo_voter_contract.finish_voting(voting_id).unwrap();
@@ -670,7 +664,7 @@ fn create_formal_voting() -> (
 
     // fast-forward
     env.advance_block_time_by(Duration::from_secs(
-        voting.informal_voting_time.as_u64() - env.get_current_block_time() + 100,
+        voting.informal_voting_time - env.get_block_time() + 100,
     ));
 
     // finish voting

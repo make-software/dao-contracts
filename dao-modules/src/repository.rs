@@ -127,9 +127,9 @@ impl Default for RepositoryDefaults {
         items.push(consts::FORMAL_VOTING_QUORUM, U256::from(500));
         items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(50));
         items.push(consts::VOTING_QUORUM, U256::from(200));
-        items.push(consts::FORMAL_VOTING_TIME, U256::from(432000000));
-        items.push(consts::INFORMAL_VOTING_TIME, U256::from(86400000));
-        items.push(consts::VOTING_TIME, U256::from(172800000));
+        items.push(consts::FORMAL_VOTING_TIME, 432000000u64);
+        items.push(consts::INFORMAL_VOTING_TIME, 86400000u64);
+        items.push(consts::VOTING_TIME, 172800000u64);
         items.push(consts::MINIMUM_GOVERNANCE_REPUTATION, U256::from(100));
         items.push(consts::MINIMUM_VOTING_REPUTATION, U256::from(10));
         items
