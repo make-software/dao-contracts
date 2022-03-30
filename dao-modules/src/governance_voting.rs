@@ -5,8 +5,8 @@ pub mod vote;
 pub mod voting;
 
 use casper_dao_utils::{
-    casper_contract::{unwrap_or_revert::UnwrapOrRevert},
-    casper_env::{caller, emit, get_block_time, revert, self_address, call_contract},
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_env::{call_contract, caller, emit, get_block_time, revert, self_address},
     consts, Address, Error, Mapping, Variable,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
@@ -246,7 +246,11 @@ impl GovernanceVoting {
     }
 
     fn perform_action(&mut self, voting: &Voting) {
-        call_contract(voting.contract_to_call.unwrap_or_revert(), &voting.entry_point, voting.runtime_args.clone());
+        call_contract(
+            voting.contract_to_call.unwrap_or_revert(),
+            &voting.entry_point,
+            voting.runtime_args.clone(),
+        );
     }
 
     fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
@@ -256,7 +260,11 @@ impl GovernanceVoting {
             "amount" => amount,
         };
 
-        call_contract(self.reputation_token.get().unwrap_or_revert(), "transfer_from", args);
+        call_contract(
+            self.reputation_token.get().unwrap_or_revert(),
+            "transfer_from",
+            args,
+        );
     }
 
     fn burn_reputation(&mut self, owner: Address, amount: U256) {
