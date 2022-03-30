@@ -16,6 +16,6 @@ fn test_erc721_initial_state() {
     let (env, token) = setup();
     assert_eq!(token.name(), NAME);
     assert_eq!(token.symbol(), SYMBOL);
-    // assert_eq!(token.total_supply(), U256::zero());
-    // assert_eq!(token.balance_of(env.get_account(0)), U256::zero());
+    assert_eq!(token.total_supply(), U256::zero());
+    assert_eq!(token.balance_of(env.get_account(0)), U256::zero());
 }

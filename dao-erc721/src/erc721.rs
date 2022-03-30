@@ -1,4 +1,8 @@
-use casper_dao_utils::{casper_dao_macros::casper_contract_interface, Address, Mapping, Variable};
+use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env, Address, Error, Mapping, Variable,
+};
 use casper_types::{bytesrepr::Bytes, U256};
 
 pub type TokenId = U256;
@@ -32,6 +36,7 @@ pub trait ERC721Interface {
     );
 }
 
+#[derive(Instance)]
 pub struct ERC721 {
     name: Variable<String>,
     symbol: Variable<String>,
@@ -75,23 +80,26 @@ impl ERC721Interface for ERC721 {
     }
 
     fn owner_of(&self, token_id: TokenId) -> Address {
-        todo!()
+        self.owners.get(&token_id).unwrap_or_revert()
     }
 
     fn balance_of(&self, owner: Address) -> U256 {
-        todo!()
+        self.balances.get(&owner)
     }
 
     fn total_supply(&self) -> U256 {
-        todo!()
+        self.total_supply.get()
     }
 
     fn token_uri(&self, token_id: TokenId) -> TokenUri {
-        todo!()
+        if !self.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
+        format!("{}{}", self.base_uri(), token_id)
     }
 
     fn base_uri(&self) -> TokenUri {
-        todo!()
+        "ipfs://".to_string()
     }
 
     fn token_of_owner_by_index(&self, owner: Address, index: U256) -> TokenId {
@@ -138,5 +146,11 @@ impl ERC721Interface for ERC721 {
         data: Bytes,
     ) {
         todo!()
+    }
+}
+
+impl ERC721 {
+    fn exists(&self, token_id: &TokenId) -> bool {
+        self.owners.get(token_id).is_some()
     }
 }

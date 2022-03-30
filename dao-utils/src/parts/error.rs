@@ -13,6 +13,7 @@ pub enum Error {
     ActivationTimeInPast,
     Unknown,
     InvalidContext,
+    TokenDoesNotExist,
 }
 
 impl From<Error> for ApiError {
@@ -28,6 +29,7 @@ impl From<Error> for ApiError {
             Error::ActivationTimeInPast => 1006,
             Error::InvalidContext => 1099,
             Error::Unknown => 1100,
+            Error::TokenDoesNotExist => 7000,
         };
         ApiError::User(id)
     }
@@ -44,6 +46,7 @@ impl From<u16> for Error {
             1004 => Error::TotalSupplyOverflow,
             1005 => Error::ValueNotAvailable,
             1006 => Error::ActivationTimeInPast,
+            7000 => Error::TokenDoesNotExist,
             _ => Error::Unknown,
         }
     }
