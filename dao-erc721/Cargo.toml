@@ -1,0 +1,23 @@
+[package]
+name = "dao-erc721"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+casper-types = "1.4.6"
+casper-dao-utils = { path = "../dao-utils", default-features = false }
+
+[[bin]]
+name = "erc_20"
+path = "bin/erc20_contract.rs"
+bench = false
+doctest = false
+test = false
+doc = false
+
+[features]
+default = [ "test-support" ]
+test-support = [ "casper-dao-utils/test-support" ]
+wasm = [ "casper-dao-utils/wasm" ]
