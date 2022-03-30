@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, TokenStreamExt};
 use syn::{spanned::Spanned, DataStruct, DeriveInput, Ident};
 
 pub fn generate_code(input: DeriveInput) -> TokenStream {
@@ -19,28 +19,25 @@ fn generate_or_err(input: DeriveInput) -> Result<TokenStream, syn::Error> {
 }
 
 fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStream, syn::Error> {
-    let fields: Vec<TokenStream> = data_struct
-        .fields
-        .into_iter()
-        .map(|field| {
-            let ident = field.ident.unwrap();
-            quote! {
-                #ident: casper_dao_utils::instance::Instanced::instance(if namespace.is_empty() {
-                    format!("{}", stringify!(#ident))
-                } else {
-                    format!("{}_{}", stringify!(#ident), namespace)
-                }
-                .as_str())
+    let mut fields = TokenStream::new();
+    fields.append_all(data_struct.fields.into_iter().map(|field| {
+        let ident = field.ident.unwrap();
+        quote! {
+            #ident: casper_dao_utils::instance::Instanced::instance(if namespace.is_empty() {
+                format!("{}", stringify!(#ident))
+            } else {
+                format!("{}_{}", stringify!(#ident), namespace)
             }
-        })
-        .collect();
+            .as_str()),
+        }
+    }));
 
     Ok(quote! {
         impl casper_dao_utils::instance::Instanced for #struct_ident {
 
             fn instance(namespace: &str) -> Self {
                 Self {
-                    #( #fields, )*
+                    #fields
                 }
             }
         }
