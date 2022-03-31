@@ -105,6 +105,11 @@ mod contract {
                 contract_package_hash,
             }
         }
+        pub fn at_address(address: casper_dao_utils::Address) -> Self {
+            Self {
+                contract_package_hash: *address.as_contract_package_hash().unwrap(),
+            }
+        }
     }
     impl ImportantContractInterface for ImportantContractCaller {
         fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256) {

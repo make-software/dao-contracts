@@ -76,6 +76,13 @@ impl Voting {
         self.stake_in_favor >= self.stake_against
     }
 
+    pub fn get_winning_stake(&self) -> U256 {
+        match self.is_in_favor() {
+            true => self.stake_in_favor,
+            false => self.stake_against,
+        }
+    }
+
     pub fn get_result(&self, voters_number: usize) -> VotingResult {
         match self.get_voting_type() {
             VotingType::Informal => {

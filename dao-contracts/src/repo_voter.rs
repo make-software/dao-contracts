@@ -1,7 +1,7 @@
 use casper_dao_modules::{vote::Vote, voting::Voting, GovernanceVoting, VotingId};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::get_block_time,
+    casper_env::{caller, get_block_time},
     consts, Address,
 };
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
@@ -47,12 +47,8 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        let variable_repo_package_hash = *self
-            .voting
-            .get_variable_repo_address()
-            .as_contract_package_hash()
-            .unwrap();
-        let repo_caller = VariableRepositoryContractCaller::at(variable_repo_package_hash);
+        let repo_caller =
+            VariableRepositoryContractCaller::at_address(self.voting.get_variable_repo_address());
         let informal_voting_time = repo_caller.get_variable(consts::INFORMAL_VOTING_TIME);
         let informal_voting_quorum = repo_caller.get_variable(consts::INFORMAL_VOTING_QUORUM);
         let formal_voting_time = repo_caller.get_variable(consts::FORMAL_VOTING_TIME);
@@ -81,11 +77,11 @@ impl RepoVoterContractInterface for RepoVoterContract {
             },
             minimum_governance_reputation,
         };
-        self.voting.create_voting(&voting, stake);
+        self.voting.create_voting(caller(), &voting, stake);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
-        self.voting.vote(voting_id, choice, stake);
+        self.voting.vote(caller(), voting_id, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId) {

@@ -4,6 +4,7 @@ use casper_dao_contracts::{
     RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 use casper_dao_modules::{
+    consts as gv_consts,
     events::{
         FormalVotingEnded, InformalVotingEnded, VoteCast, VotingContractCreated, VotingCreated,
     },
@@ -206,7 +207,7 @@ fn test_informal_vote_without_a_quorum() {
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
     repo_voter_contract.assert_last_event(InformalVotingEnded {
-        result: "quorum_not_reached".into(),
+        result: gv_consts::INFORMAL_VOTING_QUORUM_NOT_REACHED.into(),
         votes_count: U256::from(2),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(500),
@@ -278,7 +279,7 @@ fn test_informal_voting_rejected() {
     repo_voter_contract.assert_event_at(
         5,
         InformalVotingEnded {
-            result: "rejected".into(),
+            result: gv_consts::INFORMAL_VOTING_REJECTED.into(),
             votes_count: U256::from(3),
             stake_in_favor: U256::from(500),
             stake_against: U256::from(1000),
@@ -321,7 +322,7 @@ fn test_informal_voting_converted() {
     repo_voter_contract.assert_event_at(
         7,
         InformalVotingEnded {
-            result: "converted_to_formal".into(),
+            result: gv_consts::INFORMAL_VOTING_PASSED.into(),
             votes_count: U256::from(3),
             stake_in_favor: U256::from(1000),
             stake_against: U256::from(500),
@@ -330,7 +331,7 @@ fn test_informal_voting_converted() {
         },
     );
 
-    // new voting should be created
+    // new voting should be created with first creator
     repo_voter_contract.assert_event_at(
         5,
         VotingCreated {
@@ -340,7 +341,7 @@ fn test_informal_voting_converted() {
         },
     );
 
-    // with initial vote
+    // with initial vote as creator
     repo_voter_contract.assert_event_at(
         6,
         VoteCast {
@@ -395,7 +396,7 @@ fn test_formal_vote_without_a_quorum() {
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
     repo_voter_contract.assert_last_event(FormalVotingEnded {
-        result: "quorum_not_reached".into(),
+        result: gv_consts::FORMAL_VOTING_QUORUM_NOT_REACHED.into(),
         votes_count: U256::from(2),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(500),
@@ -460,7 +461,7 @@ fn test_formal_vote_rejected() {
     );
     repo_voter_contract.finish_voting(voting_id).unwrap();
     repo_voter_contract.assert_last_event(FormalVotingEnded {
-        result: "rejected".into(),
+        result: gv_consts::FORMAL_VOTING_REJECTED.into(),
         votes_count: U256::from(3),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(2000),
@@ -516,7 +517,7 @@ fn test_formal_vote_completed() {
     repo_voter_contract.assert_event_at(
         -1,
         FormalVotingEnded {
-            result: "passed".into(),
+            result: gv_consts::FORMAL_VOTING_PASSED.into(),
             votes_count: U256::from(3),
             stake_in_favor: U256::from(1500),
             stake_against: U256::from(1000),
@@ -667,8 +668,11 @@ fn create_formal_voting() -> (
         voting.informal_voting_time - env.get_block_time() + 100,
     ));
 
-    // finish voting
-    repo_voter_contract.finish_voting(voting_id).unwrap();
+    // finish voting as somebody else
+    repo_voter_contract
+        .as_account(env.get_account(1))
+        .finish_voting(voting_id)
+        .unwrap();
 
     (
         env,

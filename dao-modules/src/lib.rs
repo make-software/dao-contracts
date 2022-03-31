@@ -5,8 +5,10 @@ mod staking;
 mod token;
 mod whitelist;
 
+pub use governance_voting::consts;
 pub use governance_voting::voting::VotingId;
-pub use governance_voting::*;
+pub use governance_voting::GovernanceVoting;
+pub use governance_voting::{vote, voting};
 pub use owner::Owner;
 pub use repository::{Record, Repository, RepositoryDefaults};
 pub use staking::TokenWithStaking;
