@@ -22,7 +22,7 @@ use self::{
 
 use casper_dao_utils::consts as dao_consts;
 
-use super::{Vote, vote::VotingId};
+use super::{vote::VotingId, Vote};
 
 /// The Governance Voting module.
 
@@ -32,7 +32,7 @@ pub struct GovernanceVoting {
     pub reputation_token: Variable<Option<Address>>,
     pub votings: Mapping<U256, Voting>,
     pub votes: Mapping<(U256, Address), Vote>,
-    pub voters: Mapping<U256, Vec<Option<Address>>>,
+    pub voters: Mapping<U256, Vec<Address>>,
     pub votings_count: Variable<U256>,
     pub dust_amount: Variable<U256>,
 }
@@ -50,9 +50,17 @@ impl GovernanceVoting {
         });
     }
 
-    pub fn create_voting(&mut self, creator: Address, stake: U256, contract_to_call: Address, entry_point: String, runtime_args: RuntimeArgs, informal_voting_id: Option<VotingId>) {
+    pub fn create_voting(
+        &mut self,
+        creator: Address,
+        stake: U256,
+        contract_to_call: Address,
+        entry_point: String,
+        runtime_args: RuntimeArgs,
+        informal_voting_id: Option<VotingId>,
+    ) {
         let repo_caller =
-            VariableRepositoryContractCaller::at(self.get_variable_repo_address());
+            VariableRepositoryContractCaller::at_address(self.get_variable_repo_address());
         let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
         let informal_voting_quorum = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM);
         let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
@@ -67,15 +75,15 @@ impl GovernanceVoting {
             Some(informal_voting_id) => {
                 formal_id = Some(voting_id);
                 informal_id = informal_voting_id;
-            },
+            }
             None => {
                 formal_id = None;
                 informal_id = voting_id;
-            },
+            }
         }
-        
+
         let voting = Voting {
-            voting_id: voting_id,
+            voting_id,
             completed: false,
             stake_in_favor: U256::zero(),
             stake_against: U256::zero(),
@@ -134,11 +142,11 @@ impl GovernanceVoting {
                 // Formal voting is created with an initial stake
                 let formal_voting =
                     voting.convert_to_formal(self.votings_count.get(), get_block_time());
-                let creator_address = voters.first().unwrap().unwrap();
+                let creator_address = voters.first().unwrap();
                 self.create_voting(
-                    creator_address,
+                    *creator_address,
                     self.votes
-                        .get(&(formal_voting.informal_voting_id, creator_address))
+                        .get(&(formal_voting.informal_voting_id, *creator_address))
                         .stake,
                     formal_voting.contract_to_call.unwrap_or_revert(),
                     formal_voting.entry_point,
@@ -245,7 +253,7 @@ impl GovernanceVoting {
                 };
                 let mut voters = self.voters.get(&voting_id);
                 // Add a voter to the list
-                voters.push(Some(voter));
+                voters.push(voter);
                 self.voters.set(&voting_id, voters);
             }
         }
@@ -310,13 +318,13 @@ impl GovernanceVoting {
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
         let voters = self.voters.get(&voting_id);
         for (i, address) in voters.iter().enumerate() {
-            let vote = self.votes.get(&(voting_id, address.unwrap_or_revert()));
+            let vote = self.votes.get(&(voting_id, *address));
             if i == 0 {
                 // the creator
                 self.burn_reputation(self_address(), vote.stake);
             } else {
                 // the voters - transfer from contract to them
-                self.transfer_reputation(self_address(), address.unwrap_or_revert(), vote.stake);
+                self.transfer_reputation(self_address(), *address, vote.stake);
             }
         }
     }
@@ -324,8 +332,8 @@ impl GovernanceVoting {
     fn return_reputation(&mut self, voting_id: VotingId) {
         let voters = self.voters.get(&voting_id);
         for address in voters.iter() {
-            let vote = self.votes.get(&(voting_id, address.unwrap_or_revert()));
-            self.transfer_reputation(self_address(), address.unwrap_or_revert(), vote.stake);
+            let vote = self.votes.get(&(voting_id, *address));
+            self.transfer_reputation(self_address(), *address, vote.stake);
         }
     }
 
@@ -335,12 +343,10 @@ impl GovernanceVoting {
         let mut transferred: U256 = U256::zero();
 
         for address in voters {
-            let vote = self
-                .votes
-                .get(&(voting.voting_id, address.unwrap_or_revert()));
+            let vote = self.votes.get(&(voting.voting_id, address));
             if vote.choice == voting.is_in_favor() {
                 let to_transfer = total_stake * vote.stake / voting.get_winning_stake();
-                self.transfer_reputation(self_address(), address.unwrap_or_revert(), to_transfer);
+                self.transfer_reputation(self_address(), address, to_transfer);
                 transferred += to_transfer;
             }
         }

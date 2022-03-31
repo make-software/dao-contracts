@@ -1,9 +1,11 @@
-
-use casper_dao_utils::{Address, casper_dao_macros::{casper_contract_interface, Instance}, casper_env::{caller}};
+use casper_dao_utils::{
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::caller,
+    Address,
+};
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
-
-use crate::{voting::{GovernanceVoting, VotingId, Vote, voting::Voting}};
+use crate::voting::{voting::Voting, GovernanceVoting, Vote, VotingId};
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
@@ -23,7 +25,7 @@ pub trait RepoVoterContractInterface {
     fn get_reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: U256) -> Voting;
     fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-    fn get_voters(&self, voting_id: U256) -> Vec<Option<Address>>;
+    fn get_voters(&self, voting_id: U256) -> Vec<Address>;
 }
 
 #[derive(Instance)]
@@ -44,11 +46,18 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        self.voting.create_voting(caller(), stake, variable_repo_to_edit, "update_at".into(), runtime_args! {
-            "key" => key,
-            "value" => value,
-            "activation_time" => activation_time,
-        }, None);
+        self.voting.create_voting(
+            caller(),
+            stake,
+            variable_repo_to_edit,
+            "update_at".into(),
+            runtime_args! {
+                "key" => key,
+                "value" => value,
+                "activation_time" => activation_time,
+            },
+            None,
+        );
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
@@ -79,7 +88,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
         self.voting.votes.get(&(voting_id, address))
     }
 
-    fn get_voters(&self, voting_id: U256) -> Vec<Option<Address>> {
+    fn get_voters(&self, voting_id: U256) -> Vec<Address> {
         self.voting.voters.get(&voting_id)
     }
 }

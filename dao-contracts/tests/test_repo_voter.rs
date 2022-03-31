@@ -1,7 +1,11 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
-    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest, voting::{VotingContractCreated, VotingCreated, VoteCast, InformalVotingEnded, FormalVotingEnded, VotingId, Vote, voting::Voting, consts as gv_consts},
+    voting::{
+        consts as gv_consts, voting::Voting, FormalVotingEnded, InformalVotingEnded, Vote,
+        VoteCast, VotingContractCreated, VotingCreated, VotingId,
+    },
+    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_utils::{consts, Address, Error, TestEnv};
@@ -9,7 +13,6 @@ use casper_types::{
     bytesrepr::{Bytes, FromBytes, ToBytes},
     RuntimeArgs, U256,
 };
-
 
 #[test]
 fn test_voting_serialization() {
@@ -137,7 +140,7 @@ fn test_create_voting() {
     // check if first vote was created by a caller
     let voters = repo_voter_contract.get_voters(voting.voting_id);
     assert_eq!(voters.len(), 1);
-    assert_eq!(voters.get(0).unwrap().unwrap(), env.get_account(0));
+    assert_eq!(*voters.get(0).unwrap(), env.get_account(0));
 
     // check if the reputation was staked
     assert_eq!(
