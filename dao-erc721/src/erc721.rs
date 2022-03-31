@@ -170,7 +170,7 @@ impl ERC721Interface for ERC721 {
 
     fn mint(&mut self, to: Address, token_id: TokenId) {
         if self.exists(&token_id) {
-            casper_env::revert(Error::TokenDoesNotExist)
+            casper_env::revert(Error::TokenAlreadyExists)
         }
 
         self.balances.set(&to, self.balances.get(&to) + 1);
@@ -265,7 +265,7 @@ impl ERC721 {
                 }
                 None => true,
             },
-            None => true,
+            None => false,
         }
     }
 }

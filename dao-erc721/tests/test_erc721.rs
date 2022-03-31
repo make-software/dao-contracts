@@ -1,4 +1,4 @@
-use casper_dao_erc721::{ERC721NonReceiverTest, ERC721ReceiverTest, ERC721Test};
+use casper_dao_erc721::{events::Transfer, ERC721NonReceiverTest, ERC721ReceiverTest, ERC721Test};
 use casper_dao_utils::{Address, Error, TestEnv};
 use casper_types::U256;
 
@@ -36,14 +36,34 @@ fn test_erc721_initial_state() {
 
 #[test]
 fn mint_works() {
+    // Given token with initial state.
     let (env, mut token) = setup();
     let token_id = 1.into();
     let token_owner = env.get_account(1);
 
+    // When mint a new token
     token.mint(token_owner, token_id).unwrap();
 
+    // Then total supply and the minter balance increases, token ownership is set
     assert_eq!(token.total_supply(), 1.into());
     assert_eq!(token.balance_of(token_owner), 1.into());
+    assert_eq!(token.owner_of(token_id).unwrap(), token_owner);
+
+    // Then emits Transfer event
+    token.assert_event_at(
+        0,
+        Transfer {
+            from: None,
+            to: Some(token_owner),
+            token_id,
+        },
+    );
+
+    // When mint a token with exisiting id
+    let result = token.mint(token_owner, token_id);
+
+    // Then it raises an error
+    assert_eq!(result, Err(Error::TokenAlreadyExists));
 }
 
 #[test]
@@ -84,6 +104,9 @@ fn safe_transfer_works() {
 
     let receiver_address = Address::from(receiver.get_package_hash());
     let non_receiver_address = Address::from(non_receiver.get_package_hash());
+
+    println!("{:?}", env.get_account(0).as_contract_package_hash());
+    println!("{:?}", env.get_account(0).as_account_hash());
 
     erc721
         .as_account(token_owner)
