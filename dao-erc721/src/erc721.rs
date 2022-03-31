@@ -1,5 +1,5 @@
 use casper_dao_utils::{
-    casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert},
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, emit},
     Address, Error, Mapping, Variable,
@@ -8,6 +8,8 @@ use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
+
+use crate::receiver::{ERC721ReceiverCaller, IERC721Receiver};
 
 use self::events::{Approval, ApprovalForAll, Transfer};
 
@@ -162,7 +164,7 @@ impl ERC721Interface for ERC721 {
         if !self.is_approved_or_owner(casper_env::caller(), token_id) {
             casper_env::revert(Error::TransferCallerIsNotOwnerNorApproved)
         }
-        self._safe_transfer(owner, recipient, token_id, data);
+        self.safe_transfer(owner, recipient, token_id, data);
     }
 }
 
@@ -180,7 +182,7 @@ impl ERC721 {
         });
     }
 
-    fn _safe_transfer(
+    fn safe_transfer(
         &mut self,
         from: Address,
         to: Option<Address>,
@@ -188,7 +190,7 @@ impl ERC721 {
         _data: Bytes,
     ) {
         self.transfer(from, to, token_id);
-        if !self._check_on_erc721_received(from, to, token_id, _data) {
+        if !self.check_on_erc721_received(from, to, token_id, _data) {
             casper_env::revert(Error::TransferToNonERC721ReceiverImplementer)
         }
     }
@@ -230,7 +232,7 @@ impl ERC721 {
             || self.get_approved(token_id) == Some(spender)
     }
 
-    fn _check_on_erc721_received(
+    fn check_on_erc721_received(
         &self,
         from: Address,
         to: Option<Address>,
@@ -240,48 +242,13 @@ impl ERC721 {
         match to {
             Some(to_address) => match to_address.as_contract_package_hash() {
                 Some(to_contract) => {
-                    let caller = ERC721ReceiverCaller::at(to_contract.clone());
+                    let mut caller = ERC721ReceiverCaller::at(to_contract.clone());
                     caller.on_erc_721_received(casper_env::caller(), from, token_id, data);
                     true
                 }
                 None => true,
             },
             None => true,
-        }
-    }
-}
-
-trait IERC721Receiver {
-    fn on_erc_721_received(&self, operator: Address, from: Address, token_id: TokenId, data: Bytes);
-}
-
-struct ERC721ReceiverCaller {
-    contract_package_hash: casper_types::ContractPackageHash,
-}
-
-impl IERC721Receiver for ERC721ReceiverCaller {
-    fn on_erc_721_received(
-        &self,
-        operator: Address,
-        from: Address,
-        token_id: TokenId,
-        data: Bytes,
-    ) {
-        runtime::call_versioned_contract(self.contract_package_hash, None, "on_erc_721_received", {
-            let mut named_args = casper_types::RuntimeArgs::new();
-            named_args.insert("operator", operator).unwrap();
-            named_args.insert("from", from).unwrap();
-            named_args.insert("token_id", token_id).unwrap();
-            named_args.insert("data", data).unwrap();
-            named_args
-        })
-    }
-}
-
-impl ERC721ReceiverCaller {
-    fn at(contract_package_hash: casper_types::ContractPackageHash) -> Self {
-        Self {
-            contract_package_hash,
         }
     }
 }
