@@ -1,9 +1,15 @@
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env, Address, Error, Mapping, Variable,
+    casper_env::{self, emit},
+    Address, Error, Mapping, Variable,
 };
-use casper_types::{bytesrepr::Bytes, U256};
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    U256,
+};
+
+use self::events::{Approval, ApprovalForAll, Transfer};
 
 pub type TokenId = U256;
 pub type TokenUri = String;
@@ -13,24 +19,21 @@ pub trait ERC721Interface {
     fn init(&mut self, name: String, symbol: String);
     fn name(&self) -> String;
     fn symbol(&self) -> String;
-    fn owner_of(&self, token_id: TokenId) -> Address;
+    fn owner_of(&self, token_id: TokenId) -> Option<Address>;
     fn balance_of(&self, owner: Address) -> U256;
     fn total_supply(&self) -> U256;
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
     fn base_uri(&self) -> TokenUri;
-    fn token_of_owner_by_index(&self, owner: Address, index: U256) -> TokenId;
-    fn token_by_index(&self, index: U256) -> TokenId;
-    fn transfer(&mut self, recipient: Address, amount: U256);
-    fn approve(&mut self, spender: Address, token_id: TokenId);
-    fn get_approved(&self, token_id: TokenId) -> Address;
-    fn set_approval_for_all(&self, operator: Address, approved: bool);
+    fn approve(&mut self, to: Address, token_id: TokenId);
+    fn get_approved(&self, token_id: TokenId) -> Option<Address>;
+    fn set_approval_for_all(&mut self, operator: Address, approved: bool);
     fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
-    fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
-    fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
+    fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
+    fn safe_transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
     fn safe_transfer_from_with_data(
         &mut self,
         owner: Address,
-        recipient: Address,
+        recipient: Option<Address>,
         token_id: TokenId,
         data: Bytes,
     );
@@ -51,20 +54,6 @@ pub struct ERC721 {
     operator_approvals: Mapping<(Address, Address), bool>,
 }
 
-impl Default for ERC721 {
-    fn default() -> Self {
-        Self {
-            name: Variable::from("name"),
-            symbol: Variable::from("symbol"),
-            total_supply: Variable::from("total_supply"),
-            balances: Mapping::from("balances"),
-            owners: Mapping::from("owners"),
-            token_approvals: Mapping::from("token_approvals"),
-            operator_approvals: Mapping::from("operator_approvals"),
-        }
-    }
-}
-
 impl ERC721Interface for ERC721 {
     fn init(&mut self, name: String, symbol: String) {
         self.name.set(name);
@@ -79,8 +68,8 @@ impl ERC721Interface for ERC721 {
         self.symbol.get()
     }
 
-    fn owner_of(&self, token_id: TokenId) -> Address {
-        self.owners.get(&token_id).unwrap_or_revert()
+    fn owner_of(&self, token_id: TokenId) -> Option<Address> {
+        self.owners.get(&token_id)
     }
 
     fn balance_of(&self, owner: Address) -> U256 {
@@ -102,55 +91,195 @@ impl ERC721Interface for ERC721 {
         "ipfs://".to_string()
     }
 
-    fn token_of_owner_by_index(&self, owner: Address, index: U256) -> TokenId {
-        todo!()
+    fn approve(&mut self, to: Address, token_id: TokenId) {
+        let owner = self.owner_of(token_id.clone()).unwrap_or_revert();
+        if owner == to {
+            casper_env::revert(Error::ApprovalToCurrentOwner);
+        }
+
+        let caller = casper_env::caller();
+        if caller != owner && !self.is_approved_for_all(owner, caller) {
+            casper_env::revert(Error::ApproveCallerIsNotOwnerNorApprovedForAll);
+        }
+
+        self.approve(Some(owner), Some(to), token_id);
     }
 
-    fn token_by_index(&self, index: U256) -> TokenId {
-        todo!()
+    fn get_approved(&self, token_id: TokenId) -> Option<Address> {
+        if !self.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
+
+        self.token_approvals.get(&token_id)
     }
 
-    fn transfer(&mut self, recipient: Address, amount: U256) {
-        todo!()
-    }
+    fn set_approval_for_all(&mut self, operator: Address, approved: bool) {
+        let caller = casper_env::caller();
+        if caller == operator {
+            casper_env::revert(Error::ApproveToCaller)
+        }
 
-    fn approve(&mut self, spender: Address, token_id: TokenId) {
-        todo!()
-    }
-
-    fn get_approved(&self, token_id: TokenId) -> Address {
-        todo!()
-    }
-
-    fn set_approval_for_all(&self, operator: Address, approved: bool) {
-        todo!()
+        self.operator_approvals.set(&(caller, operator), approved);
+        emit(ApprovalForAll {
+            owner: caller,
+            operator,
+            approved,
+        });
     }
 
     fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool {
-        todo!()
+        self.operator_approvals.get(&(owner, operator))
     }
 
-    fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId) {
-        todo!()
+    fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId) {
+        if !self.is_approved_or_owner(casper_env::caller(), token_id) {
+            casper_env::revert(Error::TransferCallerIsNotOwnerNorApproved)
+        }
+        self.transfer(owner, recipient, token_id);
     }
 
-    fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId) {
-        todo!()
+    fn safe_transfer_from(
+        &mut self,
+        owner: Address,
+        recipient: Option<Address>,
+        token_id: TokenId,
+    ) {
+        self.safe_transfer_from_with_data(
+            owner,
+            recipient,
+            token_id,
+            Bytes::from("".to_bytes().unwrap()),
+        );
     }
 
     fn safe_transfer_from_with_data(
         &mut self,
         owner: Address,
-        recipient: Address,
+        recipient: Option<Address>,
         token_id: TokenId,
         data: Bytes,
     ) {
-        todo!()
+        if !self.is_approved_or_owner(casper_env::caller(), token_id) {
+            casper_env::revert(Error::TransferCallerIsNotOwnerNorApproved)
+        }
+        self._safe_transfer(owner, recipient, token_id, data);
     }
 }
 
 impl ERC721 {
     fn exists(&self, token_id: &TokenId) -> bool {
         self.owners.get(token_id).is_some()
+    }
+
+    fn approve(&mut self, owner: Option<Address>, operator: Option<Address>, token_id: TokenId) {
+        self.token_approvals.set(&token_id, operator);
+        emit(Approval {
+            owner,
+            operator,
+            token_id,
+        });
+    }
+
+    fn _safe_transfer(
+        &mut self,
+        from: Address,
+        to: Option<Address>,
+        token_id: TokenId,
+        _data: Bytes,
+    ) {
+        self.transfer(from, to, token_id);
+        if !self._check_on_erc721_received(from, to, token_id, _data) {
+            casper_env::revert(Error::TransferToNonERC721ReceiverImplementer)
+        }
+    }
+
+    fn transfer(&mut self, from: Address, to: Option<Address>, token_id: TokenId) {
+        let owner = self.owner_of(token_id.clone());
+        if let Some(owner_address) = owner {
+            if owner_address != from {
+                casper_env::revert(Error::TransferFromIncorrectOwner)
+            }
+        }
+        if to.is_none() {
+            casper_env::revert(Error::TransferToNone)
+        }
+
+        // Clear approvals from the previous owner
+        self.approve(owner, None, token_id);
+
+        let to = to.unwrap();
+
+        self.balances.set(&from, self.balances.get(&from) - 1);
+        self.balances.set(&to, self.balances.get(&to) + 1);
+        self.owners.set(&token_id, Some(to.clone()));
+
+        emit(Transfer {
+            from: Some(from.clone()),
+            to: Some(to),
+            token_id,
+        });
+    }
+
+    fn is_approved_or_owner(&mut self, spender: Address, token_id: TokenId) -> bool {
+        if !self.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
+        let owner = self.owner_of(token_id);
+        spender == owner.unwrap()
+            || self.is_approved_for_all(owner.unwrap(), spender)
+            || self.get_approved(token_id) == Some(spender)
+    }
+
+    fn _check_on_erc721_received(
+        &self,
+        from: Address,
+        to: Option<Address>,
+        token_id: TokenId,
+        _data: Bytes,
+    ) -> bool {
+        // if to.isContract() {
+        //     try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
+        //         return retval == IERC721Receiver.onERC721Received.selector;
+        //     } catch (bytes memory reason) {
+        //         if (reason.length == 0) {
+        //             revert("ERC721: transfer to non ERC721Receiver implementer");
+        //         } else {
+        //             assembly {
+        //                 revert(add(32, reason), mload(reason))
+        //             }
+        //         }
+        //     }
+        // } else {
+        //     true
+        // }
+
+        true
+    }
+}
+
+pub mod events {
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
+
+    use crate::TokenId;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Transfer {
+        pub from: Option<Address>,
+        pub to: Option<Address>,
+        pub token_id: TokenId,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Approval {
+        pub owner: Option<Address>,
+        pub operator: Option<Address>,
+        pub token_id: TokenId,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct ApprovalForAll {
+        pub owner: Address,
+        pub operator: Address,
+        pub approved: bool,
     }
 }

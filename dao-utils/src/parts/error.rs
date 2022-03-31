@@ -14,6 +14,13 @@ pub enum Error {
     Unknown,
     InvalidContext,
     TokenDoesNotExist,
+    ApprovalToCurrentOwner,
+    ApproveCallerIsNotOwnerNorApprovedForAll,
+    TransferCallerIsNotOwnerNorApproved,
+    TransferToNonERC721ReceiverImplementer,
+    TransferFromIncorrectOwner,
+    TransferToNone,
+    ApproveToCaller,
 }
 
 impl From<Error> for ApiError {
@@ -29,7 +36,14 @@ impl From<Error> for ApiError {
             Error::ActivationTimeInPast => 1006,
             Error::InvalidContext => 1099,
             Error::Unknown => 1100,
-            Error::TokenDoesNotExist => 7000,
+            Error::TokenDoesNotExist => 1700,
+            Error::ApprovalToCurrentOwner => 1701,
+            Error::ApproveCallerIsNotOwnerNorApprovedForAll => 1702,
+            Error::TransferCallerIsNotOwnerNorApproved => 1703,
+            Error::TransferToNonERC721ReceiverImplementer => 1704,
+            Error::TransferFromIncorrectOwner => 1705,
+            Error::TransferToNone => 1706,
+            Error::ApproveToCaller => 1707,
         };
         ApiError::User(id)
     }
