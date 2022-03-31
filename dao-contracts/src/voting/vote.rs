@@ -4,7 +4,7 @@ use casper_types::{
     CLType, CLTyped, U256,
 };
 
-use super::voting::VotingId;
+pub type VotingId = U256;
 
 #[derive(Debug)]
 pub struct Vote {

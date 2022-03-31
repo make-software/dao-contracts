@@ -1,12 +1,9 @@
-use casper_dao_modules::{vote::Vote, voting::Voting, GovernanceVoting, VotingId};
-use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{caller, get_block_time},
-    consts, Address,
-};
+
+use casper_dao_utils::{Address, casper_dao_macros::{casper_contract_interface, Instance}, casper_env::{caller}};
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
-use crate::VariableRepositoryContractCaller;
+
+use crate::{voting::{GovernanceVoting, VotingId, Vote, voting::Voting}};
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
@@ -47,37 +44,11 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        let repo_caller =
-            VariableRepositoryContractCaller::at_address(self.voting.get_variable_repo_address());
-        let informal_voting_time = repo_caller.get_variable(consts::INFORMAL_VOTING_TIME);
-        let informal_voting_quorum = repo_caller.get_variable(consts::INFORMAL_VOTING_QUORUM);
-        let formal_voting_time = repo_caller.get_variable(consts::FORMAL_VOTING_TIME);
-        let formal_voting_quorum = repo_caller.get_variable(consts::FORMAL_VOTING_QUORUM);
-        let minimum_governance_reputation =
-            repo_caller.get_variable(consts::MINIMUM_GOVERNANCE_REPUTATION);
-
-        let voting = Voting {
-            voting_id: self.voting.votings_count.get(),
-            completed: false,
-            stake_in_favor: U256::zero(),
-            stake_against: U256::zero(),
-            finish_time: get_block_time() + informal_voting_time,
-            informal_voting_id: self.voting.votings_count.get(),
-            formal_voting_id: None,
-            formal_voting_quorum,
-            formal_voting_time,
-            informal_voting_quorum,
-            informal_voting_time,
-            contract_to_call: Some(variable_repo_to_edit),
-            entry_point: "update_at".into(),
-            runtime_args: runtime_args! {
-                "key" => key,
-                "value" => value,
-                "activation_time" => activation_time,
-            },
-            minimum_governance_reputation,
-        };
-        self.voting.create_voting(caller(), &voting, stake);
+        self.voting.create_voting(caller(), stake, variable_repo_to_edit, "update_at".into(), runtime_args! {
+            "key" => key,
+            "value" => value,
+            "activation_time" => activation_time,
+        }, None);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {

@@ -1,8 +1,6 @@
 //! Governance Voting module.
-
 pub mod consts;
 pub mod events;
-pub mod vote;
 pub mod voting;
 
 use casper_dao_utils::{
@@ -13,17 +11,18 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
+use crate::VariableRepositoryContractCaller;
+
 use self::{
-    consts::{
-        FORMAL_VOTING_PASSED, FORMAL_VOTING_QUORUM_NOT_REACHED, FORMAL_VOTING_REJECTED,
-        INFORMAL_VOTING_PASSED, INFORMAL_VOTING_QUORUM_NOT_REACHED, INFORMAL_VOTING_REJECTED,
-    },
     events::{
         FormalVotingEnded, InformalVotingEnded, VoteCast, VotingContractCreated, VotingCreated,
     },
-    vote::Vote,
-    voting::{Voting, VotingId},
+    voting::{Voting, VotingResult, VotingType},
 };
+
+use casper_dao_utils::consts as dao_consts;
+
+use super::{Vote, vote::VotingId};
 
 /// The Governance Voting module.
 
@@ -51,7 +50,48 @@ impl GovernanceVoting {
         });
     }
 
-    pub fn create_voting(&mut self, creator: Address, voting: &Voting, stake: U256) {
+    pub fn create_voting(&mut self, creator: Address, stake: U256, contract_to_call: Address, entry_point: String, runtime_args: RuntimeArgs, informal_voting_id: Option<VotingId>) {
+        let repo_caller =
+            VariableRepositoryContractCaller::at(self.get_variable_repo_address());
+        let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
+        let informal_voting_quorum = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM);
+        let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
+        let formal_voting_quorum = repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM);
+        let minimum_governance_reputation =
+            repo_caller.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION);
+        let voting_id = self.votings_count.get();
+        let formal_id;
+        let informal_id;
+
+        match informal_voting_id {
+            Some(informal_voting_id) => {
+                formal_id = Some(voting_id);
+                informal_id = informal_voting_id;
+            },
+            None => {
+                formal_id = None;
+                informal_id = voting_id;
+            },
+        }
+        
+        let voting = Voting {
+            voting_id: voting_id,
+            completed: false,
+            stake_in_favor: U256::zero(),
+            stake_against: U256::zero(),
+            finish_time: get_block_time() + informal_voting_time,
+            informal_voting_id: informal_id,
+            formal_voting_id: formal_id,
+            formal_voting_quorum,
+            formal_voting_time,
+            informal_voting_quorum,
+            informal_voting_time,
+            contract_to_call: Some(contract_to_call),
+            entry_point,
+            runtime_args,
+            minimum_governance_reputation,
+        };
+
         // Add Voting
         self.votings.set(&voting.voting_id, voting.clone());
         self.votings_count.set(voting.voting_id + 1);
@@ -74,9 +114,9 @@ impl GovernanceVoting {
         }
 
         match voting.get_voting_type() {
-            voting::VotingType::Informal => self.finish_informal_voting(voting),
-            voting::VotingType::Formal => self.finish_formal_voting(voting),
-            voting::VotingType::Unknown => revert(Error::MalformedVoting),
+            VotingType::Informal => self.finish_informal_voting(voting),
+            VotingType::Formal => self.finish_formal_voting(voting),
+            VotingType::Unknown => revert(Error::MalformedVoting),
         }
     }
 
@@ -88,7 +128,7 @@ impl GovernanceVoting {
         let voters = self.voters.get(&voting.voting_id);
 
         let result = match voting.get_result(voters.len()) {
-            voting::VotingResult::InFavor => {
+            VotingResult::InFavor => {
                 self.return_reputation(voting.voting_id);
 
                 // Formal voting is created with an initial stake
@@ -97,10 +137,13 @@ impl GovernanceVoting {
                 let creator_address = voters.first().unwrap().unwrap();
                 self.create_voting(
                     creator_address,
-                    &formal_voting,
                     self.votes
                         .get(&(formal_voting.informal_voting_id, creator_address))
                         .stake,
+                    formal_voting.contract_to_call.unwrap_or_revert(),
+                    formal_voting.entry_point,
+                    formal_voting.runtime_args,
+                    Some(formal_voting.informal_voting_id),
                 );
 
                 // Informal voting is completed and saved with reference to a formal voting
@@ -108,23 +151,23 @@ impl GovernanceVoting {
                 voting.formal_voting_id = formal_voting.formal_voting_id;
                 self.votings.set(&voting.voting_id, voting.clone());
 
-                INFORMAL_VOTING_PASSED
+                consts::INFORMAL_VOTING_PASSED
             }
-            voting::VotingResult::Against => {
+            VotingResult::Against => {
                 self.burn_creators_and_return_others_reputation(voting.voting_id);
                 voting.complete();
                 self.votings.set(&voting.voting_id, voting.clone());
 
-                INFORMAL_VOTING_REJECTED
+                consts::INFORMAL_VOTING_REJECTED
             }
-            voting::VotingResult::QuorumNotReached => {
+            VotingResult::QuorumNotReached => {
                 self.burn_creators_and_return_others_reputation(voting.voting_id);
                 voting.complete();
                 self.votings.set(&voting.voting_id, voting.clone());
 
-                INFORMAL_VOTING_QUORUM_NOT_REACHED
+                consts::INFORMAL_VOTING_QUORUM_NOT_REACHED
             }
-            voting::VotingResult::Unknown => revert(Error::MalformedVoting),
+            VotingResult::Unknown => revert(Error::MalformedVoting),
         };
 
         emit(InformalVotingEnded {
@@ -145,20 +188,20 @@ impl GovernanceVoting {
         let voters = self.voters.get(&voting.voting_id);
 
         let result = match voting.get_result(voters.len()) {
-            voting::VotingResult::InFavor => {
+            VotingResult::InFavor => {
                 self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
-                FORMAL_VOTING_PASSED
+                consts::FORMAL_VOTING_PASSED
             }
-            voting::VotingResult::Against => {
+            VotingResult::Against => {
                 self.redistribute_reputation(&voting);
-                FORMAL_VOTING_REJECTED
+                consts::FORMAL_VOTING_REJECTED
             }
-            voting::VotingResult::QuorumNotReached => {
+            VotingResult::QuorumNotReached => {
                 self.burn_creators_and_return_others_reputation(voting.voting_id);
-                FORMAL_VOTING_QUORUM_NOT_REACHED
+                consts::FORMAL_VOTING_QUORUM_NOT_REACHED
             }
-            voting::VotingResult::Unknown => revert(Error::MalformedVoting),
+            VotingResult::Unknown => revert(Error::MalformedVoting),
         };
 
         voting.complete();

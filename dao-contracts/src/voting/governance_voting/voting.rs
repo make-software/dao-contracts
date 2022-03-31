@@ -4,7 +4,7 @@ use casper_types::{
     CLType, CLTyped, RuntimeArgs, U256,
 };
 
-pub type VotingId = U256;
+use crate::voting::vote::VotingId;
 
 pub enum VotingResult {
     InFavor,

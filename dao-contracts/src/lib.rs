@@ -1,6 +1,7 @@
 mod repo_voter;
 mod reputation;
 mod variable_repository;
+pub mod voting;
 
 pub use repo_voter::{RepoVoterContract, RepoVoterContractCaller, RepoVoterContractInterface};
 pub use reputation::{ReputationContract, ReputationContractCaller, ReputationContractInterface};

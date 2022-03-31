@@ -1,41 +1,34 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
-    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
+    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest, voting::{VotingContractCreated, VotingCreated, VoteCast, InformalVotingEnded, FormalVotingEnded, VotingId, Vote, voting::Voting, consts as gv_consts},
 };
-use casper_dao_modules::{
-    consts as gv_consts,
-    events::{
-        FormalVotingEnded, InformalVotingEnded, VoteCast, VotingContractCreated, VotingCreated,
-    },
-    vote::Vote,
-    voting::Voting,
-    VotingId,
-};
+
 use casper_dao_utils::{consts, Address, Error, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, FromBytes, ToBytes},
     RuntimeArgs, U256,
 };
 
+
 #[test]
 fn test_voting_serialization() {
     let voting = Voting {
         voting_id: VotingId::from(1),
-        informal_voting_id: VotingId::from(1),
-        formal_voting_id: None,
-        informal_voting_quorum: U256::from(2),
+        completed: false,
         stake_in_favor: U256::zero(),
         stake_against: U256::zero(),
-        completed: false,
+        finish_time: 123,
+        informal_voting_id: VotingId::from(1),
+        formal_voting_id: None,
         formal_voting_quorum: U256::from(2),
         formal_voting_time: 2,
+        informal_voting_quorum: U256::from(2),
         informal_voting_time: 2,
+        minimum_governance_reputation: U256::from(2),
         contract_to_call: None,
         entry_point: "update_variable".into(),
         runtime_args: RuntimeArgs::new(),
-        minimum_governance_reputation: U256::from(2),
-        finish_time: 123,
     };
 
     let (voting2, _bytes) = Voting::from_bytes(&voting.to_bytes().unwrap()).unwrap();

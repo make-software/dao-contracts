@@ -1,7 +1,7 @@
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
-use super::voting::VotingId;
+use crate::voting::vote::VotingId;
 
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingContractCreated {

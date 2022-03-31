@@ -1,14 +1,9 @@
-mod governance_voting;
 mod owner;
 mod repository;
 mod staking;
 mod token;
 mod whitelist;
 
-pub use governance_voting::consts;
-pub use governance_voting::voting::VotingId;
-pub use governance_voting::GovernanceVoting;
-pub use governance_voting::{vote, voting};
 pub use owner::Owner;
 pub use repository::{Record, Repository, RepositoryDefaults};
 pub use staking::TokenWithStaking;
@@ -17,7 +12,6 @@ pub use whitelist::Whitelist;
 
 pub mod events {
     use super::*;
-    pub use governance_voting::events::*;
     pub use owner::events::*;
     pub use repository::events::*;
     pub use staking::events::*;
