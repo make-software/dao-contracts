@@ -43,10 +43,8 @@ impl ERC721ReceiverCaller {
         }
     }
 }
-#[cfg(feature = "test-support")]
 pub mod tests {
     use casper_dao_utils::{
-        casper_contract::contract_api::runtime,
         casper_dao_macros::{casper_contract_interface, Instance},
         Address, Variable,
     };
@@ -55,7 +53,7 @@ pub mod tests {
     use crate::TokenId;
 
     #[casper_contract_interface]
-    trait SampleERC721ReceiverInterface {
+    trait ERC721ReceiverInterface {
         fn init(&self);
         fn on_erc_721_received(
             &mut self,
@@ -68,14 +66,12 @@ pub mod tests {
     }
 
     #[derive(Instance)]
-    struct SampleERC721Receiver {
+    pub struct ERC721Receiver {
         var: Variable<Bytes>,
     }
 
-    impl SampleERC721ReceiverInterface for SampleERC721Receiver {
-        fn init(&self) {
-            runtime::print("init erc721 receiver");
-        }
+    impl ERC721ReceiverInterface for ERC721Receiver {
+        fn init(&self) {}
 
         fn on_erc_721_received(
             &mut self,
@@ -84,10 +80,6 @@ pub mod tests {
             token_id: TokenId,
             data: Bytes,
         ) {
-            runtime::print(format!("operator = {:?}", operator).as_str());
-            runtime::print(format!("from = {:?}", from).as_str());
-            runtime::print(format!("token_id = {:?}", token_id).as_str());
-
             self.var.set(data)
         }
 
@@ -97,20 +89,18 @@ pub mod tests {
     }
 
     #[casper_contract_interface]
-    trait SampleInterface {
+    trait ERC721NonReceiverInterface {
         fn init(&self);
         fn get(&self) -> Bytes;
     }
 
     #[derive(Instance)]
-    struct Sample {
+    pub struct ERC721NonReceiver {
         var: Variable<Bytes>,
     }
 
-    impl SampleInterface for Sample {
-        fn init(&self) {
-            runtime::print("init sample contract");
-        }
+    impl ERC721NonReceiverInterface for ERC721NonReceiver {
+        fn init(&self) {}
 
         fn get(&self) -> Bytes {
             self.var.get()

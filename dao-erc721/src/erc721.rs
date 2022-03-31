@@ -39,6 +39,7 @@ pub trait ERC721Interface {
         token_id: TokenId,
         data: Bytes,
     );
+    fn mint(&mut self, to: Address, token_id: TokenId);
 }
 
 #[derive(Instance)]
@@ -165,6 +166,22 @@ impl ERC721Interface for ERC721 {
             casper_env::revert(Error::TransferCallerIsNotOwnerNorApproved)
         }
         self.safe_transfer(owner, recipient, token_id, data);
+    }
+
+    fn mint(&mut self, to: Address, token_id: TokenId) {
+        if self.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
+
+        self.balances.set(&to, self.balances.get(&to) + 1);
+        self.total_supply.set(self.total_supply.get() + 1);
+        self.owners.set(&token_id, Some(to));
+
+        emit(Transfer {
+            from: None,
+            to: Some(to),
+            token_id,
+        });
     }
 }
 
