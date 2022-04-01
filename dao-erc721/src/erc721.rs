@@ -11,6 +11,8 @@ use crate::{
     extensions::{BurnableERC721, MetadataERC721, MintableERC721},
 };
 
+use delegate::delegate;
+
 pub type TokenId = U256;
 pub type TokenUri = String;
 
@@ -55,72 +57,31 @@ impl ERC721Interface for ERC721 {
         self.metadata.set_symbol(symbol);
     }
 
-    fn name(&self) -> String {
-        self.metadata.name()
+    delegate! {
+        to self.metadata {
+            fn name(&self) -> String;
+            fn symbol(&self) -> String;
+        }
     }
 
-    fn symbol(&self) -> String {
-        self.metadata.symbol()
-    }
-
-    fn owner_of(&self, token_id: TokenId) -> Option<Address> {
-        self.core.owner_of(token_id)
-    }
-
-    fn balance_of(&self, owner: Address) -> U256 {
-        self.core.balance_of(owner)
-    }
-
-    fn total_supply(&self) -> U256 {
-        self.core.total_supply()
-    }
-
-    fn token_uri(&self, token_id: TokenId) -> TokenUri {
-        self.core.token_uri(token_id)
-    }
-
-    fn base_uri(&self) -> TokenUri {
-        self.core.base_uri()
+    delegate! {
+        to self.core {
+            fn owner_of(&self, token_id: TokenId) -> Option<Address>;
+            fn balance_of(&self, owner: Address) -> U256;
+            fn total_supply(&self) -> U256;
+            fn token_uri(&self, token_id: TokenId) -> TokenUri;
+            fn base_uri(&self) -> TokenUri;
+            fn get_approved(&self, token_id: TokenId) -> Option<Address>;
+            fn set_approval_for_all(&mut self, operator: Address, approved: bool);
+            fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
+            fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
+            fn safe_transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
+            fn safe_transfer_from_with_data(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId, data: Bytes);
+        }
     }
 
     fn approve(&mut self, to: Address, token_id: TokenId) {
         self.core.approve(Some(to), token_id)
-    }
-
-    fn get_approved(&self, token_id: TokenId) -> Option<Address> {
-        self.core.get_approved(token_id)
-    }
-
-    fn set_approval_for_all(&mut self, operator: Address, approved: bool) {
-        self.core.set_approval_for_all(operator, approved)
-    }
-
-    fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool {
-        self.core.is_approved_for_all(owner, operator)
-    }
-
-    fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId) {
-        self.core.transfer_from(owner, recipient, token_id)
-    }
-
-    fn safe_transfer_from(
-        &mut self,
-        owner: Address,
-        recipient: Option<Address>,
-        token_id: TokenId,
-    ) {
-        self.core.safe_transfer_from(owner, recipient, token_id)
-    }
-
-    fn safe_transfer_from_with_data(
-        &mut self,
-        owner: Address,
-        recipient: Option<Address>,
-        token_id: TokenId,
-        data: Bytes,
-    ) {
-        self.core
-            .safe_transfer_from_with_data(owner, recipient, token_id, data)
     }
 
     fn mint(&mut self, to: Address, token_id: TokenId) {
