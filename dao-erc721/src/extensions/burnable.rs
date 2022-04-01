@@ -1,17 +1,15 @@
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::Instance,
     casper_env::{self, emit},
     Error,
 };
 
 use crate::{core::ERC721Token, events::Transfer, TokenId};
 
-#[derive(Instance)]
 pub struct BurnableERC721 {}
 
 impl BurnableERC721 {
-    pub fn burn(&mut self, erc721: &mut ERC721Token, token_id: TokenId) {
+    pub fn burn(erc721: &mut ERC721Token, token_id: TokenId) {
         if !erc721.is_approved_or_owner(casper_env::caller(), token_id) {
             casper_env::revert(Error::CallerIsNotOwnerNorApproved);
         }

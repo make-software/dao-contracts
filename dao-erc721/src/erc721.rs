@@ -26,7 +26,7 @@ pub trait ERC721Interface {
     fn total_supply(&self) -> U256;
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
     fn base_uri(&self) -> TokenUri;
-    fn approve(&mut self, to: Address, token_id: TokenId);
+    fn approve(&mut self, to: Option<Address>, token_id: TokenId);
     fn get_approved(&self, token_id: TokenId) -> Option<Address>;
     fn set_approval_for_all(&mut self, operator: Address, approved: bool);
     fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
@@ -47,8 +47,6 @@ pub trait ERC721Interface {
 pub struct ERC721 {
     core: ERC721Token,
     metadata: MetadataERC721,
-    mintable: MintableERC721,
-    burnable: BurnableERC721,
 }
 
 impl ERC721Interface for ERC721 {
@@ -71,6 +69,7 @@ impl ERC721Interface for ERC721 {
             fn total_supply(&self) -> U256;
             fn token_uri(&self, token_id: TokenId) -> TokenUri;
             fn base_uri(&self) -> TokenUri;
+            fn approve(&mut self, to: Option<Address>, token_id: TokenId);
             fn get_approved(&self, token_id: TokenId) -> Option<Address>;
             fn set_approval_for_all(&mut self, operator: Address, approved: bool);
             fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
@@ -80,15 +79,11 @@ impl ERC721Interface for ERC721 {
         }
     }
 
-    fn approve(&mut self, to: Address, token_id: TokenId) {
-        self.core.approve(Some(to), token_id)
-    }
-
     fn mint(&mut self, to: Address, token_id: TokenId) {
-        self.mintable.mint(self.core.borrow_mut(), to, token_id);
+        MintableERC721::mint(self.core.borrow_mut(), to, token_id);
     }
 
     fn burn(&mut self, token_id: TokenId) {
-        self.burnable.burn(self.core.borrow_mut(), token_id);
+        BurnableERC721::burn(self.core.borrow_mut(), token_id);
     }
 }

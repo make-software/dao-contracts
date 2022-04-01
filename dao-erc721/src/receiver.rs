@@ -43,6 +43,7 @@ impl ERC721ReceiverCaller {
         }
     }
 }
+
 pub mod tests {
     use casper_dao_utils::{
         casper_dao_macros::{casper_contract_interface, Instance},
@@ -73,6 +74,7 @@ pub mod tests {
     impl ERC721ReceiverInterface for ERC721Receiver {
         fn init(&self) {}
 
+        #[allow(unused_variables)]
         fn on_erc_721_received(
             &mut self,
             operator: Address,

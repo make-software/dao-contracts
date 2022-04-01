@@ -113,13 +113,13 @@ fn approve_1() {
     let operator = env.get_account(0);
 
     // When approves the token's owner
-    let result = token.approve(tokens_owner, token_id);
+    let result = token.approve(Some(tokens_owner), token_id);
 
     // Then raises an error
     assert_eq!(result, Err(Error::ApprovalToCurrentOwner));
 
     // When the caller is not the owner and approved for all
-    let result = token.approve(operator, token_id);
+    let result = token.approve(Some(operator), token_id);
 
     // Then raises an error
     assert_eq!(result, Err(Error::ApproveCallerIsNotOwnerNorApprovedForAll));
@@ -127,7 +127,7 @@ fn approve_1() {
     // When the owner approves a different address
     token
         .as_account(tokens_owner)
-        .approve(env.get_account(0), token_id)
+        .approve(Some(env.get_account(0)), token_id)
         .unwrap();
 
     // Then the given address should be approved
@@ -191,7 +191,7 @@ fn approve_2() {
     );
 
     // When the operator make self-approval having approval for all
-    erc721.approve(operator, token_id).unwrap();
+    erc721.approve(Some(operator), token_id).unwrap();
 
     // Then has a single token approval
     assert_eq!(erc721.get_approved(token_id).unwrap(), operator);
@@ -226,12 +226,28 @@ fn approve_2() {
     );
 }
 
+// Scenario:
+// 1. Mint two tokens to account(1)
+// 2. Transfer token with non existent id
+// 3. Expect an error
+// 4. Transfer token to account(2) (not approved yet)
+// 5. Expect an error
+// 6. Approve account(2)
+// 7. account(2) transfers token to himself
+// 8. balance of both accounts is equal 1
+// 9. Transfer event is emitted
 #[test]
-fn unsafe_transfer_works() {
+fn unsafe_transfer_1() {
     // Given initial state: account(1) has two tokens
     let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
+
+    // When transfer non existent token
+    let result = erc721.transfer_from(token_owner, Some(token_owner), 999.into());
+
+    // Then transfer ends with an error
+    assert_eq!(result, Err(Error::TokenDoesNotExist));
 
     // When transfer a token to a not approved receiver
     let receiver_address = env.get_account(2);
@@ -243,7 +259,7 @@ fn unsafe_transfer_works() {
     // When the owner approves the receiver and transfers a token
     erc721
         .as_account(token_owner)
-        .approve(receiver_address, token_id)
+        .approve(Some(receiver_address), token_id)
         .unwrap();
 
     erc721
@@ -264,6 +280,39 @@ fn unsafe_transfer_works() {
             token_id,
         },
     );
+
+    let token_id = TOKEN_ID_2.into();
+    erc721
+        .as_account(token_owner)
+        .approve(None, token_id)
+        .unwrap();
+    erc721
+        .as_account(token_owner)
+        .set_approval_for_all(receiver_address, true)
+        .unwrap();
+}
+
+// Scenario:
+// 1. Mint two tokens to account(1)
+// 2. account(1) transfers a token to account(2)
+// 3. balance of both accounts is equal 1
+#[test]
+fn unsafe_transfer_2() {
+    // Given initial state: account(1) has two tokens
+    let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
+    let token_owner = env.get_account(1);
+    let token_id = TOKEN_ID_1.into();
+    let receiver_address = env.get_account(2);
+
+    // When the owner transfers a token
+    erc721
+        .as_account(token_owner)
+        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .unwrap();
+
+    // Then both users have one token
+    assert_eq!(erc721.balance_of(token_owner), 1.into());
+    assert_eq!(erc721.balance_of(receiver_address), 1.into());
 }
 
 #[test]
@@ -283,7 +332,7 @@ fn safe_transfer_works() {
 
     erc721
         .as_account(token_owner)
-        .approve(env.get_account(0), token_id)
+        .approve(Some(env.get_account(0)), token_id)
         .unwrap();
 
     assert_eq!(
