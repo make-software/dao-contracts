@@ -1,4 +1,7 @@
+mod core;
 mod erc721;
+pub mod events;
+mod extensions;
 mod receiver;
 pub use erc721::*;
 pub use receiver::tests::*;
