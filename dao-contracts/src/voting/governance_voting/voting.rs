@@ -1,6 +1,4 @@
-use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_env::call_contract, Address,
-};
+use casper_dao_utils::Address;
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLType, CLTyped, RuntimeArgs, U256,
@@ -148,15 +146,8 @@ impl Voting {
     }
 
     pub fn total_stake(&self) -> U256 {
+        // overflow is not possible due to reputation token having U256 as max
         self.stake_in_favor + self.stake_against
-    }
-
-    pub fn perform_action(&self) {
-        call_contract(
-            self.contract_to_call().unwrap_or_revert(),
-            &self.entry_point,
-            self.runtime_args.clone(),
-        )
     }
 
     /// Get the voting's voting id.
@@ -223,6 +214,18 @@ impl Voting {
     #[must_use]
     pub fn contract_to_call(&self) -> Option<Address> {
         self.contract_to_call
+    }
+
+    /// Get a reference to the voting's entry point.
+    #[must_use]
+    pub fn entry_point(&self) -> &str {
+        self.entry_point.as_ref()
+    }
+
+    /// Get a reference to the voting's runtime args.
+    #[must_use]
+    pub fn runtime_args(&self) -> &RuntimeArgs {
+        &self.runtime_args
     }
 }
 

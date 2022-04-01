@@ -3,13 +3,15 @@ pub mod consts;
 pub mod events;
 pub mod voting;
 
+use casper_dao_utils::bytes::BytesConversion;
+
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     casper_env::{call_contract, emit, get_block_time, revert, self_address},
     Address, Error, Mapping, Variable,
 };
-use casper_types::{runtime_args, RuntimeArgs, U256};
+use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
 use crate::VariableRepositoryContractCaller;
 
@@ -178,7 +180,7 @@ impl GovernanceVoting {
         let result = match voting.get_result(voters.len()) {
             VotingResult::InFavor => {
                 self.redistribute_reputation(&voting);
-                voting.perform_action();
+                self.perform_action(&voting);
                 consts::FORMAL_VOTING_PASSED
             }
             VotingResult::Against => {
@@ -263,6 +265,14 @@ impl GovernanceVoting {
         self.reputation_token.get().unwrap_or_revert()
     }
 
+    pub fn perform_action(&self, voting: &Voting) {
+        call_contract(
+            voting.contract_to_call().unwrap_or_revert(),
+            voting.entry_point(),
+            voting.runtime_args().clone(),
+        )
+    }
+
     fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
         let args: RuntimeArgs = runtime_args! {
             "owner" => owner,
@@ -305,30 +315,41 @@ impl GovernanceVoting {
     }
 
     fn redistribute_reputation(&mut self, voting: &Voting) {
+        // TODO: remove bytes conversion after support for U256<>U512 conversion will be added to Casper
         let voters = self.voters.get(&voting.voting_id());
-        let total_stake = voting.total_stake();
-        let mut transferred = U256::zero();
+        let total_stake = U512::convert_from_bytes(voting.total_stake().convert_to_bytes());
+        let mut transferred = U512::zero();
         let result = voting.is_in_favor();
 
         for address in voters {
             let vote = self.votes.get(&(voting.voting_id(), address));
             if vote.choice == result {
-                let to_transfer = total_stake * vote.stake / voting.get_winning_stake();
+                let to_transfer = total_stake
+                    * U512::convert_from_bytes(vote.stake.convert_to_bytes())
+                    / U512::convert_from_bytes(voting.get_winning_stake().convert_to_bytes());
 
-                if to_transfer > U256::MAX {
+                if to_transfer > U512::convert_from_bytes(U256::MAX.convert_to_bytes()) {
                     revert(Error::ArithmeticOverflow)
                 }
 
-                self.transfer_reputation(self_address(), address, to_transfer);
                 transferred += to_transfer;
+
+                let to_transfer = U256::convert_from_bytes(to_transfer.convert_to_bytes());
+
+                self.transfer_reputation(self_address(), address, to_transfer);
             }
         }
 
         // mark leftovers
         let dust = total_stake - transferred;
 
-        if dust > U256::zero() {
-            self.dust_amount.set(self.get_dust_amount() + dust);
+        if dust > U512::zero() {
+            if dust > U512::convert_from_bytes(U256::MAX.convert_to_bytes()) {
+                revert(Error::ArithmeticOverflow)
+            }
+
+            self.dust_amount
+                .set(self.get_dust_amount() + U256::convert_from_bytes(dust.convert_to_bytes()));
         }
     }
 }

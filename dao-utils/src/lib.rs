@@ -3,7 +3,7 @@ extern crate alloc;
 // Reexport of casper-contract crate.
 pub use casper_contract;
 
-mod bytes;
+pub mod bytes;
 pub mod casper_env;
 mod events;
 pub mod instance;
