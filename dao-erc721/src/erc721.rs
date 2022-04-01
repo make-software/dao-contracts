@@ -1,3 +1,5 @@
+use std::borrow::BorrowMut;
+
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     Address,
@@ -6,7 +8,7 @@ use casper_types::{bytesrepr::Bytes, U256};
 
 use crate::{
     core::ERC721Token,
-    extensions::{MetadataERC721, MintableERC721},
+    extensions::{BurnableERC721, MetadataERC721, MintableERC721},
 };
 
 pub type TokenId = U256;
@@ -36,6 +38,7 @@ pub trait ERC721Interface {
         data: Bytes,
     );
     fn mint(&mut self, to: Address, token_id: TokenId);
+    fn burn(&mut self, token_id: TokenId);
 }
 
 #[derive(Instance)]
@@ -43,6 +46,7 @@ pub struct ERC721 {
     core: ERC721Token,
     metadata: MetadataERC721,
     mintable: MintableERC721,
+    burnable: BurnableERC721,
 }
 
 impl ERC721Interface for ERC721 {
@@ -80,7 +84,7 @@ impl ERC721Interface for ERC721 {
     }
 
     fn approve(&mut self, to: Address, token_id: TokenId) {
-        self.core.approve(to, token_id)
+        self.core.approve(Some(to), token_id)
     }
 
     fn get_approved(&self, token_id: TokenId) -> Option<Address> {
@@ -120,6 +124,10 @@ impl ERC721Interface for ERC721 {
     }
 
     fn mint(&mut self, to: Address, token_id: TokenId) {
-        self.mintable.mint(&mut self.core, to, token_id);
+        self.mintable.mint(self.core.borrow_mut(), to, token_id);
+    }
+
+    fn burn(&mut self, token_id: TokenId) {
+        self.burnable.burn(self.core.borrow_mut(), token_id);
     }
 }

@@ -17,7 +17,7 @@ impl MintableERC721 {
 
         erc721.increment_balance(to);
         erc721.increment_total_supply();
-        erc721.set_owner_of(token_id, to);
+        erc721.set_owner_of(token_id, Some(to));
 
         emit(Transfer {
             from: None,

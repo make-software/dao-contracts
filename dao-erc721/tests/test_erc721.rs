@@ -238,7 +238,7 @@ fn unsafe_transfer_works() {
     let result = erc721.transfer_from(token_owner, Some(receiver_address), token_id);
 
     // Then transfer ends with an error
-    assert_eq!(result, Err(Error::TransferCallerIsNotOwnerNorApproved));
+    assert_eq!(result, Err(Error::CallerIsNotOwnerNorApproved));
 
     // When the owner approves the receiver and transfers a token
     erc721

@@ -52,18 +52,19 @@ impl ERC721Token {
         "ipfs://".to_string()
     }
 
-    pub fn approve(&mut self, to: Address, token_id: TokenId) {
-        let owner = self.owner_of(token_id.clone()).unwrap_or_revert();
+    pub fn approve(&mut self, to: Option<Address>, token_id: TokenId) {
+        let owner = self.owner_of(token_id.clone());
         if owner == to {
             casper_env::revert(Error::ApprovalToCurrentOwner);
         }
 
+        let owner = owner.unwrap_or_revert();
         let caller = casper_env::caller();
         if caller != owner && !self.is_approved_for_all(owner, caller) {
             casper_env::revert(Error::ApproveCallerIsNotOwnerNorApprovedForAll);
         }
 
-        self._approve(Some(owner), Some(to), token_id);
+        self.approve_owner(Some(owner), to, token_id);
     }
 
     pub fn get_approved(&self, token_id: TokenId) -> Option<Address> {
@@ -94,7 +95,7 @@ impl ERC721Token {
 
     pub fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId) {
         if !self.is_approved_or_owner(casper_env::caller(), token_id) {
-            casper_env::revert(Error::TransferCallerIsNotOwnerNorApproved)
+            casper_env::revert(Error::CallerIsNotOwnerNorApproved)
         }
         self.transfer(owner, recipient, token_id);
     }
@@ -121,7 +122,7 @@ impl ERC721Token {
         data: Bytes,
     ) {
         if !self.is_approved_or_owner(casper_env::caller(), token_id) {
-            casper_env::revert(Error::TransferCallerIsNotOwnerNorApproved)
+            casper_env::revert(Error::CallerIsNotOwnerNorApproved)
         }
         self.safe_transfer(owner, recipient, token_id, data);
     }
@@ -132,6 +133,10 @@ impl ERC721Token {
         self.balances.set(&owner, self.balance_of(owner) + 1);
     }
 
+    pub(crate) fn decrement_balance(&mut self, owner: Address) {
+        self.balances.set(&owner, self.balance_of(owner) - 1);
+    }
+
     pub(crate) fn increment_total_supply(&mut self) {
         self.total_supply.set(self.total_supply() + 1);
     }
@@ -140,11 +145,16 @@ impl ERC721Token {
         self.owners.get(token_id).is_some()
     }
 
-    pub(crate) fn set_owner_of(&mut self, token_id: TokenId, owner: Address) {
-        self.owners.set(&token_id, Some(owner));
+    pub(crate) fn set_owner_of(&mut self, token_id: TokenId, owner: Option<Address>) {
+        self.owners.set(&token_id, owner);
     }
 
-    fn _approve(&mut self, owner: Option<Address>, operator: Option<Address>, token_id: TokenId) {
+    fn approve_owner(
+        &mut self,
+        owner: Option<Address>,
+        operator: Option<Address>,
+        token_id: TokenId,
+    ) {
         self.token_approvals.set(&token_id, operator);
         emit(Approval {
             owner,
@@ -178,7 +188,7 @@ impl ERC721Token {
         }
 
         // Clear approvals from the previous owner
-        self._approve(owner, None, token_id);
+        self.approve_owner(owner, None, token_id);
 
         let to = to.unwrap();
 
@@ -193,7 +203,7 @@ impl ERC721Token {
         });
     }
 
-    fn is_approved_or_owner(&mut self, spender: Address, token_id: TokenId) -> bool {
+    pub(crate) fn is_approved_or_owner(&mut self, spender: Address, token_id: TokenId) -> bool {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
         }
