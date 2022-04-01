@@ -324,38 +324,83 @@ fn unsafe_transfer_2() {
     assert_eq!(erc721.balance_of(receiver_address), 1.into());
 }
 
+// Scenario:
+// 1. Mint two tokens to account(1)
+// 2. account(1) transfers tokens to receiver and non receiver contracts
+// 3. balance of both contracts is equal 1, account(1) has 0 tokens
+#[test]
+fn unsafe_transfer_3() {
+    // Given initial state: account(1) has two tokens
+    let (env, mut erc721, receiver_contract, non_receiver_contract) =
+        full_setup_with_minted_tokens();
+    let token_owner = env.get_account(1);
+    let receiver_address = Address::from(receiver_contract.get_package_hash());
+    let non_receiver_address = Address::from(non_receiver_contract.get_package_hash());
+
+    // When the owner transfers a token
+    let token_id = TOKEN_ID_1.into();
+    erc721
+        .as_account(token_owner)
+        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .unwrap();
+
+    let token_id = TOKEN_ID_2.into();
+    erc721
+        .as_account(token_owner)
+        .transfer_from(token_owner, Some(non_receiver_address), token_id)
+        .unwrap();
+
+    // Then both users have one token
+    assert_eq!(erc721.balance_of(token_owner), 0.into());
+    assert_eq!(erc721.balance_of(non_receiver_address), 1.into());
+    assert_eq!(erc721.balance_of(receiver_address), 1.into());
+}
+
+// Scenario:
+// 1. Mint tokens to account(1)
+// 2. account(1) transfers token to account(0)
+// 3. account(0) transfers token to a contract that does not implement IERC721Receiver
+// 4. Expect error
+// 5. account(0) transfers token to a contract that implements IERC721Receiver
+// 6. The given contract is the new token owner
 #[test]
 fn safe_transfer_works() {
-    let (env, mut erc721, receiver, non_receiver) = full_setup();
+    let (env, mut erc721, receiver, non_receiver) = full_setup_with_minted_tokens();
 
     let token_owner = env.get_account(1);
-    let token_id = 1.into();
+    let token_id = TOKEN_ID_1.into();
 
-    erc721.mint(token_owner, token_id).unwrap();
-
+    let operator_account = env.get_account(0);
     let receiver_address = Address::from(receiver.get_package_hash());
     let non_receiver_address = Address::from(non_receiver.get_package_hash());
 
-    println!("{:?}", env.get_account(0).as_contract_package_hash());
-    println!("{:?}", env.get_account(0).as_account_hash());
-
+    // When the owner - account(1) transfers to a user account
     erc721
         .as_account(token_owner)
-        .approve(Some(env.get_account(0)), token_id)
+        .safe_transfer_from(token_owner, Some(operator_account), token_id)
         .unwrap();
+    // Then the given account becomes the owner
+    assert_eq!(erc721.owner_of(token_id).unwrap(), operator_account);
 
-    assert_eq!(
-        erc721.safe_transfer_from(token_owner, Some(non_receiver_address), token_id),
-        Err(Error::NoSuchMethod("on_erc_721_received".to_string()))
+    // When the owner - account(0) transfers to a non erc721 receiver contract
+    let token_owner = env.get_account(0);
+    let result = erc721.as_account(token_owner).safe_transfer_from(
+        token_owner,
+        Some(non_receiver_address),
+        token_id,
     );
 
-    assert_eq!(erc721.balance_of(token_owner), 1.into());
-    assert_eq!(erc721.balance_of(non_receiver_address), 0.into());
+    // Then NoSuchMethod error is raised, the owner remains the same
+    assert_eq!(
+        result,
+        Err(Error::NoSuchMethod("on_erc_721_received".to_string()))
+    );
+    assert_eq!(erc721.owner_of(token_id).unwrap(), operator_account);
 
+    // When transfer to a erc721 receiver contract
     erc721
         .safe_transfer_from(token_owner, Some(receiver_address), token_id)
         .unwrap();
-
-    assert_eq!(erc721.balance_of(token_owner), 0.into());
-    assert_eq!(erc721.balance_of(receiver_address), 1.into());
+    // Then the given contract becomes an owner
+    assert_eq!(erc721.owner_of(token_id).unwrap(), receiver_address);
 }
