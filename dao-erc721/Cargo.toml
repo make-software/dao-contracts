@@ -19,16 +19,16 @@ test = false
 doc = false
 
 [[bin]]
-name = "erc_721_receiver"
-path = "bin/erc721_receiver_contract.rs"
+name = "mock_erc_721_receiver"
+path = "bin/mock/erc721_receiver_contract.rs"
 bench = false
 doctest = false
 test = false
 doc = false
 
 [[bin]]
-name = "erc_721_non_receiver"
-path = "bin/non_receiver_contract.rs"
+name = "mock_erc_721_non_receiver"
+path = "bin/mock/non_receiver_contract.rs"
 bench = false
 doctest = false
 test = false

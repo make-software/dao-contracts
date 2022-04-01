@@ -9,6 +9,6 @@ pub use receiver::tests::*;
 #[cfg(feature = "test-support")]
 pub use erc721::ERC721Test;
 #[cfg(feature = "test-support")]
-pub use receiver::tests::ERC721NonReceiverTest;
+pub use receiver::tests::MockERC721NonReceiverTest;
 #[cfg(feature = "test-support")]
-pub use receiver::tests::ERC721ReceiverTest;
+pub use receiver::tests::MockERC721ReceiverTest;

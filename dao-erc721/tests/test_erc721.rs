@@ -1,6 +1,6 @@
 use casper_dao_erc721::{
     events::{Approval, ApprovalForAll, Transfer},
-    ERC721NonReceiverTest, ERC721ReceiverTest, ERC721Test,
+    ERC721Test, MockERC721NonReceiverTest, MockERC721ReceiverTest,
 };
 use casper_dao_utils::{Address, Error, TestEnv};
 use casper_types::U256;
@@ -20,13 +20,13 @@ fn setup() -> (TestEnv, ERC721Test) {
 fn full_setup() -> (
     TestEnv,
     ERC721Test,
-    ERC721ReceiverTest,
-    ERC721NonReceiverTest,
+    MockERC721ReceiverTest,
+    MockERC721NonReceiverTest,
 ) {
     let env = TestEnv::new();
     let token = ERC721Test::new(&env, String::from(NAME), String::from(SYMBOL));
-    let receiver = ERC721ReceiverTest::new(&env);
-    let non_receiver = ERC721NonReceiverTest::new(&env);
+    let receiver = MockERC721ReceiverTest::new(&env);
+    let non_receiver = MockERC721NonReceiverTest::new(&env);
 
     (env, token, receiver, non_receiver)
 }
@@ -34,8 +34,8 @@ fn full_setup() -> (
 fn full_setup_with_minted_tokens() -> (
     TestEnv,
     ERC721Test,
-    ERC721ReceiverTest,
-    ERC721NonReceiverTest,
+    MockERC721ReceiverTest,
+    MockERC721NonReceiverTest,
 ) {
     let mut config = full_setup();
     let env = &config.0;

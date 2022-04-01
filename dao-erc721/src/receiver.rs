@@ -54,7 +54,7 @@ pub mod tests {
     use crate::TokenId;
 
     #[casper_contract_interface]
-    trait ERC721ReceiverInterface {
+    trait MockERC721ReceiverInterface {
         fn init(&self);
         fn on_erc_721_received(
             &mut self,
@@ -67,11 +67,11 @@ pub mod tests {
     }
 
     #[derive(Instance)]
-    pub struct ERC721Receiver {
+    pub struct MockERC721Receiver {
         var: Variable<Bytes>,
     }
 
-    impl ERC721ReceiverInterface for ERC721Receiver {
+    impl MockERC721ReceiverInterface for MockERC721Receiver {
         fn init(&self) {}
 
         #[allow(unused_variables)]
@@ -91,17 +91,17 @@ pub mod tests {
     }
 
     #[casper_contract_interface]
-    trait ERC721NonReceiverInterface {
+    trait MockERC721NonReceiverInterface {
         fn init(&self);
         fn get(&self) -> Bytes;
     }
 
     #[derive(Instance)]
-    pub struct ERC721NonReceiver {
+    pub struct MockERC721NonReceiver {
         var: Variable<Bytes>,
     }
 
-    impl ERC721NonReceiverInterface for ERC721NonReceiver {
+    impl MockERC721NonReceiverInterface for MockERC721NonReceiver {
         fn init(&self) {}
 
         fn get(&self) -> Bytes {
