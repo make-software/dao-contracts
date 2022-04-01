@@ -233,9 +233,12 @@ fn approve_2() {
 // 4. Transfer token to account(2) (not approved yet)
 // 5. Expect an error
 // 6. Approve account(2)
-// 7. account(2) transfers token to himself
+// 7. account(2) transfers a token to himself
 // 8. balance of both accounts is equal 1
 // 9. Transfer event is emitted
+// 10. account(1) approves for all account(2)
+// 11. account(2) transfers a token to himself
+// 12. account(1) balance is 0, account(2) balance is 2
 #[test]
 fn unsafe_transfer_1() {
     // Given initial state: account(1) has two tokens
@@ -281,15 +284,21 @@ fn unsafe_transfer_1() {
         },
     );
 
+    // When the owner approves the receiver for all, the receiver transfers a token
     let token_id = TOKEN_ID_2.into();
-    erc721
-        .as_account(token_owner)
-        .approve(None, token_id)
-        .unwrap();
     erc721
         .as_account(token_owner)
         .set_approval_for_all(receiver_address, true)
         .unwrap();
+
+    erc721
+        .as_account(receiver_address)
+        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .unwrap();
+
+    // Then the orignal owner has no tokens, and the receiver has 2 tokens
+    assert_eq!(erc721.balance_of(token_owner), 0.into());
+    assert_eq!(erc721.balance_of(receiver_address), 2.into());
 }
 
 // Scenario:
