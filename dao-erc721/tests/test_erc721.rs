@@ -3,7 +3,7 @@ use casper_dao_erc721::{
     ERC721Test, MockERC721NonReceiverTest, MockERC721ReceiverTest,
 };
 use casper_dao_utils::{Address, Error, TestEnv};
-use casper_types::U256;
+use casper_types::{bytesrepr::Bytes, U256};
 
 static NAME: &str = "Plascoin";
 static SYMBOL: &str = "PLS";
@@ -240,7 +240,7 @@ fn approve_2() {
 // 11. account(2) transfers a token to himself
 // 12. account(1) balance is 0, account(2) balance is 2
 #[test]
-fn unsafe_transfer_1() {
+fn transfer_1() {
     // Given initial state: account(1) has two tokens
     let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
     let token_owner = env.get_account(1);
@@ -306,7 +306,7 @@ fn unsafe_transfer_1() {
 // 2. account(1) transfers a token to account(2)
 // 3. balance of both accounts is equal 1
 #[test]
-fn unsafe_transfer_2() {
+fn transfer_2() {
     // Given initial state: account(1) has two tokens
     let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
     let token_owner = env.get_account(1);
@@ -329,7 +329,7 @@ fn unsafe_transfer_2() {
 // 2. account(1) transfers tokens to receiver and non receiver contracts
 // 3. balance of both contracts is equal 1, account(1) has 0 tokens
 #[test]
-fn unsafe_transfer_3() {
+fn transfer_3() {
     // Given initial state: account(1) has two tokens
     let (env, mut erc721, receiver_contract, non_receiver_contract) =
         full_setup_with_minted_tokens();
@@ -356,6 +356,22 @@ fn unsafe_transfer_3() {
     assert_eq!(erc721.balance_of(receiver_address), 1.into());
 }
 
+#[test]
+fn transfer_to_none() {
+    // Given initial state: account(1) has two tokens
+    let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
+    let token_owner = env.get_account(1);
+    let token_id = TOKEN_ID_1.into();
+
+    // When account(1) transfers token to None
+    let result = erc721
+        .as_account(token_owner)
+        .transfer_from(token_owner, None, token_id);
+
+    // Then an error is raised
+    assert_eq!(result, Err(Error::TransferToNone));
+}
+
 // Scenario:
 // 1. Mint tokens to account(1)
 // 2. account(1) transfers token to account(0)
@@ -364,12 +380,11 @@ fn unsafe_transfer_3() {
 // 5. account(0) transfers token to a contract that implements IERC721Receiver
 // 6. The given contract is the new token owner
 #[test]
-fn safe_transfer_works() {
+fn safe_transfer_1() {
+    // Given initial state: account(1) has two tokens
     let (env, mut erc721, receiver, non_receiver) = full_setup_with_minted_tokens();
-
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
-
     let operator_account = env.get_account(0);
     let receiver_address = Address::from(receiver.get_package_hash());
     let non_receiver_address = Address::from(non_receiver.get_package_hash());
@@ -402,5 +417,34 @@ fn safe_transfer_works() {
         .safe_transfer_from(token_owner, Some(receiver_address), token_id)
         .unwrap();
     // Then the given contract becomes an owner
+    assert_eq!(erc721.owner_of(token_id).unwrap(), receiver_address);
+}
+
+// Scenario:
+// 1. Mint tokens to account(1)
+// 2. account(0) transfers token with some data to a contract that implements IERC721Receiver
+// 3. The given contract is the new token owner and is able to restore the data
+#[test]
+fn safe_transfer_2() {
+    // Given initial state: account(1) has two tokens
+    let (env, mut erc721, receiver, _) = full_setup_with_minted_tokens();
+    let token_owner = env.get_account(1);
+    let token_id = TOKEN_ID_1.into();
+    let receiver_address = Address::from(receiver.get_package_hash());
+    let payload = Bytes::from(vec![1, 2, 3]);
+
+    // When the owner transfers token with some data
+    erc721
+        .as_account(token_owner)
+        .safe_transfer_from_with_data(
+            token_owner,
+            Some(receiver_address),
+            token_id,
+            payload.clone(),
+        )
+        .unwrap();
+
+    // Then the receiver contract is the new owner and correctly received the data
+    assert_eq!(receiver.get(), payload);
     assert_eq!(erc721.owner_of(token_id).unwrap(), receiver_address);
 }
