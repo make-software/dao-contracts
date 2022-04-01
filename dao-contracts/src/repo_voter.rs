@@ -56,7 +56,6 @@ impl RepoVoterContractInterface for RepoVoterContract {
                 "value" => value,
                 "activation_time" => activation_time,
             },
-            None,
         );
     }
 

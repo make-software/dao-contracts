@@ -11,70 +11,8 @@ use casper_dao_contracts::{
 use casper_dao_utils::{consts, Address, Error, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, FromBytes, ToBytes},
-    RuntimeArgs, U256,
+    U256,
 };
-
-#[test]
-fn test_voting_serialization() {
-    let voting = Voting {
-        voting_id: VotingId::from(1),
-        completed: false,
-        stake_in_favor: U256::zero(),
-        stake_against: U256::zero(),
-        finish_time: 123,
-        informal_voting_id: VotingId::from(1),
-        formal_voting_id: None,
-        formal_voting_quorum: U256::from(2),
-        formal_voting_time: 2,
-        informal_voting_quorum: U256::from(2),
-        informal_voting_time: 2,
-        minimum_governance_reputation: U256::from(2),
-        contract_to_call: None,
-        entry_point: "update_variable".into(),
-        runtime_args: RuntimeArgs::new(),
-    };
-
-    let (voting2, _bytes) = Voting::from_bytes(&voting.to_bytes().unwrap()).unwrap();
-
-    assert_eq!(voting.voting_id, voting2.voting_id);
-    assert_eq!(voting.informal_voting_id, voting2.informal_voting_id);
-    assert_eq!(voting.formal_voting_id, voting2.formal_voting_id);
-    assert_eq!(
-        voting.informal_voting_quorum,
-        voting2.informal_voting_quorum
-    );
-    assert_eq!(voting.formal_voting_quorum, voting2.formal_voting_quorum);
-    assert_eq!(voting.stake_against, voting2.stake_against);
-    assert_eq!(voting.stake_in_favor, voting2.stake_in_favor);
-    assert_eq!(voting.completed, voting2.completed);
-    assert_eq!(voting.contract_to_call, voting2.contract_to_call);
-    assert_eq!(voting.entry_point, voting2.entry_point);
-    assert_eq!(voting.runtime_args, voting2.runtime_args);
-    assert_eq!(voting.formal_voting_time, voting2.formal_voting_time);
-    assert_eq!(voting.informal_voting_time, voting2.informal_voting_time);
-    assert_eq!(
-        voting.minimum_governance_reputation,
-        voting2.minimum_governance_reputation
-    );
-    assert_eq!(voting.finish_time, voting2.finish_time);
-}
-
-#[test]
-fn test_vote_serialization() {
-    let env = TestEnv::new();
-    let vote = Vote {
-        voter: Some(env.get_account(0)),
-        voting_id: U256::from(123),
-        choice: true,
-        stake: U256::from(456),
-    };
-
-    let (vote2, _bytes) = Vote::from_bytes(&vote.to_bytes().unwrap()).unwrap();
-    assert_eq!(vote.voter, vote2.voter);
-    assert_eq!(vote.voting_id, vote2.voting_id);
-    assert_eq!(vote.choice, vote2.choice);
-    assert_eq!(vote.stake, vote2.stake);
-}
 
 #[test]
 fn test_contract_deploy() {
@@ -120,25 +58,25 @@ fn test_create_voting() {
 
     // check if voting was created correctly
     let voting: Voting = repo_voter_contract.get_voting(vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id, vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id, VotingId::zero());
-    assert_eq!(voting.formal_voting_time, 432000000);
-    assert_eq!(voting.formal_voting_quorum, U256::from(3));
-    assert_eq!(voting.informal_voting_time, 86400000);
-    assert_eq!(voting.informal_voting_quorum, U256::from(3));
-    assert_eq!(voting_created_event.voting_id, voting.voting_id);
+    assert_eq!(voting.voting_id(), vote_cast_event.voting_id);
+    assert_eq!(voting.voting_id(), VotingId::zero());
+    assert_eq!(voting.formal_voting_time(), 432000000);
+    assert_eq!(voting.formal_voting_quorum(), U256::from(3));
+    assert_eq!(voting.informal_voting_time(), 86400000);
+    assert_eq!(voting.informal_voting_quorum(), U256::from(3));
+    assert_eq!(voting_created_event.voting_id, voting.voting_id());
     assert_eq!(voting_created_event.creator, env.get_account(0));
     assert_eq!(voting_created_event.stake, U256::from(500));
 
     // check if first vote was created correctly
-    let vote: Vote = repo_voter_contract.get_vote(voting.voting_id, env.get_account(0));
-    assert_eq!(vote.voting_id, voting.voting_id);
+    let vote: Vote = repo_voter_contract.get_vote(voting.voting_id(), env.get_account(0));
+    assert_eq!(vote.voting_id, voting.voting_id());
     assert_eq!(vote.voter, Some(env.get_account(0)));
     assert_eq!(vote.choice, true);
     assert_eq!(vote.stake, U256::from(500));
 
     // check if first vote was created by a caller
-    let voters = repo_voter_contract.get_voters(voting.voting_id);
+    let voters = repo_voter_contract.get_voters(voting.voting_id());
     assert_eq!(voters.len(), 1);
     assert_eq!(*voters.get(0).unwrap(), env.get_account(0));
 
@@ -164,7 +102,7 @@ fn test_create_voting() {
         .unwrap();
     let vote_cast_event: VoteCast = repo_voter_contract.event(4);
     let voting: Voting = repo_voter_contract.get_voting(vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id, VotingId::from(1));
+    assert_eq!(voting.voting_id(), VotingId::from(1));
 }
 
 #[test]
@@ -196,9 +134,7 @@ fn test_informal_vote_without_a_quorum() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(
-        voting.informal_voting_time - env.get_block_time() + 100,
-    ));
+    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
 
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
@@ -213,7 +149,7 @@ fn test_informal_vote_without_a_quorum() {
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(U256::zero());
-    assert_eq!(voting.completed, true);
+    assert_eq!((voting.completed()), true);
 
     // cast a vote on a finished voting should return an error
     let result = repo_voter_contract.vote(U256::zero(), false, U256::from(500));
@@ -260,16 +196,14 @@ fn test_informal_voting_rejected() {
         .unwrap();
 
     // fast-forward
-    env.advance_block_time_by(Duration::from_secs(
-        voting.informal_voting_time - env.get_block_time() + 100,
-    ));
+    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
 
     // finish voting
     repo_voter_contract.finish_voting(voting_id).unwrap();
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
-    assert_eq!(voting.completed, true);
+    assert_eq!((voting.completed()), true);
 
     // the status should be rejected
     repo_voter_contract.assert_event_at(
@@ -312,24 +246,11 @@ fn test_informal_voting_converted() {
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
-    assert_eq!(voting.completed, true);
-
-    // the status should be converted
-    repo_voter_contract.assert_event_at(
-        7,
-        InformalVotingEnded {
-            result: gv_consts::INFORMAL_VOTING_PASSED.into(),
-            votes_count: U256::from(3),
-            stake_in_favor: U256::from(1000),
-            stake_against: U256::from(500),
-            informal_voting_id: VotingId::zero(),
-            formal_voting_id: Some(VotingId::from(1)),
-        },
-    );
+    assert_eq!((voting.completed()), true);
 
     // new voting should be created with first creator
     repo_voter_contract.assert_event_at(
-        5,
+        -3,
         VotingCreated {
             creator: env.get_account(0),
             voting_id: VotingId::from(1),
@@ -339,7 +260,7 @@ fn test_informal_voting_converted() {
 
     // with initial vote as creator
     repo_voter_contract.assert_event_at(
-        6,
+        -2,
         VoteCast {
             voter: env.get_account(0),
             voting_id: VotingId::from(1),
@@ -347,6 +268,16 @@ fn test_informal_voting_converted() {
             stake: 500.into(),
         },
     );
+
+    // the status should be converted
+    repo_voter_contract.assert_last_event(InformalVotingEnded {
+        result: gv_consts::INFORMAL_VOTING_PASSED.into(),
+        votes_count: U256::from(3),
+        stake_in_favor: U256::from(1000),
+        stake_against: U256::from(500),
+        informal_voting_id: VotingId::zero(),
+        formal_voting_id: Some(VotingId::from(1)),
+    });
 
     // creator's reputation should stay staked and voters' returned
     assert_eq!(
@@ -387,7 +318,7 @@ fn test_formal_vote_without_a_quorum() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time + 100));
+    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
 
     // Now the time should be fine, but a single vote should not reach quorum
     repo_voter_contract.finish_voting(voting_id).unwrap();
@@ -402,7 +333,7 @@ fn test_formal_vote_without_a_quorum() {
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
-    assert_eq!(voting.completed, true);
+    assert_eq!((voting.completed()), true);
 
     // cast a vote on a finished voting should return an error
     let result = repo_voter_contract.vote(voting_id, false, U256::from(500));
@@ -448,7 +379,7 @@ fn test_formal_vote_rejected() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time + 100));
+    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
 
     // Now the time should be fine, the result should be rejected
     assert_eq!(
@@ -467,7 +398,7 @@ fn test_formal_vote_rejected() {
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
-    assert_eq!(voting.completed, true);
+    assert_eq!((voting.completed()), true);
 
     // creator's reputation should be transferred to voters proportionally
     assert_eq!(
@@ -506,7 +437,7 @@ fn test_formal_vote_completed() {
         .unwrap();
 
     // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time + 100));
+    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
 
     // Now the time should be fine, the result should be completed
     repo_voter_contract.finish_voting(voting_id).unwrap();
@@ -524,7 +455,7 @@ fn test_formal_vote_completed() {
 
     // voting status should be completed
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
-    assert_eq!(voting.completed, true);
+    assert_eq!((voting.completed()), true);
 
     // the action should be performed
     let bytes = variable_repo_contract.get("variable_name".into()).unwrap();
@@ -660,9 +591,7 @@ fn create_formal_voting() -> (
         .unwrap();
 
     // fast-forward
-    env.advance_block_time_by(Duration::from_secs(
-        voting.informal_voting_time - env.get_block_time() + 100,
-    ));
+    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
 
     // finish voting as somebody else
     repo_voter_contract
