@@ -1,7 +1,9 @@
+cargo-features = ["edition2021"]
+
 [package]
 name = "casper-dao-utils"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 casper-contract = { version = "1.4.3", default-features = false }

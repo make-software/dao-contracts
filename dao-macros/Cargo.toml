@@ -1,3 +1,5 @@
+cargo-features = ["edition2021"]
+
 [package]
 name = "casper-dao-macros"
 version = "0.1.0"
