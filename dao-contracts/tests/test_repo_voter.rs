@@ -36,8 +36,7 @@ fn test_contract_deploy() {
 
 #[test]
 fn test_action_performed() {
-    let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) =
-        create_formal_voting();
+    let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) = setup();
     let voting_id = VotingId::from(1);
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
 
@@ -94,7 +93,7 @@ pub fn setup() -> (
     let env = TestEnv::new();
     let mut variable_repo_contract = VariableRepositoryContractTest::new(&env);
     let mut reputation_token_contract = ReputationContractTest::new(&env);
-    let repo_voter_contract = RepoVoterContractTest::new(
+    let mut repo_voter_contract = RepoVoterContractTest::new(
         &env,
         Address::from(variable_repo_contract.get_package_hash()),
         Address::from(reputation_token_contract.get_package_hash()),
@@ -134,21 +133,6 @@ pub fn setup() -> (
         .mint(env.get_account(2), 10000.into())
         .unwrap();
 
-    (
-        env,
-        repo_voter_contract,
-        variable_repo_contract,
-        reputation_token_contract,
-    )
-}
-
-pub fn create_voting() -> (
-    TestEnv,
-    RepoVoterContractTest,
-    VariableRepositoryContractTest,
-    ReputationContractTest,
-) {
-    let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) = setup();
     repo_voter_contract
         .create_voting(
             Address::from(variable_repo_contract.get_package_hash()),
@@ -158,22 +142,7 @@ pub fn create_voting() -> (
             U256::from(500),
         )
         .unwrap();
-    (
-        env,
-        repo_voter_contract,
-        variable_repo_contract,
-        reputation_token_contract,
-    )
-}
 
-pub fn create_formal_voting() -> (
-    TestEnv,
-    RepoVoterContractTest,
-    VariableRepositoryContractTest,
-    ReputationContractTest,
-) {
-    let (env, mut repo_voter_contract, variable_repo_contract, reputation_token_contract) =
-        create_voting();
     let voting_id = VotingId::zero();
     let voting: Voting = repo_voter_contract.get_voting(voting_id);
 
