@@ -1,11 +1,15 @@
 use casper_dao_modules::{Owner, Record, Repository, Whitelist};
+use casper_dao_utils::bytes::BytesConversion;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
     Address, Error,
 };
-use casper_types::bytesrepr::{Bytes, FromBytes};
+use casper_types::{
+    bytesrepr::{Bytes, FromBytes},
+    U256, U512,
+};
 
 #[casper_contract_interface]
 pub trait VariableRepositoryContractInterface {
@@ -91,5 +95,20 @@ impl VariableRepositoryContractCaller {
             revert(Error::ValueNotAvailable)
         }
         variable
+    }
+
+    pub fn mul_by_ratio(number: U256, ratio: U256) -> U256 {
+        let number_u512 = U512::convert_from_bytes(number.convert_to_bytes());
+        let ratio_u512 = U512::convert_from_bytes(ratio.convert_to_bytes());
+
+        let dividend = number_u512 * ratio_u512;
+
+        let result = dividend / U512::from(1000);
+
+        if result > U512::convert_from_bytes(U256::MAX.convert_to_bytes()) {
+            revert(Error::ArithmeticOverflow);
+        } else {
+            U256::convert_from_bytes(result.convert_to_bytes())
+        }
     }
 }

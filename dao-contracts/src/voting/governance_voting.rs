@@ -13,7 +13,9 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
-use crate::VariableRepositoryContractCaller;
+use crate::{
+    ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
+};
 
 use self::{
     events::{
@@ -62,13 +64,24 @@ impl GovernanceVoting {
     ) {
         let repo_caller =
             VariableRepositoryContractCaller::at_address(self.get_variable_repo_address());
+
+        let reputation_caller =
+            ReputationContractCaller::at_address(self.get_reputation_token_address());
+
         let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
-        let informal_voting_quorum = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM);
         let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
-        let formal_voting_quorum = repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM);
         let minimum_governance_reputation =
             repo_caller.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION);
         let voting_id = self.votings_count.get();
+
+        let informal_voting_quorum = VariableRepositoryContractCaller::mul_by_ratio(
+            reputation_caller.total_onboarded(),
+            repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
+        );
+        let formal_voting_quorum = VariableRepositoryContractCaller::mul_by_ratio(
+            reputation_caller.total_onboarded(),
+            repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
+        );
 
         let voting_configuration = VotingConfiguration {
             formal_voting_quorum,

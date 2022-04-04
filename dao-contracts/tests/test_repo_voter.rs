@@ -508,17 +508,18 @@ fn setup() -> (
         .add_to_whitelist(repo_voter_contract.address())
         .unwrap();
 
+    // TODO: Currently there are 4 hardcoded onboarded members, quorum at 750 should make the quorum when there are 3 votes
     variable_repo_contract
         .update_at(
             consts::INFORMAL_VOTING_QUORUM.into(),
-            U256::from(3).to_bytes().unwrap().into(),
+            U256::from(750).to_bytes().unwrap().into(),
             None,
         )
         .unwrap();
     variable_repo_contract
         .update_at(
             consts::FORMAL_VOTING_QUORUM.into(),
-            U256::from(3).to_bytes().unwrap().into(),
+            U256::from(750).to_bytes().unwrap().into(),
             None,
         )
         .unwrap();
