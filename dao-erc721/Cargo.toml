@@ -9,6 +9,8 @@ edition = "2018"
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 delegate = "0.6.2"
+[dev-dependencies]
+speculate = "0.1.2"
 
 [[bin]]
 name = "erc_721"
@@ -37,6 +39,11 @@ doc = false
 [[test]]
 name = "test-erc721"
 path = "tests/test_erc721.rs"
+harness = true
+
+[[test]]
+name = "test-erc721-spec"
+path = "tests/test_erc721_spec.rs"
 harness = true
 
 [features]
