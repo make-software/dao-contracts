@@ -1,3 +1,5 @@
+use std::borrow::BorrowMut;
+
 use casper_dao_erc721::{
     events::{Approval, ApprovalForAll, Transfer},
     ERC721Test, MockERC721NonReceiverTest, MockERC721ReceiverTest,
@@ -10,14 +12,16 @@ static SYMBOL: &str = "PLS";
 
 static TOKEN_ID_1: u32 = 1;
 static TOKEN_ID_2: u32 = 2;
+static UNKNOWN_TOKEN_ID: u32 = 999;
 
 fn setup() -> (TestEnv, ERC721Test) {
     let env = TestEnv::new();
     let token = ERC721Test::new(&env, String::from(NAME), String::from(SYMBOL));
+
     (env, token)
 }
 
-fn full_setup() -> (
+fn setup_with_mock_contracts() -> (
     TestEnv,
     ERC721Test,
     MockERC721ReceiverTest,
@@ -31,21 +35,13 @@ fn full_setup() -> (
     (env, token, receiver, non_receiver)
 }
 
-fn full_setup_with_minted_tokens() -> (
-    TestEnv,
-    ERC721Test,
-    MockERC721ReceiverTest,
-    MockERC721NonReceiverTest,
-) {
-    let mut config = full_setup();
-    let env = &config.0;
-    let erc721 = &mut config.1;
-    erc721.mint(env.get_account(1), TOKEN_ID_1.into()).unwrap();
-    erc721.mint(env.get_account(1), TOKEN_ID_2.into()).unwrap();
+fn _mint_tokens(env: &TestEnv, erc721: &mut ERC721Test) {
+    let token_owner = env.get_account(1);
+    erc721.mint(token_owner, TOKEN_ID_1.into()).unwrap();
+    erc721.mint(token_owner, TOKEN_ID_2.into()).unwrap();
 
     assert_eq!(erc721.total_supply(), 2.into());
-    assert_eq!(erc721.balance_of(env.get_account(1)), 2.into());
-    config
+    assert_eq!(erc721.balance_of(token_owner), 2.into());
 }
 
 #[test]
@@ -107,7 +103,8 @@ fn mint_works() {
 #[test]
 fn approve_1() {
     // Given initial state: account(1) has two tokens
-    let (env, mut token, _, _) = full_setup_with_minted_tokens();
+    let (env, mut token, _, _) = setup_with_mock_contracts();
+    _mint_tokens(&env, token.borrow_mut());
     let token_id = TOKEN_ID_1.into();
     let tokens_owner = env.get_account(1);
     let operator = env.get_account(0);
@@ -127,18 +124,18 @@ fn approve_1() {
     // When the owner approves a different address
     token
         .as_account(tokens_owner)
-        .approve(Some(env.get_account(0)), token_id)
+        .approve(Some(operator), token_id)
         .unwrap();
 
     // Then the given address should be approved
-    assert_eq!(token.get_approved(token_id).unwrap(), env.get_account(0));
+    assert_eq!(token.get_approved(token_id).unwrap(), operator);
 
     // Then an Approval event is emitted
     token.assert_event_at(
         2,
         Approval {
             owner: Some(tokens_owner),
-            operator: Some(env.get_account(0)),
+            operator: Some(operator),
             token_id,
         },
     );
@@ -160,7 +157,9 @@ fn approve_1() {
 #[test]
 fn approve_2() {
     // Given initial state
-    let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
+    let (env, mut erc721) = setup();
+    _mint_tokens(&env, erc721.borrow_mut());
+
     let owner = env.get_account(1);
     let operator = env.get_account(0);
     let token_id = TOKEN_ID_1.into();
@@ -242,12 +241,15 @@ fn approve_2() {
 #[test]
 fn transfer_1() {
     // Given initial state: account(1) has two tokens
-    let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
+    let (env, mut erc721) = setup();
+    _mint_tokens(&env, erc721.borrow_mut());
+
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
+    let unknown_token_id = UNKNOWN_TOKEN_ID.into();
 
     // When transfer non existent token
-    let result = erc721.transfer_from(token_owner, Some(token_owner), 999.into());
+    let result = erc721.transfer_from(token_owner, Some(token_owner), unknown_token_id);
 
     // Then transfer ends with an error
     assert_eq!(result, Err(Error::TokenDoesNotExist));
@@ -308,7 +310,9 @@ fn transfer_1() {
 #[test]
 fn transfer_2() {
     // Given initial state: account(1) has two tokens
-    let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
+    let (env, mut erc721) = setup();
+    _mint_tokens(&env, erc721.borrow_mut());
+
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
     let receiver_address = env.get_account(2);
@@ -331,8 +335,8 @@ fn transfer_2() {
 #[test]
 fn transfer_3() {
     // Given initial state: account(1) has two tokens
-    let (env, mut erc721, receiver_contract, non_receiver_contract) =
-        full_setup_with_minted_tokens();
+    let (env, mut erc721, receiver_contract, non_receiver_contract) = setup_with_mock_contracts();
+    _mint_tokens(&env, erc721.borrow_mut());
     let token_owner = env.get_account(1);
     let receiver_address = Address::from(receiver_contract.get_package_hash());
     let non_receiver_address = Address::from(non_receiver_contract.get_package_hash());
@@ -359,7 +363,9 @@ fn transfer_3() {
 #[test]
 fn transfer_to_none() {
     // Given initial state: account(1) has two tokens
-    let (env, mut erc721, _, _) = full_setup_with_minted_tokens();
+    let (env, mut erc721) = setup();
+    _mint_tokens(&env, erc721.borrow_mut());
+
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
 
@@ -382,7 +388,9 @@ fn transfer_to_none() {
 #[test]
 fn safe_transfer_1() {
     // Given initial state: account(1) has two tokens
-    let (env, mut erc721, receiver, non_receiver) = full_setup_with_minted_tokens();
+    let (env, mut erc721, receiver, non_receiver) = setup_with_mock_contracts();
+    _mint_tokens(&env, erc721.borrow_mut());
+
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
     let operator_account = env.get_account(0);
@@ -427,7 +435,9 @@ fn safe_transfer_1() {
 #[test]
 fn safe_transfer_2() {
     // Given initial state: account(1) has two tokens
-    let (env, mut erc721, receiver, _) = full_setup_with_minted_tokens();
+    let (env, mut erc721, receiver, _) = setup_with_mock_contracts();
+    _mint_tokens(&env, erc721.borrow_mut());
+
     let token_owner = env.get_account(1);
     let token_id = TOKEN_ID_1.into();
     let receiver_address = Address::from(receiver.get_package_hash());
