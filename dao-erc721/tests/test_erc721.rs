@@ -249,14 +249,14 @@ fn transfer_1() {
     let unknown_token_id = UNKNOWN_TOKEN_ID.into();
 
     // When transfer non existent token
-    let result = erc721.transfer_from(token_owner, Some(token_owner), unknown_token_id);
+    let result = erc721.transfer_from(token_owner, token_owner, unknown_token_id);
 
     // Then transfer ends with an error
     assert_eq!(result, Err(Error::TokenDoesNotExist));
 
     // When transfer a token to a not approved receiver
     let receiver_address = env.get_account(2);
-    let result = erc721.transfer_from(token_owner, Some(receiver_address), token_id);
+    let result = erc721.transfer_from(token_owner, receiver_address, token_id);
 
     // Then transfer ends with an error
     assert_eq!(result, Err(Error::CallerIsNotOwnerNorApproved));
@@ -269,7 +269,7 @@ fn transfer_1() {
 
     erc721
         .as_account(receiver_address)
-        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .transfer_from(token_owner, receiver_address, token_id)
         .unwrap();
 
     // Then both users have one token
@@ -295,7 +295,7 @@ fn transfer_1() {
 
     erc721
         .as_account(receiver_address)
-        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .transfer_from(token_owner, receiver_address, token_id)
         .unwrap();
 
     // Then the orignal owner has no tokens, and the receiver has 2 tokens
@@ -320,7 +320,7 @@ fn transfer_2() {
     // When the owner transfers a token
     erc721
         .as_account(token_owner)
-        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .transfer_from(token_owner, receiver_address, token_id)
         .unwrap();
 
     // Then both users have one token
@@ -345,37 +345,19 @@ fn transfer_3() {
     let token_id = TOKEN_ID_1.into();
     erc721
         .as_account(token_owner)
-        .transfer_from(token_owner, Some(receiver_address), token_id)
+        .transfer_from(token_owner, receiver_address, token_id)
         .unwrap();
 
     let token_id = TOKEN_ID_2.into();
     erc721
         .as_account(token_owner)
-        .transfer_from(token_owner, Some(non_receiver_address), token_id)
+        .transfer_from(token_owner, non_receiver_address, token_id)
         .unwrap();
 
     // Then both users have one token
     assert_eq!(erc721.balance_of(token_owner), 0.into());
     assert_eq!(erc721.balance_of(non_receiver_address), 1.into());
     assert_eq!(erc721.balance_of(receiver_address), 1.into());
-}
-
-#[test]
-fn transfer_to_none() {
-    // Given initial state: account(1) has two tokens
-    let (env, mut erc721) = setup();
-    _mint_tokens(&env, erc721.borrow_mut());
-
-    let token_owner = env.get_account(1);
-    let token_id = TOKEN_ID_1.into();
-
-    // When account(1) transfers token to None
-    let result = erc721
-        .as_account(token_owner)
-        .transfer_from(token_owner, None, token_id);
-
-    // Then an error is raised
-    assert_eq!(result, Err(Error::TransferToNone));
 }
 
 // Scenario:
@@ -400,7 +382,7 @@ fn safe_transfer_1() {
     // When the owner - account(1) transfers to a user account
     erc721
         .as_account(token_owner)
-        .safe_transfer_from(token_owner, Some(operator_account), token_id)
+        .safe_transfer_from(token_owner, operator_account, token_id)
         .unwrap();
     // Then the given account becomes the owner
     assert_eq!(erc721.owner_of(token_id).unwrap(), operator_account);
@@ -409,7 +391,7 @@ fn safe_transfer_1() {
     let token_owner = env.get_account(0);
     let result = erc721.as_account(token_owner).safe_transfer_from(
         token_owner,
-        Some(non_receiver_address),
+        non_receiver_address,
         token_id,
     );
 
@@ -422,7 +404,7 @@ fn safe_transfer_1() {
 
     // When transfer to a erc721 receiver contract
     erc721
-        .safe_transfer_from(token_owner, Some(receiver_address), token_id)
+        .safe_transfer_from(token_owner, receiver_address, token_id)
         .unwrap();
     // Then the given contract becomes an owner
     assert_eq!(erc721.owner_of(token_id).unwrap(), receiver_address);
@@ -446,12 +428,7 @@ fn safe_transfer_2() {
     // When the owner transfers token with some data
     erc721
         .as_account(token_owner)
-        .safe_transfer_from_with_data(
-            token_owner,
-            Some(receiver_address),
-            token_id,
-            payload.clone(),
-        )
+        .safe_transfer_from_with_data(token_owner, receiver_address, token_id, payload.clone())
         .unwrap();
 
     // Then the receiver contract is the new owner and correctly received the data

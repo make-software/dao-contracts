@@ -4,7 +4,13 @@ use casper_types::bytesrepr::Bytes;
 use crate::TokenId;
 
 pub trait IERC721Receiver {
-    fn on_erc_721_received(&self, operator: Address, from: Address, token_id: TokenId, data: Bytes);
+    fn on_erc_721_received(
+        &self,
+        operator: Address,
+        from: Address,
+        token_id: TokenId,
+        data: Option<Bytes>,
+    );
 }
 
 pub struct ERC721ReceiverCaller {
@@ -17,7 +23,7 @@ impl IERC721Receiver for ERC721ReceiverCaller {
         operator: Address,
         from: Address,
         token_id: TokenId,
-        data: Bytes,
+        data: Option<Bytes>,
     ) {
         runtime::call_versioned_contract(self.contract_package_hash, None, "on_erc_721_received", {
             let mut named_args = casper_types::RuntimeArgs::new();
@@ -55,7 +61,7 @@ pub mod tests {
             operator: Address,
             from: Address,
             token_id: TokenId,
-            data: Bytes,
+            data: Option<Bytes>,
         );
         fn get(&self) -> Bytes;
     }
@@ -74,9 +80,11 @@ pub mod tests {
             operator: Address,
             from: Address,
             token_id: TokenId,
-            data: Bytes,
+            data: Option<Bytes>,
         ) {
-            self.var.set(data)
+            if let Some(data) = data {
+                self.var.set(data)
+            }
         }
 
         fn get(&self) -> Bytes {

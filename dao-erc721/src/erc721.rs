@@ -30,12 +30,12 @@ pub trait ERC721Interface {
     fn get_approved(&self, token_id: TokenId) -> Option<Address>;
     fn set_approval_for_all(&mut self, operator: Address, approved: bool);
     fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
-    fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
-    fn safe_transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
+    fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
+    fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
     fn safe_transfer_from_with_data(
         &mut self,
         owner: Address,
-        recipient: Option<Address>,
+        recipient: Address,
         token_id: TokenId,
         data: Bytes,
     );
@@ -67,10 +67,24 @@ impl ERC721Interface for ERC721 {
             fn get_approved(&self, token_id: TokenId) -> Option<Address>;
             fn set_approval_for_all(&mut self, operator: Address, approved: bool);
             fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
-            fn transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
-            fn safe_transfer_from(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId);
-            fn safe_transfer_from_with_data(&mut self, owner: Address, recipient: Option<Address>, token_id: TokenId, data: Bytes);
+            fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
         }
+    }
+
+    fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId) {
+        self.core
+            .safe_transfer_from(owner, recipient, token_id, None);
+    }
+
+    fn safe_transfer_from_with_data(
+        &mut self,
+        owner: Address,
+        recipient: Address,
+        token_id: TokenId,
+        data: Bytes,
+    ) {
+        self.core
+            .safe_transfer_from(owner, recipient, token_id, Some(data));
     }
 
     fn mint(&mut self, to: Address, token_id: TokenId) {

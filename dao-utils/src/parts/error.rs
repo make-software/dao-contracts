@@ -21,7 +21,6 @@ pub enum Error {
     CallerIsNotOwnerNorApproved,
     TransferToNonERC721ReceiverImplementer,
     TransferFromIncorrectOwner,
-    TransferToNone,
     ApproveToCaller,
 }
 
@@ -46,8 +45,7 @@ impl From<Error> for ApiError {
             Error::CallerIsNotOwnerNorApproved => 1704,
             Error::TransferToNonERC721ReceiverImplementer => 1705,
             Error::TransferFromIncorrectOwner => 1706,
-            Error::TransferToNone => 1707,
-            Error::ApproveToCaller => 1708,
+            Error::ApproveToCaller => 1707,
         };
         ApiError::User(id)
     }
@@ -71,8 +69,7 @@ impl From<u16> for Error {
             1704 => Error::CallerIsNotOwnerNorApproved,
             1705 => Error::TransferToNonERC721ReceiverImplementer,
             1706 => Error::TransferFromIncorrectOwner,
-            1707 => Error::TransferToNone,
-            1708 => Error::ApproveToCaller,
+            1707 => Error::ApproveToCaller,
             _ => Error::Unknown,
         }
     }
