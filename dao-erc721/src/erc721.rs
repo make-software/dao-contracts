@@ -50,19 +50,13 @@ pub struct ERC721 {
 }
 
 impl ERC721Interface for ERC721 {
-    fn init(&mut self, name: String, symbol: String) {
-        self.metadata.set_name(name);
-        self.metadata.set_symbol(symbol);
-    }
-
     delegate! {
         to self.metadata {
+            fn init(&mut self, name: String, symbol: String);
             fn name(&self) -> String;
             fn symbol(&self) -> String;
         }
-    }
 
-    delegate! {
         to self.core {
             fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
