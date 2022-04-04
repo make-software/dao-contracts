@@ -104,6 +104,7 @@ mod tests {
                     #[no_mangle]
                     fn init() {
                         let mut contract: Contract = casper_dao_utils::instance::Instanced::instance("contract");
+                        #[allow(clippy::unnecessary_mut_passed)]
                         ContractTrait::init(&mut contract,);
                     }
 
@@ -111,6 +112,7 @@ mod tests {
                     fn do_something() {
                         let amount = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(amount));
                         let mut contract: Contract = casper_dao_utils::instance::Instanced::instance("contract");
+                        #[allow(clippy::unnecessary_mut_passed)]
                         ContractTrait::do_something(&mut contract, amount,);
                     }
                 };

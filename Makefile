@@ -38,7 +38,7 @@ test-erc721: build-proxy-getter build-erc721
 	$(CARGO_TEST) -p casper-dao-erc721 $$TEST_NAME --tests
 
 test-dao-macros:
-	cargo test -p casper-dao-macros
+	cargo test -p casper-dao-macros -- --skip verify_expand_output
 
 build-all: build-dao-contracts build-erc20 build-erc721
 
