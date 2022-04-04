@@ -5,7 +5,7 @@ use crate::voting::vote::VotingId;
 
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingContractCreated {
-    pub repo_voter: Address,
+    pub voter_contract: Address,
     pub variable_repo: Address,
     pub reputation_token: Address,
 }

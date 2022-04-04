@@ -50,7 +50,7 @@ impl GovernanceVoting {
         emit(VotingContractCreated {
             variable_repo,
             reputation_token,
-            repo_voter: self_address(),
+            voter_contract: self_address(),
         });
     }
 
@@ -62,11 +62,9 @@ impl GovernanceVoting {
         entry_point: String,
         runtime_args: RuntimeArgs,
     ) {
-        let repo_caller =
-            VariableRepositoryContractCaller::at_address(self.get_variable_repo_address());
+        let repo_caller = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
 
-        let reputation_caller =
-            ReputationContractCaller::at_address(self.get_reputation_token_address());
+        let reputation_caller = ReputationContractCaller::at(self.get_reputation_token_address());
 
         let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
         let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);

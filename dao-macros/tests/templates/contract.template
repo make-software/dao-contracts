@@ -8,7 +8,9 @@ mod contract {
                 "important_contract_package_hash",
                 ImportantContract::entry_points(),
                 |contract_package_hash| {
-                    let mut contract_instance = ImportantContractCaller::at(contract_package_hash);
+                    let mut contract_instance = ImportantContractCaller::at(
+                        casper_dao_utils::Address::from(contract_package_hash),
+                    );
                     let first_arg =
                         casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(
                             "first_arg",
@@ -100,12 +102,7 @@ mod contract {
         contract_package_hash: casper_types::ContractPackageHash,
     }
     impl ImportantContractCaller {
-        pub fn at(contract_package_hash: casper_types::ContractPackageHash) -> Self {
-            Self {
-                contract_package_hash,
-            }
-        }
-        pub fn at_address(address: casper_dao_utils::Address) -> Self {
+        pub fn at(address: casper_dao_utils::Address) -> Self {
             Self {
                 contract_package_hash: *address.as_contract_package_hash().unwrap(),
             }

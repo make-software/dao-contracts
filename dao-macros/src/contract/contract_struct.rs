@@ -38,7 +38,7 @@ fn generate_install(input: &CasperContractItem) -> Result<TokenStream, syn::Erro
                     #package_hash,
                     #contract_ident::entry_points(),
                     |contract_package_hash| {
-                        let mut contract_instance = #caller_ident::at(contract_package_hash);
+                        let mut contract_instance = #caller_ident::at(casper_dao_utils::Address::from(contract_package_hash));
                         #args_stream
                         contract_instance.init( #punctuated_args );
                     }
@@ -165,7 +165,7 @@ mod tests {
                         "contract",
                         Contract::entry_points(),
                         |contract_package_hash| {
-                            let mut contract_instance = ContractCaller::at(contract_package_hash);
+                            let mut contract_instance = ContractCaller::at(casper_dao_utils::Address::from(contract_package_hash));
                             contract_instance.init();
                         }
                     );
@@ -187,7 +187,7 @@ mod tests {
                         "contract",
                         Contract::entry_points(),
                         |contract_package_hash| {
-                            let mut contract_instance = ContractCaller::at(contract_package_hash);
+                            let mut contract_instance = ContractCaller::at(casper_dao_utils::Address::from(contract_package_hash));
                             let arg1 = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(arg1));
                             let arg2 = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(arg2));
                             contract_instance.init(arg1, arg2,);

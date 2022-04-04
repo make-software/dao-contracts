@@ -30,6 +30,13 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "mock_voter_contract"
+path = "bin/mocks/mock_voter_contract.rs"
+bench = false
+doctest = false
+test = false
+
 [[test]]
 name = "test-reputation"
 path = "tests/test_reputation.rs"
@@ -43,6 +50,11 @@ harness = true
 [[test]]
 name = "test-repo-voter"
 path = "tests/test_repo_voter.rs"
+harness = true
+
+[[test]]
+name = "test-governance-voting"
+path = "tests/test_governance_voting.rs"
 harness = true
 
 [features]
