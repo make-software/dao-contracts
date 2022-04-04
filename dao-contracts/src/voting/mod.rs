@@ -1,5 +1,5 @@
-pub mod governance_voting;
-pub mod vote;
+mod governance_voting;
+mod vote;
 
 pub use governance_voting::consts;
 pub use governance_voting::events::*;

@@ -1,12 +1,12 @@
-use casper_dao_utils::Address;
-use casper_types::{
-    bytesrepr::{FromBytes, ToBytes},
-    CLType, CLTyped, U256,
+use casper_dao_utils::{
+    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
+    Address,
 };
+use casper_types::U256;
 
 pub type VotingId = U256;
 
-#[derive(Debug)]
+#[derive(Debug, Default, FromBytes, ToBytes, CLTyped)]
 pub struct Vote {
     pub voter: Option<Address>,
     pub voting_id: VotingId,
@@ -14,62 +14,11 @@ pub struct Vote {
     pub stake: U256,
 }
 
-impl Default for Vote {
-    fn default() -> Self {
-        Self {
-            voter: None,
-            voting_id: VotingId::from(0),
-            choice: false,
-            stake: U256::from(0),
-        }
-    }
-}
-
-impl ToBytes for Vote {
-    fn to_bytes(&self) -> Result<Vec<u8>, casper_types::bytesrepr::Error> {
-        let mut vec = Vec::with_capacity(self.serialized_length());
-        vec.extend(self.voter.to_bytes()?);
-        vec.extend(self.voting_id.to_bytes()?);
-        vec.extend(self.choice.to_bytes()?);
-        vec.extend(self.stake.to_bytes()?);
-        Ok(vec)
-    }
-
-    fn serialized_length(&self) -> usize {
-        let mut size = 0;
-        size += self.voter.serialized_length();
-        size += self.voting_id.serialized_length();
-        size += self.choice.serialized_length();
-        size += self.stake.serialized_length();
-        size
-    }
-}
-
-impl FromBytes for Vote {
-    fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), casper_types::bytesrepr::Error> {
-        let (voter, bytes) = FromBytes::from_bytes(bytes)?;
-        let (voting_id, bytes) = FromBytes::from_bytes(bytes)?;
-        let (choice, bytes) = FromBytes::from_bytes(bytes)?;
-        let (stake, bytes) = FromBytes::from_bytes(bytes)?;
-        let value = Vote {
-            voter,
-            voting_id,
-            choice,
-            stake,
-        };
-        Ok((value, bytes))
-    }
-}
-
-impl CLTyped for Vote {
-    fn cl_type() -> CLType {
-        CLType::Any
-    }
-}
-
 #[test]
 fn test_vote_serialization() {
     use casper_types::account::AccountHash;
+    use casper_types::bytesrepr::FromBytes;
+    use casper_types::bytesrepr::ToBytes;
     let address = Address::Account(AccountHash::default());
 
     let vote = Vote {

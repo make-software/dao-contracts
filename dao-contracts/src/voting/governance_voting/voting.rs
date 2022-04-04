@@ -1,10 +1,9 @@
-use casper_dao_utils::Address;
-use casper_types::{
-    bytesrepr::{FromBytes, ToBytes},
-    CLType, CLTyped, RuntimeArgs, U256,
-};
-
 use crate::voting::vote::VotingId;
+use casper_dao_utils::{
+    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
+    Address,
+};
+use casper_types::{RuntimeArgs, U256};
 
 pub enum VotingResult {
     InFavor,
@@ -28,7 +27,7 @@ pub struct VotingConfiguration {
     pub runtime_args: RuntimeArgs,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes)]
 pub struct Voting {
     voting_id: VotingId,
     completed: bool,
@@ -229,94 +228,11 @@ impl Voting {
     }
 }
 
-impl ToBytes for Voting {
-    fn to_bytes(&self) -> Result<Vec<u8>, casper_types::bytesrepr::Error> {
-        let mut vec = Vec::with_capacity(self.serialized_length());
-        vec.extend(self.voting_id.to_bytes()?);
-        vec.extend(self.completed.to_bytes()?);
-        vec.extend(self.stake_in_favor.to_bytes()?);
-        vec.extend(self.stake_against.to_bytes()?);
-        vec.extend(self.start_time.to_bytes()?);
-        vec.extend(self.formal_voting_id.to_bytes()?);
-        vec.extend(self.informal_voting_id.to_bytes()?);
-        vec.extend(self.formal_voting_quorum.to_bytes()?);
-        vec.extend(self.formal_voting_time.to_bytes()?);
-        vec.extend(self.informal_voting_quorum.to_bytes()?);
-        vec.extend(self.informal_voting_time.to_bytes()?);
-        vec.extend(self.minimum_governance_reputation.to_bytes()?);
-        vec.extend(self.contract_to_call.to_bytes()?);
-        vec.extend(self.entry_point.to_bytes()?);
-        vec.extend(self.runtime_args.to_bytes()?);
-        Ok(vec)
-    }
-
-    fn serialized_length(&self) -> usize {
-        let mut size = 0;
-        size += self.voting_id.serialized_length();
-        size += self.completed.serialized_length();
-        size += self.stake_in_favor.serialized_length();
-        size += self.stake_against.serialized_length();
-        size += self.start_time.serialized_length();
-        size += self.formal_voting_id.serialized_length();
-        size += self.informal_voting_id.serialized_length();
-        size += self.formal_voting_quorum.serialized_length();
-        size += self.formal_voting_time.serialized_length();
-        size += self.informal_voting_quorum.serialized_length();
-        size += self.informal_voting_time.serialized_length();
-        size += self.minimum_governance_reputation.serialized_length();
-        size += self.contract_to_call.serialized_length();
-        size += self.entry_point.serialized_length();
-        size += self.runtime_args.serialized_length();
-        size
-    }
-}
-
-impl FromBytes for Voting {
-    fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), casper_types::bytesrepr::Error> {
-        let (voting_id, bytes) = FromBytes::from_bytes(bytes)?;
-        let (completed, bytes) = FromBytes::from_bytes(bytes)?;
-        let (stake_in_favor, bytes) = FromBytes::from_bytes(bytes)?;
-        let (stake_against, bytes) = FromBytes::from_bytes(bytes)?;
-        let (start_time, bytes) = FromBytes::from_bytes(bytes)?;
-        let (formal_voting_id, bytes) = FromBytes::from_bytes(bytes)?;
-        let (informal_voting_id, bytes) = FromBytes::from_bytes(bytes)?;
-        let (formal_voting_quorum, bytes) = FromBytes::from_bytes(bytes)?;
-        let (formal_voting_time, bytes) = FromBytes::from_bytes(bytes)?;
-        let (informal_voting_quorum, bytes) = FromBytes::from_bytes(bytes)?;
-        let (informal_voting_time, bytes) = FromBytes::from_bytes(bytes)?;
-        let (minimum_governance_reputation, bytes) = FromBytes::from_bytes(bytes)?;
-        let (contract_to_call, bytes) = FromBytes::from_bytes(bytes)?;
-        let (entry_point, bytes) = FromBytes::from_bytes(bytes)?;
-        let (runtime_args, bytes) = FromBytes::from_bytes(bytes)?;
-        let value = Voting {
-            voting_id,
-            completed,
-            stake_in_favor,
-            stake_against,
-            start_time,
-            informal_voting_id,
-            formal_voting_id,
-            formal_voting_quorum,
-            formal_voting_time,
-            informal_voting_quorum,
-            informal_voting_time,
-            minimum_governance_reputation,
-            contract_to_call,
-            entry_point,
-            runtime_args,
-        };
-        Ok((value, bytes))
-    }
-}
-
-impl CLTyped for Voting {
-    fn cl_type() -> CLType {
-        CLType::Any
-    }
-}
-
 #[test]
 fn test_voting_serialization() {
+    use casper_types::bytesrepr::FromBytes;
+    use casper_types::bytesrepr::ToBytes;
+
     let voting = Voting {
         voting_id: VotingId::from(1),
         completed: false,
