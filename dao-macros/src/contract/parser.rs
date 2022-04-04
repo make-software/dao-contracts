@@ -6,6 +6,7 @@ use syn::{braced, Token, TraitItemMethod};
 
 use super::utils;
 
+#[derive(Debug)]
 pub struct CasperContractItem {
     pub trait_token: Token![trait],
     pub trait_methods: Vec<TraitItemMethod>,
