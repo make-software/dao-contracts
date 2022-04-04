@@ -4,13 +4,7 @@ use casper_types::bytesrepr::Bytes;
 use crate::TokenId;
 
 pub trait IERC721Receiver {
-    fn on_erc_721_received(
-        &mut self,
-        operator: Address,
-        from: Address,
-        token_id: TokenId,
-        data: Bytes,
-    );
+    fn on_erc_721_received(&self, operator: Address, from: Address, token_id: TokenId, data: Bytes);
 }
 
 pub struct ERC721ReceiverCaller {
@@ -19,7 +13,7 @@ pub struct ERC721ReceiverCaller {
 
 impl IERC721Receiver for ERC721ReceiverCaller {
     fn on_erc_721_received(
-        &mut self,
+        &self,
         operator: Address,
         from: Address,
         token_id: TokenId,

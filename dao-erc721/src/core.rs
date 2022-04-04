@@ -53,7 +53,7 @@ impl ERC721Token {
     }
 
     pub fn approve(&mut self, to: Option<Address>, token_id: TokenId) {
-        let owner = self.owner_of(token_id.clone());
+        let owner = self.owner_of(token_id);
         if owner == to {
             casper_env::revert(Error::ApprovalToCurrentOwner);
         }
@@ -177,7 +177,7 @@ impl ERC721Token {
     }
 
     fn transfer(&mut self, from: Address, to: Option<Address>, token_id: TokenId) {
-        let owner = self.owner_of(token_id.clone());
+        let owner = self.owner_of(token_id);
         if let Some(owner_address) = owner {
             if owner_address != from {
                 casper_env::revert(Error::TransferFromIncorrectOwner)
@@ -194,10 +194,10 @@ impl ERC721Token {
 
         self.balances.set(&from, self.balances.get(&from) - 1);
         self.balances.set(&to, self.balances.get(&to) + 1);
-        self.owners.set(&token_id, Some(to.clone()));
+        self.owners.set(&token_id, Some(to));
 
         emit(Transfer {
-            from: Some(from.clone()),
+            from: Some(from),
             to: Some(to),
             token_id,
         });
@@ -223,7 +223,7 @@ impl ERC721Token {
         match to {
             Some(to_address) => match to_address.as_contract_package_hash() {
                 Some(to_contract) => {
-                    let mut caller = ERC721ReceiverCaller::at(to_contract.clone());
+                    let caller = ERC721ReceiverCaller::at(*to_contract);
                     caller.on_erc_721_received(casper_env::caller(), from, token_id, data);
                     true
                 }

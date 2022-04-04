@@ -69,6 +69,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                 fn #ident() {
                     #casper_args
                     let mut contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
+                    #[allow(clippy::unnecessary_mut_passed)]
                     #contract_interface_ident::#ident(&mut contract, #punctuated_args);
                 }
             }
