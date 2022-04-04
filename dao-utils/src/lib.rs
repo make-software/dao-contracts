@@ -9,6 +9,8 @@ mod events;
 pub mod instance;
 mod parts;
 pub use casper_dao_macros;
+pub mod conversions;
+pub mod math;
 
 pub use parts::address::Address;
 pub use parts::collection::List;
@@ -20,7 +22,7 @@ pub use parts::mapping::Mapping;
 pub use parts::variable::Variable;
 
 #[cfg(feature = "test-support")]
-pub use bytes::BytesConversion;
+pub use conversions::BytesConversion;
 
 #[cfg(feature = "test-support")]
 mod test_env;

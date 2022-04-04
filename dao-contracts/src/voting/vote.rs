@@ -28,9 +28,9 @@ fn test_vote_serialization() {
         stake: U256::from(456),
     };
 
-    let (vote2, _bytes) = Vote::from_bytes(&vote.to_bytes().unwrap()).unwrap();
-    assert_eq!(vote.voter, vote2.voter);
-    assert_eq!(vote.voting_id, vote2.voting_id);
-    assert_eq!(vote.choice, vote2.choice);
-    assert_eq!(vote.stake, vote2.stake);
+    let (deserialized_vote, _) = Vote::from_bytes(&vote.to_bytes().unwrap()).unwrap();
+    assert_eq!(vote.voter, deserialized_vote.voter);
+    assert_eq!(vote.voting_id, deserialized_vote.voting_id);
+    assert_eq!(vote.choice, deserialized_vote.choice);
+    assert_eq!(vote.stake, deserialized_vote.stake);
 }

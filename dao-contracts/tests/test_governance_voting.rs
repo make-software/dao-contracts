@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use casper_dao_contracts::{
     voting::{
-        consts as gv_consts, voting::Voting, FormalVotingEnded, InformalVotingEnded, Vote,
-        VoteCast, VotingContractCreated, VotingCreated, VotingId,
+        consts as gv_consts, voting::Voting, Vote, VoteCast, VotingContractCreated, VotingCreated,
+        VotingEnded, VotingId,
     },
     MockVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
@@ -136,7 +136,8 @@ fn test_informal_vote_without_a_quorum() {
 
     // Now the time should be fine, but a single vote should not reach quorum
     mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_last_event(InformalVotingEnded {
+    mock_voter_contract.assert_last_event(VotingEnded {
+        voting_id,
         result: gv_consts::INFORMAL_VOTING_QUORUM_NOT_REACHED.into(),
         votes_count: U256::from(2),
         stake_in_favor: U256::from(500),
@@ -206,7 +207,8 @@ fn test_informal_voting_rejected() {
     // the status should be rejected
     mock_voter_contract.assert_event_at(
         5,
-        InformalVotingEnded {
+        VotingEnded {
+            voting_id,
             result: gv_consts::INFORMAL_VOTING_REJECTED.into(),
             votes_count: U256::from(3),
             stake_in_favor: U256::from(500),
@@ -268,7 +270,8 @@ fn test_informal_voting_converted() {
     );
 
     // the status should be converted
-    mock_voter_contract.assert_last_event(InformalVotingEnded {
+    mock_voter_contract.assert_last_event(VotingEnded {
+        voting_id,
         result: gv_consts::INFORMAL_VOTING_PASSED.into(),
         votes_count: U256::from(3),
         stake_in_favor: U256::from(1000),
@@ -320,13 +323,14 @@ fn test_formal_vote_without_a_quorum() {
 
     // Now the time should be fine, but a single vote should not reach quorum
     mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_last_event(FormalVotingEnded {
+    mock_voter_contract.assert_last_event(VotingEnded {
+        voting_id,
         result: gv_consts::FORMAL_VOTING_QUORUM_NOT_REACHED.into(),
         votes_count: U256::from(2),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(500),
         informal_voting_id: VotingId::zero(),
-        formal_voting_id: voting_id,
+        formal_voting_id: Some(voting_id),
     });
 
     // voting status should be completed
@@ -385,13 +389,14 @@ fn test_formal_vote_rejected() {
         2500.into()
     );
     mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_last_event(FormalVotingEnded {
+    mock_voter_contract.assert_last_event(VotingEnded {
+        voting_id,
         result: gv_consts::FORMAL_VOTING_REJECTED.into(),
         votes_count: U256::from(3),
         stake_in_favor: U256::from(500),
         stake_against: U256::from(2000),
         informal_voting_id: VotingId::zero(),
-        formal_voting_id: voting_id,
+        formal_voting_id: Some(voting_id),
     });
 
     // voting status should be completed
@@ -441,13 +446,14 @@ fn test_formal_vote_completed() {
     mock_voter_contract.finish_voting(voting_id).unwrap();
     mock_voter_contract.assert_event_at(
         -1,
-        FormalVotingEnded {
+        VotingEnded {
+            voting_id,
             result: gv_consts::FORMAL_VOTING_PASSED.into(),
             votes_count: U256::from(3),
             stake_in_favor: U256::from(1500),
             stake_against: U256::from(1000),
             informal_voting_id: VotingId::zero(),
-            formal_voting_id: voting_id,
+            formal_voting_id: Some(voting_id),
         },
     );
 

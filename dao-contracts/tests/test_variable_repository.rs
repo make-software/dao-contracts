@@ -49,8 +49,11 @@ impl ContractWrapper {
         value: V,
         activation_time: Option<u64>,
     ) -> Result<(), Error> {
-        self.contract
-            .update_at(key.to_string(), value.convert_to_bytes(), activation_time)
+        self.contract.update_at(
+            key.to_string(),
+            value.convert_to_bytes().unwrap(),
+            activation_time,
+        )
     }
 
     pub fn get_value<K: ToString, V: BytesConversion>(&self, key: K) -> V {
@@ -62,10 +65,10 @@ impl ContractWrapper {
     pub fn get_full_value<K: ToString, V: BytesConversion>(&self, key: K) -> (V, Option<(V, u64)>) {
         let result: (Bytes, Option<(Bytes, u64)>) =
             self.contract.get_full_value(key.to_string()).unwrap();
-        let current: V = V::convert_from_bytes(result.0);
+        let current: V = V::convert_from_bytes(result.0).unwrap();
         let future = result
             .1
-            .map(|(future, time)| (V::convert_from_bytes(future), time));
+            .map(|(future, time)| (V::convert_from_bytes(future).unwrap(), time));
         (current, future)
     }
 
@@ -148,7 +151,7 @@ fn test_update_at_1() {
     // And it throws an event.
     contract.assert_last_event(ValueUpdated {
         key: String::from(KEY),
-        value: VALUE.convert_to_bytes(),
+        value: VALUE.convert_to_bytes().unwrap(),
         activation_time: None,
     });
 }
@@ -425,7 +428,7 @@ fn test_anyone_can_read_data() {
 
     contract.update_at(KEY, VALUE_2, None).unwrap();
     let value = contract.as_account(user).get(KEY.to_string()).unwrap();
-    assert_eq!(VALUE_2, u32::convert_from_bytes(value));
+    assert_eq!(VALUE_2, u32::convert_from_bytes(value).unwrap());
 }
 
 #[test]

@@ -79,7 +79,7 @@ impl Voting {
         }
     }
 
-    pub fn convert_to_formal(&self, new_voting_id: U256, start_time: u64) -> Self {
+    pub fn create_formal_voting(&self, new_voting_id: U256, start_time: u64) -> Self {
         let mut voting = self.clone();
         voting.formal_voting_id = Some(new_voting_id);
         voting.voting_id = new_voting_id;

@@ -67,15 +67,15 @@ impl MockVoterContractInterface for MockVoterContract {
     }
 
     fn get_voting(&self, voting_id: VotingId) -> Voting {
-        self.voting.votings.get(&voting_id)
+        self.voting.get_voting(voting_id)
     }
 
     fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
-        self.voting.votes.get(&(voting_id, address))
+        self.voting.get_vote(voting_id, address)
     }
 
     fn get_voters(&self, voting_id: U256) -> Vec<Address> {
-        self.voting.voters.get(&voting_id)
+        self.voting.get_voters(voting_id)
     }
 
     fn set_variable(&mut self, variable: String) {

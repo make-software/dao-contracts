@@ -20,6 +20,7 @@ pub enum Error {
     VoteOnCompletedVotingNotAllowed,
     FinishingCompletedVotingNotAllowed,
     CannotVoteTwice,
+    BytesConversionError,
 }
 
 impl From<Error> for ApiError {
@@ -34,6 +35,7 @@ impl From<Error> for ApiError {
             Error::ValueNotAvailable => 1005,
             Error::ActivationTimeInPast => 1006,
             Error::ArithmeticOverflow => 1007,
+            Error::BytesConversionError => 1008,
             Error::InvalidContext => 1099,
             Error::Unknown => 1100,
             Error::InformalVotingTimeNotReached => 2101, // Voting errors start with 21xx
@@ -59,6 +61,7 @@ impl From<u16> for Error {
             1005 => Error::ValueNotAvailable,
             1006 => Error::ActivationTimeInPast,
             1007 => Error::ArithmeticOverflow,
+            1008 => Error::BytesConversionError,
             2101 => Error::InformalVotingTimeNotReached,
             2102 => Error::FormalQuorumNotReached,
             2103 => Error::FormalVotingTimeNotReached,

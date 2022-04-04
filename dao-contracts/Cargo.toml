@@ -37,26 +37,6 @@ bench = false
 doctest = false
 test = false
 
-[[test]]
-name = "test-reputation"
-path = "tests/test_reputation.rs"
-harness = true
-
-[[test]]
-name = "test-variable-repository"
-path = "tests/test_variable_repository.rs"
-harness = true
-
-[[test]]
-name = "test-repo-voter"
-path = "tests/test_repo_voter.rs"
-harness = true
-
-[[test]]
-name = "test-governance-voting"
-path = "tests/test_governance_voting.rs"
-harness = true
-
 [features]
 default = [ "test-support" ]
 test-support = [ "casper-dao-utils/test-support", "casper-dao-modules/test-support" ]

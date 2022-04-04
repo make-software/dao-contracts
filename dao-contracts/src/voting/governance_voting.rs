@@ -3,8 +3,7 @@ pub mod consts;
 pub mod events;
 pub mod voting;
 
-use casper_dao_utils::bytes::BytesConversion;
-
+use casper_dao_utils::conversions::{u256_to_512, u512_to_u256};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
@@ -18,27 +17,26 @@ use crate::{
 };
 
 use self::{
-    events::{
-        FormalVotingEnded, InformalVotingEnded, VoteCast, VotingContractCreated, VotingCreated,
-    },
+    events::{VoteCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
-use casper_dao_utils::consts as dao_consts;
+use casper_dao_utils::{consts as dao_consts, math};
 
+use super::VotingEnded;
 use super::{vote::VotingId, Vote};
 
 /// The Governance Voting module.
 
 #[derive(Instance)]
 pub struct GovernanceVoting {
-    pub variable_repo: Variable<Option<Address>>,
-    pub reputation_token: Variable<Option<Address>>,
-    pub votings: Mapping<U256, Voting>,
-    pub votes: Mapping<(U256, Address), Vote>,
-    pub voters: Mapping<U256, Vec<Address>>,
-    pub votings_count: Variable<U256>,
-    pub dust_amount: Variable<U256>,
+    variable_repo: Variable<Option<Address>>,
+    reputation_token: Variable<Option<Address>>,
+    votings: Mapping<U256, Voting>,
+    votes: Mapping<(U256, Address), Vote>,
+    voters: Mapping<U256, Vec<Address>>,
+    votings_count: Variable<U256>,
+    dust_amount: Variable<U256>,
 }
 
 impl GovernanceVoting {
@@ -63,23 +61,24 @@ impl GovernanceVoting {
         runtime_args: RuntimeArgs,
     ) {
         let repo_caller = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
-
         let reputation_caller = ReputationContractCaller::at(self.get_reputation_token_address());
 
         let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
         let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
         let minimum_governance_reputation =
             repo_caller.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION);
-        let voting_id = self.votings_count.get();
+        let voting_id = self.next_voting_id();
 
-        let informal_voting_quorum = VariableRepositoryContractCaller::mul_by_ratio(
+        let informal_voting_quorum = math::promils_of(
             reputation_caller.total_onboarded(),
             repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
-        );
-        let formal_voting_quorum = VariableRepositoryContractCaller::mul_by_ratio(
+        )
+        .unwrap_or_revert();
+        let formal_voting_quorum = math::promils_of(
             reputation_caller.total_onboarded(),
             repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
-        );
+        )
+        .unwrap_or_revert();
 
         let voting_configuration = VotingConfiguration {
             formal_voting_quorum,
@@ -95,7 +94,6 @@ impl GovernanceVoting {
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
 
         // Add Voting
-        self.votings_count.set(voting_id + 1);
         self.votings.set(&voting_id, voting);
 
         emit(VotingCreated {
@@ -132,14 +130,14 @@ impl GovernanceVoting {
             VotingResult::InFavor => {
                 self.return_reputation(voting.voting_id());
 
-                let formal_voting_id = self.votings_count.get();
+                let formal_voting_id = self.next_voting_id();
                 let creator_address = *voters.first().unwrap_or_revert();
                 let creator_stake = self.votes.get(&(voting.voting_id(), creator_address)).stake;
 
                 // Formal voting is created and first vote cast
                 self.votings.set(
                     &formal_voting_id,
-                    voting.convert_to_formal(formal_voting_id, get_block_time()),
+                    voting.create_formal_voting(formal_voting_id, get_block_time()),
                 );
 
                 emit(VotingCreated {
@@ -169,7 +167,8 @@ impl GovernanceVoting {
             }
         };
 
-        emit(InformalVotingEnded {
+        emit(VotingEnded {
+            voting_id: voting.voting_id(),
             result: result.into(),
             votes_count: voters.len().into(),
             stake_in_favor: voting.stake_in_favor(),
@@ -204,13 +203,14 @@ impl GovernanceVoting {
             }
         };
 
-        emit(FormalVotingEnded {
+        emit(VotingEnded {
+            voting_id: voting.voting_id(),
             result: result.into(),
             votes_count: voters.len().into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
             informal_voting_id: voting.informal_voting_id(),
-            formal_voting_id: voting.voting_id(),
+            formal_voting_id: Some(voting.voting_id()),
         });
 
         voting.complete(None);
@@ -276,6 +276,24 @@ impl GovernanceVoting {
         self.reputation_token.get().unwrap_or_revert()
     }
 
+    pub fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
+        self.votes.get(&(voting_id, address))
+    }
+
+    pub fn get_voters(&self, voting_id: VotingId) -> Vec<Address> {
+        self.voters.get(&voting_id)
+    }
+
+    pub fn get_voting(&self, voting_id: VotingId) -> Voting {
+        self.votings.get(&voting_id)
+    }
+
+    pub fn next_voting_id(&mut self) -> U256 {
+        let voting_id = self.votings_count.get();
+        self.votings_count.set(voting_id + 1);
+        voting_id
+    }
+
     pub fn perform_action(&self, voting: &Voting) {
         call_contract(
             voting.contract_to_call().unwrap_or_revert(),
@@ -326,26 +344,26 @@ impl GovernanceVoting {
     }
 
     fn redistribute_reputation(&mut self, voting: &Voting) {
-        // TODO: remove bytes conversion after support for U256<>U512 conversion will be added to Casper
+        // TODO: update conversion after support for U256<>U512 conversion will be added to Casper
         let voters = self.voters.get(&voting.voting_id());
-        let total_stake = U512::convert_from_bytes(voting.total_stake().convert_to_bytes());
+        let total_stake = u256_to_512(voting.total_stake()).unwrap_or_revert();
         let mut transferred = U512::zero();
         let result = voting.is_in_favor();
+        let u256_max = u256_to_512(U256::MAX).unwrap_or_revert();
 
         for address in voters {
             let vote = self.votes.get(&(voting.voting_id(), address));
             if vote.choice == result {
-                let to_transfer = total_stake
-                    * U512::convert_from_bytes(vote.stake.convert_to_bytes())
-                    / U512::convert_from_bytes(voting.get_winning_stake().convert_to_bytes());
+                let to_transfer = total_stake * u256_to_512(vote.stake).unwrap_or_revert()
+                    / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
 
-                if to_transfer > U512::convert_from_bytes(U256::MAX.convert_to_bytes()) {
+                if to_transfer > u256_max {
                     revert(Error::ArithmeticOverflow)
                 }
 
                 transferred += to_transfer;
 
-                let to_transfer = U256::convert_from_bytes(to_transfer.convert_to_bytes());
+                let to_transfer = u512_to_u256(to_transfer).unwrap_or_revert();
 
                 self.transfer_reputation(self_address(), address, to_transfer);
             }
@@ -355,12 +373,12 @@ impl GovernanceVoting {
         let dust = total_stake - transferred;
 
         if dust > U512::zero() {
-            if dust > U512::convert_from_bytes(U256::MAX.convert_to_bytes()) {
+            if dust > u256_max {
                 revert(Error::ArithmeticOverflow)
             }
 
             self.dust_amount
-                .set(self.get_dust_amount() + U256::convert_from_bytes(dust.convert_to_bytes()));
+                .set(self.get_dust_amount() + u512_to_u256(dust).unwrap_or_revert());
         }
     }
 }
