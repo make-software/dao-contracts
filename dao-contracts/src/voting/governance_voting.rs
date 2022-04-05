@@ -63,10 +63,14 @@ impl GovernanceVoting {
         let repo_caller = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
         let reputation_caller = ReputationContractCaller::at(self.get_reputation_token_address());
 
-        let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
-        let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
         let minimum_governance_reputation =
             repo_caller.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION);
+
+        if stake < minimum_governance_reputation {
+            revert(Error::NotEnoughReputation)
+        }
+        let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
+        let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
         let voting_id = self.next_voting_id();
 
         let informal_voting_quorum = math::promils_of(

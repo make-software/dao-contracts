@@ -12,15 +12,15 @@ pub enum Error {
     ValueNotAvailable,
     ActivationTimeInPast,
     ArithmeticOverflow,
+    BytesConversionError,
     Unknown,
     InvalidContext,
     InformalVotingTimeNotReached,
-    FormalQuorumNotReached,
     FormalVotingTimeNotReached,
     VoteOnCompletedVotingNotAllowed,
     FinishingCompletedVotingNotAllowed,
     CannotVoteTwice,
-    BytesConversionError,
+    NotEnoughReputation,
 }
 
 impl From<Error> for ApiError {
@@ -39,11 +39,11 @@ impl From<Error> for ApiError {
             Error::InvalidContext => 1099,
             Error::Unknown => 1100,
             Error::InformalVotingTimeNotReached => 2101, // Voting errors start with 21xx
-            Error::FormalQuorumNotReached => 2102,
-            Error::FormalVotingTimeNotReached => 2103,
-            Error::VoteOnCompletedVotingNotAllowed => 2104,
-            Error::FinishingCompletedVotingNotAllowed => 2105,
-            Error::CannotVoteTwice => 2106,
+            Error::FormalVotingTimeNotReached => 2102,
+            Error::VoteOnCompletedVotingNotAllowed => 2103,
+            Error::FinishingCompletedVotingNotAllowed => 2104,
+            Error::CannotVoteTwice => 2105,
+            Error::NotEnoughReputation => 2106,
         };
         ApiError::User(id)
     }
@@ -63,11 +63,11 @@ impl From<u16> for Error {
             1007 => Error::ArithmeticOverflow,
             1008 => Error::BytesConversionError,
             2101 => Error::InformalVotingTimeNotReached,
-            2102 => Error::FormalQuorumNotReached,
-            2103 => Error::FormalVotingTimeNotReached,
-            2104 => Error::VoteOnCompletedVotingNotAllowed,
-            2105 => Error::FinishingCompletedVotingNotAllowed,
-            2106 => Error::CannotVoteTwice,
+            2102 => Error::FormalVotingTimeNotReached,
+            2103 => Error::VoteOnCompletedVotingNotAllowed,
+            2104 => Error::FinishingCompletedVotingNotAllowed,
+            2105 => Error::CannotVoteTwice,
+            2106 => Error::NotEnoughReputation,
             _ => Error::Unknown,
         }
     }
