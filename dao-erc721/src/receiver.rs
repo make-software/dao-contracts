@@ -46,7 +46,8 @@ impl ERC721ReceiverCaller {
 
 pub mod tests {
     use casper_dao_utils::{
-        casper_dao_macros::{casper_contract_interface, Instance},
+        casper_dao_macros::{casper_contract_interface, Event, Instance},
+        casper_env::emit,
         Address, Variable,
     };
     use casper_types::bytesrepr::Bytes;
@@ -82,6 +83,13 @@ pub mod tests {
             token_id: TokenId,
             data: Option<Bytes>,
         ) {
+            emit(Received {
+                operator,
+                from,
+                token_id,
+                data: data.clone(),
+            });
+
             if let Some(data) = data {
                 self.var.set(data)
             }
@@ -109,5 +117,13 @@ pub mod tests {
         fn get(&self) -> Bytes {
             self.var.get()
         }
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Received {
+        pub operator: Address,
+        pub from: Address,
+        pub token_id: TokenId,
+        pub data: Option<Bytes>,
     }
 }

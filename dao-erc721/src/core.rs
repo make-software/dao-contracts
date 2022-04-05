@@ -27,6 +27,9 @@ pub struct ERC721Token {
 
 impl ERC721Token {
     pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
+        if !self.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
         self.owners.get(&token_id)
     }
 
@@ -54,7 +57,6 @@ impl ERC721Token {
         if owner == to {
             casper_env::revert(Error::ApprovalToCurrentOwner);
         }
-
         let owner = owner.unwrap_or_revert();
         let caller = casper_env::caller();
         if caller != owner && !self.is_approved_for_all(owner, caller) {
@@ -181,14 +183,14 @@ impl ERC721Token {
         });
     }
 
-    pub(crate) fn is_approved_or_owner(&mut self, spender: Address, token_id: TokenId) -> bool {
+    pub(crate) fn is_approved_or_owner(&mut self, approved: Address, token_id: TokenId) -> bool {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
         }
         let owner = self.owner_of(token_id);
-        spender == owner.unwrap()
-            || self.is_approved_for_all(owner.unwrap(), spender)
-            || self.get_approved(token_id) == Some(spender)
+        approved == owner.unwrap()
+            || self.is_approved_for_all(owner.unwrap(), approved)
+            || self.get_approved(token_id) == Some(approved)
     }
 
     fn check_on_erc721_received(

@@ -117,7 +117,7 @@ impl TestEnvState {
     pub fn new() -> TestEnvState {
         let mut genesis_config = DEFAULT_GENESIS_CONFIG.clone();
         let mut accounts: Vec<Address> = Vec::new();
-        for i in 0..3 {
+        for i in 0..5 {
             // Create keypair.
             let secret_key = SecretKey::ed25519_from_bytes([i; 32]).unwrap();
             let public_key = PublicKey::from(&secret_key);

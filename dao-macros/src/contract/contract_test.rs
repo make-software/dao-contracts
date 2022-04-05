@@ -54,8 +54,20 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
                 event
             }
 
-            pub fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: u32, event: T) {
+            pub fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: i32, event: T) {
+                let length: u32 = self.env.get_value(self.package_hash, "events_length");
+                let index: u32 = if index.is_negative() {
+                    length - index.wrapping_abs() as u32
+                } else {
+                    index as u32
+                };
+
                 assert_eq!(self.event::<T>(index), event);
+            }
+
+            pub fn assert_last_event<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, event: T) {
+                let length: u32 = self.env.get_value(self.package_hash, "events_length");
+                assert_eq!(self.event::<T>(length - 1), event);
             }
         }
     })
