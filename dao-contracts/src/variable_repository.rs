@@ -1,10 +1,11 @@
 use casper_dao_modules::{Owner, Record, Repository, Whitelist};
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::caller,
-    Address,
+    casper_env::{caller, revert},
+    Address, Error,
 };
-use casper_types::bytesrepr::Bytes;
+use casper_types::bytesrepr::{Bytes, FromBytes};
 
 #[casper_contract_interface]
 pub trait VariableRepositoryContractInterface {
@@ -79,5 +80,16 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 
     fn is_whitelisted(&self, address: Address) -> bool {
         self.whitelist.is_whitelisted(&address)
+    }
+}
+
+impl VariableRepositoryContractCaller {
+    pub fn get_variable<T: FromBytes>(&self, key: &str) -> T {
+        let variable = self.get(key.into()).unwrap_or_revert();
+        let (variable, bytes) = <T>::from_bytes(&variable).unwrap_or_revert();
+        if !bytes.is_empty() {
+            revert(Error::ValueNotAvailable)
+        }
+        variable
     }
 }

@@ -21,10 +21,10 @@ fn generate_struct(input: &CasperContractItem) -> TokenStream {
       }
 
       impl #ident {
-        pub fn at(contract_package_hash: casper_types::ContractPackageHash) -> Self {
-            Self {
-                contract_package_hash,
-            }
+        pub fn at(address: casper_dao_utils::Address) -> Self {
+          Self {
+              contract_package_hash: *address.as_contract_package_hash().unwrap(),
+          }
         }
       }
     }
@@ -96,9 +96,9 @@ mod tests {
           }
 
           impl ContractCaller {
-            pub fn at(contract_package_hash: casper_types::ContractPackageHash) -> Self {
+            pub fn at(address: casper_dao_utils::Address) -> Self {
               Self {
-                  contract_package_hash,
+                  contract_package_hash: *address.as_contract_package_hash().unwrap(),
               }
             }
           }

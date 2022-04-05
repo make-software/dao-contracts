@@ -8,7 +8,7 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    ApiError, CLTyped, ContractPackageHash, EntryPoints, URef,
+    ApiError, CLTyped, ContractPackageHash, EntryPoints, RuntimeArgs, URef,
 };
 
 use crate::{events::Events, Address};
@@ -74,6 +74,12 @@ pub fn caller() -> Address {
     call_stack_element_to_address(second_elem)
 }
 
+/// Gets the address of the currently run contract
+pub fn self_address() -> Address {
+    let first_elem = take_call_stack_elem(0);
+    call_stack_element_to_address(first_elem)
+}
+
 /// Record event to the contract's storage.
 pub fn emit<T: ToBytes>(event: T) {
     Events::default().emit(event);
@@ -84,6 +90,16 @@ pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
     let preimage = key.to_bytes().unwrap_or_revert();
     let bytes = runtime::blake2b(preimage);
     hex::encode(bytes)
+}
+
+/// Calls a contract method by Address
+pub fn call_contract<T: CLTyped + FromBytes>(
+    address: Address,
+    entry_point: &str,
+    runtime_args: RuntimeArgs,
+) -> T {
+    let contract_package_hash = address.as_contract_package_hash().unwrap_or_revert();
+    runtime::call_versioned_contract(*contract_package_hash, None, entry_point, runtime_args)
 }
 
 pub fn install_contract(
