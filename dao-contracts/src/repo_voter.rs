@@ -25,7 +25,7 @@ pub trait RepoVoterContractInterface {
     fn get_reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: U256) -> Voting;
     fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-    fn get_voters(&self, voting_id: U256) -> Vec<Address>;
+    fn get_voter(&self, voting_id: U256, at: u32) -> Address;
 }
 
 #[derive(Instance)]
@@ -87,7 +87,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
         self.voting.get_vote(voting_id, address)
     }
 
-    fn get_voters(&self, voting_id: U256) -> Vec<Address> {
-        self.voting.get_voters(voting_id)
+    fn get_voter(&self, voting_id: U256, at: u32) -> Address {
+        self.voting.get_voter(voting_id, at)
     }
 }

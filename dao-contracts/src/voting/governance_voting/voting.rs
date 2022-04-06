@@ -119,15 +119,15 @@ impl Voting {
         }
     }
 
-    pub fn get_quorum(&self) -> usize {
+    pub fn get_quorum(&self) -> U256 {
         match self.get_voting_type() {
-            VotingType::Informal => self.informal_voting_quorum.as_usize(),
-            VotingType::Formal => self.formal_voting_quorum.as_usize(),
+            VotingType::Informal => self.informal_voting_quorum,
+            VotingType::Formal => self.formal_voting_quorum,
         }
     }
 
-    pub fn get_result(&self, voters_number: usize) -> VotingResult {
-        if self.get_quorum() > voters_number {
+    pub fn get_result(&self, voters_number: u32) -> VotingResult {
+        if self.get_quorum().as_u32() > voters_number {
             VotingResult::QuorumNotReached
         } else if self.is_in_favor() {
             VotingResult::InFavor
