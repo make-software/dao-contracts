@@ -1,5 +1,4 @@
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_env::{self, emit},
     Error,
 };
@@ -14,7 +13,7 @@ impl BurnableERC721 {
             casper_env::revert(Error::CallerIsNotOwnerNorApproved);
         }
 
-        let owner = erc721.owner_of(token_id).unwrap_or_revert();
+        let owner = erc721.owner_of(token_id);
 
         erc721.approve(None, token_id);
         erc721.decrement_balance(owner);

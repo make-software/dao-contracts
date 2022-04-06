@@ -12,7 +12,7 @@ pub struct Transfer {
 #[derive(Debug, PartialEq, Event)]
 pub struct Approval {
     pub owner: Option<Address>,
-    pub operator: Option<Address>,
+    pub approved: Option<Address>,
     pub token_id: TokenId,
 }
 

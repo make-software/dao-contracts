@@ -21,7 +21,7 @@ pub trait ERC721Interface {
     fn init(&mut self, name: String, symbol: String);
     fn name(&self) -> String;
     fn symbol(&self) -> String;
-    fn owner_of(&self, token_id: TokenId) -> Option<Address>;
+    fn owner_of(&self, token_id: TokenId) -> Address;
     fn balance_of(&self, owner: Address) -> U256;
     fn total_supply(&self) -> U256;
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
@@ -31,13 +31,12 @@ pub trait ERC721Interface {
     fn set_approval_for_all(&mut self, operator: Address, approved: bool);
     fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
     fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
-    fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
-    fn safe_transfer_from_with_data(
+    fn safe_transfer_from(
         &mut self,
         owner: Address,
         recipient: Address,
         token_id: TokenId,
-        data: Bytes,
+        data: Option<Bytes>,
     );
     fn mint(&mut self, to: Address, token_id: TokenId);
     fn burn(&mut self, token_id: TokenId);
@@ -58,7 +57,7 @@ impl ERC721Interface for ERC721 {
         }
 
         to self.core {
-            fn owner_of(&self, token_id: TokenId) -> Option<Address>;
+            fn owner_of(&self, token_id: TokenId) -> Address;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
             fn token_uri(&self, token_id: TokenId) -> TokenUri;
@@ -68,23 +67,8 @@ impl ERC721Interface for ERC721 {
             fn set_approval_for_all(&mut self, operator: Address, approved: bool);
             fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
             fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
+            fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId, data: Option<Bytes>);
         }
-    }
-
-    fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId) {
-        self.core
-            .safe_transfer_from(owner, recipient, token_id, None);
-    }
-
-    fn safe_transfer_from_with_data(
-        &mut self,
-        owner: Address,
-        recipient: Address,
-        token_id: TokenId,
-        data: Bytes,
-    ) {
-        self.core
-            .safe_transfer_from(owner, recipient, token_id, Some(data));
     }
 
     fn mint(&mut self, to: Address, token_id: TokenId) {

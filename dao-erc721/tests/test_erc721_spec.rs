@@ -59,7 +59,7 @@ mod test {
                 }
 
                 it "sets the ownership to the new token owner" {
-                    assert_eq!(token.owner_of(first_token_id).unwrap(), token_owner);
+                    assert_eq!(token.owner_of(first_token_id), token_owner);
                 }
 
                 it "emits a Transfer event" {
@@ -111,7 +111,7 @@ mod test {
                     context "when the given token id was tracked by this token" {
                         it "returns the owner of the given token ID" {
                             let token_id = first_token_id;
-                            assert_eq!(token.owner_of(token_id).unwrap(), token_owner);
+                            assert_eq!(token.owner_of(token_id), token_owner);
                         }
 
                     }
@@ -141,7 +141,7 @@ mod test {
                     {
                         token.assert_last_event(Approval {
                             owner: Some(owner),
-                            operator: address,
+                            approved: address,
                             token_id
                         });
                     }
@@ -378,7 +378,7 @@ mod test {
                         //transfers the ownership of the given token id to the given address
                         assert_eq!(
                             token.owner_of(token_id),
-                            new_owner
+                            new_owner.unwrap(),
                         );
 
                         //emits a Transfer event
@@ -397,7 +397,7 @@ mod test {
                         //emits an Approval event
                         token.assert_event_at(-2, Approval {
                             owner: Some(owner),
-                            operator: None,
+                            approved: None,
                             token_id
                         });
 
@@ -457,7 +457,7 @@ mod test {
 
                             it "keeps ownership of the token" {
                                 assert_eq!(
-                                    token.owner_of(first_token_id).unwrap(),
+                                    token.owner_of(first_token_id),
                                     token_owner,
                                 );
                             }
@@ -516,7 +516,7 @@ mod test {
                             context "when called by the owner" {
                                 it "works" {
                                     token.as_account(token_owner)
-                                        .safe_transfer_from(token_owner, recipient, first_token_id)
+                                        .safe_transfer_from(token_owner, recipient, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(recipient));
                                 }
@@ -525,7 +525,7 @@ mod test {
                             context "when called by the approved individual" {
                                 it "works" {
                                     token.as_account(approved)
-                                        .safe_transfer_from(token_owner, recipient, first_token_id)
+                                        .safe_transfer_from(token_owner, recipient, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(recipient));
                                 }
@@ -534,7 +534,7 @@ mod test {
                             context "when called by the operator" {
                                 it "works" {
                                     token.as_account(operator)
-                                        .safe_transfer_from(token_owner, recipient, first_token_id)
+                                        .safe_transfer_from(token_owner, recipient, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(recipient));
                                 }
@@ -546,7 +546,7 @@ mod test {
                                 }
                                 it "works" {
                                     token.as_account(operator)
-                                        .safe_transfer_from(token_owner, recipient, first_token_id)
+                                        .safe_transfer_from(token_owner, recipient, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(recipient));
                                 }
@@ -555,13 +555,13 @@ mod test {
                             context "when sent to the owner" {
                                 before {
                                     token.as_account(token_owner)
-                                        .safe_transfer_from(token_owner, token_owner, first_token_id)
+                                        .safe_transfer_from(token_owner, token_owner, first_token_id, None)
                                         .unwrap();
                                 }
 
                                 it "keeps ownership of the token" {
                                     assert_eq!(
-                                        token.owner_of(first_token_id).unwrap(),
+                                        token.owner_of(first_token_id),
                                         token_owner,
                                     );
                                 }
@@ -590,7 +590,7 @@ mod test {
                             context "when the address of the previous owner is incorrect" {
                                 it "reverts" {
                                     assert_eq!(
-                                        token.as_account(token_owner).safe_transfer_from(another_user, recipient, first_token_id),
+                                        token.as_account(token_owner).safe_transfer_from(another_user, recipient, first_token_id, None),
                                         Err(Error::TransferFromIncorrectOwner)
                                     );
                                 }
@@ -599,7 +599,7 @@ mod test {
                             context "when the sender is not authorized for the token id" {
                                 it "reverts" {
                                     assert_eq!(
-                                        token.as_account(another_user).safe_transfer_from(token_owner, another_user, first_token_id),
+                                        token.as_account(another_user).safe_transfer_from(token_owner, another_user, first_token_id, None),
                                         Err(Error::CallerIsNotOwnerNorApproved)
                                     );
                                 }
@@ -608,7 +608,7 @@ mod test {
                             context "when the given token id does not exist" {
                                 it "reverts" {
                                     assert_eq!(
-                                        token.as_account(token_owner).safe_transfer_from(token_owner, another_user, non_existent_token_id),
+                                        token.as_account(token_owner).safe_transfer_from(token_owner, another_user, non_existent_token_id, None),
                                         Err(Error::TokenDoesNotExist)
                                     );
                                 }
@@ -623,7 +623,7 @@ mod test {
                             context "when called by the owner" {
                                 it "works" {
                                     token.as_account(token_owner)
-                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id)
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(receiver_contract_address));
                                 }
@@ -632,7 +632,7 @@ mod test {
                             context "when called by the approved individual" {
                                 it "works" {
                                     token.as_account(approved)
-                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id)
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(receiver_contract_address));
                                 }
@@ -641,7 +641,7 @@ mod test {
                             context "when called by the operator" {
                                 it "works" {
                                     token.as_account(operator)
-                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id)
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(receiver_contract_address));
                                 }
@@ -653,7 +653,7 @@ mod test {
                                 }
                                 it "works" {
                                     token.as_account(operator)
-                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id)
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None)
                                         .unwrap();
                                     transfer_was_successful(token, token_owner, first_token_id, Some(receiver_contract_address));
                                 }
@@ -663,7 +663,7 @@ mod test {
                             context "when the address of the previous owner is incorrect" {
                                 it "reverts" {
                                     assert_eq!(
-                                        token.as_account(token_owner).safe_transfer_from(another_user, receiver_contract_address, first_token_id),
+                                        token.as_account(token_owner).safe_transfer_from(another_user, receiver_contract_address, first_token_id, None),
                                         Err(Error::TransferFromIncorrectOwner)
                                     );
                                 }
@@ -672,7 +672,7 @@ mod test {
                             context "when the sender is not authorized for the token id" {
                                 it "reverts" {
                                     assert_eq!(
-                                        token.as_account(another_user).safe_transfer_from(token_owner, receiver_contract_address, first_token_id),
+                                        token.as_account(another_user).safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None),
                                         Err(Error::CallerIsNotOwnerNorApproved)
                                     );
                                 }
@@ -681,7 +681,7 @@ mod test {
                             context "when the given token id does not exist" {
                                 it "reverts" {
                                     assert_eq!(
-                                        token.as_account(token_owner).safe_transfer_from(token_owner, receiver_contract_address, non_existent_token_id),
+                                        token.as_account(token_owner).safe_transfer_from(token_owner, receiver_contract_address, non_existent_token_id, None),
                                         Err(Error::TokenDoesNotExist)
                                     );
                                 }
@@ -689,7 +689,7 @@ mod test {
                             context "without data" {
                                 it "calls on_ERC721_received" {
                                     token.as_account(token_owner)
-                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id)
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None)
                                         .unwrap();
                                     receiver_contract.assert_last_event(Received {
                                         operator: token_owner,
@@ -701,7 +701,7 @@ mod test {
 
                                 it "calls on_ERC721_received from approved" {
                                     token.as_account(approved)
-                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id)
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, None)
                                         .unwrap();
                                     receiver_contract.assert_last_event(Received {
                                         operator: approved,
@@ -714,11 +714,11 @@ mod test {
 
                             context "with data" {
                                 before {
-                                    let magic_value = BytesConversion::convert_to_bytes(&"value".to_string());
+                                    let magic_value = BytesConversion::convert_to_bytes(&"value".to_string()).unwrap();
                                 }
                                 it "calls on_ERC721_received" {
                                     token.as_account(token_owner)
-                                        .safe_transfer_from_with_data(token_owner, receiver_contract_address, first_token_id, magic_value.clone())
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, Some(magic_value.clone()))
                                         .unwrap();
                                     receiver_contract.assert_last_event(Received {
                                         operator: token_owner,
@@ -730,7 +730,7 @@ mod test {
 
                                 it "calls on_ERC721_received from approved" {
                                     token.as_account(approved)
-                                        .safe_transfer_from_with_data(token_owner, receiver_contract_address, first_token_id, magic_value.clone())
+                                        .safe_transfer_from(token_owner, receiver_contract_address, first_token_id, Some(magic_value.clone()))
                                         .unwrap();
                                     receiver_contract.assert_last_event(Received {
                                         operator: approved,
@@ -750,7 +750,7 @@ mod test {
 
                             it "reverts" {
                                 assert_eq!(
-                                    token.as_account(approved).safe_transfer_from(token_owner, invalid_receiver_address, first_token_id),
+                                    token.as_account(approved).safe_transfer_from(token_owner, invalid_receiver_address, first_token_id, None),
                                     Err(Error::NoSuchMethod("on_erc_721_received".to_string()))
                                 )
                             }
