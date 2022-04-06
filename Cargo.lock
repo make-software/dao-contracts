@@ -120,6 +120,7 @@ dependencies = [
  "casper-dao-modules",
  "casper-dao-utils",
  "casper-types",
+ "delegate",
 ]
 
 [[package]]
@@ -147,7 +148,6 @@ version = "0.1.0"
 dependencies = [
  "casper-dao-utils",
  "casper-types",
- "delegate",
 ]
 
 [[package]]

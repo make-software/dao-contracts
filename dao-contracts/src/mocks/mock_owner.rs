@@ -1,11 +1,10 @@
+use casper_dao_modules::Owner;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env, Address,
 };
 
 use delegate::delegate;
-
-use crate::Owner;
 
 #[casper_contract_interface]
 trait MockOwnerInterface {

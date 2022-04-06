@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
-    mocks::MockVoterContractTest,
+    mocks::test::MockVoterContractTest,
     voting::{
         consts as gv_consts, voting::Voting, Vote, VoteCast, VotingContractCreated, VotingCreated,
         VotingEnded, VotingId,

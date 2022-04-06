@@ -6,7 +6,6 @@ edition = "2018"
 [dependencies]
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
-delegate = "0.6.2"
 
 [features]
 default = [ "test-support" ]

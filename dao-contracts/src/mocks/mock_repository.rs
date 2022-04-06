@@ -1,9 +1,8 @@
+use casper_dao_modules::{Record, Repository};
 use casper_dao_utils::casper_dao_macros::{casper_contract_interface, Instance};
 
 use casper_types::bytesrepr::Bytes;
 use delegate::delegate;
-
-use crate::{Record, Repository};
 
 #[casper_contract_interface]
 trait MockRepositoryInterface {

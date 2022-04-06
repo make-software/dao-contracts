@@ -7,6 +7,7 @@ edition = "2018"
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 casper-dao-modules = { path = "../dao-modules", default-features = false }
+delegate = "0.6.2"
 
 [[bin]]
 name = "reputation_contract"
@@ -44,6 +45,33 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "mock_owner_contract"
+path = "bin/mocks/mock_owner_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "mock_repository_contract"
+path = "bin/mocks/mock_repository_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "mock_staking_contract"
+path = "bin/mocks/mock_staking_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "mock_token_contract"
+path = "bin/mocks/mock_token_contract.rs"
+bench = false
+doctest = false
+test = false
 
 [features]
 default = [ "test-support" ]

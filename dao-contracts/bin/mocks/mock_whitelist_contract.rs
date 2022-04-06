@@ -1,4 +1,4 @@
-use casper_dao_modules::mocks::{MockWhitelist, MockWhitelistInterface};
-casper_dao_modules::mock_whitelist!();
+use casper_dao_contracts::mocks::{MockWhitelist, MockWhitelistInterface};
+casper_dao_contracts::mock_whitelist!();
 
 fn main() {}
