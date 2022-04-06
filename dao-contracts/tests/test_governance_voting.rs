@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
+    mocks::MockVoterContractTest,
     voting::{
         consts as gv_consts, voting::Voting, Vote, VoteCast, VotingContractCreated, VotingCreated,
         VotingEnded, VotingId,
     },
-    MockVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
+    ReputationContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_utils::{consts, Address, Error, TestEnv};

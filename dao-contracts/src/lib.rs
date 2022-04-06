@@ -22,6 +22,3 @@ pub use variable_repository::VariableRepositoryContractTest;
 
 #[cfg(feature = "test-support")]
 pub use repo_voter::RepoVoterContractTest;
-
-#[cfg(feature = "test-support")]
-pub use mocks::mock_voter::MockVoterContractTest;
