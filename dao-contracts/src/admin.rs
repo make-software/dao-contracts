@@ -5,7 +5,10 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::{voting::{voting::Voting, GovernanceVoting, Vote, VotingId}, action::Action};
+use crate::{
+    action::Action,
+    voting::{voting::Voting, GovernanceVoting, Vote, VotingId},
+};
 
 #[casper_contract_interface]
 pub trait AdminContractInterface {

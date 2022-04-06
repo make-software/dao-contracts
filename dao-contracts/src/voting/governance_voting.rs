@@ -98,7 +98,7 @@ impl GovernanceVoting {
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
 
         self.set_voting(voting);
-        
+
         emit(VotingCreated {
             creator,
             voting_id,

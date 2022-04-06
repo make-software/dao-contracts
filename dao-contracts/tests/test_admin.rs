@@ -1,15 +1,13 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
+    action::Action,
     voting::{voting::Voting, VotingContractCreated, VotingId},
-    AdminContractTest, ReputationContractTest, VariableRepositoryContractTest, action::Action,
+    AdminContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_utils::{consts, Address, TestEnv};
-use casper_types::{
-    bytesrepr::{ToBytes},
-    U256,
-};
+use casper_types::{bytesrepr::ToBytes, U256};
 
 #[test]
 fn test_contract_deploy() {
