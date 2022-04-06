@@ -226,6 +226,12 @@ impl Voting {
     pub fn runtime_args(&self) -> &RuntimeArgs {
         &self.runtime_args
     }
+
+    /// Get the voting's minimum governance reputation.
+    #[must_use]
+    pub fn minimum_governance_reputation(&self) -> U256 {
+        self.minimum_governance_reputation
+    }
 }
 
 #[test]

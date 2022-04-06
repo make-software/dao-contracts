@@ -32,7 +32,7 @@ use super::{vote::VotingId, Vote};
 pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
     reputation_token: Variable<Option<Address>>,
-    votings: Mapping<U256, Voting>,
+    votings: Mapping<U256, Option<Voting>>,
     votes: Mapping<(U256, Address), Vote>,
     voters: VecMapping<U256, Option<Address>>,
     votings_count: Variable<U256>,
@@ -97,9 +97,8 @@ impl GovernanceVoting {
 
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
 
-        // Add Voting
-        self.votings.set(&voting_id, voting);
-
+        self.set_voting(voting);
+        
         emit(VotingCreated {
             creator,
             voting_id,
@@ -111,7 +110,7 @@ impl GovernanceVoting {
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
-        let voting = self.votings.get(&voting_id);
+        let voting = self.get_voting(voting_id);
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
@@ -137,10 +136,7 @@ impl GovernanceVoting {
                 let creator_stake = self.votes.get(&(voting.voting_id(), creator_address)).stake;
 
                 // Formal voting is created and first vote cast
-                self.votings.set(
-                    &formal_voting_id,
-                    voting.create_formal_voting(formal_voting_id, get_block_time()),
-                );
+                self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
 
                 emit(VotingCreated {
                     creator: creator_address,
@@ -179,7 +175,7 @@ impl GovernanceVoting {
             formal_voting_id: voting.formal_voting_id(),
         });
 
-        self.votings.set(&voting.voting_id(), voting);
+        self.set_voting(voting);
     }
 
     fn finish_formal_voting(&mut self, mut voting: Voting) {
@@ -216,11 +212,11 @@ impl GovernanceVoting {
         });
 
         voting.complete(None);
-        self.votings.set(&voting.voting_id(), voting);
+        self.set_voting(voting);
     }
 
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: bool, stake: U256) {
-        let mut voting = self.votings.get(&voting_id);
+        let mut voting = self.get_voting(voting_id);
 
         // We cannot vote on a completed voting
         if voting.completed() {
@@ -254,7 +250,7 @@ impl GovernanceVoting {
 
         // update voting
         voting.stake(stake, choice);
-        self.votings.set(&voting_id, voting);
+        self.set_voting(voting);
 
         emit(VoteCast {
             voter,
@@ -285,7 +281,11 @@ impl GovernanceVoting {
     }
 
     pub fn get_voting(&self, voting_id: VotingId) -> Voting {
-        self.votings.get(&voting_id)
+        self.votings.get(&voting_id).unwrap_or_revert()
+    }
+
+    pub fn set_voting(&self, voting: Voting) {
+        self.votings.set(&voting.voting_id(), Some(voting))
     }
 
     pub fn next_voting_id(&mut self) -> U256 {
