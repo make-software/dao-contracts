@@ -146,14 +146,11 @@ fn test_update_at_1() {
     assert_eq!(contract.get_full_value(KEY), (VALUE, None));
 
     // And it throws an event.
-    contract.assert_event_at(
-        RepositoryDefaults::len() + 2,
-        ValueUpdated {
-            key: String::from(KEY),
-            value: VALUE.convert_to_bytes(),
-            activation_time: None,
-        },
-    );
+    contract.assert_last_event(ValueUpdated {
+        key: String::from(KEY),
+        value: VALUE.convert_to_bytes(),
+        activation_time: None,
+    });
 }
 
 #[test]

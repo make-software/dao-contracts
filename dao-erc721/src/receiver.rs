@@ -48,7 +48,7 @@ pub mod tests {
     use casper_dao_utils::{
         casper_dao_macros::{casper_contract_interface, Event, Instance},
         casper_env::emit,
-        Address, Variable,
+        Address,
     };
     use casper_types::bytesrepr::Bytes;
 
@@ -64,13 +64,10 @@ pub mod tests {
             token_id: TokenId,
             data: Option<Bytes>,
         );
-        fn get(&self) -> Bytes;
     }
 
     #[derive(Instance)]
-    pub struct MockERC721Receiver {
-        var: Variable<Bytes>,
-    }
+    pub struct MockERC721Receiver {}
 
     impl MockERC721ReceiverInterface for MockERC721Receiver {
         fn init(&self) {}
@@ -87,36 +84,21 @@ pub mod tests {
                 operator,
                 from,
                 token_id,
-                data: data.clone(),
+                data,
             });
-
-            if let Some(data) = data {
-                self.var.set(data)
-            }
-        }
-
-        fn get(&self) -> Bytes {
-            self.var.get()
         }
     }
 
     #[casper_contract_interface]
     trait MockERC721NonReceiverInterface {
         fn init(&self);
-        fn get(&self) -> Bytes;
     }
 
     #[derive(Instance)]
-    pub struct MockERC721NonReceiver {
-        var: Variable<Bytes>,
-    }
+    pub struct MockERC721NonReceiver {}
 
     impl MockERC721NonReceiverInterface for MockERC721NonReceiver {
         fn init(&self) {}
-
-        fn get(&self) -> Bytes {
-            self.var.get()
-        }
     }
 
     #[derive(Debug, PartialEq, Event)]
