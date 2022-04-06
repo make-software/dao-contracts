@@ -18,9 +18,9 @@ pub trait MockVoterContractInterface {
     fn get_reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: U256) -> Voting;
     fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-    fn get_voters(&self, voting_id: U256) -> Vec<Address>;
     fn set_variable(&mut self, variable: String);
     fn get_variable(&self) -> String;
+    fn get_voter(&self, voting_id: U256, at: u32) -> Address;
 }
 
 #[derive(Instance)]
@@ -74,15 +74,15 @@ impl MockVoterContractInterface for MockVoterContract {
         self.voting.get_vote(voting_id, address)
     }
 
-    fn get_voters(&self, voting_id: U256) -> Vec<Address> {
-        self.voting.get_voters(voting_id)
-    }
-
     fn set_variable(&mut self, variable: String) {
         self.variable.set(variable);
     }
 
     fn get_variable(&self) -> String {
         self.variable.get()
+    }
+
+    fn get_voter(&self, voting_id: U256, at: u32) -> Address {
+        self.voting.get_voter(voting_id, at)
     }
 }

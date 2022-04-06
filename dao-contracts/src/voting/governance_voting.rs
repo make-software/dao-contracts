@@ -21,7 +21,7 @@ use self::{
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
-use casper_dao_utils::{consts as dao_consts, math};
+use casper_dao_utils::{consts as dao_consts, math, VecMapping};
 
 use super::VotingEnded;
 use super::{vote::VotingId, Vote};
@@ -34,7 +34,7 @@ pub struct GovernanceVoting {
     reputation_token: Variable<Option<Address>>,
     votings: Mapping<U256, Voting>,
     votes: Mapping<(U256, Address), Vote>,
-    voters: Mapping<U256, Vec<Address>>,
+    voters: VecMapping<U256, Option<Address>>,
     votings_count: Variable<U256>,
     dust_amount: Variable<U256>,
 }
@@ -123,15 +123,13 @@ impl GovernanceVoting {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
-
-        let voters = self.voters.get(&voting.voting_id());
-
-        let result = match voting.get_result(voters.len()) {
+        let voters_len = self.voters.len(voting.voting_id());
+        let result = match voting.get_result(voters_len) {
             VotingResult::InFavor => {
                 self.return_reputation(voting.voting_id());
 
                 let formal_voting_id = self.next_voting_id();
-                let creator_address = *voters.first().unwrap_or_revert();
+                let creator_address = self.voters.get(voting.voting_id(), 0).unwrap_or_revert();
                 let creator_stake = self.votes.get(&(voting.voting_id(), creator_address)).stake;
 
                 // Formal voting is created and first vote cast
@@ -170,7 +168,7 @@ impl GovernanceVoting {
         emit(VotingEnded {
             voting_id: voting.voting_id(),
             result: result.into(),
-            votes_count: voters.len().into(),
+            votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
             informal_voting_id: voting.informal_voting_id(),
@@ -185,9 +183,9 @@ impl GovernanceVoting {
             revert(Error::FormalVotingTimeNotReached)
         }
 
-        let voters = self.voters.get(&voting.voting_id());
+        let voters_len = self.voters.len(voting.voting_id());
 
-        let result = match voting.get_result(voters.len()) {
+        let result = match voting.get_result(voters_len) {
             VotingResult::InFavor => {
                 self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
@@ -206,7 +204,7 @@ impl GovernanceVoting {
         emit(VotingEnded {
             voting_id: voting.voting_id(),
             result: result.into(),
-            votes_count: voters.len().into(),
+            votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
             informal_voting_id: voting.informal_voting_id(),
@@ -242,10 +240,8 @@ impl GovernanceVoting {
                     voting_id,
                     stake,
                 };
-                let mut voters = self.voters.get(&voting_id);
                 // Add a voter to the list
-                voters.push(voter);
-                self.voters.set(&voting_id, voters);
+                self.voters.add(voting_id, Some(voter));
             }
         }
 
@@ -280,8 +276,8 @@ impl GovernanceVoting {
         self.votes.get(&(voting_id, address))
     }
 
-    pub fn get_voters(&self, voting_id: VotingId) -> Vec<Address> {
-        self.voters.get(&voting_id)
+    pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Address {
+        self.voters.get(voting_id, at).unwrap_or_revert()
     }
 
     pub fn get_voting(&self, voting_id: VotingId) -> Voting {
@@ -322,36 +318,36 @@ impl GovernanceVoting {
     }
 
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
-        let voters = self.voters.get(&voting_id);
-        for (i, address) in voters.iter().enumerate() {
-            let vote = self.votes.get(&(voting_id, *address));
+        for i in 0..self.voters.len(voting_id) {
+            let address = self.get_voter(voting_id, i);
+            let vote = self.votes.get(&(voting_id, address));
             if i == 0 {
                 // the creator
                 self.burn_reputation(self_address(), vote.stake);
             } else {
                 // the voters - transfer from contract to them
-                self.transfer_reputation(self_address(), *address, vote.stake);
+                self.transfer_reputation(self_address(), address, vote.stake);
             }
         }
     }
 
     fn return_reputation(&mut self, voting_id: VotingId) {
-        let voters = self.voters.get(&voting_id);
-        for address in voters.iter() {
-            let vote = self.votes.get(&(voting_id, *address));
-            self.transfer_reputation(self_address(), *address, vote.stake);
+        for i in 0..self.voters.len(voting_id) {
+            let address = self.get_voter(voting_id, i);
+            let vote = self.votes.get(&(voting_id, address));
+            self.transfer_reputation(self_address(), address, vote.stake);
         }
     }
 
     fn redistribute_reputation(&mut self, voting: &Voting) {
         // TODO: update conversion after support for U256<>U512 conversion will be added to Casper
-        let voters = self.voters.get(&voting.voting_id());
         let total_stake = u256_to_512(voting.total_stake()).unwrap_or_revert();
         let mut transferred = U512::zero();
         let result = voting.is_in_favor();
         let u256_max = u256_to_512(U256::MAX).unwrap_or_revert();
 
-        for address in voters {
+        for i in 0..self.voters.len(voting.voting_id()) {
+            let address = self.get_voter(voting.voting_id(), i);
             let vote = self.votes.get(&(voting.voting_id(), address));
             if vote.choice == result {
                 let to_transfer = total_stake * u256_to_512(vote.stake).unwrap_or_revert()
