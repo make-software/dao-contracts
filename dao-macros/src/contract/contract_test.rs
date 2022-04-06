@@ -41,6 +41,10 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
                 self.package_hash
             }
 
+            pub fn address(&self) -> casper_dao_utils::Address {
+                casper_dao_utils::Address::from(self.package_hash)
+            }
+
             pub fn as_account(&mut self, account: casper_dao_utils::Address) -> &mut Self {
                 self.env.as_account(account);
                 self

@@ -41,3 +41,4 @@ pub const INFORMAL_VOTING_TIME: &str = "informal_voting_time";
 pub const VOTING_TIME: &str = "voting_time";
 pub const MINIMUM_GOVERNANCE_REPUTATION: &str = "minimum_governance_reputation";
 pub const MINIMUM_VOTING_REPUTATION: &str = "minimum_voting_reputation";
+pub const FLOAT_DIVISOR: &str = "float_divisor";

@@ -119,6 +119,8 @@ pub trait ReputationContractInterface {
     fn is_whitelisted(&self, address: Address) -> bool;
 
     fn get_staked_balance_of(&self, address: Address) -> U256;
+
+    fn total_onboarded(&self) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -195,5 +197,10 @@ impl ReputationContractInterface for ReputationContract {
 
     fn get_staked_balance_of(&self, address: Address) -> U256 {
         self.token.get_stake_of(&address)
+    }
+
+    fn total_onboarded(&self) -> U256 {
+        // TODO: To implement
+        U256::from(4)
     }
 }
