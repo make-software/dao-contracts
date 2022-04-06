@@ -161,6 +161,59 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for IndexedMapping<T>
     }
 }
 
+pub struct VecMapping<K, V> {
+    mapping: Mapping<(K, u32), V>,
+    lengths: Mapping<K, u32>,
+}
+
+impl<
+        K: Default + CLTyped + FromBytes + ToBytes + Hash,
+        V: ToBytes + FromBytes + CLTyped + Default,
+    > VecMapping<K, V>
+{
+    pub fn new(name: String) -> Self {
+        VecMapping {
+            mapping: Mapping::new(name.clone()),
+            lengths: Mapping::new(format!("{}_length", name)),
+        }
+    }
+
+    pub fn replace(&self, key: K, at: u32, value: V) -> Result<(), Error> {
+        let length = self.lengths.get(&key);
+        if at >= length {
+            return Err(Error::MappingIndexDoesNotExist);
+        }
+        self.mapping.set(&(key, at), value);
+        Ok(())
+    }
+
+    pub fn get(&self, key: K, at: u32) -> V {
+        self.mapping.get(&(key, at))
+    }
+
+    pub fn add(&self, key: K, value: V) {
+        let length = self.lengths.get(&key);
+        self.lengths.set(&key, length + 1);
+        self.mapping.set(&(key, length), value);
+    }
+
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self, key: K) -> u32 {
+        self.lengths.get(&key)
+    }
+}
+
+impl<K: Default + ToBytes + CLTyped, V: Default + FromBytes + ToBytes + CLTyped> Instanced
+    for VecMapping<K, V>
+{
+    fn instance(namespace: &str) -> Self {
+        Self {
+            mapping: Instanced::instance(&format!("{}:{}", namespace, "mapping")),
+            lengths: Instanced::instance(&format!("{}:{}", namespace, "lengths")),
+        }
+    }
+}
+
 pub struct Index {
     index: Mapping<u64, Option<u32>>,
 }

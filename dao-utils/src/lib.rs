@@ -19,6 +19,7 @@ pub use parts::collection::Set;
 pub use parts::consts;
 pub use parts::error::Error;
 pub use parts::mapping::Mapping;
+pub use parts::mapping::VecMapping;
 pub use parts::variable::Variable;
 
 #[cfg(feature = "test-support")]

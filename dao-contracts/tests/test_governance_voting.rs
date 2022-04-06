@@ -80,9 +80,8 @@ fn test_create_voting() {
     assert_eq!(vote.stake, U256::from(500));
 
     // check if first vote was created by a caller
-    let voters = mock_voter_contract.get_voters(voting.voting_id());
-    assert_eq!(voters.len(), 1);
-    assert_eq!(*voters.get(0).unwrap(), env.get_account(0));
+    let first_voter = mock_voter_contract.get_voter(voting.voting_id(), 0);
+    assert_eq!(first_voter, env.get_account(0));
 
     // check if the reputation was staked
     assert_eq!(
