@@ -8,7 +8,7 @@ use casper_types::U256;
 use delegate::delegate;
 
 #[casper_contract_interface]
-trait MockStakingInterface {
+trait MockStakingContractInterface {
     fn init(&mut self) {}
     fn mint(&mut self, recipient: Address, amount: U256);
     fn burn(&mut self, owner: Address, amount: U256);
@@ -21,11 +21,11 @@ trait MockStakingInterface {
 }
 
 #[derive(Instance)]
-pub struct MockStaking {
+pub struct MockStakingContract {
     token: TokenWithStaking,
 }
 
-impl MockStakingInterface for MockStaking {
+impl MockStakingContractInterface for MockStakingContract {
     delegate! {
         to self.token {
             fn mint(&mut self, recipient: Address, amount: U256);
