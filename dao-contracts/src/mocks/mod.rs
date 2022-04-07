@@ -7,7 +7,7 @@ mod mock_whitelist;
 
 #[cfg(feature = "test-support")]
 pub mod test {
-    pub use super::mock_owner::MockOwnerTest;
+    pub use super::mock_owner::MockOwnerContractTest;
     pub use super::mock_repository::MockRepositoryTest;
     pub use super::mock_staking::MockStakingTest;
     pub use super::mock_token::MockTokenTest;
@@ -15,7 +15,7 @@ pub mod test {
     pub use super::mock_whitelist::MockWhitelistTest;
 }
 
-pub use mock_owner::{MockOwner, MockOwnerCaller, MockOwnerInterface};
+pub use mock_owner::{MockOwnerContract, MockOwnerContractCaller, MockOwnerContractInterface};
 pub use mock_repository::{MockRepository, MockRepositoryCaller, MockRepositoryInterface};
 pub use mock_staking::{MockStaking, MockStakingCaller, MockStakingInterface};
 pub use mock_token::{MockToken, MockTokenCaller, MockTokenInterface};

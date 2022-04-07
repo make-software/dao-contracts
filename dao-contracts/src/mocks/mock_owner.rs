@@ -1,31 +1,30 @@
 use casper_dao_modules::Owner;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env, Address,
+    Address,
 };
 
 use delegate::delegate;
 
 #[casper_contract_interface]
-trait MockOwnerInterface {
-    fn init(&mut self);
+trait MockOwnerContractInterface {
+    fn init(&mut self) {}
+    fn initialize_module(&mut self, owner: Address);
     fn change_ownership(&mut self, owner: Address);
     fn ensure_owner(&self);
     fn get_owner(&self) -> Option<Address>;
 }
 
 #[derive(Instance)]
-pub struct MockOwner {
+pub struct MockOwnerContract {
     owner: Owner,
 }
 
-impl MockOwnerInterface for MockOwner {
-    fn init(&mut self) {
-        self.owner.init(casper_env::caller());
-    }
-
+impl MockOwnerContractInterface for MockOwnerContract {
     delegate! {
         to self.owner {
+            #[call(init)]
+            fn initialize_module(&mut self, owner: Address);
             fn change_ownership(&mut self, owner: Address);
             fn ensure_owner(&self);
             fn get_owner(&self) -> Option<Address>;
