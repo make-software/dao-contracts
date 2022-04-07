@@ -57,6 +57,17 @@ speculate! {
             );
         }
 
+        test "reputation was set up correctly" {
+            let accounts = vec![
+                (0, reputation_to_mint),
+                (1, reputation_to_mint),
+                (2, reputation_to_mint),
+                (3, reputation_to_mint),
+            ];
+
+            governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), 0);
+        }
+
         context "informal_voting" {
             #[should_panic]
             test "creating voting is impossible without enough reputation" {
@@ -94,6 +105,18 @@ speculate! {
                     let vote_cast_event: VoteCast = mock_voter_contract.event(2);
                     #[allow(unused_variables)]
                     let informal_voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                }
+
+                test "reputation was collected correctly" {
+                    // creator's reputation was transferred to contract
+                    let accounts = vec![
+                        (0, reputation_to_mint - minimum_reputation.as_usize()),
+                        (1, reputation_to_mint),
+                        (2, reputation_to_mint),
+                        (3, reputation_to_mint),
+                    ];
+
+                    governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), minimum_reputation.as_usize());
                 }
 
                 test "voting is created correctly" {
@@ -217,6 +240,19 @@ speculate! {
                         });
                     }
 
+
+                    test "reputation was distributed correctly" {
+                        // creator's reputation should be burned and voters' returned
+                        let accounts = vec![
+                            (0, 10000 - minimum_reputation.as_usize()),
+                            (1, 10000),
+                            (2, 10000),
+                            (3, 10000),
+                        ];
+
+                        governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), 0);
+                    }
+
                     #[should_panic]
                     test "ended voting should not accept votes" {
                         mock_voter_contract.as_account(env.get_account(1)).vote(informal_voting.voting_id(), true, minimum_reputation).unwrap();
@@ -233,6 +269,19 @@ speculate! {
                         mock_voter_contract.as_account(env.get_account(1)).vote(informal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
                         env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
+                    }
+
+
+                    test "reputation was distributed correctly" {
+                        // creator's reputation should be burned and voters' returned
+                        let accounts = vec![
+                            (0, reputation_to_mint - minimum_reputation.as_usize()),
+                            (1, reputation_to_mint),
+                            (2, reputation_to_mint),
+                            (3, reputation_to_mint),
+                        ];
+
+                        governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), 0);
                     }
 
                     #[should_panic]
@@ -278,6 +327,18 @@ speculate! {
                             informal_voting_id: VotingId::zero(),
                             formal_voting_id: Some(U256::one()),
                         });
+                    }
+
+                    test "reputation was distributed correctly" {
+                        // creator's reputation should stay staked and voters' returned
+                        let accounts = vec![
+                            (0, reputation_to_mint - minimum_reputation.as_usize()),
+                            (1, reputation_to_mint),
+                            (2, reputation_to_mint),
+                            (3, reputation_to_mint),
+                        ];
+
+                        governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), minimum_reputation.as_usize());
                     }
                 }
             }
@@ -464,6 +525,18 @@ speculate! {
                     let variable = mock_voter_contract.get_variable();
                     assert_eq!(variable, "");
                 }
+
+                test "reputation was distributed correctly" {
+                    // creator's reputation should be burned and voters' returned
+                    let accounts = vec![
+                        (0, reputation_to_mint - minimum_reputation.as_usize()),
+                        (1, reputation_to_mint),
+                        (2, reputation_to_mint),
+                        (3, reputation_to_mint),
+                    ];
+
+                    governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), 0);
+                }
             }
 
 
@@ -500,6 +573,18 @@ speculate! {
                     assert_eq!(variable, "");
                 }
 
+                test "reputation was distributed correctly" {
+                    // creator's reputation should be transferred to voters proportionally
+                    let accounts = vec![
+                        (0, reputation_to_mint - minimum_reputation.as_usize()),
+                        (1, reputation_to_mint + minimum_reputation.as_usize() / 2),
+                        (2, reputation_to_mint + minimum_reputation.as_usize() / 2),
+                        (3, reputation_to_mint),
+                    ];
+
+                    governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), 0);
+                }
+
             }
 
             context "formal_voting_completed" {
@@ -507,8 +592,8 @@ speculate! {
                     let vote_cast_event: VoteCast = mock_voter_contract.event(5);
                     let formal_voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
 
-                    mock_voter_contract.as_account(env.get_account(1)).vote(formal_voting.voting_id(), true, minimum_reputation).unwrap();
-                    mock_voter_contract.as_account(env.get_account(2)).vote(formal_voting.voting_id(), true, minimum_reputation).unwrap();
+                    mock_voter_contract.as_account(env.get_account(1)).vote(formal_voting.voting_id(), true, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
+                    mock_voter_contract.as_account(env.get_account(2)).vote(formal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
 
                     env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
                     mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
@@ -520,7 +605,7 @@ speculate! {
                         result: gv_consts::FORMAL_VOTING_PASSED.into(),
                         votes_count: U256::from(3),
                         stake_in_favor: minimum_reputation.saturating_mul(U256::from(3)),
-                        stake_against: U256::zero(),
+                        stake_against: minimum_reputation.saturating_add(minimum_reputation),
                         informal_voting_id: informal_voting.voting_id(),
                         formal_voting_id: Some(formal_voting.voting_id()),
                     });
@@ -529,6 +614,22 @@ speculate! {
                 test "action was was performed" {
                     let variable = mock_voter_contract.get_variable();
                     assert_eq!(variable, "some_value");
+                }
+
+                test "reputation was distributed correctly" {
+                    // those who voted against' reputation should be transferred to for voters proportionally
+                    let loser_stake = minimum_reputation.saturating_add(minimum_reputation).as_usize();
+                    let accounts = vec![
+                        (0, reputation_to_mint + loser_stake/3),
+                        (1, reputation_to_mint + (loser_stake*2)/3),
+                        (2, reputation_to_mint - loser_stake),
+                        (3, reputation_to_mint),
+                    ];
+
+                    governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), 1);
+
+                    // as the reputation was not divisible entirely, we check the dust amount
+                    assert_eq!(mock_voter_contract.get_dust_amount(), U256::one());
                 }
             }
         }

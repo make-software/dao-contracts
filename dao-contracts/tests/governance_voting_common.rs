@@ -1,5 +1,5 @@
 use casper_dao_contracts::{ReputationContractTest, VariableRepositoryContractTest};
-use casper_dao_utils::{consts, TestEnv};
+use casper_dao_utils::{consts, Address, TestEnv};
 use casper_types::{bytesrepr::ToBytes, U256};
 
 pub fn get_variable_repo_contract(
@@ -61,4 +61,24 @@ pub fn get_reputation_token_contract(env: &TestEnv, tokens: usize) -> Reputation
     }
 
     reputation_token_contract
+}
+
+pub fn assert_reputation(
+    env: &TestEnv,
+    reputation_contract: ReputationContractTest,
+    accounts: Vec<(usize, usize)>,
+    contract_address: Address,
+    amount: usize,
+) {
+    for (account, amount) in accounts.iter() {
+        assert_eq!(
+            reputation_contract.balance_of(env.get_account(*account)),
+            U256::from(*amount)
+        );
+    }
+
+    assert_eq!(
+        reputation_contract.balance_of(contract_address),
+        U256::from(amount)
+    );
 }
