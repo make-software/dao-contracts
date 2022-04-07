@@ -12,7 +12,7 @@ pub mod test {
     pub use super::mock_staking::MockStakingTest;
     pub use super::mock_token::MockTokenTest;
     pub use super::mock_voter::MockVoterContractTest;
-    pub use super::mock_whitelist::MockWhitelistTest;
+    pub use super::mock_whitelist::MockWhitelistContractTest;
 }
 
 pub use mock_owner::{MockOwnerContract, MockOwnerContractCaller, MockOwnerContractInterface};
@@ -20,4 +20,6 @@ pub use mock_repository::{MockRepository, MockRepositoryCaller, MockRepositoryIn
 pub use mock_staking::{MockStaking, MockStakingCaller, MockStakingInterface};
 pub use mock_token::{MockToken, MockTokenCaller, MockTokenInterface};
 pub use mock_voter::{MockVoterContract, MockVoterContractCaller, MockVoterContractInterface};
-pub use mock_whitelist::{MockWhitelist, MockWhitelistCaller, MockWhitelistInterface};
+pub use mock_whitelist::{
+    MockWhitelistContract, MockWhitelistContractCaller, MockWhitelistContractInterface,
+};

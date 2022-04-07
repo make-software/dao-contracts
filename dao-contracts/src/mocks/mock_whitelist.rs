@@ -7,7 +7,7 @@ use casper_dao_utils::{
 use delegate::delegate;
 
 #[casper_contract_interface]
-trait MockWhitelistInterface {
+trait MockWhitelistContractInterface {
     fn init(&mut self) {}
     fn add_to_whitelist(&mut self, address: Address);
     fn remove_from_whitelist(&mut self, address: Address);
@@ -16,11 +16,11 @@ trait MockWhitelistInterface {
 }
 
 #[derive(Instance)]
-pub struct MockWhitelist {
+pub struct MockWhitelistContract {
     whitelist: Whitelist,
 }
 
-impl MockWhitelistInterface for MockWhitelist {
+impl MockWhitelistContractInterface for MockWhitelistContract {
     delegate! {
         to self.whitelist {
             fn add_to_whitelist(&mut self, address: Address);
