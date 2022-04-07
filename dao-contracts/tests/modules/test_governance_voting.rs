@@ -10,14 +10,7 @@ use casper_dao_contracts::{
 };
 
 use casper_dao_utils::{consts, Address, Error, TestEnv};
-use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
-    U256,
-};
-
-pub fn into_bytes(val: &str) -> Bytes {
-    val.as_bytes().into()
-}
+use casper_types::{bytesrepr::ToBytes, U256};
 
 #[test]
 fn test_contract_deploy() {
