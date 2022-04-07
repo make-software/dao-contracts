@@ -63,6 +63,7 @@ pub fn get_reputation_token_contract(env: &TestEnv, tokens: usize) -> Reputation
     reputation_token_contract
 }
 
+#[allow(dead_code)]
 pub fn assert_reputation(
     env: &TestEnv,
     reputation_contract: ReputationContractTest,
