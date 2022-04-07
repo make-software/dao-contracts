@@ -1,4 +1,4 @@
-use casper_dao_contracts::mocks::{MockToken, MockTokenInterface};
-casper_dao_contracts::mock_token!();
+use casper_dao_contracts::mocks::{MockTokenContract, MockTokenContractInterface};
+casper_dao_contracts::mock_token_contract!();
 
 fn main() {}
