@@ -1,5 +1,7 @@
 name: ci-casper-rust-contract
 
+
+
 on:
   push:
     branches:
@@ -25,6 +27,7 @@ jobs:
         with:
           profile: minimal
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v1
       - run: sudo apt update && sudo apt install -y build-essential
       - run: make prepare
       - run: make check-lint
