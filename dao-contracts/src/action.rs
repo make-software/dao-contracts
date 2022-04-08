@@ -1,43 +1,11 @@
-use casper_dao_utils::casper_dao_macros::CLTyped;
-use casper_types::bytesrepr::{FromBytes, ToBytes};
+use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
+use casper_types::bytesrepr::FromBytes;
 
-#[derive(CLTyped, PartialEq, Debug)]
+#[derive(CLTyped, PartialEq, Debug, FromBytes, ToBytes)]
 pub enum Action {
     AddToWhitelist,
     RemoveFromWhitelist,
     ChangeOwner,
-}
-
-impl FromBytes for Action {
-    fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), casper_types::bytesrepr::Error> {
-        let (variant, bytes) = FromBytes::from_bytes(bytes)?;
-
-        match variant {
-            1 => Ok((Action::AddToWhitelist, bytes)),
-            2 => Ok((Action::RemoveFromWhitelist, bytes)),
-            3 => Ok((Action::ChangeOwner, bytes)),
-            _ => Err(casper_types::bytesrepr::Error::Formatting),
-        }
-    }
-}
-
-impl ToBytes for Action {
-    fn to_bytes(&self) -> Result<Vec<u8>, casper_types::bytesrepr::Error> {
-        let mut vec = Vec::with_capacity(self.serialized_length());
-        vec.append(
-            &mut match self {
-                Action::AddToWhitelist => 1,
-                Action::RemoveFromWhitelist => 2,
-                Action::ChangeOwner => 3,
-            }
-            .to_bytes()?,
-        );
-        Ok(vec)
-    }
-
-    fn serialized_length(&self) -> usize {
-        1
-    }
 }
 
 impl Action {
@@ -60,6 +28,7 @@ impl Action {
 
 #[test]
 fn test_action() {
+    use casper_types::bytesrepr::ToBytes;
     let action = Action::ChangeOwner;
     let (deserialized_action, _) = Action::from_bytes(&action.to_bytes().unwrap()).unwrap();
 

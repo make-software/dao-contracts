@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident as Ident2, TokenStream as TokenStream2};
 use quote::{quote, TokenStreamExt};
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields};
+use syn::{parse_macro_input, Data, DataEnum, DataStruct, DeriveInput, Fields};
 
 pub fn derive_cl_typed(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -37,8 +37,7 @@ fn named_fields(input: DeriveInput) -> Result<Vec<Ident2>, TokenStream> {
     Ok(fields)
 }
 
-pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+pub fn derive_from_bytes(input: DeriveInput) -> TokenStream {
     let struct_ident = input.ident.clone();
     let fields = match named_fields(input) {
         Ok(fields) => fields,
@@ -70,8 +69,7 @@ pub fn derive_from_bytes(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+pub fn derive_to_bytes(input: DeriveInput) -> TokenStream {
     let struct_ident = input.ident.clone();
     let fields = match named_fields(input) {
         Ok(fields) => fields,
@@ -104,6 +102,89 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
           let mut vec = Vec::with_capacity(self.serialized_length());
           #append_bytes
           Ok(vec)
+        }
+      }
+    };
+
+    TokenStream::from(expanded)
+}
+
+fn variants(input: DeriveInput) -> Result<Vec<Ident2>, TokenStream> {
+    let variants = match input.data {
+        Data::Enum(DataEnum { variants, .. }) => {
+            variants.into_iter().map(|x| x.ident).collect::<Vec<_>>()
+        }
+        _ => {
+            return Err(TokenStream::from(
+                quote! { compile_error!("Expected an enum."); },
+            ))
+        }
+    };
+    Ok(variants)
+}
+
+pub fn derive_to_bytes_enum(input: DeriveInput) -> TokenStream {
+    let enum_ident = input.ident.clone();
+    let variants = match variants(input) {
+        Ok(variants) => variants,
+        Err(error_stream) => return error_stream,
+    };
+
+    let mut append_bytes = TokenStream2::new();
+    let mut index = 0;
+    append_bytes.append_all(variants.iter().map(|ident| {
+        index += 1;
+        quote! {
+          #enum_ident::#ident => #index,
+        }
+    }));
+
+    let expanded = quote! {
+      impl casper_types::bytesrepr::ToBytes for #enum_ident {
+        fn serialized_length(&self) -> usize {
+          1
+        }
+
+        fn to_bytes(&self) -> Result<Vec<u8>, casper_types::bytesrepr::Error> {
+          let mut vec = Vec::with_capacity(self.serialized_length());
+          vec.append(
+            &mut match self {
+                #append_bytes
+              }
+              .to_bytes()?,
+          );
+          Ok(vec)
+        }
+      }
+    };
+
+    TokenStream::from(expanded)
+}
+
+pub fn derive_from_bytes_enum(input: DeriveInput) -> TokenStream {
+    let enum_ident = input.ident.clone();
+    let variants = match variants(input) {
+        Ok(variants) => variants,
+        Err(error_stream) => return error_stream,
+    };
+
+    let mut append_bytes = TokenStream2::new();
+    let mut index = 0;
+    append_bytes.append_all(variants.iter().map(|ident| {
+        index += 1;
+        quote! {
+          #index => Ok((#enum_ident::#ident, bytes)),
+        }
+    }));
+
+    let expanded = quote! {
+      impl casper_types::bytesrepr::FromBytes for #enum_ident {
+        fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), casper_types::bytesrepr::Error> {
+          let (variant, bytes) = FromBytes::from_bytes(bytes)?;
+          match variant {
+            #append_bytes
+            _ => Err(casper_types::bytesrepr::Error::Formatting),
+          }
         }
       }
     };
