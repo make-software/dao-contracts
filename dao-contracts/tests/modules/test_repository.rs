@@ -1,4 +1,4 @@
-#[allow(unused_variables, unused_mut)]
+#[allow(unused_variables, unused_mut, clippy::redundant_clone)]
 mod test {
     extern crate speculate;
     use casper_dao_contracts::mocks::test::MockRepositoryContractTest;
@@ -62,7 +62,7 @@ mod test {
 
             it "reverts" {
                 assert_eq!(
-                    contract.update_at(key.clone(), value.clone(), date_in_past),
+                    contract.update_at(key, value, date_in_past),
                     Err(Error::ActivationTimeInPast)
                 );
             }
@@ -75,7 +75,7 @@ mod test {
                     let block_time = Duration::from_secs(env.get_block_time());
                     let date_in_future = (block_time + Duration::from_secs(10)).as_secs();
                     assert_eq!(
-                        contract.update_at(key.clone(), next_value.clone(), Some(date_in_future)),
+                        contract.update_at(key, next_value, Some(date_in_future)),
                         Err(Error::ValueNotAvailable)
                     );
                 }

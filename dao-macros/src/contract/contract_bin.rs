@@ -50,6 +50,11 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
         let ident = &method.sig.ident;
         let (casper_args, punctuated_args) = utils::parse_casper_args(method);
         let has_return = matches!(&method.sig.output, syn::ReturnType::Type(_, _));
+        let mutability = &method.sig.inputs.first().and_then(|arg| match arg {
+            syn::FnArg::Receiver(receiver) => Some(receiver),
+            syn::FnArg::Typed(_) => None,
+        }).and_then(|receiver| receiver.mutability);
+
         if has_return {
             quote! {
                 #[no_mangle]
@@ -69,7 +74,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                 fn #ident() {
                     #casper_args
                     let mut contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
-                    #contract_interface_ident::#ident(&mut contract, #punctuated_args);
+                    #contract_interface_ident::#ident(&#mutability contract, #punctuated_args);
                 }
             }
         }
