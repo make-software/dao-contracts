@@ -35,6 +35,10 @@ impl Address {
             None
         }
     }
+
+    pub fn is_contract(&self) -> bool {
+        self.as_contract_package_hash().is_some()
+    }
 }
 
 impl From<ContractPackageHash> for Address {

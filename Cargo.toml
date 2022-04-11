@@ -5,7 +5,8 @@ members = [
     "dao-macros",
     "dao-modules",
     "dao-contracts",
-    "dao-erc20"
+    "dao-erc20",
+    "dao-erc721",
 ]
 
 [profile.release]

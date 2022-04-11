@@ -121,7 +121,7 @@ impl TestEnvState {
     pub fn new() -> TestEnvState {
         let mut genesis_config = DEFAULT_GENESIS_CONFIG.clone();
         let mut accounts: Vec<Address> = Vec::new();
-        for i in 0..3 {
+        for i in 0..5 {
             // Create keypair.
             let secret_key = SecretKey::ed25519_from_bytes([i; 32]).unwrap();
             let public_key = PublicKey::from(&secret_key);
@@ -335,6 +335,9 @@ fn parse_error(err: engine_state::Error) -> Error {
     if let engine_state::Error::Exec(exec_err) = err {
         if let ExecutionError::Revert(ApiError::User(id)) = exec_err {
             return Error::from(id);
+        }
+        if let ExecutionError::NoSuchMethod(name) = exec_err {
+            return Error::NoSuchMethod(name);
         }
         if let ExecutionError::InvalidContext = exec_err {
             return Error::InvalidContext;
