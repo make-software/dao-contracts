@@ -1,10 +1,9 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident as Ident2, TokenStream as TokenStream2};
 use quote::{quote, TokenStreamExt};
-use syn::{parse_macro_input, Data, DataEnum, DataStruct, DeriveInput, Fields};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields};
 
-pub fn derive_cl_typed(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+pub fn derive_cl_typed(input: DeriveInput) -> TokenStream {
     let ident = input.ident;
 
     let expanded = quote! {
@@ -110,6 +109,25 @@ pub fn derive_to_bytes(input: DeriveInput) -> TokenStream {
 }
 
 fn variants(input: DeriveInput) -> Result<Vec<Ident2>, TokenStream> {
+    let fields = match &input.data {
+        Data::Enum(DataEnum { variants, .. }) => {
+            variants.into_iter().map(|x| &x.fields).collect::<Vec<_>>()
+        }
+        _ => {
+            return Err(TokenStream::from(
+                quote! { compile_error!("Expected an enum."); },
+            ))
+        }
+    };
+
+    for f in fields.into_iter() {
+        if *f != Fields::Unit {
+            return Err(TokenStream::from(
+                quote! { compile_error!("Expected an enum with unit variants."); },
+            ));
+        }
+    }
+
     let variants = match input.data {
         Data::Enum(DataEnum { variants, .. }) => {
             variants.into_iter().map(|x| x.ident).collect::<Vec<_>>()
@@ -131,9 +149,8 @@ pub fn derive_to_bytes_enum(input: DeriveInput) -> TokenStream {
     };
 
     let mut append_bytes = TokenStream2::new();
-    let mut index = 0;
-    append_bytes.append_all(variants.iter().map(|ident| {
-        index += 1;
+    append_bytes.append_all(variants.iter().enumerate().map(|(index, ident)| {
+        let index: u32 = index as u32 + 1;
         quote! {
           #enum_ident::#ident => #index,
         }
@@ -169,9 +186,8 @@ pub fn derive_from_bytes_enum(input: DeriveInput) -> TokenStream {
     };
 
     let mut append_bytes = TokenStream2::new();
-    let mut index = 0;
-    append_bytes.append_all(variants.iter().map(|ident| {
-        index += 1;
+    append_bytes.append_all(variants.iter().enumerate().map(|(index, ident)| {
+        let index: u32 = index as u32 + 1;
         quote! {
           #index => Ok((#enum_ident::#ident, bytes)),
         }

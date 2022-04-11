@@ -32,9 +32,9 @@ use super::{vote::VotingId, Vote};
 pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
     reputation_token: Variable<Option<Address>>,
-    votings: Mapping<U256, Option<Voting>>,
-    votes: Mapping<(U256, Address), Vote>,
-    voters: VecMapping<U256, Option<Address>>,
+    votings: Mapping<VotingId, Option<Voting>>,
+    votes: Mapping<(VotingId, Address), Vote>,
+    voters: VecMapping<VotingId, Option<Address>>,
     votings_count: Variable<U256>,
     dust_amount: Variable<U256>,
 }

@@ -31,6 +31,7 @@ pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> Token
 
 #[proc_macro_derive(CLTyped)]
 pub fn derive_cl_typed(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
     serialization::derive_cl_typed(input)
 }
 

@@ -332,13 +332,13 @@ fn blake2b<T: AsRef<[u8]>>(data: T) -> [u8; 32] {
 }
 
 fn parse_error(err: engine_state::Error) -> Error {
-    if let engine_state::Error::Exec(exec_err) = &err {
-        if let ExecutionError::Revert(ApiError::User(id)) = exec_err {
-            return Error::from(*id);
+    if let engine_state::Error::Exec(exec_err) = err {
+        match exec_err {
+            ExecutionError::Revert(ApiError::User(id)) => Error::from(id),
+            ExecutionError::InvalidContext => Error::InvalidContext,
+            _ => panic!("{}", exec_err.to_string()),
         }
-        if let ExecutionError::InvalidContext = exec_err {
-            return Error::InvalidContext;
-        }
+    } else {
+        panic!("{}", err.to_string())
     }
-    panic!("{}", err.to_string());
 }

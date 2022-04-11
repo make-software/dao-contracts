@@ -5,6 +5,8 @@ use casper_dao_utils::{
 use casper_types::U256;
 
 pub type VotingId = U256;
+pub type AccountId = usize;
+pub type ReputationAmount = usize;
 
 #[derive(Debug, Default, FromBytes, ToBytes, CLTyped)]
 pub struct Vote {

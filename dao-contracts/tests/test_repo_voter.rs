@@ -27,6 +27,13 @@ speculate! {
             let mut variable_repo_contract = governance_voting_common::get_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
             let mut reputation_token_contract = governance_voting_common::get_reputation_token_contract(&env, reputation_to_mint);
 
+            #[allow(unused_variables)]
+            let account1 = env.get_account(1);
+            #[allow(unused_variables)]
+            let account2 = env.get_account(2);
+            #[allow(unused_variables)]
+            let account3 = env.get_account(3);
+
             #[allow(unused_mut)]
             let mut repo_voter_contract = RepoVoterContractTest::new(
                 &env,
@@ -73,7 +80,7 @@ speculate! {
 
                 // cast votes for informal voting
                 repo_voter_contract
-                    .as_account(env.get_account(1))
+                    .as_account(account1)
                     .vote(voting_id, true, U256::from(500))
                     .unwrap();
 
@@ -82,7 +89,7 @@ speculate! {
 
                 // finish informal voting
                 repo_voter_contract
-                    .as_account(env.get_account(1))
+                    .as_account(account1)
                     .finish_voting(voting_id)
                     .unwrap();
 
@@ -90,11 +97,11 @@ speculate! {
 
                 // cast votes for formal voting
                 repo_voter_contract
-                    .as_account(env.get_account(1))
+                    .as_account(account1)
                     .vote(voting_id, true, 1000.into())
                     .unwrap();
                 repo_voter_contract
-                    .as_account(env.get_account(2))
+                    .as_account(account2)
                     .vote(voting_id, true, 1000.into())
                     .unwrap();
             }
@@ -108,7 +115,7 @@ speculate! {
             test "action was not performed on rejected voting" {
                 // vote against
                 repo_voter_contract
-                    .as_account(env.get_account(3))
+                    .as_account(account3)
                     .vote(voting_id, false, 5000.into())
                     .unwrap();
 

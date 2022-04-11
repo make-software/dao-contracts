@@ -11,10 +11,11 @@ pub enum Action {
 impl Action {
     pub fn get_entry_point(&self) -> String {
         match self {
-            Action::AddToWhitelist => "add_to_whitelist".to_string(),
-            Action::RemoveFromWhitelist => "remove_from_whitelist".to_string(),
-            Action::ChangeOwner => "change_ownership".to_string(),
+            Action::AddToWhitelist => "add_to_whitelist",
+            Action::RemoveFromWhitelist => "remove_from_whitelist",
+            Action::ChangeOwner => "change_ownership",
         }
+        .to_string()
     }
 
     pub fn get_arg(&self) -> &str {

@@ -25,6 +25,13 @@ speculate! {
             let mut variable_repo_contract = governance_voting_common::get_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
             let mut reputation_token_contract = governance_voting_common::get_reputation_token_contract(&env, reputation_to_mint);
 
+            #[allow(unused_variables)]
+            let account1 = env.get_account(1);
+            #[allow(unused_variables)]
+            let account2 = env.get_account(2);
+            #[allow(unused_variables)]
+            let account3 = env.get_account(3);
+
             #[allow(unused_mut)]
             let mut admin_contract = AdminContractTest::new(
                 &env,
@@ -59,20 +66,20 @@ speculate! {
         context "voting" {
             before {
                 admin_contract
-                .create_voting(
-                    reputation_token_contract.address(),
-                    Action::AddToWhitelist,
-                    env.get_account(1),
-                    minimum_reputation,
-                )
-                .unwrap();
+                    .create_voting(
+                        reputation_token_contract.address(),
+                        Action::AddToWhitelist,
+                        account1,
+                        minimum_reputation,
+                    )
+                    .unwrap();
 
                 let voting_id = VotingId::zero();
                 let voting: Voting = admin_contract.get_voting(voting_id);
 
                 // cast votes for informal voting
                 admin_contract
-                    .as_account(env.get_account(1))
+                    .as_account(account1)
                     .vote(voting_id, true, U256::from(500))
                     .unwrap();
 
@@ -81,7 +88,7 @@ speculate! {
 
                 // finish informal voting
                 admin_contract
-                    .as_account(env.get_account(1))
+                    .as_account(account1)
                     .finish_voting(voting_id)
                     .unwrap();
 
@@ -89,36 +96,36 @@ speculate! {
 
                 // cast votes for formal voting
                 admin_contract
-                    .as_account(env.get_account(1))
+                    .as_account(account1)
                     .vote(voting_id, true, 1000.into())
                     .unwrap();
                 admin_contract
-                    .as_account(env.get_account(2))
+                    .as_account(account2)
                     .vote(voting_id, true, 1000.into())
                     .unwrap();
             }
 
             test "action was not performed before finish" {
-                assert_eq!(reputation_token_contract.is_whitelisted(env.get_account(1)), false);
+                assert_eq!(reputation_token_contract.is_whitelisted(account1), false);
             }
 
             test "action was not performed on rejected voting" {
                 // vote against
                 admin_contract
-                    .as_account(env.get_account(3))
+                    .as_account(account3)
                     .vote(voting_id, false, 5000.into())
                     .unwrap();
 
                 env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                 admin_contract.finish_voting(voting_id).unwrap();
-                assert_eq!(reputation_token_contract.is_whitelisted(env.get_account(1)), false);
+                assert_eq!(reputation_token_contract.is_whitelisted(account1), false);
             }
 
             test "action was performed after finish" {
                 env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                 admin_contract.finish_voting(voting_id).unwrap();
 
-                assert!(reputation_token_contract.is_whitelisted(env.get_account(1)));
+                assert!(reputation_token_contract.is_whitelisted(account1));
             }
         }
     }
