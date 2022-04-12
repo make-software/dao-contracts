@@ -60,4 +60,4 @@ clean:
 	cargo clean
 	
 docs:
-	cargo doc --features test-support --no-deps --open
+	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
