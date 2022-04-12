@@ -120,6 +120,7 @@ dependencies = [
  "casper-dao-modules",
  "casper-dao-utils",
  "casper-types",
+ "delegate",
  "speculate",
 ]
 

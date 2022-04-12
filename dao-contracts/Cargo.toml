@@ -7,6 +7,7 @@ edition = "2018"
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 casper-dao-modules = { path = "../dao-modules", default-features = false }
+delegate = "0.6.2"
 
 [dev-dependencies]
 speculate = "0.1.2"
