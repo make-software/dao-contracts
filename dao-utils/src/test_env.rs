@@ -336,6 +336,7 @@ fn parse_error(err: engine_state::Error) -> Error {
         match exec_err {
             ExecutionError::Revert(ApiError::User(id)) => Error::from(id),
             ExecutionError::InvalidContext => Error::InvalidContext,
+            ExecutionError::NoSuchMethod(name) => Error::NoSuchMethod(name),
             _ => panic!("{}", exec_err.to_string()),
         }
     } else {

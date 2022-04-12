@@ -5,7 +5,7 @@ use std::{
 };
 
 #[test]
-fn check_casper_contract_interface_output() {
+fn verify_expand_output_casper_contract_interface() {
     let (expansion, template) = expand(
         &["expand", "--lib", "contract", "--features", "test-support"],
         "tests/templates/contract.template",
@@ -14,7 +14,7 @@ fn check_casper_contract_interface_output() {
 }
 
 #[test]
-fn check_casper_contract_bin_output() {
+fn verify_expand_output_casper_contract_bin() {
     let (expansion, template) = expand(
         &[
             "expand",
