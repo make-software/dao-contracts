@@ -101,6 +101,9 @@ mod tests {
         let generated = generate_code(&item);
 
         let expected = quote! {
+            #[doc = "Generates a "] 
+            #[doc = stringify!(Contract)]
+            #[doc = " binary with all the required no_mangle functions."]
             #[macro_export]
             macro_rules! contract {
                 () => {
