@@ -23,6 +23,7 @@ pub trait MockVoterContractInterface {
     fn get_voter(&self, voting_id: U256, at: u32) -> Address;
 }
 
+#[doc(hidden)]
 #[derive(Instance)]
 pub struct MockVoterContract {
     voting: GovernanceVoting,

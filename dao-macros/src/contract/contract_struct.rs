@@ -118,16 +118,25 @@ fn build_entry_point_params(method: &TraitItemMethod) -> TokenStream {
 
 pub mod interface {
     use super::CasperContractItem;
+    use convert_case::Casing;
     use proc_macro2::TokenStream;
     use quote::{quote, TokenStreamExt};
 
     pub fn generate_code(model: &CasperContractItem) -> TokenStream {
         let id = &model.ident;
 
+        let contract_name: &str = &model
+            .contract_ident
+            .to_string()
+            .to_case(convert_case::Case::Title);
+
         let mut methods = TokenStream::new();
         methods.append_all(&model.trait_methods);
 
         quote! {
+            #[doc = "Defines the "]
+            #[doc = #contract_name]
+            #[doc = " contract's public interface."]
             pub trait #id {
                 #methods
             }

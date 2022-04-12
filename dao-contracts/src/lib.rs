@@ -1,9 +1,12 @@
+#[doc(hidden)]
 pub mod mocks;
 mod repo_voter;
 mod reputation;
 mod variable_repository;
+/// Utilities to manage the voting process
 pub mod voting;
 
+#[doc(hidden)]
 pub use mocks::mock_voter::{
     MockVoterContract, MockVoterContractCaller, MockVoterContractInterface,
 };
@@ -23,5 +26,6 @@ pub use variable_repository::VariableRepositoryContractTest;
 #[cfg(feature = "test-support")]
 pub use repo_voter::RepoVoterContractTest;
 
+#[doc(hidden)]
 #[cfg(feature = "test-support")]
 pub use mocks::mock_voter::MockVoterContractTest;
