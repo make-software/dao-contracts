@@ -6,13 +6,10 @@ use casper_dao_utils::{
 };
 use casper_types::U256;
 
-// TODO: Put it lower.
-//
 // Interface of the Reputation Contract.
 //
 // It should be implemented by [`ReputationContract`], [`ReputationContractCaller`]
 // and [`ReputationContractTest`].
-
 #[casper_contract_interface]
 pub trait ReputationContractInterface {
     /// Constructor method.
@@ -110,14 +107,19 @@ pub trait ReputationContractInterface {
     /// event.
     fn unstake(&mut self, address: Address, amount: U256);
 
+    /// Returns the address of the current owner.
     fn get_owner(&self) -> Option<Address>;
 
+    /// Returns the total token supply.
     fn total_supply(&self) -> U256;
 
+    /// Returns the current token balance of the given address.
     fn balance_of(&self, address: Address) -> U256;
 
+    /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
 
+    /// Returns the amount of staked tokens of the given address.
     fn get_staked_balance_of(&self, address: Address) -> U256;
 
     fn total_onboarded(&self) -> U256;
