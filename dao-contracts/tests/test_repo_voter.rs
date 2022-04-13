@@ -14,6 +14,7 @@ use casper_types::{
     U256,
 };
 
+// TODO: Remove speculate 
 speculate! {
     context "repo_voter" {
         before {
@@ -24,8 +25,8 @@ speculate! {
             let informal_voting_time: u64 = 3600;
             let formal_voting_time: u64 = 2*3600;
             let env = TestEnv::new();
-            let mut variable_repo_contract = governance_voting_common::get_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
-            let mut reputation_token_contract = governance_voting_common::get_reputation_token_contract(&env, reputation_to_mint);
+            let mut variable_repo_contract = governance_voting_common::setup_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
+            let mut reputation_token_contract = governance_voting_common::setup_reputation_token_contract(&env, reputation_to_mint);
 
             #[allow(unused_variables)]
             let account1 = env.get_account(1);

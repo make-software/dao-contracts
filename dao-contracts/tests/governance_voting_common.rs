@@ -5,7 +5,9 @@ use casper_dao_contracts::{
 use casper_dao_utils::{consts, Address, TestEnv};
 use casper_types::{bytesrepr::ToBytes, U256};
 
-pub fn get_variable_repo_contract(
+// TODO: Move setups here.
+
+pub fn setup_variable_repo_contract(
     env: &TestEnv,
     informal_voting_quorum: U256,
     formal_voting_quorum: U256,
@@ -13,7 +15,17 @@ pub fn get_variable_repo_contract(
     formal_voting_time: u64,
     minimum_reputation: U256,
 ) -> VariableRepositoryContractTest {
+    fn update<T:ToBytes>(contract: &mut VariableRepositoryContractTest, name: &str, value: T) {
+        contract
+        .update_at(
+            name.into(),
+            value.to_bytes().unwrap().into(),
+            None,
+        )
+        .unwrap();
+    }
     let mut variable_repo_contract = VariableRepositoryContractTest::new(env);
+    // TODO: Cleanup
 
     variable_repo_contract
         .update_at(
@@ -54,7 +66,7 @@ pub fn get_variable_repo_contract(
     variable_repo_contract
 }
 
-pub fn get_reputation_token_contract(env: &TestEnv, tokens: usize) -> ReputationContractTest {
+pub fn setup_reputation_token_contract(env: &TestEnv, tokens: usize) -> ReputationContractTest {
     let mut reputation_token_contract = ReputationContractTest::new(env);
 
     for i in 0..reputation_token_contract.total_onboarded().as_usize() {

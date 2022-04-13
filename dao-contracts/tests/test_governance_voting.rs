@@ -17,16 +17,23 @@ use casper_types::{runtime_args, RuntimeArgs, U256};
 
 speculate! {
     context "governance_voting" {
+        // TODO: move to commons.
         before {
             let informal_quorum = 500.into();
             let formal_quorum = 750.into();
             let minimum_reputation = 500.into();
-            let reputation_to_mint = 10000;
-            let informal_voting_time: u64 = 3600;
-            let formal_voting_time: u64 = 2*3600;
+            let reputation_to_mint = 10_000;
+            let informal_voting_time: u64 = 3_600;
+            let formal_voting_time: u64 = 2 * informal_voting_time;
+            let before_informal_voting_time = Duration::from_secs(informal_voting_time - 1);
+            let after_informal_voting_time = Duration::from_secs(informal_voting_time + 1);
+            let before_formal_voting_time = Duration::from_secs(formal_voting_time + 1);
+            let after_formal_voting_time = Duration::from_secs(formal_voting_time + 1);
+
             let env = TestEnv::new();
-            let mut variable_repo_contract = governance_voting_common::get_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
-            let mut reputation_token_contract = governance_voting_common::get_reputation_token_contract(&env, reputation_to_mint);
+            let mut variable_repo_contract = governance_voting_common::setup_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
+            let mut reputation_token_contract = governance_voting_common::setup_reputation_token_contract(&env, reputation_to_mint);
+            
 
             #[allow(unused_variables)]
             let creator = env.get_account(0);
@@ -37,12 +44,14 @@ speculate! {
             #[allow(unused_variables)]
             let account3 = env.get_account(3);
 
+            // TODO: Hide below in commons.
+            // let (creator, account1, account2, account3) = commons::acconts()
 
             #[allow(unused_mut)]
             let mut mock_voter_contract = MockVoterContractTest::new(
                 &env,
-                Address::from(variable_repo_contract.get_package_hash()),
-                Address::from(reputation_token_contract.get_package_hash()),
+                variable_repo_contract.address(),
+                reputation_token_contract.address(),
             );
 
             variable_repo_contract
@@ -67,6 +76,7 @@ speculate! {
             );
         }
 
+        // TODO: Remove. Move reputation setup into the setup phase.
         test "reputation was set up correctly" {
             let accounts = vec![
                 (0, reputation_to_mint),
@@ -81,8 +91,9 @@ speculate! {
         context "informal_voting" {
             #[should_panic]
             test "creating voting is impossible without enough reputation" {
+                // TODO: remove should_panic
                 mock_voter_contract
-                    .create_voting("some_value".to_string(), minimum_reputation.saturating_sub(100.into()))
+                    .create_voting("some_value".to_string(), minimum_reputation - 100.into())
                     .unwrap();
             }
 
@@ -93,28 +104,26 @@ speculate! {
                     .unwrap();
             }
 
-            test "creating voting is possible with enough reputation" {
-                mock_voter_contract
-                    .create_voting("some_value".to_string(), minimum_reputation)
-                    .unwrap();
-
-                mock_voter_contract.assert_event_at(-2, VotingCreated {
-                    creator,
-                    voting_id: VotingId::zero(),
-                    stake: minimum_reputation,
-                });
-            }
-
             context "informal_voting_created" {
                 before {
                     mock_voter_contract
-                    .create_voting("some_value".to_string(), minimum_reputation)
-                    .unwrap();
+                        .create_voting("some_value".to_string(), minimum_reputation)
+                        .unwrap();
+
                     #[allow(unused_variables)]
                     let voting_created_event : VotingCreated = mock_voter_contract.event(1);
                     let vote_cast_event: VoteCast = mock_voter_contract.event(2);
+
                     #[allow(unused_variables)]
                     let informal_voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                }
+
+                test "creating voting emits an event" {
+                    mock_voter_contract.assert_event_at(-2, VotingCreated {
+                        creator,
+                        voting_id: VotingId::zero(),
+                        stake: minimum_reputation,
+                    });
                 }
 
                 test "reputation was collected correctly" {
@@ -130,6 +139,7 @@ speculate! {
                 }
 
                 test "voting is created correctly" {
+                    // TODO: Change Vote to Ballot.
                     let first_vote: Vote = mock_voter_contract.get_vote(informal_voting.voting_id(), creator);
 
                     assert_eq!(informal_voting.voting_id(), VotingId::zero());
@@ -151,7 +161,8 @@ speculate! {
                 }
 
                 #[should_panic]
-                test "only one vote is cast" {
+                test "only one vote is casted" {
+                    // TODO: check harder.
                     mock_voter_contract.get_voter(informal_voting.voting_id(), 1);
                 }
 
@@ -159,6 +170,7 @@ speculate! {
                     mock_voter_contract
                         .create_voting("some_other_value".to_string(), minimum_reputation)
                         .unwrap();
+                    // TODO: change the way of reading events and ids.
                     let vote_cast_event: VoteCast = mock_voter_contract.event(4);
                     let voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
                     assert_eq!(voting.voting_id(), VotingId::from(1));
@@ -169,16 +181,17 @@ speculate! {
                     mock_voter_contract.vote(informal_voting.voting_id(), true, minimum_reputation).unwrap();
                 }
 
+                // TODO: remove this context.
                 context "informal_voting_lifetime" {
                     test "cannot finish before end" {
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() - 1));
+                        env.advance_block_time_by(before_informal_voting_time);
                         let result = mock_voter_contract.finish_voting(informal_voting.voting_id());
                         assert_eq!(result.unwrap_err(), Error::InformalVotingTimeNotReached);
                     }
 
                     test "tie results in passed voting" {
                         mock_voter_contract.as_account(account1).vote(informal_voting.voting_id(), false, minimum_reputation).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(after_informal_voting_time);
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -195,7 +208,7 @@ speculate! {
                     test "one reputation not enough rejects the voting" {
                         mock_voter_contract.as_account(account1).vote(informal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
                         mock_voter_contract.as_account(account2).vote(informal_voting.voting_id(), true, minimum_reputation.saturating_sub(U256::one())).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(after_informal_voting_time);
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -213,7 +226,7 @@ speculate! {
                         mock_voter_contract.as_account(account1).vote(informal_voting.voting_id(), true, minimum_reputation).unwrap();
                         mock_voter_contract.as_account(account2).vote(informal_voting.voting_id(), true, minimum_reputation).unwrap();
                         mock_voter_contract.as_account(account3).vote(informal_voting.voting_id(), true, minimum_reputation).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(after_informal_voting_time);
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -230,7 +243,7 @@ speculate! {
 
                 context "informal_voting_ended_without_quorum" {
                     before {
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(after_informal_voting_time);
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
                     }
 
@@ -277,7 +290,7 @@ speculate! {
                 context "informal_voting_rejected" {
                     before {
                         mock_voter_contract.as_account(account1).vote(informal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(after_informal_voting_time);
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
                     }
 
@@ -319,14 +332,13 @@ speculate! {
                 context "informal_voting_completed" {
                     before {
                         mock_voter_contract.as_account(account1).vote(informal_voting.voting_id(), false, minimum_reputation).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(after_informal_voting_time);
                         mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
                     }
 
                     test "voting is completed" {
                         let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id());
                         assert_eq!(informal_voting.completed(), true);
-                        assert_eq!(informal_voting.formal_voting_id(), Some(U256::one()));
 
                         mock_voter_contract.assert_last_event(VotingEnded {
                             voting_id: informal_voting.voting_id(),
@@ -350,6 +362,10 @@ speculate! {
 
                         governance_voting_common::assert_reputation(&env, reputation_token_contract, accounts, mock_voter_contract.address(), minimum_reputation.as_usize());
                     }
+
+                    test "new formal voting created" {
+                        assert_eq!(informal_voting.formal_voting_id(), Some(U256::one()));
+                    }
                 }
             }
         }
@@ -357,17 +373,21 @@ speculate! {
         context "formal_voting" {
 
             before {
+                // TODO: simplify.
                 mock_voter_contract
-                .create_voting("some_value".to_string(), minimum_reputation)
-                .unwrap();
+                    .create_voting("some_value".to_string(), minimum_reputation)
+                    .unwrap();
 
                 let vote_cast_event: VoteCast = mock_voter_contract.event(2);
                 let informal_voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
 
-                mock_voter_contract.as_account(account1).vote(informal_voting.voting_id(), false, minimum_reputation).unwrap();
-                env.advance_block_time_by(Duration::from_secs(informal_voting.informal_voting_time() + 1));
+                mock_voter_contract
+                    .as_account(account1)
+                    .vote(informal_voting.voting_id(), false, minimum_reputation)
+                    .unwrap();
+                
+                env.advance_block_time_by(after_informal_voting_time);
                 mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
-
 
                 let vote_cast_event: VoteCast = mock_voter_contract.event(5);
                 #[allow(unused_variables)]
@@ -435,14 +455,14 @@ speculate! {
 
                 context "formal_voting_lifetime" {
                     test "cannot finish before end" {
-                        env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() - 1));
                         let result = mock_voter_contract.finish_voting(formal_voting.voting_id());
                         assert_eq!(result.unwrap_err(), Error::FormalVotingTimeNotReached);
                     }
 
+                    // TODO: Remove as theres is a whole context about it.
                     test "quorum not reached - off by one" {
                         mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), true, minimum_reputation).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                        env.advance_block_time_by(after_formal_voting_time);
                         mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -459,7 +479,7 @@ speculate! {
                     test "quorum reached and voting passed" {
                         mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), true, minimum_reputation).unwrap();
                         mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), true, minimum_reputation).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                        env.advance_block_time_by(after_formal_voting_time);
                         mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -476,7 +496,7 @@ speculate! {
                     test "quorum reached and voting rejected" {
                         mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), false, minimum_reputation).unwrap();
                         mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), false, minimum_reputation).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                        env.advance_block_time_by(after_formal_voting_time);
                         mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -490,10 +510,12 @@ speculate! {
                         });
                     }
 
+                    // TODO: Remove as theres is a whole context about it.
                     test "quorum reached and voting rejected - off by one" {
+                        // TODO: use "+" and move to 2* minimum_reputation + 1 to variable.
                         mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), true, minimum_reputation).unwrap();
                         mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation).saturating_add(U256::one())).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                        env.advance_block_time_by(after_formal_voting_time);
                         mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -512,7 +534,7 @@ speculate! {
             context "formal_voting_ended_without_quorum" {
 
                 before {
-                    env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                    env.advance_block_time_by(after_formal_voting_time);
                     mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
                 }
 
@@ -558,7 +580,7 @@ speculate! {
                     mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), false, minimum_reputation).unwrap();
                     mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), false, minimum_reputation).unwrap();
 
-                    env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                    env.advance_block_time_by(after_formal_voting_time);
                     mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
                 }
 
@@ -605,7 +627,7 @@ speculate! {
                     mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), true, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
                     mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
 
-                    env.advance_block_time_by(Duration::from_secs(formal_voting.formal_voting_time() + 1));
+                    env.advance_block_time_by(after_formal_voting_time);
                     mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
                 }
 

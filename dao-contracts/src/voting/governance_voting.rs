@@ -110,7 +110,7 @@ impl GovernanceVoting {
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
-        let voting = self.get_voting(voting_id);
+        let voting = self.get_voting(voting_id).unwrap_or_revert();
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
@@ -216,7 +216,7 @@ impl GovernanceVoting {
     }
 
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: bool, stake: U256) {
-        let mut voting = self.get_voting(voting_id);
+        let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
         // We cannot vote on a completed voting
         if voting.completed() {
@@ -272,16 +272,16 @@ impl GovernanceVoting {
         self.reputation_token.get().unwrap_or_revert()
     }
 
-    pub fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
-        self.votes.get(&(voting_id, address))
+    pub fn get_vote(&self, voting_id: U256, address: Address) -> Option<Vote> {
+        self.votes.get_or_none(&(voting_id, address))
     }
 
-    pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Address {
-        self.voters.get(voting_id, at).unwrap_or_revert()
+    pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
+        self.voters.get_or_none(voting_id, at).map(|x| x.unwrap_or_revert())
     }
 
-    pub fn get_voting(&self, voting_id: VotingId) -> Voting {
-        self.votings.get(&voting_id).unwrap_or_revert()
+    pub fn get_voting(&self, voting_id: VotingId) -> Option<Voting> {
+        self.votings.get_or_none(&voting_id).map(|x| x.unwrap_or_revert())
     }
 
     pub fn set_voting(&self, voting: Voting) {
@@ -296,13 +296,14 @@ impl GovernanceVoting {
 
     pub fn perform_action(&self, voting: &Voting) {
         call_contract(
-            voting.contract_to_call().unwrap_or_revert(),
+            voting.contract_to_call(),
             voting.entry_point(),
             voting.runtime_args().clone(),
         )
     }
 
     fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
+        // TODO: Check if amount > 0.
         let args: RuntimeArgs = runtime_args! {
             "owner" => owner,
             "recipient" => recipient,
@@ -323,7 +324,7 @@ impl GovernanceVoting {
 
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
-            let address = self.get_voter(voting_id, i);
+            let address = self.get_voter(voting_id, i).unwrap_or_revert();
             let vote = self.votes.get(&(voting_id, address));
             if i == 0 {
                 // the creator
@@ -337,7 +338,7 @@ impl GovernanceVoting {
 
     fn return_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
-            let address = self.get_voter(voting_id, i);
+            let address = self.get_voter(voting_id, i).unwrap_or_revert();
             let vote = self.votes.get(&(voting_id, address));
             self.transfer_reputation(self_address(), address, vote.stake);
         }
@@ -351,7 +352,7 @@ impl GovernanceVoting {
         let u256_max = u256_to_512(U256::MAX).unwrap_or_revert();
 
         for i in 0..self.voters.len(voting.voting_id()) {
-            let address = self.get_voter(voting.voting_id(), i);
+            let address = self.get_voter(voting.voting_id(), i).unwrap_or_revert();
             let vote = self.votes.get(&(voting.voting_id(), address));
             if vote.choice == result {
                 let to_transfer = total_stake * u256_to_512(vote.stake).unwrap_or_revert()

@@ -1,7 +1,7 @@
 use crate::voting::vote::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address,
+    Address, casper_contract::unwrap_or_revert::UnwrapOrRevert, Error,
 };
 use casper_types::{RuntimeArgs, U256};
 
@@ -211,14 +211,14 @@ impl Voting {
 
     /// Get the voting's contract to call.
     #[must_use]
-    pub fn contract_to_call(&self) -> Option<Address> {
-        self.contract_to_call
+    pub fn contract_to_call(&self) -> Address {
+        self.contract_to_call.unwrap_or_revert_with(Error::ContractToCallNotSet)
     }
 
     /// Get a reference to the voting's entry point.
     #[must_use]
     pub fn entry_point(&self) -> &str {
-        self.entry_point.as_ref()
+        &self.entry_point
     }
 
     /// Get a reference to the voting's runtime args.

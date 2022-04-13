@@ -29,6 +29,7 @@ pub struct MockVoterContract {
     variable: Variable<String>,
 }
 
+// TODO: use delegate!.
 impl MockVoterContractInterface for MockVoterContract {
     fn init(&mut self, variable_repo: Address, reputation_token: Address) {
         self.voting.init(variable_repo, reputation_token);
