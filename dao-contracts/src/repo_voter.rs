@@ -36,10 +36,6 @@ pub struct RepoVoterContract {
 }
 
 impl RepoVoterContractInterface for RepoVoterContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address) {
-        self.voting.init(variable_repo, reputation_token);
-    }
-
     fn create_voting(
         &mut self,
         variable_repo_to_edit: Address,
@@ -67,6 +63,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
 
     delegate! {
         to self.voting {
+            fn init(&mut self, variable_repo: Address, reputation_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
