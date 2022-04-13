@@ -18,6 +18,14 @@ pub struct CasperContractItem {
     pub wasm_file_name: String,
 }
 
+impl CasperContractItem {
+    pub fn contract_name(&self) -> String {
+        self.contract_ident
+            .to_string()
+            .to_case(convert_case::Case::Title)
+    }
+}
+
 impl Parse for CasperContractItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;

@@ -21,12 +21,19 @@ pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Err
 }
 
 fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
+    let ident = &input.ident;
     let contract_ident = &input.contract_ident;
     let contract_test_ident = &input.contract_test_ident;
-    let contrustor = build_constructor(input)?;
+    let constructor = build_constructor(input)?;
 
     Ok(quote! {
         #[cfg(feature = "test-support")]
+        #[doc = "A wrapper around [`"]
+        #[doc = stringify!(#contract_ident)]
+        #[doc = "`] to simplify testing."]
+        #[doc = "Implements [`"]
+        #[doc = stringify!(#ident)]
+        #[doc = "`] and [`TestContract`](casper_dao_utils::TestContract)."]
         pub struct #contract_test_ident {
             env: casper_dao_utils::TestEnv,
             package_hash: casper_types::ContractPackageHash,
@@ -35,22 +42,25 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
 
         #[cfg(feature = "test-support")]
         impl #contract_test_ident {
-            #contrustor
+            #constructor
+        }
 
-            pub fn get_package_hash(&self) -> casper_types::ContractPackageHash {
+        #[cfg(feature = "test-support")]
+        impl casper_dao_utils::TestContract for #contract_test_ident {
+            fn get_package_hash(&self) -> casper_types::ContractPackageHash {
                 self.package_hash
             }
 
-            pub fn address(&self) -> casper_dao_utils::Address {
+            fn address(&self) -> casper_dao_utils::Address {
                 casper_dao_utils::Address::from(self.package_hash)
             }
 
-            pub fn as_account(&mut self, account: casper_dao_utils::Address) -> &mut Self {
+            fn as_account(&mut self, account: casper_dao_utils::Address) -> &mut Self {
                 self.env.as_account(account);
                 self
             }
 
-            pub fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
+            fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
                 let raw_event: std::option::Option<casper_types::bytesrepr::Bytes> = self.env.get_dict_value(self.package_hash, "events", index);
                 let raw_event = raw_event.unwrap();
                 let (event, bytes) = T::from_bytes(&raw_event).unwrap();
@@ -58,7 +68,7 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
                 event
             }
 
-            pub fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: i32, event: T) {
+            fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: i32, event: T) {
                 let length: u32 = self.env.get_value(self.package_hash, "events_length");
                 let index: u32 = if index.is_negative() {
                     length - index.wrapping_abs() as u32
@@ -69,7 +79,7 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
                 assert_eq!(self.event::<T>(index), event);
             }
 
-            pub fn assert_last_event<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, event: T) {
+            fn assert_last_event<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, event: T) {
                 let length: u32 = self.env.get_value(self.package_hash, "events_length");
                 assert_eq!(self.event::<T>(length - 1), event);
             }

@@ -14,13 +14,18 @@ pub fn generate_code(input: &CasperContractItem) -> TokenStream {
 }
 
 fn generate_struct(input: &CasperContractItem) -> TokenStream {
+    let contract_name = &input.contract_name();
     let ident = &input.caller_ident;
     quote! {
+      #[doc = "Provides a reference to a deployed "]
+      #[doc = #contract_name]
+      #[doc = "."]
       pub struct #ident {
         contract_package_hash: casper_types::ContractPackageHash,
       }
 
       impl #ident {
+        /// Creates a new caller instance from the given address.
         pub fn at(address: casper_dao_utils::Address) -> Self {
           Self {
               contract_package_hash: *address.as_contract_package_hash().unwrap(),
@@ -91,11 +96,15 @@ mod tests {
         let struct_stream = generate_struct(&item);
 
         let expected = quote! {
+          #[doc = "Provides a reference to a deployed "]
+          #[doc = "Contract"]
+          #[doc = "."]
           pub struct ContractCaller {
             contract_package_hash: casper_types::ContractPackageHash,
           }
 
           impl ContractCaller {
+            #[doc = r" Creates a new caller instance from the given address."]
             pub fn at(address: casper_dao_utils::Address) -> Self {
               Self {
                   contract_package_hash: *address.as_contract_package_hash().unwrap(),

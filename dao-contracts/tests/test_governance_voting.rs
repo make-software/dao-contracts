@@ -8,7 +8,7 @@ use casper_dao_contracts::{
     MockVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
-use casper_dao_utils::{consts, Address, Error, TestEnv};
+use casper_dao_utils::{consts, Address, Error, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,

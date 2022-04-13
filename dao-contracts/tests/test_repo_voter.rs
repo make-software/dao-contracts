@@ -5,7 +5,7 @@ use casper_dao_contracts::{
     RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
-use casper_dao_utils::{consts, Address, TestEnv};
+use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, FromBytes, ToBytes},
     U256,
@@ -14,7 +14,6 @@ use casper_types::{
 #[test]
 fn test_contract_deploy() {
     let (_env, repo_voter_contract, variable_repo_contract, reputation_token_contract) = setup();
-
     assert_eq!(
         repo_voter_contract.get_variable_repo_address(),
         Address::from(variable_repo_contract.get_package_hash())

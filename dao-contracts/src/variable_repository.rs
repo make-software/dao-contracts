@@ -176,6 +176,11 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 }
 
 impl VariableRepositoryContractCaller {
+    /// Retrieves a value for the given key and returns a deserialized struct.
+    ///
+    /// # Errors
+    /// Throws [`ValueNotAvailable`](casper_dao_utils::Error::NotAnOwner) if a value
+    /// for the given key does not exist.
     pub fn get_variable<T: FromBytes>(&self, key: &str) -> T {
         let variable = self.get(key.into()).unwrap_or_revert();
         let (variable, bytes) = <T>::from_bytes(&variable).unwrap_or_revert();

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use casper_dao_contracts::VariableRepositoryContractTest;
 use casper_dao_modules::{events::ValueUpdated, RepositoryDefaults};
-use casper_dao_utils::{consts, BytesConversion, Error, TestEnv};
+use casper_dao_utils::{consts, BytesConversion, Error, TestContract, TestEnv};
 use casper_types::{bytesrepr::Bytes, U256};
 
 static KEY: &str = "key";
