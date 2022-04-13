@@ -38,10 +38,6 @@ pub struct AdminContract {
 }
 
 impl AdminContractInterface for AdminContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address) {
-        self.voting.init(variable_repo, reputation_token);
-    }
-
     fn create_voting(
         &mut self,
         contract_to_update: Address,
@@ -66,6 +62,7 @@ impl AdminContractInterface for AdminContract {
 
     delegate! {
         to self.voting {
+            fn init(&mut self, variable_repo: Address, reputation_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
