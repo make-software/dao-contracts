@@ -1,10 +1,11 @@
-use casper_dao_modules::{Owner, TokenWithStaking, Whitelist};
+use casper_dao_modules::{AccessControl, TokenWithStaking};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
 };
 use casper_types::U256;
+use delegate::delegate;
 
 // TODO: Put it lower.
 //
@@ -127,60 +128,48 @@ pub trait ReputationContractInterface {
 #[derive(Instance)]
 pub struct ReputationContract {
     pub token: TokenWithStaking,
-    pub owner: Owner,
-    pub whitelist: Whitelist,
+    pub access_control: AccessControl,
 }
 
 impl ReputationContractInterface for ReputationContract {
+    delegate! {
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
+        }
+    }
+
     fn init(&mut self) {
         let deployer = caller();
-        self.owner.init(deployer);
-        self.whitelist.add_to_whitelist(deployer);
+        self.access_control.init(deployer);
     }
 
     fn mint(&mut self, recipient: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.mint(recipient, amount);
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.burn(owner, amount);
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.raw_transfer(owner, recipient, amount);
     }
 
-    fn change_ownership(&mut self, owner: Address) {
-        self.owner.ensure_owner();
-        self.owner.change_ownership(owner);
-        self.whitelist.add_to_whitelist(owner);
-    }
-
-    fn add_to_whitelist(&mut self, address: Address) {
-        self.owner.ensure_owner();
-        self.whitelist.add_to_whitelist(address);
-    }
-
-    fn remove_from_whitelist(&mut self, address: Address) {
-        self.owner.ensure_owner();
-        self.whitelist.remove_from_whitelist(address);
-    }
-
     fn stake(&mut self, address: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.stake(address, amount);
     }
 
     fn unstake(&mut self, address: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.unstake(address, amount);
-    }
-
-    fn get_owner(&self) -> Option<Address> {
-        self.owner.get_owner()
     }
 
     fn total_supply(&self) -> U256 {
@@ -189,10 +178,6 @@ impl ReputationContractInterface for ReputationContract {
 
     fn balance_of(&self, address: Address) -> U256 {
         self.token.balance_of(&address)
-    }
-
-    fn is_whitelisted(&self, address: Address) -> bool {
-        self.whitelist.is_whitelisted(&address)
     }
 
     fn get_staked_balance_of(&self, address: Address) -> U256 {
