@@ -7,8 +7,12 @@ mod reputation;
 mod variable_repository;
 pub mod voting;
 
+pub use dao_nft::{DaoOwnedNftContract, DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 pub use mocks::mock_voter::{
     MockVoterContract, MockVoterContractCaller, MockVoterContractInterface,
+};
+pub use onboarding_voter::{
+    OnboardingVoterContract, OnboardingVoterContractCaller, OnboardingVoterContractInterface,
 };
 pub use repo_voter::{RepoVoterContract, RepoVoterContractCaller, RepoVoterContractInterface};
 pub use reputation::{ReputationContract, ReputationContractCaller, ReputationContractInterface};
@@ -28,3 +32,9 @@ pub use repo_voter::RepoVoterContractTest;
 
 #[cfg(feature = "test-support")]
 pub use mocks::mock_voter::MockVoterContractTest;
+
+#[cfg(feature = "test-support")]
+pub use onboarding_voter::OnboardingVoterContractTest;
+
+#[cfg(feature = "test-support")]
+pub use dao_nft::DaoOwnedNftContractTest;

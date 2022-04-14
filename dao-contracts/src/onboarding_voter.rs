@@ -43,7 +43,7 @@ pub trait OnboardingVoterContractInterface {
 }
 
 #[derive(Instance)]
-struct OnboardingVoterContract {
+pub struct OnboardingVoterContract {
     storage: OnboardingContractStorage,
     voting: GovernanceVoting,
 }

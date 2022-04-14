@@ -29,7 +29,7 @@ pub trait DaoOwnedNftContractInterface {
 }
 
 #[derive(Instance)]
-struct DaoOwnedNftContract {
+pub struct DaoOwnedNftContract {
     token: ERC721Token,
     metadata: MetadataERC721,
     access_control: AccessControl,
