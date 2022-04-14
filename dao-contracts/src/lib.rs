@@ -1,5 +1,7 @@
 mod dao_nft;
+mod kyc_voter;
 pub mod mocks;
+mod onboarding_voter;
 mod repo_voter;
 mod reputation;
 mod variable_repository;

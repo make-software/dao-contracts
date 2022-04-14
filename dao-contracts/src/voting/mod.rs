@@ -1,5 +1,8 @@
 mod governance_voting;
+mod onboarding;
 mod vote;
+
+pub use onboarding::OnboardingContractStorage;
 
 pub use governance_voting::consts;
 pub use governance_voting::events::*;
