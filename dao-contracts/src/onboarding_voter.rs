@@ -5,7 +5,11 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{voting::Voting, GovernanceVoting, OnboardingContractStorage, Vote, VotingId};
+use crate::voting::{
+    onboarding::{self, OnboardingContractStorage},
+    voting::Voting,
+    GovernanceVoting, Vote, VotingId,
+};
 use delegate::delegate;
 
 #[casper_contract_interface]
@@ -28,7 +32,7 @@ pub trait OnboardingVoterContractInterface {
     // For Removing existing VA:
     // - Check if VA is already onboarderd.
     // - Check if `address` has positive reputation amount.
-    fn create_voting(&mut self, action: u32, subject_address: Address, stake: U256);
+    fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256);
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
@@ -77,19 +81,26 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         self.voting.init(variable_repo, reputation_token);
     }
 
-    fn create_voting(&mut self, action: u32, subject_address: Address, stake: U256) {
+    fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256) {
         let creator = caller();
         let va_token_address = self.get_va_token_address();
-        self.voting.create_voting(
-            creator,
-            stake,
-            va_token_address,
-            "mint".into(),
-            runtime_args! {
+
+        let entry_point = match action {
+            onboarding::Action::Add => "mint",
+            onboarding::Action::Remove => "burn",
+        }
+        .to_string();
+
+        let runtime_args = match action {
+            onboarding::Action::Add => runtime_args! {
                 "to" => subject_address,
                 "token_id" => U256::one(),
             },
-        );
+            onboarding::Action::Remove => runtime_args! {},
+        };
+
+        self.voting
+            .create_voting(creator, stake, va_token_address, entry_point, runtime_args);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {

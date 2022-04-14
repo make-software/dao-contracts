@@ -1,6 +1,7 @@
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_dao_macros::Instance, Address,
-    Variable,
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
+    Address, Variable,
 };
 
 #[derive(Instance)]
@@ -23,4 +24,10 @@ impl OnboardingContractStorage {
     pub fn get_va_token_address(&self) -> Address {
         self.va_token.get().unwrap_or_revert()
     }
+}
+
+#[derive(ToBytes, FromBytes, CLTyped)]
+pub enum Action {
+    Add,
+    Remove,
 }

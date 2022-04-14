@@ -3,10 +3,11 @@ use speculate::speculate;
 speculate! {
     use casper_dao_contracts::{OnboardingVoterContractTest, DaoOwnedNftContractTest, ReputationContractTest, VariableRepositoryContractTest};
     use casper_types::U256;
-
+    use casper_dao_contracts::voting::onboarding;
 
     before {
         let env = casper_dao_utils::TestEnv::new();
+        #[allow(unused_variables, unused_mut)]
         let mut va_token = DaoOwnedNftContractTest::new(&env, "va token".to_string(), "vat".to_string(), "".to_string());
         let kyc_token = DaoOwnedNftContractTest::new(&env, "kyc token".to_string(), "kyt".to_string(), "".to_string());
         let reputation_token = ReputationContractTest::new(&env);
@@ -31,7 +32,7 @@ speculate! {
             context "when_there_is_an_ongoing_voting" {
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.create_voting(1, va, 1_000.into()),
+                        contract.create_voting(onboarding::Action::Add, va, 1_000.into()),
                         Err(casper_dao_utils::Error::Unknown)
                     )
                 }
@@ -40,7 +41,7 @@ speculate! {
             describe "when_removes_a_VA" {
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.create_voting(1, va, 1_000.into()),
+                        contract.create_voting(onboarding::Action::Remove, va, 1_000.into()),
                         Err(casper_dao_utils::Error::Unknown)
                     )
                 }
@@ -49,7 +50,7 @@ speculate! {
             context "VA_is_not_kyed" {
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.create_voting(1, va, 1_000.into()),
+                        contract.create_voting(onboarding::Action::Add, va, 1_000.into()),
                         Err(casper_dao_utils::Error::Unknown)
                     )
                 }
@@ -58,7 +59,7 @@ speculate! {
             context "VA_has_no_reputation" {
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.create_voting(1, va, 1_000.into()),
+                        contract.create_voting(onboarding::Action::Add, va, 1_000.into()),
                         Err(casper_dao_utils::Error::Unknown)
                     )
                 }
@@ -68,14 +69,14 @@ speculate! {
 
                 test "that_an_add_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.create_voting(1, va, 1_000.into()),
+                        contract.create_voting(onboarding::Action::Add, va, 1_000.into()),
                         Err(casper_dao_utils::Error::Unknown)
                     )
                 }
 
                 test "that_a_remove_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.create_voting(2, va, 1_000.into()),
+                        contract.create_voting(onboarding::Action::Remove, va, 1_000.into()),
                         Err(casper_dao_utils::Error::Unknown)
                     )
                 }
@@ -101,8 +102,8 @@ speculate! {
 
             test "that_an_add_va_voting_cannot_be_created" {
                 assert_eq!(
-                    contract.create_voting(1, va, 1_000.into()),
-                    Err(casper_dao_utils::Error::Unknown)
+                    contract.create_voting(onboarding::Action::Add, va, 1_000.into()),
+                    Err(casper_dao_utils::Error::VaOnboardedAlready)
                 )
             }
         }

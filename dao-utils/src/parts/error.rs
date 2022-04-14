@@ -32,6 +32,7 @@ pub enum Error {
     CannotVoteTwice,
     BytesConversionError,
     MappingIndexDoesNotExist,
+    VaOnboardedAlready,
 }
 
 impl From<Error> for ApiError {
@@ -65,6 +66,7 @@ impl From<Error> for ApiError {
             Error::VoteOnCompletedVotingNotAllowed => 2104,
             Error::FinishingCompletedVotingNotAllowed => 2105,
             Error::CannotVoteTwice => 2106,
+            Error::VaOnboardedAlready => 2201,
             Error::MappingIndexDoesNotExist => 3404,
         };
         ApiError::User(id)
@@ -99,6 +101,7 @@ impl From<u16> for Error {
             2104 => Error::VoteOnCompletedVotingNotAllowed,
             2105 => Error::FinishingCompletedVotingNotAllowed,
             2106 => Error::CannotVoteTwice,
+            2201 => Error::VaOnboardedAlready,
             3404 => Error::MappingIndexDoesNotExist,
             _ => Error::Unknown,
         }
