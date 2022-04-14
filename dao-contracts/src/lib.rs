@@ -1,3 +1,4 @@
+mod dao_nft;
 pub mod mocks;
 mod repo_voter;
 mod reputation;

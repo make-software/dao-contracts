@@ -8,7 +8,7 @@ use casper_types::{bytesrepr::Bytes, U256};
 use crate::{
     events::{Approval, ApprovalForAll, Transfer},
     receiver::{ERC721ReceiverCaller, IERC721Receiver},
-    TokenId, TokenUri,
+    TokenId,
 };
 
 #[derive(Instance)]
@@ -41,17 +41,6 @@ impl ERC721Token {
 
     pub fn total_supply(&self) -> U256 {
         self.total_supply.get()
-    }
-
-    pub fn token_uri(&self, token_id: TokenId) -> TokenUri {
-        if !self.exists(&token_id) {
-            casper_env::revert(Error::TokenDoesNotExist)
-        }
-        format!("{}{}", self.base_uri(), token_id)
-    }
-
-    pub fn base_uri(&self) -> TokenUri {
-        "ipfs://".to_string()
     }
 
     pub fn approve(&mut self, approved: Option<Address>, token_id: TokenId) {
