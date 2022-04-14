@@ -9,7 +9,7 @@ use casper_dao_contracts::{
     AdminContractTest,
 };
 
-use casper_dao_utils::{Address, TestEnv};
+use casper_dao_utils::{TestEnv};
 use casper_types::U256;
 
 // TODO: Remove speculate 
@@ -78,7 +78,7 @@ speculate! {
                     .unwrap();
 
                 let informal_voting_id = VotingId::zero();
-                let voting: Voting = admin_contract.get_voting(informal_voting_id);
+                let voting: Voting = admin_contract.get_voting(informal_voting_id).unwrap();
 
                 // cast votes for informal voting
                 // TODO: Enum Choice::Against,For

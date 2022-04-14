@@ -32,6 +32,8 @@ pub enum Error {
     CannotVoteTwice,
     NotEnoughReputation,
     MappingIndexDoesNotExist,
+    BallotDoesNotExist,
+    VoterDoesNotExist,
     ContractToCallNotSet
 }
 
@@ -68,6 +70,8 @@ impl From<Error> for ApiError {
             Error::NotEnoughReputation => 2106,
             Error::ContractToCallNotSet => 2107,
             Error::MappingIndexDoesNotExist => 3404,
+            Error::BallotDoesNotExist => 3405,
+            Error::VoterDoesNotExist => 3406,
         };
         ApiError::User(id)
     }
@@ -103,6 +107,8 @@ impl From<u16> for Error {
             2106 => Error::NotEnoughReputation,
             2107 => Error::ContractToCallNotSet,
             3404 => Error::MappingIndexDoesNotExist,
+            3405 => Error::BallotDoesNotExist,
+            3406 => Error::VoterDoesNotExist,
             _ => Error::Unknown,
         }
     }

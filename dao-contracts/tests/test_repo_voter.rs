@@ -77,7 +77,7 @@ speculate! {
                 .unwrap();
 
                 let voting_id = VotingId::zero();
-                let voting: Voting = repo_voter_contract.get_voting(voting_id);
+                let voting: Voting = repo_voter_contract.get_voting(voting_id).unwrap();
 
                 // cast votes for informal voting
                 repo_voter_contract

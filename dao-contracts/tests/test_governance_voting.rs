@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use casper_dao_contracts::{
     voting::{
-        consts as gv_consts, voting::Voting, Vote, VoteCast, VotingContractCreated, VotingCreated,
+        consts as gv_consts, voting::Voting, Ballot, VoteCast, VotingContractCreated, VotingCreated,
         VotingEnded, VotingId,
     },
     MockVoterContractTest,
@@ -93,7 +93,7 @@ speculate! {
             test "creating voting is impossible without enough reputation" {
                 // TODO: remove should_panic
                 mock_voter_contract
-                    .create_voting("some_value".to_string(), minimum_reputation - 100.into())
+                    .create_voting("some_value".to_string(), minimum_reputation - U256::one())
                     .unwrap();
             }
 
@@ -112,10 +112,10 @@ speculate! {
 
                     #[allow(unused_variables)]
                     let voting_created_event : VotingCreated = mock_voter_contract.event(1);
-                    let vote_cast_event: VoteCast = mock_voter_contract.event(2);
+                    let ballot_cast_event: VoteCast = mock_voter_contract.event(2);
 
                     #[allow(unused_variables)]
-                    let informal_voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                    let informal_voting: Voting = mock_voter_contract.get_voting(ballot_cast_event.voting_id).unwrap();
                 }
 
                 test "creating voting emits an event" {
@@ -139,8 +139,7 @@ speculate! {
                 }
 
                 test "voting is created correctly" {
-                    // TODO: Change Vote to Ballot.
-                    let first_vote: Vote = mock_voter_contract.get_vote(informal_voting.voting_id(), creator);
+                    let first_ballot: Ballot = mock_voter_contract.get_ballot(informal_voting.voting_id(), creator).unwrap();
 
                     assert_eq!(informal_voting.voting_id(), VotingId::zero());
                     assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
@@ -152,18 +151,18 @@ speculate! {
                     assert_eq!(voting_created_event.stake, minimum_reputation);
 
                     // first vote is cast automatically
-                    assert_eq!(first_vote.voting_id, informal_voting.voting_id());
-                    assert_eq!(first_vote.voter, Some(creator));
-                    assert_eq!(first_vote.choice, true);
-                    assert_eq!(first_vote.stake, minimum_reputation);
-                    assert_eq!(vote_cast_event, VoteCast { voter: creator, voting_id: informal_voting.voting_id(), choice: true, stake: minimum_reputation });
-                    assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 0), creator);
+                    assert_eq!(first_ballot.voting_id, informal_voting.voting_id());
+                    assert_eq!(first_ballot.voter, Some(creator));
+                    assert!(first_ballot.choice);
+                    assert_eq!(first_ballot.stake, minimum_reputation);
+                    assert_eq!(ballot_cast_event, VoteCast { voter: creator, voting_id: informal_voting.voting_id(), choice: true, stake: minimum_reputation });
+                    assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 0).unwrap(), creator);
                 }
 
                 #[should_panic]
                 test "only one vote is casted" {
                     // TODO: check harder.
-                    mock_voter_contract.get_voter(informal_voting.voting_id(), 1);
+                    mock_voter_contract.get_voter(informal_voting.voting_id(), 1).unwrap();
                 }
 
                 test "voting counter works" {
@@ -171,8 +170,8 @@ speculate! {
                         .create_voting("some_other_value".to_string(), minimum_reputation)
                         .unwrap();
                     // TODO: change the way of reading events and ids.
-                    let vote_cast_event: VoteCast = mock_voter_contract.event(4);
-                    let voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                    let ballot_cast_event: VoteCast = mock_voter_contract.event(4);
+                    let voting: Voting = mock_voter_contract.get_voting(ballot_cast_event.voting_id).unwrap();
                     assert_eq!(voting.voting_id(), VotingId::from(1));
                 }
 
@@ -248,7 +247,7 @@ speculate! {
                     }
 
                     test "voting is completed" {
-                        let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id());
+                        let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id()).unwrap();
                         assert_eq!((informal_voting.completed()), true);
                         assert_eq!(informal_voting.formal_voting_id(), None);
 
@@ -309,11 +308,11 @@ speculate! {
 
                     #[should_panic]
                     test "no new voting was created" {
-                        mock_voter_contract.get_voting(informal_voting.voting_id() + 1);
+                        mock_voter_contract.get_voting(informal_voting.voting_id() + 1).unwrap();
                     }
 
                     test "voting is completed" {
-                        let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id());
+                        let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id()).unwrap();
                         assert_eq!(informal_voting.completed(), true);
                         assert_eq!(informal_voting.formal_voting_id(), None);
 
@@ -337,7 +336,7 @@ speculate! {
                     }
 
                     test "voting is completed" {
-                        let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id());
+                        let informal_voting = mock_voter_contract.get_voting(informal_voting.voting_id()).unwrap();
                         assert_eq!(informal_voting.completed(), true);
 
                         mock_voter_contract.assert_last_event(VotingEnded {
@@ -378,8 +377,8 @@ speculate! {
                     .create_voting("some_value".to_string(), minimum_reputation)
                     .unwrap();
 
-                let vote_cast_event: VoteCast = mock_voter_contract.event(2);
-                let informal_voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                let ballot_cast_event: VoteCast = mock_voter_contract.event(2);
+                let informal_voting: Voting = mock_voter_contract.get_voting(ballot_cast_event.voting_id).unwrap();
 
                 mock_voter_contract
                     .as_account(account1)
@@ -389,11 +388,11 @@ speculate! {
                 env.advance_block_time_by(after_informal_voting_time);
                 mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
 
-                let vote_cast_event: VoteCast = mock_voter_contract.event(5);
+                let ballot_cast_event: VoteCast = mock_voter_contract.event(5);
                 #[allow(unused_variables)]
-                let formal_voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                let formal_voting = mock_voter_contract.get_voting(ballot_cast_event.voting_id).unwrap();
                 #[allow(unused_variables)]
-                let informal_voting: Voting = mock_voter_contract.get_voting(informal_voting.voting_id());
+                let informal_voting: Voting = mock_voter_contract.get_voting(informal_voting.voting_id()).unwrap();
             }
 
             context "formal_voting_created" {
@@ -402,8 +401,8 @@ speculate! {
                     let runtime_args = runtime_args! {
                         "variable" => "some_value".to_string(),
                     };
-                    let first_voter = mock_voter_contract.get_voter(formal_voting.voting_id(), 0);
-                    let first_vote = mock_voter_contract.get_vote(formal_voting.voting_id(), first_voter);
+                    let first_voter = mock_voter_contract.get_voter(formal_voting.voting_id(), 0).unwrap();
+                    let first_ballot = mock_voter_contract.get_ballot(formal_voting.voting_id(), first_voter).unwrap();
                     let voting_created_event: VotingCreated = mock_voter_contract.event(4);
 
                     assert_eq!(voting_created_event.voting_id, VotingId::from(1));
@@ -411,7 +410,7 @@ speculate! {
                     assert_eq!(voting_created_event.stake, minimum_reputation);
 
                     assert_eq!(formal_voting.voting_id(), voting_created_event.voting_id);
-                    assert_eq!(formal_voting.completed(), false);
+                    assert!(!formal_voting.completed());
                     assert_eq!(formal_voting.stake_in_favor(), minimum_reputation);
                     assert_eq!(formal_voting.stake_against(), U256::zero());
                     assert_eq!(formal_voting.informal_voting_id(), informal_voting.voting_id());
@@ -420,15 +419,15 @@ speculate! {
                     assert_eq!(formal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(reputation_token_contract.total_onboarded(), formal_quorum).unwrap());
                     assert_eq!(formal_voting.informal_voting_quorum(), casper_dao_utils::math::promils_of(reputation_token_contract.total_onboarded(), informal_quorum).unwrap());
                     assert_eq!(formal_voting.minimum_governance_reputation(), minimum_reputation);
-                    assert_eq!(formal_voting.contract_to_call(), Some(mock_voter_contract.address()));
+                    assert_eq!(formal_voting.contract_to_call(), mock_voter_contract.address());
                     assert_eq!(formal_voting.entry_point(), "set_variable");
                     assert_eq!(formal_voting.runtime_args(), &runtime_args);
 
                     // first vote is cast automatically
-                    assert_eq!(first_vote.choice, true);
-                    assert_eq!(first_vote.stake, minimum_reputation);
-                    assert_eq!(first_vote.voter, Some(first_voter));
-                    assert_eq!(first_vote.voting_id, formal_voting.voting_id());
+                    assert_eq!(first_ballot.choice, true);
+                    assert_eq!(first_ballot.stake, minimum_reputation);
+                    assert_eq!(first_ballot.voter, Some(first_voter));
+                    assert_eq!(first_ballot.voting_id, formal_voting.voting_id());
 
                     // informal voting is updated
                     assert_eq!(informal_voting.completed(), true);
@@ -437,14 +436,14 @@ speculate! {
 
                 #[should_panic]
                 test "only one vote is cast" {
-                    mock_voter_contract.get_voter(formal_voting.voting_id(), 1);
+                    mock_voter_contract.get_voter(formal_voting.voting_id(), 1).unwrap();
                 }
 
                 test "voting counter works" {
                     mock_voter_contract
                         .create_voting("some_other_value".to_string(), minimum_reputation)
                         .unwrap();
-                    let voting: Voting = mock_voter_contract.get_voting(VotingId::from(2));
+                    let voting: Voting = mock_voter_contract.get_voting(VotingId::from(2)).unwrap();
                     assert_eq!(voting.voting_id(), VotingId::from(2));
                 }
 
@@ -549,7 +548,7 @@ speculate! {
                         formal_voting_id: Some(formal_voting.voting_id()),
                     });
 
-                    let formal_voting = mock_voter_contract.get_voting(formal_voting.voting_id());
+                    let formal_voting = mock_voter_contract.get_voting(formal_voting.voting_id()).unwrap();
                     assert_eq!(formal_voting.completed(), true);
                 }
 
@@ -574,8 +573,8 @@ speculate! {
 
             context "formal_voting_rejected" {
                 before {
-                    let vote_cast_event: VoteCast = mock_voter_contract.event(5);
-                    let formal_voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                    let ballot_cast_event: VoteCast = mock_voter_contract.event(5);
+                    let formal_voting = mock_voter_contract.get_voting(ballot_cast_event.voting_id).unwrap();
 
                     mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), false, minimum_reputation).unwrap();
                     mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), false, minimum_reputation).unwrap();
@@ -596,7 +595,7 @@ speculate! {
                         formal_voting_id: Some(formal_voting.voting_id()),
                     });
 
-                    let formal_voting = mock_voter_contract.get_voting(formal_voting.voting_id());
+                    let formal_voting = mock_voter_contract.get_voting(formal_voting.voting_id()).unwrap();
                     assert_eq!(formal_voting.completed(), true);
                 }
 
@@ -621,8 +620,8 @@ speculate! {
 
             context "formal_voting_completed" {
                 before {
-                    let vote_cast_event: VoteCast = mock_voter_contract.event(5);
-                    let formal_voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
+                    let ballot_cast_event: VoteCast = mock_voter_contract.event(5);
+                    let formal_voting = mock_voter_contract.get_voting(ballot_cast_event.voting_id).unwrap();
 
                     mock_voter_contract.as_account(account1).vote(formal_voting.voting_id(), true, minimum_reputation.saturating_add(minimum_reputation)).unwrap();
                     mock_voter_contract.as_account(account2).vote(formal_voting.voting_id(), false, minimum_reputation.saturating_add(minimum_reputation)).unwrap();

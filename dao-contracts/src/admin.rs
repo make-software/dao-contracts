@@ -7,7 +7,7 @@ use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::{
     action::Action,
-    voting::{voting::Voting, GovernanceVoting, Vote, VotingId},
+    voting::{voting::Voting, GovernanceVoting, Ballot, VotingId},
 };
 
 use delegate::delegate;
@@ -27,9 +27,9 @@ pub trait AdminContractInterface {
     fn get_dust_amount(&self) -> U256;
     fn get_variable_repo_address(&self) -> Address;
     fn get_reputation_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: U256) -> Voting;
-    fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-    fn get_voter(&self, voting_id: U256, at: u32) -> Address;
+    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
 }
 
 #[derive(Instance)]
@@ -67,9 +67,9 @@ impl AdminContractInterface for AdminContract {
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: U256) -> Voting;
-            fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-            fn get_voter(&self, voting_id: U256, at: u32) -> Address;
+            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
         }
     }
 }

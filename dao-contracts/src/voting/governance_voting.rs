@@ -10,6 +10,7 @@ use casper_dao_utils::{
     casper_env::{call_contract, emit, get_block_time, revert, self_address},
     Address, Error, Mapping, Variable,
 };
+
 use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
 use crate::{
@@ -24,7 +25,7 @@ use self::{
 use casper_dao_utils::{consts as dao_consts, math, VecMapping};
 
 use super::VotingEnded;
-use super::{vote::VotingId, Vote};
+use super::{vote::VotingId, Ballot};
 
 /// The Governance Voting module.
 
@@ -33,7 +34,7 @@ pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
     reputation_token: Variable<Option<Address>>,
     votings: Mapping<VotingId, Option<Voting>>,
-    votes: Mapping<(VotingId, Address), Vote>,
+    ballots: Mapping<(VotingId, Address), Ballot>,
     voters: VecMapping<VotingId, Option<Address>>,
     votings_count: Variable<U256>,
     dust_amount: Variable<U256>,
@@ -133,7 +134,7 @@ impl GovernanceVoting {
 
                 let formal_voting_id = self.next_voting_id();
                 let creator_address = self.voters.get(voting.voting_id(), 0).unwrap_or_revert();
-                let creator_stake = self.votes.get(&(voting.voting_id(), creator_address)).stake;
+                let creator_stake = self.ballots.get(&(voting.voting_id(), creator_address)).stake;
 
                 // Formal voting is created and first vote cast
                 self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
@@ -223,7 +224,7 @@ impl GovernanceVoting {
             revert(Error::VoteOnCompletedVotingNotAllowed)
         }
 
-        let mut vote = self.votes.get(&(voting_id, voter));
+        let mut vote = self.ballots.get(&(voting_id, voter));
         match vote.voter {
             Some(_) => {
                 // Cannot vote twice on the same voting
@@ -234,7 +235,7 @@ impl GovernanceVoting {
                 self.transfer_reputation(voter, self_address(), stake);
 
                 // Create a new vote
-                vote = Vote {
+                vote = Ballot {
                     voter: Some(voter),
                     choice,
                     voting_id,
@@ -246,7 +247,7 @@ impl GovernanceVoting {
         }
 
         // Update the votes list
-        self.votes.set(&(voting_id, voter), vote);
+        self.ballots.set(&(voting_id, voter), vote);
 
         // update voting
         voting.stake(stake, choice);
@@ -272,8 +273,13 @@ impl GovernanceVoting {
         self.reputation_token.get().unwrap_or_revert()
     }
 
-    pub fn get_vote(&self, voting_id: U256, address: Address) -> Option<Vote> {
-        self.votes.get_or_none(&(voting_id, address))
+    pub fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot> {
+        self.ballots.get_or_none(&(voting_id, address))
+    }
+
+    pub fn get_ballot_at(&mut self, voting_id: U256, i: u32) -> Ballot {
+        let address = self.get_voter(voting_id, i).unwrap_or_revert_with(Error::VoterDoesNotExist);
+        self.get_ballot(voting_id, address).unwrap_or_revert_with(Error::BallotDoesNotExist)
     }
 
     pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
@@ -324,23 +330,23 @@ impl GovernanceVoting {
 
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
-            let address = self.get_voter(voting_id, i).unwrap_or_revert();
-            let vote = self.votes.get(&(voting_id, address));
+            let ballot = self.get_ballot_at(voting_id, i);
             if i == 0 {
                 // the creator
-                self.burn_reputation(self_address(), vote.stake);
+                self.burn_reputation(self_address(), ballot.stake);
             } else {
                 // the voters - transfer from contract to them
-                self.transfer_reputation(self_address(), address, vote.stake);
+                self.transfer_reputation(self_address(), ballot.voter.unwrap_or_revert(), ballot.stake);
             }
         }
     }
 
+
+
     fn return_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
-            let address = self.get_voter(voting_id, i).unwrap_or_revert();
-            let vote = self.votes.get(&(voting_id, address));
-            self.transfer_reputation(self_address(), address, vote.stake);
+            let ballot = self.get_ballot_at(voting_id, i);
+            self.transfer_reputation(self_address(), ballot.voter.unwrap_or_revert(), ballot.stake);
         }
     }
 
@@ -352,10 +358,9 @@ impl GovernanceVoting {
         let u256_max = u256_to_512(U256::MAX).unwrap_or_revert();
 
         for i in 0..self.voters.len(voting.voting_id()) {
-            let address = self.get_voter(voting.voting_id(), i).unwrap_or_revert();
-            let vote = self.votes.get(&(voting.voting_id(), address));
-            if vote.choice == result {
-                let to_transfer = total_stake * u256_to_512(vote.stake).unwrap_or_revert()
+            let ballot = self.get_ballot_at(voting.voting_id(), i);
+            if ballot.choice == result {
+                let to_transfer = total_stake * u256_to_512(ballot.stake).unwrap_or_revert()
                     / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
 
                 if to_transfer > u256_max {
@@ -364,9 +369,9 @@ impl GovernanceVoting {
 
                 transferred += to_transfer;
 
-                let to_transfer = u512_to_u256(to_transfer).unwrap_or_revert();
+                let to_transfer = u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
-                self.transfer_reputation(self_address(), address, to_transfer);
+                self.transfer_reputation(self_address(), ballot.voter.unwrap_or_revert(), to_transfer);
             }
         }
 
@@ -379,7 +384,7 @@ impl GovernanceVoting {
             }
 
             self.dust_amount
-                .set(self.get_dust_amount() + u512_to_u256(dust).unwrap_or_revert());
+                .set(self.get_dust_amount() + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow));
         }
     }
 }
