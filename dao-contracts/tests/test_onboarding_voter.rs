@@ -17,6 +17,21 @@ speculate! {
     }
 
     describe "voting" {
+
+        test "kyc_token_address_is_set" {
+            assert_eq!(
+                contract.get_kyc_token_address(),
+                kyc_token.address()
+            )
+        }
+
+        test "va_token_address_it_set" {
+            assert_eq!(
+                contract.get_va_token_address(),
+                va_token.address()
+            )
+        }
+
         context "VA_is_not_onboarded" {
             before {
                 assert_eq!(va_token.balance_of(va), U256::zero());
@@ -81,6 +96,13 @@ speculate! {
                 context "voting_passed" {
                     test "VA_owns_a_va_token" {
                         assert_eq!(va_token.balance_of(va), U256::one())
+                    }
+
+                    test "remove_voting_creation_succeeds" {
+                        assert_eq!(
+                            contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount),
+                            Ok(())
+                        );
                     }
                 }
 

@@ -1,4 +1,5 @@
 mod governance_voting;
+pub mod kyc;
 pub mod onboarding;
 mod vote;
 

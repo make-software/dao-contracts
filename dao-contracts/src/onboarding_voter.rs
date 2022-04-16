@@ -1,12 +1,13 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::caller,
-    Address,
+    casper_env::{self, caller},
+    Address, Error,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::voting::{
-    onboarding::{self, OnboardingContractStorage},
+    kyc::KycInfo,
+    onboarding::{self, OnboardingInfo},
     voting::Voting,
     GovernanceVoting, Vote, VotingId,
 };
@@ -48,15 +49,19 @@ pub trait OnboardingVoterContractInterface {
 
 #[derive(Instance)]
 pub struct OnboardingVoterContract {
-    storage: OnboardingContractStorage,
+    onboarding: OnboardingInfo,
+    kyc: KycInfo,
     voting: GovernanceVoting,
 }
 
 impl OnboardingVoterContractInterface for OnboardingVoterContract {
     delegate! {
-        to self.storage {
-            fn get_kyc_token_address(&self) -> Address;
+        to self.onboarding {
             fn get_va_token_address(&self) -> Address;
+        }
+
+        to self.kyc {
+            fn get_kyc_token_address(&self) -> Address;
         }
 
         to self.voting {
@@ -77,13 +82,23 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         kyc_token: Address,
         va_token: Address,
     ) {
-        self.storage.init(kyc_token, va_token);
+        self.onboarding.init(va_token);
+        self.kyc.init(kyc_token);
         self.voting.init(variable_repo, reputation_token);
     }
 
     fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256) {
-        let creator = caller();
-        let va_token_address = self.get_va_token_address();
+        if self.onboarding.exists_ongoing_voting(&subject_address) {
+            casper_env::revert(Error::OnboardingAlreadyInProgress);
+        }
+
+        if self.onboarding.is_onboarded(&subject_address) {
+            casper_env::revert(Error::VaOnboardedAlready);
+        }
+
+        if !self.kyc.is_kycd(&subject_address) {
+            casper_env::revert(Error::VaNotKyced);
+        }
 
         let entry_point = match action {
             onboarding::Action::Add => "mint",
@@ -98,9 +113,12 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             },
             onboarding::Action::Remove => runtime_args! {},
         };
+        let creator = caller();
+        let va_token_address = self.get_va_token_address();
 
         self.voting
             .create_voting(creator, stake, va_token_address, entry_point, runtime_args);
+        self.onboarding.set_voting(&subject_address);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
