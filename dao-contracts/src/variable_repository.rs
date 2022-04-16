@@ -41,6 +41,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         self.owner.ensure_owner();
         self.owner.change_ownership(owner);
         self.whitelist.add_to_whitelist(owner);
+        self.whitelist.remove_from_whitelist(caller());
     }
 
     fn add_to_whitelist(&mut self, address: Address) {

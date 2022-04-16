@@ -12,9 +12,7 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
-use crate::{
-    ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
-};
+use crate::VariableRepositoryContractCaller;
 
 use self::{
     events::{VoteCast, VotingContractCreated, VotingCreated},
@@ -61,8 +59,6 @@ impl GovernanceVoting {
         runtime_args: RuntimeArgs,
     ) {
         let repo_caller = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
-        let reputation_caller = ReputationContractCaller::at(self.get_reputation_token_address());
-
         let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
         let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
         let minimum_governance_reputation =
@@ -70,12 +66,12 @@ impl GovernanceVoting {
         let voting_id = self.next_voting_id();
 
         let informal_voting_quorum = math::promils_of(
-            reputation_caller.total_onboarded(),
+            total_onboarded(),
             repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
         )
         .unwrap_or_revert();
         let formal_voting_quorum = math::promils_of(
-            reputation_caller.total_onboarded(),
+            total_onboarded(),
             repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
         )
         .unwrap_or_revert();
@@ -377,4 +373,9 @@ impl GovernanceVoting {
                 .set(self.get_dust_amount() + u512_to_u256(dust).unwrap_or_revert());
         }
     }
+}
+
+// TODO: Change this to the call to VaKycContract, when ready.
+fn total_onboarded() -> U256 {
+    U256::from(4)
 }

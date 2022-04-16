@@ -25,3 +25,6 @@ pub use repo_voter::RepoVoterContractTest;
 
 #[cfg(feature = "test-support")]
 pub use mocks::mock_voter::MockVoterContractTest;
+
+#[cfg(feature = "test-support")]
+pub use casper_dao_erc20::events as erc20_events;

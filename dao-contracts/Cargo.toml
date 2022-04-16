@@ -7,6 +7,7 @@ edition = "2018"
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 casper-dao-modules = { path = "../dao-modules", default-features = false }
+casper-dao-erc20 = { path = "../dao-erc20", default-features = false }
 
 [[bin]]
 name = "reputation_contract"
@@ -39,5 +40,13 @@ test = false
 
 [features]
 default = [ "test-support" ]
-test-support = [ "casper-dao-utils/test-support", "casper-dao-modules/test-support" ]
-wasm = [ "casper-dao-utils/wasm", "casper-dao-modules/wasm" ]
+test-support = [ 
+    "casper-dao-utils/test-support",
+    "casper-dao-modules/test-support",
+    "casper-dao-erc20/test-support"    
+]
+wasm = [
+    "casper-dao-utils/wasm",
+    "casper-dao-modules/wasm",
+    "casper-dao-erc20/wasm"    
+]

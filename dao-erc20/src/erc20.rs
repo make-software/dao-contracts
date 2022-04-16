@@ -37,14 +37,7 @@ impl ERC20Interface for ERC20 {
         self.name.set(name);
         self.symbol.set(symbol);
         self.decimals.set(decimals);
-        self.total_supply.set(initial_supply);
-        self.balances.set(&sender, initial_supply);
-
-        emit(Transfer {
-            from: None,
-            to: Some(sender),
-            value: initial_supply,
-        });
+        self.mint(&sender, initial_supply)
     }
 
     fn name(&self) -> String {
@@ -123,6 +116,38 @@ impl ERC20 {
             owner,
             spender,
             value: allowance - amount,
+        });
+    }
+
+    pub fn mint(&mut self, recipient: &Address, amount: U256) {
+        let (new_supply, is_overflowed) = self.total_supply.get().overflowing_add(amount);
+        if is_overflowed {
+            casper_env::revert(Error::TotalSupplyOverflow);
+        }
+        self.total_supply.set(new_supply);
+        self.balances
+            .set(recipient, self.balances.get(recipient) + amount);
+
+        emit(Transfer {
+            from: None,
+            to: Some(*recipient),
+            value: amount,
+        });
+    }
+
+    pub fn burn(&mut self, owner: &Address, amount: U256) {
+        let owner_balance = self.balances.get(owner);
+        if owner_balance < amount {
+            casper_env::revert(Error::InsufficientBalance);
+        }
+
+        self.total_supply.set(self.total_supply.get() - amount);
+        self.balances.set(owner, owner_balance - amount);
+
+        emit(Transfer {
+            from: Some(*owner),
+            to: None,
+            value: amount,
         });
     }
 }
