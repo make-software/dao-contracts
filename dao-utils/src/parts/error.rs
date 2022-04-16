@@ -33,6 +33,9 @@ pub enum Error {
     BytesConversionError,
     MappingIndexDoesNotExist,
     VaOnboardedAlready,
+    OnboardingAlreadyInProgress,
+    VaNotOnboarded,
+    VaNotKyced,
 }
 
 impl From<Error> for ApiError {
@@ -67,6 +70,9 @@ impl From<Error> for ApiError {
             Error::FinishingCompletedVotingNotAllowed => 2105,
             Error::CannotVoteTwice => 2106,
             Error::VaOnboardedAlready => 2201,
+            Error::OnboardingAlreadyInProgress => 2202,
+            Error::VaNotOnboarded => 2203,
+            Error::VaNotKyced => 2204,
             Error::MappingIndexDoesNotExist => 3404,
         };
         ApiError::User(id)
@@ -102,6 +108,9 @@ impl From<u16> for Error {
             2105 => Error::FinishingCompletedVotingNotAllowed,
             2106 => Error::CannotVoteTwice,
             2201 => Error::VaOnboardedAlready,
+            2202 => Error::OnboardingAlreadyInProgress,
+            2203 => Error::VaNotOnboarded,
+            2204 => Error::VaNotKyced,
             3404 => Error::MappingIndexDoesNotExist,
             _ => Error::Unknown,
         }
