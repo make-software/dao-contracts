@@ -92,6 +92,39 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             casper_env::revert(Error::OnboardingAlreadyInProgress);
         }
 
+        match action {
+            onboarding::Action::Add => self.create_add_voting(subject_address, stake),
+            onboarding::Action::Remove => self.create_remove_voting(subject_address, stake),
+        };
+    }
+
+    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
+        let voter = caller();
+        self.voting.vote(voter, voting_id, choice, stake);
+    }
+}
+
+impl OnboardingVoterContract {
+    fn create_remove_voting(&mut self, subject_address: Address, stake: U256) {
+        if !self.onboarding.is_onboarded(&subject_address) {
+            casper_env::revert(Error::VaNotOnboarded);
+        }
+
+        let runtime_args = runtime_args! {};
+        let creator = caller();
+        let va_token_address = self.get_va_token_address();
+
+        self.voting.create_voting(
+            creator,
+            stake,
+            va_token_address,
+            "burn".to_string(),
+            runtime_args,
+        );
+        self.onboarding.set_voting(&subject_address);
+    }
+
+    fn create_add_voting(&mut self, subject_address: Address, stake: U256) {
         if self.onboarding.is_onboarded(&subject_address) {
             casper_env::revert(Error::VaOnboardedAlready);
         }
@@ -100,29 +133,20 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             casper_env::revert(Error::VaNotKyced);
         }
 
-        let entry_point = match action {
-            onboarding::Action::Add => "mint",
-            onboarding::Action::Remove => "burn",
-        }
-        .to_string();
-
-        let runtime_args = match action {
-            onboarding::Action::Add => runtime_args! {
+        let runtime_args = runtime_args! {
                 "to" => subject_address,
                 "token_id" => U256::one(),
-            },
-            onboarding::Action::Remove => runtime_args! {},
         };
         let creator = caller();
         let va_token_address = self.get_va_token_address();
 
-        self.voting
-            .create_voting(creator, stake, va_token_address, entry_point, runtime_args);
+        self.voting.create_voting(
+            creator,
+            stake,
+            va_token_address,
+            "mint".to_string(),
+            runtime_args,
+        );
         self.onboarding.set_voting(&subject_address);
-    }
-
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
-        let voter = caller();
-        self.voting.vote(voter, voting_id, choice, stake);
     }
 }
