@@ -10,10 +10,23 @@ speculate! {
     use casper_types::U256;
     use casper_dao_contracts::voting::onboarding;
     use casper_dao_utils::Error;
+    use std::time::Duration;
 
     before {
         #[allow(unused_variables, unused_mut)]
-        let (va, member, mint_amount, vote_amount, mut va_token, mut kyc_token, mut reputation_token, mut variable_repo, mut contract) = setup();
+        let (
+            user,
+            va,
+            second_va,
+            mint_amount,
+            vote_amount,
+            mut va_token,
+            mut kyc_token,
+            mut reputation_token,
+            mut variable_repo,
+            mut contract,
+            mut env
+        ) = setup();
     }
 
     describe "voting" {
@@ -25,48 +38,48 @@ speculate! {
             )
         }
 
-        test "va_token_address_it_set" {
+        test "user_token_address_it_set" {
             assert_eq!(
                 contract.get_va_token_address(),
                 va_token.address()
             )
         }
 
-        context "VA_is_not_onboarded" {
+        context "user_is_not_onboarded" {
             before {
-                assert_eq!(va_token.balance_of(va), U256::zero());
+                assert_eq!(va_token.balance_of(user), U256::zero());
             }
 
-            test "remove_va_voting_creation_fails" {
+            test "remove_user_voting_creation_fails" {
                 assert_eq!(
-                    contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount),
+                    contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
                     Err(Error::VaNotOnboarded)
                 )
             }
 
-            context "VA_is_not_kyced" {
+            context "user_is_not_kyced" {
                 before {
-                    reputation_token.mint(va, mint_amount).unwrap();
-                    assert_eq!(kyc_token.balance_of(va), U256::zero());
+                    reputation_token.mint(user, mint_amount).unwrap();
+                    assert_eq!(kyc_token.balance_of(user), U256::zero());
                 }
 
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Add, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
                         Err(Error::VaNotKyced)
                     )
                 }
             }
 
-            context "VA_has_no_reputation" {
+            context "user_has_no_reputation" {
                 before {
-                    kyc_token.mint(va, 1.into()).unwrap();
-                    assert_eq!(reputation_token.balance_of(va), U256::zero());
+                    kyc_token.mint(user, 1.into()).unwrap();
+                    assert_eq!(reputation_token.balance_of(user), U256::zero());
                 }
 
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Add, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
                         Err(Error::InsufficientBalance)
                     )
                 }
@@ -74,68 +87,80 @@ speculate! {
 
             context "voting_is_created" {
                 before {
-                    reputation_token.mint(va, mint_amount).unwrap();
-                    kyc_token.mint(va, 1.into()).unwrap();
-                    contract.as_account(member).create_voting(onboarding::Action::Add, va, vote_amount).unwrap();
+                    reputation_token.mint(user, mint_amount).unwrap();
+                    kyc_token.mint(user, 1.into()).unwrap();
+                    contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount).unwrap();
                 }
 
                 test "that_add_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Add, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
                 test "that_remove_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
                 context "voting_passed" {
-                    test "VA_owns_a_va_token" {
-                        assert_eq!(va_token.balance_of(va), U256::one())
+                    before {
+                        let voting_id = 0.into();
+                        let voting = contract.get_voting(voting_id);
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
+                        contract.as_account(va).finish_voting(voting_id).unwrap();
+                        let voting_id = 1.into();
+                        contract.as_account(second_va).vote(voting_id, true,  vote_amount).unwrap();
+                        env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                        contract.as_account(va).finish_voting(1.into()).unwrap();
+                        let voting = contract.get_voting(1.into());
+                        println!("voting={:?}", voting);
+                    }
+                    test "user_owns_a_user_token" {
+                        assert_eq!(va_token.balance_of(user), U256::one())
                     }
 
                     test "remove_voting_creation_succeeds" {
                         assert_eq!(
-                            contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount),
+                            contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
                             Ok(())
                         );
                     }
                 }
 
                 context "voting_rejected" {
-                    test "VA_does_not_own_va_token" {
-                        assert_eq!(va_token.balance_of(va), U256::zero())
+                    test "user" {
+                        assert_eq!(va_token.balance_of(user), U256::zero())
                     }
                 }
             }
         }
 
-        context "VA_is_already_onboarded" {
+        context "user_is_already_onboarded" {
             before {
-                va_token.mint(va, 1.into()).unwrap();
+                va_token.mint(user, 1.into()).unwrap();
             }
 
-            test "that_add_va_voting_cannot_be_created" {
+            test "that_add_user_voting_cannot_be_created" {
                 assert_eq!(
-                    contract.as_account(member).create_voting(onboarding::Action::Add, va, vote_amount),
+                    contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
                     Err(Error::VaOnboardedAlready)
                 )
             }
 
-            context "when_VA_has_no_reputation" {
+            context "when_user_has_no_reputation" {
                 before {
                     assert_eq!(
-                        reputation_token.balance_of(va),
+                        reputation_token.balance_of(user),
                         U256::zero()
                     );
                 }
                 test "that_voting_creation_fails" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
                         Err(Error::InsufficientBalance)
                     )
                 }
@@ -143,33 +168,33 @@ speculate! {
 
             context "a_remove_voting_is_created" {
                 before {
-                    reputation_token.mint(va, mint_amount).unwrap();
-                    contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount).unwrap();
+                    reputation_token.mint(user, mint_amount).unwrap();
+                    contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount).unwrap();
                 }
 
                 test "that_add_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Add, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
                 test "that_remove_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(member).create_voting(onboarding::Action::Remove, va, vote_amount),
+                        contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
                 context "voting_passed" {
-                    test "that_VA_has_no_va_token" {
-                        assert_eq!(va_token.balance_of(va), U256::zero())
+                    test "that_user_has_no_user_token" {
+                        assert_eq!(va_token.balance_of(user), U256::zero())
                     }
                 }
 
                 context "voting_rejected" {
-                    test "that_VA_still_owns_va_token" {
-                        assert_eq!(va_token.balance_of(va), U256::one())
+                    test "that_user_still_owns_user_token" {
+                        assert_eq!(va_token.balance_of(user), U256::one())
                     }
                 }
             }
@@ -181,6 +206,7 @@ speculate! {
 fn setup() -> (
     Address,
     Address,
+    Address,
     U256,
     U256,
     DaoOwnedNftContractTest,
@@ -188,13 +214,14 @@ fn setup() -> (
     ReputationContractTest,
     VariableRepositoryContractTest,
     OnboardingVoterContractTest,
+    TestEnv,
 ) {
     let env = TestEnv::new();
 
     let va_token = DaoOwnedNftContractTest::new(
         &env,
-        "va token".to_string(),
-        "vat".to_string(),
+        "user token".to_string(),
+        "usert".to_string(),
         "".to_string(),
     );
     let kyc_token = DaoOwnedNftContractTest::new(
@@ -222,16 +249,19 @@ fn setup() -> (
     reputation_token
         .change_ownership(onboarding_voter.address())
         .unwrap();
-    let va = env.get_account(1);
-    let member = env.get_account(2);
+    let user = env.get_account(1);
+    let va = env.get_account(2);
+    let second_va = env.get_account(3);
     // The voter has to have some tokens
     let mint_amount = 10_000.into();
     let vote_amount = 1_000.into();
-    reputation_token.mint(member, mint_amount).unwrap();
+    reputation_token.mint(va, mint_amount).unwrap();
+    reputation_token.mint(second_va, mint_amount).unwrap();
 
     (
+        user,
         va,
-        member,
+        second_va,
         mint_amount,
         vote_amount,
         va_token,
@@ -239,5 +269,6 @@ fn setup() -> (
         reputation_token,
         variable_repo,
         onboarding_voter,
+        env,
     )
 }
