@@ -5,14 +5,14 @@ use std::time::Duration;
 
 use casper_dao_contracts::{
     action::Action,
-    voting::{voting::Voting, VotingContractCreated, VotingId},
+    voting::{voting::Voting, Choice, VotingContractCreated, VotingId},
     AdminContractTest,
 };
 
-use casper_dao_utils::{TestEnv};
+use casper_dao_utils::TestEnv;
 use casper_types::U256;
 
-// TODO: Remove speculate 
+// TODO: Remove speculate
 speculate! {
     context "admin" {
         before {
@@ -24,7 +24,7 @@ speculate! {
             let formal_voting_time: u64 = 2 * informal_voting_time;
             let env = TestEnv::new();
             let mut variable_repo_contract = governance_voting_common::setup_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
-            let mut reputation_token_contract = governance_voting_common::setup_reputation_token_contract(&env, reputation_to_mint);
+            let mut reputation_token_contract = governance_voting_common::setup_reputation_token_contract(&env, reputation_to_mint, 4);
 
             #[allow(unused_variables)]
             let deployer = env.get_account(0);
@@ -46,7 +46,7 @@ speculate! {
                 .as_account(deployer)
                 .change_ownership(admin_contract.address())
                 .unwrap();
-            
+
             reputation_token_contract
                 .as_account(deployer)
                 .change_ownership(admin_contract.address())
@@ -85,7 +85,7 @@ speculate! {
                 // TODO: Remove magic numbers.
                 admin_contract
                     .as_account(account1)
-                    .vote(informal_voting_id, true, U256::from(500))
+                    .vote(informal_voting_id, Choice::InFavor, U256::from(500))
                     .unwrap();
 
                 // fast forward
@@ -102,11 +102,11 @@ speculate! {
                 // cast votes for formal voting
                 admin_contract
                     .as_account(account1)
-                    .vote(formal_voting_id, true, 1000.into())
+                    .vote(formal_voting_id, Choice::InFavor, 1000.into())
                     .unwrap();
                 admin_contract
                     .as_account(account2)
-                    .vote(formal_voting_id, true, 1000.into())
+                    .vote(formal_voting_id, Choice::InFavor, 1000.into())
                     .unwrap();
             }
 

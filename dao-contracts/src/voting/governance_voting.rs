@@ -24,10 +24,9 @@ use self::{
 
 use casper_dao_utils::{consts as dao_consts, math, VecMapping};
 
+use super::ballot::Choice;
 use super::VotingEnded;
-use super::{vote::VotingId, Ballot};
-
-/// The Governance Voting module.
+use super::{ballot::VotingId, Ballot};
 
 #[derive(Instance)]
 pub struct GovernanceVoting {
@@ -107,7 +106,7 @@ impl GovernanceVoting {
         });
 
         // Cast first vote in favor
-        self.vote(creator, voting_id, true, stake);
+        self.vote(creator, voting_id, Choice::InFavor, stake);
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
@@ -134,7 +133,10 @@ impl GovernanceVoting {
 
                 let formal_voting_id = self.next_voting_id();
                 let creator_address = self.voters.get(voting.voting_id(), 0).unwrap_or_revert();
-                let creator_stake = self.ballots.get(&(voting.voting_id(), creator_address)).stake;
+                let creator_stake = self
+                    .ballots
+                    .get(&(voting.voting_id(), creator_address))
+                    .stake;
 
                 // Formal voting is created and first vote cast
                 self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
@@ -145,7 +147,12 @@ impl GovernanceVoting {
                     stake: creator_stake,
                 });
 
-                self.vote(creator_address, formal_voting_id, true, creator_stake);
+                self.vote(
+                    creator_address,
+                    formal_voting_id,
+                    Choice::InFavor,
+                    creator_stake,
+                );
 
                 // Informal voting is completed and referenced with formal voting
                 voting.complete(Some(formal_voting_id));
@@ -216,7 +223,7 @@ impl GovernanceVoting {
         self.set_voting(voting);
     }
 
-    pub fn vote(&mut self, voter: Address, voting_id: U256, choice: bool, stake: U256) {
+    pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
         let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
         // We cannot vote on a completed voting
@@ -278,16 +285,23 @@ impl GovernanceVoting {
     }
 
     pub fn get_ballot_at(&mut self, voting_id: U256, i: u32) -> Ballot {
-        let address = self.get_voter(voting_id, i).unwrap_or_revert_with(Error::VoterDoesNotExist);
-        self.get_ballot(voting_id, address).unwrap_or_revert_with(Error::BallotDoesNotExist)
+        let address = self
+            .get_voter(voting_id, i)
+            .unwrap_or_revert_with(Error::VoterDoesNotExist);
+        self.get_ballot(voting_id, address)
+            .unwrap_or_revert_with(Error::BallotDoesNotExist)
     }
 
     pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
-        self.voters.get_or_none(voting_id, at).map(|x| x.unwrap_or_revert())
+        self.voters
+            .get_or_none(voting_id, at)
+            .map(|x| x.unwrap_or_revert())
     }
 
     pub fn get_voting(&self, voting_id: VotingId) -> Option<Voting> {
-        self.votings.get_or_none(&voting_id).map(|x| x.unwrap_or_revert())
+        self.votings
+            .get_or_none(&voting_id)
+            .map(|x| x.unwrap_or_revert())
     }
 
     pub fn set_voting(&self, voting: Voting) {
@@ -302,7 +316,9 @@ impl GovernanceVoting {
 
     pub fn perform_action(&self, voting: &Voting) {
         call_contract(
-            voting.contract_to_call(),
+            voting
+                .contract_to_call()
+                .unwrap_or_revert_with(Error::ContractToCallNotSet),
             voting.entry_point(),
             voting.runtime_args().clone(),
         )
@@ -336,17 +352,23 @@ impl GovernanceVoting {
                 self.burn_reputation(self_address(), ballot.stake);
             } else {
                 // the voters - transfer from contract to them
-                self.transfer_reputation(self_address(), ballot.voter.unwrap_or_revert(), ballot.stake);
+                self.transfer_reputation(
+                    self_address(),
+                    ballot.voter.unwrap_or_revert(),
+                    ballot.stake,
+                );
             }
         }
     }
 
-
-
     fn return_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
-            self.transfer_reputation(self_address(), ballot.voter.unwrap_or_revert(), ballot.stake);
+            self.transfer_reputation(
+                self_address(),
+                ballot.voter.unwrap_or_revert(),
+                ballot.stake,
+            );
         }
     }
 
@@ -359,7 +381,7 @@ impl GovernanceVoting {
 
         for i in 0..self.voters.len(voting.voting_id()) {
             let ballot = self.get_ballot_at(voting.voting_id(), i);
-            if ballot.choice == result {
+            if ballot.choice.is_in_favor() == result {
                 let to_transfer = total_stake * u256_to_512(ballot.stake).unwrap_or_revert()
                     / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
 
@@ -369,9 +391,14 @@ impl GovernanceVoting {
 
                 transferred += to_transfer;
 
-                let to_transfer = u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
+                let to_transfer =
+                    u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
-                self.transfer_reputation(self_address(), ballot.voter.unwrap_or_revert(), to_transfer);
+                self.transfer_reputation(
+                    self_address(),
+                    ballot.voter.unwrap_or_revert(),
+                    to_transfer,
+                );
             }
         }
 
@@ -383,8 +410,10 @@ impl GovernanceVoting {
                 revert(Error::ArithmeticOverflow)
             }
 
-            self.dust_amount
-                .set(self.get_dust_amount() + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow));
+            self.dust_amount.set(
+                self.get_dust_amount()
+                    + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow),
+            );
         }
     }
 }

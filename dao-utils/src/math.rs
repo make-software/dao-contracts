@@ -25,4 +25,5 @@ fn test_promils_of() {
     assert_eq!(promils_of(1000.into(), 999.into()).unwrap(), 999.into());
     assert_eq!(promils_of(6.into(), 334.into()).unwrap(), 2.into());
     assert_eq!(promils_of(6.into(), 333.into()).unwrap(), 1.into());
+    assert_eq!(promils_of(10.into(), 750.into()).unwrap(), 7.into());
 }

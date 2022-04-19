@@ -34,7 +34,7 @@ pub enum Error {
     MappingIndexDoesNotExist,
     BallotDoesNotExist,
     VoterDoesNotExist,
-    ContractToCallNotSet
+    ContractToCallNotSet,
 }
 
 impl From<Error> for ApiError {

@@ -7,7 +7,7 @@ use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::{
     action::Action,
-    voting::{voting::Voting, GovernanceVoting, Ballot, VotingId},
+    voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
 };
 
 use delegate::delegate;
@@ -22,7 +22,7 @@ pub trait AdminContractInterface {
         address: Address,
         stake: U256,
     );
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
     fn get_variable_repo_address(&self) -> Address;
@@ -56,7 +56,7 @@ impl AdminContractInterface for AdminContract {
         );
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
         self.voting.vote(caller(), voting_id, choice, stake);
     }
 

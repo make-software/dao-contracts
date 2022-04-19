@@ -4,6 +4,7 @@ use speculate::speculate;
 use std::time::Duration;
 
 use casper_dao_contracts::{
+    voting::Choice,
     voting::{voting::Voting, VotingContractCreated, VotingId},
     RepoVoterContractTest,
 };
@@ -14,7 +15,7 @@ use casper_types::{
     U256,
 };
 
-// TODO: Remove speculate 
+// TODO: Remove speculate
 speculate! {
     context "repo_voter" {
         before {
@@ -26,7 +27,7 @@ speculate! {
             let formal_voting_time: u64 = 2*3600;
             let env = TestEnv::new();
             let mut variable_repo_contract = governance_voting_common::setup_variable_repo_contract(&env, informal_quorum, formal_quorum, informal_voting_time, formal_voting_time, minimum_reputation);
-            let mut reputation_token_contract = governance_voting_common::setup_reputation_token_contract(&env, reputation_to_mint);
+            let mut reputation_token_contract = governance_voting_common::setup_reputation_token_contract(&env, reputation_to_mint, 4);
 
             #[allow(unused_variables)]
             let account1 = env.get_account(1);
@@ -82,7 +83,7 @@ speculate! {
                 // cast votes for informal voting
                 repo_voter_contract
                     .as_account(account1)
-                    .vote(voting_id, true, U256::from(500))
+                    .vote(voting_id, Choice::InFavor, U256::from(500))
                     .unwrap();
 
                 // fast forward
@@ -99,11 +100,11 @@ speculate! {
                 // cast votes for formal voting
                 repo_voter_contract
                     .as_account(account1)
-                    .vote(voting_id, true, 1000.into())
+                    .vote(voting_id, Choice::InFavor, 1000.into())
                     .unwrap();
                 repo_voter_contract
                     .as_account(account2)
-                    .vote(voting_id, true, 1000.into())
+                    .vote(voting_id, Choice::InFavor, 1000.into())
                     .unwrap();
             }
 
@@ -117,7 +118,7 @@ speculate! {
                 // vote against
                 repo_voter_contract
                     .as_account(account3)
-                    .vote(voting_id, false, 5000.into())
+                    .vote(voting_id, Choice::Against, 5000.into())
                     .unwrap();
 
                 env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));

@@ -8,11 +8,32 @@ pub type VotingId = U256;
 pub type AccountId = usize;
 pub type ReputationAmount = usize;
 
+#[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]
+pub enum Choice {
+    Against,
+    InFavor,
+}
+
+impl Default for Choice {
+    fn default() -> Self {
+        Self::InFavor
+    }
+}
+
+impl Choice {
+    pub fn is_in_favor(&self) -> bool {
+        match self {
+            Choice::InFavor => true,
+            Choice::Against => false,
+        }
+    }
+}
+
 #[derive(Debug, Default, FromBytes, ToBytes, CLTyped)]
 pub struct Ballot {
     pub voter: Option<Address>,
     pub voting_id: VotingId,
-    pub choice: bool,
+    pub choice: Choice,
     pub stake: U256,
 }
 
@@ -26,7 +47,7 @@ fn test_vote_serialization() {
     let vote = Ballot {
         voter: Some(address),
         voting_id: U256::from(123),
-        choice: true,
+        choice: Choice::InFavor,
         stake: U256::from(456),
     };
 
