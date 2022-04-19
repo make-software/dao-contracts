@@ -5,11 +5,14 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{
-    kyc::KycInfo,
-    onboarding::{self, OnboardingInfo},
-    voting::Voting,
-    GovernanceVoting, Vote, VotingId,
+use crate::{
+    proxy::reputation_proxy::ReputationContractProxy,
+    voting::{
+        kyc::KycInfo,
+        onboarding::{self, OnboardingInfo},
+        voting::Voting,
+        GovernanceVoting, Vote, VotingId,
+    },
 };
 use delegate::delegate;
 
@@ -68,7 +71,6 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
-            fn finish_voting(&mut self, voting_id: VotingId);
             fn get_voting(&self, voting_id: U256) -> Voting;
             fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
             fn get_voter(&self, voting_id: U256, at: u32) -> Address;
@@ -88,65 +90,94 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
     }
 
     fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256) {
-        if self.onboarding.exists_ongoing_voting(&subject_address) {
-            casper_env::revert(Error::OnboardingAlreadyInProgress);
-        }
+        self.assert_no_ongoing_voting(&subject_address);
 
-        match action {
-            onboarding::Action::Add => self.create_add_voting(subject_address, stake),
-            onboarding::Action::Remove => self.create_remove_voting(subject_address, stake),
+        let (entry_point, runtime_args) = match action {
+            onboarding::Action::Add => self.config_add_voting(subject_address),
+            onboarding::Action::Remove => self.config_remove_voting(subject_address),
         };
+        let creator = caller();
+        let contract_to_call = self.get_va_token_address();
+
+        self.voting
+            .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
+        self.onboarding.set_voting(&subject_address);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
         let voter = caller();
         self.voting.vote(voter, voting_id, choice, stake);
     }
+
+    fn finish_voting(&mut self, voting_id: VotingId) {
+        self.voting.finish_voting(voting_id);
+        let address = self.extract_address_from_args(voting_id);
+        self.onboarding.clear_voting(&address);
+    }
 }
 
 impl OnboardingVoterContract {
-    fn create_remove_voting(&mut self, subject_address: Address, stake: U256) {
-        if !self.onboarding.is_onboarded(&subject_address) {
-            casper_env::revert(Error::VaNotOnboarded);
-        }
+    fn config_remove_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
+        self.assert_onboarded(&subject_address);
 
         let runtime_args = runtime_args! {};
-        let creator = caller();
-        let va_token_address = self.get_va_token_address();
+        let entry_point = "burn".to_string();
 
-        self.voting.create_voting(
-            creator,
-            stake,
-            va_token_address,
-            "burn".to_string(),
-            runtime_args,
-        );
-        self.onboarding.set_voting(&subject_address);
+        (entry_point, runtime_args)
     }
 
-    fn create_add_voting(&mut self, subject_address: Address, stake: U256) {
-        if self.onboarding.is_onboarded(&subject_address) {
-            casper_env::revert(Error::VaOnboardedAlready);
-        }
-
-        if !self.kyc.is_kycd(&subject_address) {
-            casper_env::revert(Error::VaNotKyced);
-        }
+    fn config_add_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
+        self.assert_not_onboarded(&subject_address);
+        self.assert_kyced(&subject_address);
+        self.assert_has_reputation(&subject_address);
 
         let runtime_args = runtime_args! {
-                "to" => subject_address,
-                "token_id" => U256::one(),
+            "to" => subject_address,
+            "token_id" => U256::one(),
         };
-        let creator = caller();
-        let va_token_address = self.get_va_token_address();
+        let entry_point = "mint".to_string();
 
-        self.voting.create_voting(
-            creator,
-            stake,
-            va_token_address,
-            "mint".to_string(),
-            runtime_args,
-        );
-        self.onboarding.set_voting(&subject_address);
+        (entry_point, runtime_args)
+    }
+
+    fn extract_address_from_args(&self, voting_id: VotingId) -> Address {
+        let voting = self.voting.get_voting(voting_id);
+        let arg = voting
+            .runtime_args()
+            .named_args()
+            .find(|arg| arg.name() == "to")
+            .unwrap();
+
+        arg.cl_value().clone().into_t().unwrap()
+    }
+
+    fn assert_has_reputation(&self, address: &Address) {
+        if !ReputationContractProxy::has_reputation(self.get_reputation_token_address(), address) {
+            casper_env::revert(Error::InsufficientBalance)
+        }
+    }
+
+    fn assert_kyced(&self, address: &Address) {
+        if !self.kyc.is_kycd(address) {
+            casper_env::revert(Error::VaNotKyced);
+        }
+    }
+
+    fn assert_not_onboarded(&self, address: &Address) {
+        if self.onboarding.is_onboarded(address) {
+            casper_env::revert(Error::VaOnboardedAlready);
+        }
+    }
+
+    fn assert_no_ongoing_voting(&self, address: &Address) {
+        if self.onboarding.exists_ongoing_voting(&address) {
+            casper_env::revert(Error::OnboardingAlreadyInProgress);
+        }
+    }
+
+    fn assert_onboarded(&self, address: &Address) {
+        if !self.onboarding.is_onboarded(address) {
+            casper_env::revert(Error::VaNotOnboarded);
+        }
     }
 }

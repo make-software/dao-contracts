@@ -12,16 +12,14 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
-use crate::{
-    ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
-};
+use crate::proxy::variable_repo_proxy::VariableRepoContractProxy;
 
 use self::{
     events::{VoteCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
-use casper_dao_utils::{consts as dao_consts, math, VecMapping};
+use casper_dao_utils::VecMapping;
 
 use super::VotingEnded;
 use super::{vote::VotingId, Vote};
@@ -60,25 +58,18 @@ impl GovernanceVoting {
         entry_point: String,
         runtime_args: RuntimeArgs,
     ) {
-        let repo_caller = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
-        let reputation_caller = ReputationContractCaller::at(self.get_reputation_token_address());
-
-        let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
-        let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
+        let variable_repo_address = self.get_variable_repo_address();
+        let informal_voting_time =
+            VariableRepoContractProxy::informal_voting_time(variable_repo_address);
+        let formal_voting_time =
+            VariableRepoContractProxy::formal_voting_time(variable_repo_address);
         let minimum_governance_reputation =
-            repo_caller.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION);
-        let voting_id = self.next_voting_id();
+            VariableRepoContractProxy::minimum_governance_reputation(variable_repo_address);
 
-        let informal_voting_quorum = math::promils_of(
-            reputation_caller.total_onboarded(),
-            repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
-        )
-        .unwrap_or_revert();
-        let formal_voting_quorum = math::promils_of(
-            reputation_caller.total_onboarded(),
-            repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
-        )
-        .unwrap_or_revert();
+        let informal_voting_quorum =
+            VariableRepoContractProxy::informal_voting_quorum(variable_repo_address);
+        let formal_voting_quorum =
+            VariableRepoContractProxy::formal_voting_quorum(variable_repo_address);
 
         let voting_configuration = VotingConfiguration {
             formal_voting_quorum,
@@ -91,6 +82,7 @@ impl GovernanceVoting {
             runtime_args,
         };
 
+        let voting_id = self.next_voting_id();
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
 
         // Add Voting
