@@ -1,4 +1,4 @@
-use crate::voting::vote::VotingId;
+use crate::voting::ballot::{Choice, VotingId};
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
@@ -16,6 +16,7 @@ pub enum VotingType {
     Formal,
 }
 
+#[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]
 pub struct VotingConfiguration {
     pub formal_voting_quorum: U256,
     pub formal_voting_time: u64,
@@ -27,7 +28,7 @@ pub struct VotingConfiguration {
     pub runtime_args: RuntimeArgs,
 }
 
-#[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes)]
+#[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]
 pub struct Voting {
     voting_id: VotingId,
     completed: bool,
@@ -36,14 +37,7 @@ pub struct Voting {
     start_time: u64,
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
-    formal_voting_quorum: U256,
-    formal_voting_time: u64,
-    informal_voting_quorum: U256,
-    informal_voting_time: u64,
-    minimum_governance_reputation: U256,
-    contract_to_call: Option<Address>,
-    entry_point: String,
-    runtime_args: RuntimeArgs,
+    voting_configuration: VotingConfiguration,
 }
 
 impl Voting {
@@ -60,14 +54,7 @@ impl Voting {
             start_time,
             informal_voting_id: voting_id,
             formal_voting_id: None,
-            formal_voting_quorum: voting_configuration.formal_voting_quorum,
-            formal_voting_time: voting_configuration.formal_voting_time,
-            informal_voting_quorum: voting_configuration.informal_voting_quorum,
-            informal_voting_time: voting_configuration.informal_voting_time,
-            minimum_governance_reputation: voting_configuration.minimum_governance_reputation,
-            contract_to_call: voting_configuration.contract_to_call,
-            entry_point: voting_configuration.entry_point,
-            runtime_args: voting_configuration.runtime_args,
+            voting_configuration,
         }
     }
 
@@ -103,8 +90,12 @@ impl Voting {
 
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.get_voting_type() {
-            VotingType::Informal => self.start_time + self.informal_voting_time < block_time,
-            VotingType::Formal => self.start_time + self.formal_voting_time < block_time,
+            VotingType::Informal => {
+                self.start_time + self.voting_configuration.informal_voting_time < block_time
+            }
+            VotingType::Formal => {
+                self.start_time + self.voting_configuration.formal_voting_time < block_time
+            }
         }
     }
 
@@ -121,8 +112,8 @@ impl Voting {
 
     pub fn get_quorum(&self) -> U256 {
         match self.get_voting_type() {
-            VotingType::Informal => self.informal_voting_quorum,
-            VotingType::Formal => self.formal_voting_quorum,
+            VotingType::Informal => self.voting_configuration.informal_voting_quorum,
+            VotingType::Formal => self.voting_configuration.formal_voting_quorum,
         }
     }
 
@@ -136,11 +127,11 @@ impl Voting {
         }
     }
 
-    pub fn stake(&mut self, stake: U256, choice: bool) {
+    pub fn stake(&mut self, stake: U256, choice: Choice) {
         // TODO check overflow
         match choice {
-            true => self.stake_in_favor += stake,
-            false => self.stake_against += stake,
+            Choice::InFavor => self.stake_in_favor += stake,
+            Choice::Against => self.stake_against += stake,
         }
     }
 
@@ -148,83 +139,74 @@ impl Voting {
         // overflow is not possible due to reputation token having U256 as max
         self.stake_in_favor + self.stake_against
     }
-
     /// Get the voting's voting id.
-    #[must_use]
     pub fn voting_id(&self) -> U256 {
         self.voting_id
     }
 
     /// Get the voting's completed.
-    #[must_use]
     pub fn completed(&self) -> bool {
         self.completed
     }
 
     /// Get the voting's stake in favor.
-    #[must_use]
     pub fn stake_in_favor(&self) -> U256 {
         self.stake_in_favor
     }
 
     /// Get the voting's stake against.
-    #[must_use]
     pub fn stake_against(&self) -> U256 {
         self.stake_against
     }
 
     /// Get the voting's informal voting id.
-    #[must_use]
     pub fn informal_voting_id(&self) -> U256 {
         self.informal_voting_id
     }
 
     /// Get the voting's formal voting id.
-    #[must_use]
     pub fn formal_voting_id(&self) -> Option<U256> {
         self.formal_voting_id
     }
 
     /// Get the voting's formal voting quorum.
-    #[must_use]
     pub fn formal_voting_quorum(&self) -> U256 {
-        self.formal_voting_quorum
+        self.voting_configuration.formal_voting_quorum
     }
 
     /// Get the voting's informal voting quorum.
-    #[must_use]
     pub fn informal_voting_quorum(&self) -> U256 {
-        self.informal_voting_quorum
+        self.voting_configuration.informal_voting_quorum
     }
 
     /// Get the voting's formal voting time.
-    #[must_use]
     pub fn formal_voting_time(&self) -> u64 {
-        self.formal_voting_time
+        self.voting_configuration.formal_voting_time
     }
 
     /// Get the voting's informal voting time.
-    #[must_use]
     pub fn informal_voting_time(&self) -> u64 {
-        self.informal_voting_time
+        self.voting_configuration.informal_voting_time
     }
 
     /// Get the voting's contract to call.
-    #[must_use]
     pub fn contract_to_call(&self) -> Option<Address> {
-        self.contract_to_call
+        self.voting_configuration.contract_to_call
     }
 
     /// Get a reference to the voting's entry point.
-    #[must_use]
     pub fn entry_point(&self) -> &str {
-        self.entry_point.as_ref()
+        &self.voting_configuration.entry_point
     }
 
     /// Get a reference to the voting's runtime args.
-    #[must_use]
     pub fn runtime_args(&self) -> &RuntimeArgs {
-        &self.runtime_args
+        &self.voting_configuration.runtime_args
+    }
+
+    /// Get the voting's minimum governance reputation.
+    pub fn minimum_governance_reputation(&self) -> U256 {
+        self.voting_configuration.minimum_governance_reputation
     }
 }
 
@@ -241,14 +223,16 @@ fn test_voting_serialization() {
         start_time: 123,
         informal_voting_id: VotingId::from(1),
         formal_voting_id: None,
-        formal_voting_quorum: U256::from(2),
-        formal_voting_time: 2,
-        informal_voting_quorum: U256::from(2),
-        informal_voting_time: 2,
-        minimum_governance_reputation: U256::from(2),
-        contract_to_call: None,
-        entry_point: "update_variable".into(),
-        runtime_args: RuntimeArgs::new(),
+        voting_configuration: VotingConfiguration {
+            formal_voting_quorum: U256::from(2),
+            formal_voting_time: 2,
+            informal_voting_quorum: U256::from(2),
+            informal_voting_time: 2,
+            minimum_governance_reputation: U256::from(2),
+            contract_to_call: None,
+            entry_point: "update_variable".into(),
+            runtime_args: RuntimeArgs::new(),
+        },
     };
 
     let (voting2, _bytes) = Voting::from_bytes(&voting.to_bytes().unwrap()).unwrap();
@@ -257,21 +241,39 @@ fn test_voting_serialization() {
     assert_eq!(voting.informal_voting_id, voting2.informal_voting_id);
     assert_eq!(voting.formal_voting_id, voting2.formal_voting_id);
     assert_eq!(
-        voting.informal_voting_quorum,
-        voting2.informal_voting_quorum
+        voting.voting_configuration.informal_voting_quorum,
+        voting2.voting_configuration.informal_voting_quorum
     );
-    assert_eq!(voting.formal_voting_quorum, voting2.formal_voting_quorum);
+    assert_eq!(
+        voting.voting_configuration.formal_voting_quorum,
+        voting2.voting_configuration.formal_voting_quorum
+    );
     assert_eq!(voting.stake_against, voting2.stake_against);
     assert_eq!(voting.stake_in_favor, voting2.stake_in_favor);
     assert_eq!(voting.completed, voting2.completed);
-    assert_eq!(voting.contract_to_call, voting2.contract_to_call);
-    assert_eq!(voting.entry_point, voting2.entry_point);
-    assert_eq!(voting.runtime_args, voting2.runtime_args);
-    assert_eq!(voting.formal_voting_time, voting2.formal_voting_time);
-    assert_eq!(voting.informal_voting_time, voting2.informal_voting_time);
     assert_eq!(
-        voting.minimum_governance_reputation,
-        voting2.minimum_governance_reputation
+        voting.voting_configuration.contract_to_call,
+        voting2.voting_configuration.contract_to_call
+    );
+    assert_eq!(
+        voting.voting_configuration.entry_point,
+        voting2.voting_configuration.entry_point
+    );
+    assert_eq!(
+        voting.voting_configuration.runtime_args,
+        voting2.voting_configuration.runtime_args
+    );
+    assert_eq!(
+        voting.voting_configuration.formal_voting_time,
+        voting2.voting_configuration.formal_voting_time
+    );
+    assert_eq!(
+        voting.voting_configuration.informal_voting_time,
+        voting2.voting_configuration.informal_voting_time
+    );
+    assert_eq!(
+        voting.voting_configuration.minimum_governance_reputation,
+        voting2.voting_configuration.minimum_governance_reputation
     );
     assert_eq!(voting.start_time, voting2.start_time);
 }

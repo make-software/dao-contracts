@@ -5,7 +5,9 @@ use casper_dao_utils::{
 };
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{voting::Voting, GovernanceVoting, Vote, VotingId};
+use crate::voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId};
+
+use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
@@ -18,14 +20,14 @@ pub trait RepoVoterContractInterface {
         activation_time: Option<u64>,
         stake: U256,
     );
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
     fn get_variable_repo_address(&self) -> Address;
     fn get_reputation_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: U256) -> Voting;
-    fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-    fn get_voter(&self, voting_id: U256, at: u32) -> Address;
+    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
 }
 
 #[derive(Instance)]
@@ -34,10 +36,6 @@ pub struct RepoVoterContract {
 }
 
 impl RepoVoterContractInterface for RepoVoterContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address) {
-        self.voting.init(variable_repo, reputation_token);
-    }
-
     fn create_voting(
         &mut self,
         variable_repo_to_edit: Address,
@@ -59,35 +57,20 @@ impl RepoVoterContractInterface for RepoVoterContract {
         );
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
         self.voting.vote(caller(), voting_id, choice, stake);
     }
 
-    fn finish_voting(&mut self, voting_id: VotingId) {
-        self.voting.finish_voting(voting_id);
-    }
-
-    fn get_dust_amount(&self) -> U256 {
-        self.voting.get_dust_amount()
-    }
-
-    fn get_variable_repo_address(&self) -> Address {
-        self.voting.get_variable_repo_address()
-    }
-
-    fn get_reputation_token_address(&self) -> Address {
-        self.voting.get_reputation_token_address()
-    }
-
-    fn get_voting(&self, voting_id: VotingId) -> Voting {
-        self.voting.get_voting(voting_id)
-    }
-
-    fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
-        self.voting.get_vote(voting_id, address)
-    }
-
-    fn get_voter(&self, voting_id: U256, at: u32) -> Address {
-        self.voting.get_voter(voting_id, at)
+    delegate! {
+        to self.voting {
+            fn init(&mut self, variable_repo: Address, reputation_token: Address);
+            fn finish_voting(&mut self, voting_id: VotingId);
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+        }
     }
 }

@@ -1,7 +1,7 @@
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
-use crate::voting::vote::VotingId;
+use crate::voting::ballot::{Choice, VotingId};
 
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingContractCreated {
@@ -14,7 +14,7 @@ pub struct VotingContractCreated {
 pub struct VoteCast {
     pub voter: Address,
     pub voting_id: VotingId,
-    pub choice: bool,
+    pub choice: Choice,
     pub stake: U256,
 }
 

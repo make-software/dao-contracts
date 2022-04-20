@@ -18,3 +18,12 @@ pub fn promils_of(number: U256, promils: U256) -> Result<U256, Error> {
         Ok(U256::convert_from_bytes(result.convert_to_bytes()?)?)
     }
 }
+
+#[test]
+fn test_promils_of() {
+    assert_eq!(promils_of(1000.into(), 1.into()).unwrap(), 1.into());
+    assert_eq!(promils_of(1000.into(), 999.into()).unwrap(), 999.into());
+    assert_eq!(promils_of(6.into(), 334.into()).unwrap(), 2.into());
+    assert_eq!(promils_of(6.into(), 333.into()).unwrap(), 1.into());
+    assert_eq!(promils_of(10.into(), 750.into()).unwrap(), 7.into());
+}
