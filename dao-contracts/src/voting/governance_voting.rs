@@ -329,7 +329,10 @@ impl GovernanceVoting {
     }
 
     fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
-        // TODO: Check if amount > 0.
+        if amount == U256::zero() {
+            return;
+        }
+
         let args: RuntimeArgs = runtime_args! {
             "owner" => owner,
             "recipient" => recipient,

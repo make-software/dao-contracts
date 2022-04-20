@@ -8,7 +8,6 @@ use casper_dao_contracts::voting::{
 use casper_dao_utils::Error;
 use speculate::speculate;
 
-use casper_dao_utils::Address;
 use casper_types::U256;
 
 speculate! {
@@ -41,9 +40,9 @@ speculate! {
 
                 mock_voter_contract.assert_last_event(
                     VotingContractCreated {
-                        variable_repo: Address::from(variable_repo_contract.get_package_hash()),
-                        reputation_token: Address::from(reputation_token_contract.get_package_hash()),
-                        voter_contract: Address::from(mock_voter_contract.get_package_hash()),
+                        variable_repo: variable_repo_contract.address(),
+                        reputation_token: reputation_token_contract.address(),
+                        voter_contract: mock_voter_contract.address(),
                     },
                 );
             }

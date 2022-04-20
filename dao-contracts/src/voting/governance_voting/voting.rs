@@ -139,87 +139,72 @@ impl Voting {
         // overflow is not possible due to reputation token having U256 as max
         self.stake_in_favor + self.stake_against
     }
-
     /// Get the voting's voting id.
-    #[must_use]
     pub fn voting_id(&self) -> U256 {
         self.voting_id
     }
 
     /// Get the voting's completed.
-    #[must_use]
     pub fn completed(&self) -> bool {
         self.completed
     }
 
     /// Get the voting's stake in favor.
-    #[must_use]
     pub fn stake_in_favor(&self) -> U256 {
         self.stake_in_favor
     }
 
     /// Get the voting's stake against.
-    #[must_use]
     pub fn stake_against(&self) -> U256 {
         self.stake_against
     }
 
     /// Get the voting's informal voting id.
-    #[must_use]
     pub fn informal_voting_id(&self) -> U256 {
         self.informal_voting_id
     }
 
     /// Get the voting's formal voting id.
-    #[must_use]
     pub fn formal_voting_id(&self) -> Option<U256> {
         self.formal_voting_id
     }
 
     /// Get the voting's formal voting quorum.
-    #[must_use]
     pub fn formal_voting_quorum(&self) -> U256 {
         self.voting_configuration.formal_voting_quorum
     }
 
     /// Get the voting's informal voting quorum.
-    #[must_use]
     pub fn informal_voting_quorum(&self) -> U256 {
         self.voting_configuration.informal_voting_quorum
     }
 
     /// Get the voting's formal voting time.
-    #[must_use]
     pub fn formal_voting_time(&self) -> u64 {
         self.voting_configuration.formal_voting_time
     }
 
     /// Get the voting's informal voting time.
-    #[must_use]
     pub fn informal_voting_time(&self) -> u64 {
         self.voting_configuration.informal_voting_time
     }
 
     /// Get the voting's contract to call.
-    #[must_use]
     pub fn contract_to_call(&self) -> Option<Address> {
         self.voting_configuration.contract_to_call
     }
 
     /// Get a reference to the voting's entry point.
-    #[must_use]
     pub fn entry_point(&self) -> &str {
         &self.voting_configuration.entry_point
     }
 
     /// Get a reference to the voting's runtime args.
-    #[must_use]
     pub fn runtime_args(&self) -> &RuntimeArgs {
         &self.voting_configuration.runtime_args
     }
 
     /// Get the voting's minimum governance reputation.
-    #[must_use]
     pub fn minimum_governance_reputation(&self) -> U256 {
         self.voting_configuration.minimum_governance_reputation
     }
