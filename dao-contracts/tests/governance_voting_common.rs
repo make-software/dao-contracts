@@ -1,10 +1,109 @@
 use casper_dao_contracts::{
+    action::Action,
     voting::{voting::Voting, Choice, VotingId},
-    MockVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
+    AdminContractTest, MockVoterContractTest, RepoVoterContractTest, ReputationContractTest,
+    VariableRepositoryContractTest,
 };
 
 use casper_dao_utils::{consts, Error, TestEnv};
-use casper_types::{bytesrepr::ToBytes, U256};
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    U256,
+};
+
+#[allow(dead_code)]
+pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
+    let minimum_reputation = 500.into();
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 3;
+
+    let (variable_repo_contract, mut reputation_token_contract) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+
+    #[allow(unused_mut)]
+    let mut admin_contract = AdminContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+    );
+
+    reputation_token_contract
+        .change_ownership(admin_contract.address())
+        .unwrap();
+
+    admin_contract
+        .create_voting(
+            reputation_token_contract.address(),
+            Action::AddToWhitelist,
+            admin_contract.get_env().get_account(1),
+            minimum_reputation,
+        )
+        .unwrap();
+
+    let voting_id = VotingId::zero();
+    let voting: Voting = admin_contract.get_voting(voting_id).unwrap();
+
+    admin_contract
+        .as_nth_account(1)
+        .vote(voting_id, Choice::InFavor, minimum_reputation)
+        .unwrap();
+    admin_contract.advance_block_time_by(voting.informal_voting_time() + 1);
+    admin_contract.finish_voting(voting_id).unwrap();
+
+    (admin_contract, reputation_token_contract)
+}
+
+#[allow(dead_code)]
+pub fn setup_repo_voter(
+    key: String,
+    value: Bytes,
+) -> (RepoVoterContractTest, VariableRepositoryContractTest) {
+    let minimum_reputation = 500.into();
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 3;
+
+    let (mut variable_repo_contract, mut reputation_token_contract) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+
+    #[allow(unused_mut)]
+    let mut repo_voter_contract = RepoVoterContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+    );
+
+    variable_repo_contract
+        .add_to_whitelist(repo_voter_contract.address())
+        .unwrap();
+
+    reputation_token_contract
+        .add_to_whitelist(repo_voter_contract.address())
+        .unwrap();
+
+    repo_voter_contract
+        .create_voting(
+            repo_voter_contract.get_variable_repo_address(),
+            key,
+            value,
+            None,
+            minimum_reputation,
+        )
+        .unwrap();
+
+    let voting_id = VotingId::zero();
+    let voting: Voting = repo_voter_contract.get_voting(voting_id).unwrap();
+
+    repo_voter_contract
+        .as_nth_account(1)
+        .vote(voting_id, Choice::InFavor, minimum_reputation)
+        .unwrap();
+    repo_voter_contract.advance_block_time_by(voting.informal_voting_time() + 1);
+    repo_voter_contract.finish_voting(voting_id).unwrap();
+
+    (repo_voter_contract, variable_repo_contract)
+}
 
 pub fn setup_voting_contract(
     informal_quorum: U256,
@@ -15,26 +114,12 @@ pub fn setup_voting_contract(
     VariableRepositoryContractTest,
     ReputationContractTest,
 ) {
-    let minimum_reputation = 500.into();
-    let reputation_to_mint = 10_000;
-    let informal_voting_time: u64 = 3_600;
-    let formal_voting_time: u64 = 2 * informal_voting_time;
-
-    let env = TestEnv::new();
-    let mut variable_repo_contract = setup_variable_repo_contract(
-        &env,
-        informal_quorum,
-        formal_quorum,
-        informal_voting_time,
-        formal_voting_time,
-        minimum_reputation,
-    );
-    let mut reputation_token_contract =
-        setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
+    let (mut variable_repo_contract, mut reputation_token_contract) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
     #[allow(unused_mut)]
     let mut mock_voter_contract = MockVoterContractTest::new(
-        &env,
+        variable_repo_contract.get_env(),
         variable_repo_contract.address(),
         reputation_token_contract.address(),
     );
@@ -52,6 +137,29 @@ pub fn setup_voting_contract(
         variable_repo_contract,
         reputation_token_contract,
     )
+}
+
+fn setup_repository_and_reputation_contracts(
+    informal_quorum: U256,
+    formal_quorum: U256,
+    total_onboarded: usize,
+) -> (VariableRepositoryContractTest, ReputationContractTest) {
+    let minimum_reputation = 500.into();
+    let reputation_to_mint = 10_000;
+    let informal_voting_time: u64 = 3_600;
+    let formal_voting_time: u64 = 2 * informal_voting_time;
+    let env = TestEnv::new();
+    let variable_repo_contract = setup_variable_repo_contract(
+        &env,
+        informal_quorum,
+        formal_quorum,
+        informal_voting_time,
+        formal_voting_time,
+        minimum_reputation,
+    );
+    let reputation_token_contract =
+        setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
+    (variable_repo_contract, reputation_token_contract)
 }
 
 pub fn setup_voting_contract_with_informal_voting(

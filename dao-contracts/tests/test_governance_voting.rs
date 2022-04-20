@@ -271,7 +271,7 @@ speculate! {
                     governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
                 }
 
-                test "action was not performed" {
+                it "does not perform its action" {
                     let variable = mock_voter_contract.get_variable();
                     assert_eq!(variable, "");
                 }
@@ -300,7 +300,7 @@ speculate! {
                     governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
                 }
 
-                test "action was not performed" {
+                it "does not perform its action" {
                     let variable = mock_voter_contract.get_variable();
                     assert_eq!(variable, "");
                 }
@@ -329,7 +329,7 @@ speculate! {
                     governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
                 }
 
-                test "action was performed" {
+                it "does perform its action" {
                     let variable = mock_voter_contract.get_variable();
                     assert_ne!(variable, "");
                 }

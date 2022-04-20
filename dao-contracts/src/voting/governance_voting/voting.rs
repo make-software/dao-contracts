@@ -54,16 +54,7 @@ impl Voting {
             start_time,
             informal_voting_id: voting_id,
             formal_voting_id: None,
-            voting_configuration: VotingConfiguration {
-                formal_voting_quorum: voting_configuration.formal_voting_quorum,
-                formal_voting_time: voting_configuration.formal_voting_time,
-                informal_voting_quorum: voting_configuration.informal_voting_quorum,
-                informal_voting_time: voting_configuration.informal_voting_time,
-                minimum_governance_reputation: voting_configuration.minimum_governance_reputation,
-                contract_to_call: voting_configuration.contract_to_call,
-                entry_point: voting_configuration.entry_point,
-                runtime_args: voting_configuration.runtime_args,
-            },
+            voting_configuration,
         }
     }
 

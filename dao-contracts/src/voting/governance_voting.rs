@@ -28,6 +28,10 @@ use super::ballot::Choice;
 use super::VotingEnded;
 use super::{ballot::VotingId, Ballot};
 
+pub trait GovernanceVotingTrait {
+    fn init(&mut self, variable_repo: Address, reputation_token: Address);
+}
+
 #[derive(Instance)]
 pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
