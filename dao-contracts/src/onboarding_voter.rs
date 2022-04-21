@@ -200,7 +200,7 @@ impl OnboardingVoterContract {
     }
 
     fn assert_no_ongoing_voting(&self, address: &Address) {
-        if self.onboarding.exists_ongoing_voting(&address) {
+        if self.onboarding.exists_ongoing_voting(address) {
             casper_env::revert(Error::OnboardingAlreadyInProgress);
         }
     }
