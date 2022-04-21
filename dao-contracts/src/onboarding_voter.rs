@@ -1,7 +1,7 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    Address, Error,
+    Address, Error, Sequence,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -16,6 +16,11 @@ use crate::{
 };
 use delegate::delegate;
 
+const ARG_TO: &str = "to";
+const ARG_TOKEN_ID: &str = "token_id";
+const ENTRY_POINT_MINT: &str = "mint";
+const ENTRY_POINT_BURN: &str = "burn";
+
 #[casper_contract_interface]
 pub trait OnboardingVoterContractInterface {
     fn init(
@@ -26,13 +31,11 @@ pub trait OnboardingVoterContractInterface {
         va_token: Address,
     );
 
-    // - Require no voting for a given `address` is on.
-
+    // - Require no voting for a given `address` is in progress.
     // For Adding new VA:
     // - Check if VA is not onboarderd.
     // - Check if `address` is KYCed.
     // - Check if `address` has positive reputation amount.
-
     // For Removing existing VA:
     // - Check if VA is already onboarderd.
     // - Check if `address` has positive reputation amount.
@@ -55,9 +58,22 @@ pub struct OnboardingVoterContract {
     onboarding: OnboardingInfo,
     kyc: KycInfo,
     voting: GovernanceVoting,
+    sequence: Sequence,
 }
 
 impl OnboardingVoterContractInterface for OnboardingVoterContract {
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    ) {
+        self.onboarding.init(va_token);
+        self.kyc.init(kyc_token);
+        self.voting.init(variable_repo, reputation_token);
+    }
+
     delegate! {
         to self.onboarding {
             fn get_va_token_address(&self) -> Address;
@@ -75,18 +91,6 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
             fn get_voter(&self, voting_id: U256, at: u32) -> Address;
         }
-    }
-
-    fn init(
-        &mut self,
-        variable_repo: Address,
-        reputation_token: Address,
-        kyc_token: Address,
-        va_token: Address,
-    ) {
-        self.onboarding.init(va_token);
-        self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token);
     }
 
     fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256) {
@@ -125,9 +129,9 @@ impl OnboardingVoterContract {
         let token_id = self.onboarding.token_id_of(&subject_address).unwrap();
 
         let runtime_args = runtime_args! {
-            "token_id" => token_id,
+            ARG_TOKEN_ID => token_id,
         };
-        let entry_point = "burn".to_string();
+        let entry_point = ENTRY_POINT_BURN.to_string();
 
         (entry_point, runtime_args)
     }
@@ -137,11 +141,13 @@ impl OnboardingVoterContract {
         self.assert_kyced(&subject_address);
         self.assert_has_reputation(&subject_address);
 
+        let token_id = self.sequence.next_value();
+
         let runtime_args = runtime_args! {
-            "to" => subject_address,
-            "token_id" => U256::one(),
+            ARG_TO => subject_address,
+            ARG_TOKEN_ID => token_id,
         };
-        let entry_point = "mint".to_string();
+        let entry_point = ENTRY_POINT_MINT.to_string();
 
         (entry_point, runtime_args)
     }
@@ -151,7 +157,7 @@ impl OnboardingVoterContract {
         let arg = voting
             .runtime_args()
             .named_args()
-            .find(|arg| arg.name() == "to");
+            .find(|arg| arg.name() == ARG_TO);
 
         if let Some(to_arg) = arg {
             return to_arg.cl_value().clone().into_t().unwrap();
@@ -160,14 +166,14 @@ impl OnboardingVoterContract {
         let arg = voting
             .runtime_args()
             .named_args()
-            .find(|arg| arg.name() == "token_id");
+            .find(|arg| arg.name() == ARG_TOKEN_ID);
 
         if let Some(token_id_arg) = arg {
             let token_id = token_id_arg.cl_value().clone().into_t().unwrap();
             return self.onboarding.owner_of(token_id);
         }
 
-        casper_env::revert(Error::BytesConversionError)
+        casper_env::revert(Error::Unknown)
     }
 
     fn assert_has_reputation(&self, address: &Address) {
