@@ -32,6 +32,18 @@ pub trait GovernanceVotingTrait {
     fn init(&mut self, variable_repo: Address, reputation_token: Address);
 }
 
+/// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
+/// 1. Informal voting
+/// 2. Formal voting
+///
+/// Whether formal voting starts depends on informal voting results.
+///
+/// When formal voting passes, an action can be performed - a contract can be called with voted arguments.
+///
+/// Governance voting uses [Reputation Token](crate::ReputationContract) to handle reputation staking and
+/// [Variable Repo](crate::VariableRepositoryContract) for reading voting configuration.
+///
+/// For example implementation see [MockVoterContract](crate::mocks::mock_voter::MockVoterContract)
 #[derive(Instance)]
 pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
@@ -44,7 +56,9 @@ pub struct GovernanceVoting {
 }
 
 impl GovernanceVoting {
-    /// Initialize the module.
+    /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract) and [Variable Repo](crate::VariableRepositoryContract)
+    ///
+    /// Emits [VotingContractCreated](VotingContractCreated)
     pub fn init(&mut self, variable_repo: Address, reputation_token: Address) {
         self.variable_repo.set(Some(variable_repo));
         self.reputation_token.set(Some(reputation_token));
@@ -56,6 +70,17 @@ impl GovernanceVoting {
         });
     }
 
+    /// Creates new informal [Voting](Voting).
+    ///
+    /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed  when formal voting passes.
+    ///
+    /// It collects configuration from [Variable Repo](crate::VariableRepositoryContract) and persists it, so they won't change during the voting process.
+    ///
+    /// It automatically casts first vote in favor in name of the creator.
+    ///
+    /// Emits [VotingCreated](VotingCreated), [VoteCast](VoteCast)
+    ///
+    /// Throws `Error::NotEnoughReputation`
     pub fn create_voting(
         &mut self,
         creator: Address,
@@ -113,6 +138,19 @@ impl GovernanceVoting {
         self.vote(creator, voting_id, Choice::InFavor, stake);
     }
 
+    /// Finishes voting.
+    ///
+    /// Depending on type of voting, different actions are performed.
+    ///
+    /// For informal voting a new formal voting can be created. Reputation staked for this voting is returned to the voters, except for creator. When voting
+    /// passes, it is used as a stake for a new voting, otherwise it is burned.
+    ///
+    /// For formal voting an action will be performed if the result is in favor. Reputation is redistributed to the winning voters. When no quorum is reached,
+    /// the reputation is returned, except for the creator - its reputation is then burned.
+    ///
+    /// Emits [VotingEnded](VotingEnded), [VotingCreated](VotingCreated), [VoteCast](VoteCast)
+    ///
+    /// Throws `Error::FinishingCompletedVotingNotAllowed`, `Error::FormalVotingTimeNotReached`, `Error::InformalVotingTimeNotReached`, `Error::ArithmeticOverflow`
     pub fn finish_voting(&mut self, voting_id: VotingId) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
 
@@ -227,6 +265,11 @@ impl GovernanceVoting {
         self.set_voting(voting);
     }
 
+    /// Casts a vote
+    ///
+    /// Emits [VoteCast](VoteCast)
+    ///
+    /// Throws `Error::VoteOnCompletedVotingNotAllowed`, `Error::CannotVoteTwice`
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
         let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
@@ -272,22 +315,30 @@ impl GovernanceVoting {
         });
     }
 
+    /// Returns the dust amount.
+    ///
+    /// Those are leftovers from redistribution of reputation tokens. For example, when 10 tokens needs to be redistributed between 3 voters,
+    /// each will recieve 3 reputation, with 1 reputation left in the contract's balance.
     pub fn get_dust_amount(&self) -> U256 {
         self.dust_amount.get()
     }
 
+    /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
     pub fn get_variable_repo_address(&self) -> Address {
         self.variable_repo.get().unwrap_or_revert()
     }
 
+    /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
     pub fn get_reputation_token_address(&self) -> Address {
         self.reputation_token.get().unwrap_or_revert()
     }
 
+    /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
     pub fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot> {
         self.ballots.get_or_none(&(voting_id, address))
     }
 
+    /// Returns the nth [Ballot](Ballot) of cast on `voting_id`
     pub fn get_ballot_at(&mut self, voting_id: U256, i: u32) -> Ballot {
         let address = self
             .get_voter(voting_id, i)
@@ -296,29 +347,31 @@ impl GovernanceVoting {
             .unwrap_or_revert_with(Error::BallotDoesNotExist)
     }
 
+    /// Returns the address of nth voter who voted on Voting with `voting_id`
     pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
         self.voters
             .get_or_none(voting_id, at)
             .map(|x| x.unwrap_or_revert())
     }
 
+    /// Returns the [Voting](Voting) for given id
     pub fn get_voting(&self, voting_id: VotingId) -> Option<Voting> {
         self.votings
             .get_or_none(&voting_id)
             .map(|x| x.unwrap_or_revert())
     }
 
-    pub fn set_voting(&self, voting: Voting) {
+    fn set_voting(&self, voting: Voting) {
         self.votings.set(&voting.voting_id(), Some(voting))
     }
 
-    pub fn next_voting_id(&mut self) -> U256 {
+    fn next_voting_id(&mut self) -> U256 {
         let voting_id = self.votings_count.get();
         self.votings_count.set(voting_id + 1);
         voting_id
     }
 
-    pub fn perform_action(&self, voting: &Voting) {
+    fn perform_action(&self, voting: &Voting) {
         call_contract(
             voting
                 .contract_to_call()

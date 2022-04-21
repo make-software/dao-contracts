@@ -28,6 +28,7 @@ pub struct VotingConfiguration {
     pub runtime_args: RuntimeArgs,
 }
 
+/// Voting struct
 #[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]
 pub struct Voting {
     voting_id: VotingId,
@@ -41,6 +42,7 @@ pub struct Voting {
 }
 
 impl Voting {
+    /// Creates new Voting with immutable VotingConfiguration
     pub fn new(
         voting_id: U256,
         start_time: u64,
@@ -58,6 +60,7 @@ impl Voting {
         }
     }
 
+    /// Returns the type of voting
     pub fn get_voting_type(&self) -> VotingType {
         if self.voting_id == self.informal_voting_id {
             VotingType::Informal
@@ -66,6 +69,7 @@ impl Voting {
         }
     }
 
+    /// Creates new formal voting from self, cloning existing VotingConfiguration
     pub fn create_formal_voting(&self, new_voting_id: U256, start_time: u64) -> Self {
         let mut voting = self.clone();
         voting.formal_voting_id = Some(new_voting_id);
@@ -81,6 +85,7 @@ impl Voting {
         !self.completed && !self.is_in_time(block_time)
     }
 
+    /// Sets voting as completed, optionally saves id of newly created formal voting
     pub fn complete(&mut self, formal_voting_id: Option<U256>) {
         if formal_voting_id.is_some() {
             self.formal_voting_id = formal_voting_id
@@ -88,6 +93,7 @@ impl Voting {
         self.completed = true;
     }
 
+    /// Returns if voting is still in voting phase
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.get_voting_type() {
             VotingType::Informal => {
@@ -103,6 +109,7 @@ impl Voting {
         self.stake_in_favor >= self.stake_against
     }
 
+    /// Depending on the result of the voting, returns the amount of reputation staked on the winning side
     pub fn get_winning_stake(&self) -> U256 {
         match self.is_in_favor() {
             true => self.stake_in_favor,
@@ -128,7 +135,7 @@ impl Voting {
     }
 
     pub fn stake(&mut self, stake: U256, choice: Choice) {
-        // TODO check overflow
+        // overflow is not possible due to reputation token having U256 as max
         match choice {
             Choice::InFavor => self.stake_in_favor += stake,
             Choice::Against => self.stake_against += stake,
@@ -139,6 +146,7 @@ impl Voting {
         // overflow is not possible due to reputation token having U256 as max
         self.stake_in_favor + self.stake_against
     }
+
     /// Get the voting's voting id.
     pub fn voting_id(&self) -> U256 {
         self.voting_id
