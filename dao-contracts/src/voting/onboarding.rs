@@ -2,7 +2,7 @@ use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
-    Address, Mapping, Variable,
+    Address, Error, Mapping, Variable,
 };
 use casper_types::U256;
 
@@ -14,14 +14,15 @@ pub struct OnboardingInfo {
     votings: Mapping<Address, bool>,
 }
 
-// TODO: replace unwrap_or_revert() with a custom Error
 impl OnboardingInfo {
     pub fn init(&mut self, va_token: Address) {
         self.va_token.set(Some(va_token));
     }
 
     pub fn get_va_token_address(&self) -> Address {
-        self.va_token.get().unwrap_or_revert()
+        self.va_token
+            .get()
+            .unwrap_or_revert_with(Error::VariableValueNotSet)
     }
 
     pub fn set_voting(&mut self, address: &Address) {

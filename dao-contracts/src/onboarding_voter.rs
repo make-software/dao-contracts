@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    Address, Error, Sequence,
+    Address, Error, SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -59,7 +59,7 @@ pub struct OnboardingVoterContract {
     onboarding: OnboardingInfo,
     kyc: KycInfo,
     voting: GovernanceVoting,
-    sequence: Sequence,
+    sequence: SequenceGenerator,
 }
 
 impl OnboardingVoterContractInterface for OnboardingVoterContract {
@@ -98,8 +98,8 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         self.assert_no_ongoing_voting(&subject_address);
 
         let (entry_point, runtime_args) = match action {
-            onboarding::Action::Add => self.config_add_voting(subject_address),
-            onboarding::Action::Remove => self.config_remove_voting(subject_address),
+            onboarding::Action::Add => self.configure_add_voting(subject_address),
+            onboarding::Action::Remove => self.configure_remove_voting(subject_address),
         };
         let creator = caller();
         let contract_to_call = self.get_va_token_address();
@@ -123,7 +123,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
 
 // non-contract implementation
 impl OnboardingVoterContract {
-    fn config_remove_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
+    fn configure_remove_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
         self.assert_onboarded(&subject_address);
         self.assert_has_reputation(&subject_address);
 
@@ -137,7 +137,7 @@ impl OnboardingVoterContract {
         (entry_point, runtime_args)
     }
 
-    fn config_add_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
+    fn configure_add_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
         self.assert_not_onboarded(&subject_address);
         self.assert_kyced(&subject_address);
         self.assert_has_reputation(&subject_address);

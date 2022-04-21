@@ -41,6 +41,7 @@ pub enum Error {
     VoterDoesNotExist,
     VotingDoesNotExist,
     ContractToCallNotSet,
+    VariableValueNotSet,
 }
 
 impl From<Error> for ApiError {
@@ -59,6 +60,7 @@ impl From<Error> for ApiError {
             Error::InvalidContext => 1099,
             Error::Unknown => 1100,
             Error::NoSuchMethod(_) => 1101,
+            Error::VariableValueNotSet => 1102,
             Error::TokenDoesNotExist => 1700,
             Error::TokenAlreadyExists => 1701,
             Error::ApprovalToCurrentOwner => 1702,
@@ -102,6 +104,7 @@ impl From<u16> for Error {
             1006 => Error::ActivationTimeInPast,
             1007 => Error::ArithmeticOverflow,
             1008 => Error::BytesConversionError,
+            1102 => Error::VariableValueNotSet,
             1700 => Error::TokenDoesNotExist,
             1701 => Error::TokenAlreadyExists,
             1702 => Error::ApprovalToCurrentOwner,

@@ -2,11 +2,11 @@ use casper_types::U256;
 
 use crate::{instance::Instanced, Variable};
 
-pub struct Sequence {
+pub struct SequenceGenerator {
     value: Variable<U256>,
 }
 
-impl Sequence {
+impl SequenceGenerator {
     pub fn get_current_value(&self) -> U256 {
         self.value.get()
     }
@@ -18,7 +18,7 @@ impl Sequence {
     }
 }
 
-impl Instanced for Sequence {
+impl Instanced for SequenceGenerator {
     fn instance(namespace: &str) -> Self {
         Self {
             value: Instanced::instance(format!("{}_{}", "value", namespace).as_str()),
