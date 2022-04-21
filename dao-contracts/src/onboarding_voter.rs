@@ -1,4 +1,5 @@
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
     Address, Error, Sequence,
@@ -11,7 +12,7 @@ use crate::{
         kyc::KycInfo,
         onboarding::{self, OnboardingInfo},
         voting::Voting,
-        GovernanceVoting, Vote, VotingId,
+        Ballot, Choice, GovernanceVoting, VotingId,
     },
 };
 use delegate::delegate;
@@ -40,7 +41,7 @@ pub trait OnboardingVoterContractInterface {
     // - Check if VA is already onboarderd.
     // - Check if `address` has positive reputation amount.
     fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256);
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
     fn get_variable_repo_address(&self) -> Address;
@@ -48,9 +49,9 @@ pub trait OnboardingVoterContractInterface {
     fn get_kyc_token_address(&self) -> Address;
     fn get_va_token_address(&self) -> Address;
 
-    fn get_voting(&self, voting_id: U256) -> Voting;
-    fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-    fn get_voter(&self, voting_id: U256, at: u32) -> Address;
+    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
 }
 
 #[derive(Instance)]
@@ -87,9 +88,9 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
-            fn get_voting(&self, voting_id: U256) -> Voting;
-            fn get_vote(&self, voting_id: U256, address: Address) -> Vote;
-            fn get_voter(&self, voting_id: U256, at: u32) -> Address;
+            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
         }
     }
 
@@ -108,7 +109,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         self.onboarding.set_voting(&subject_address);
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: bool, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
         let voter = caller();
         self.voting.vote(voter, voting_id, choice, stake);
     }
@@ -153,7 +154,11 @@ impl OnboardingVoterContract {
     }
 
     fn extract_address_from_args(&self, voting_id: VotingId) -> Address {
-        let voting = self.voting.get_voting(voting_id);
+        let voting = self
+            .voting
+            .get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VoterDoesNotExist);
+
         let arg = voting
             .runtime_args()
             .named_args()
@@ -173,7 +178,7 @@ impl OnboardingVoterContract {
             return self.onboarding.owner_of(token_id);
         }
 
-        casper_env::revert(Error::Unknown)
+        casper_env::revert(Error::UnexpectedOnboardingError)
     }
 
     fn assert_has_reputation(&self, address: &Address) {

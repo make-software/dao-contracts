@@ -8,7 +8,7 @@ use speculate::speculate;
 
 speculate! {
     use casper_types::U256;
-    use casper_dao_contracts::voting::onboarding;
+    use casper_dao_contracts::voting::{Choice, onboarding};
     use casper_dao_utils::Error;
     use std::time::Duration;
 
@@ -109,7 +109,7 @@ speculate! {
                 context "informal_voting_passed" {
                     before {
                         let voting_id = 0.into();
-                        let voting = contract.get_voting(voting_id);
+                        let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
                         let voting_id = 1.into();
@@ -117,7 +117,7 @@ speculate! {
 
                     context "voting_passed" {
                         before {
-                            contract.as_account(second_va).vote(voting_id, true,  vote_amount).unwrap();
+                            contract.as_account(second_va).vote(voting_id, Choice::InFavor,  vote_amount).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(va).finish_voting(voting_id).unwrap();
                         }
@@ -136,6 +136,7 @@ speculate! {
 
                     context "voting_rejected" {
                         before {
+                            contract.as_account(second_va).vote(voting_id, Choice::Against, vote_amount + U256::one()).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(va).finish_voting(voting_id).unwrap();
                         }
@@ -212,7 +213,7 @@ speculate! {
                 context "informal_voting_passed" {
                     before {
                         let voting_id = 0.into();
-                        let voting = contract.get_voting(voting_id);
+                        let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
                         let voting_id = 1.into();
@@ -220,7 +221,7 @@ speculate! {
 
                     context "voting_passed" {
                         before {
-                            contract.as_account(second_va).vote(voting_id, true,  vote_amount).unwrap();
+                            contract.as_account(second_va).vote(voting_id, Choice::InFavor, vote_amount).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(va).finish_voting(voting_id).unwrap();
                         }
@@ -240,6 +241,7 @@ speculate! {
 
                     context "voting_rejected" {
                         before {
+                            contract.as_account(second_va).vote(voting_id, Choice::Against, vote_amount + U256::one()).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(va).finish_voting(voting_id).unwrap();
                         }

@@ -15,6 +15,10 @@ impl ReputationContractProxy {
         ReputationContractProxy::balance_of(contract_address, address) > U256::zero()
     }
 
+    pub fn total_onboarded(contract_address: Address) -> U256 {
+        ReputationContractProxy::caller(contract_address).total_onboarded()
+    }
+
     fn caller(contract_address: Address) -> ReputationContractCaller {
         ReputationContractCaller::at(contract_address)
     }

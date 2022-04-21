@@ -123,6 +123,7 @@ dependencies = [
  "casper-types",
  "delegate",
  "speculate",
+ "test-case",
 ]
 
 [[package]]

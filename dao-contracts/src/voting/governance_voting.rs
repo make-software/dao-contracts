@@ -10,8 +10,10 @@ use casper_dao_utils::{
     casper_env::{call_contract, emit, get_block_time, revert, self_address},
     Address, Error, Mapping, Variable,
 };
+
 use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
+use crate::proxy::reputation_proxy::ReputationContractProxy;
 use crate::proxy::variable_repo_proxy::VariableRepoContractProxy;
 
 use self::{
@@ -21,18 +23,21 @@ use self::{
 
 use casper_dao_utils::VecMapping;
 
+use super::ballot::Choice;
 use super::VotingEnded;
-use super::{vote::VotingId, Vote};
+use super::{ballot::VotingId, Ballot};
 
-/// The Governance Voting module.
+pub trait GovernanceVotingTrait {
+    fn init(&mut self, variable_repo: Address, reputation_token: Address);
+}
 
 #[derive(Instance)]
 pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
     reputation_token: Variable<Option<Address>>,
-    votings: Mapping<U256, Voting>,
-    votes: Mapping<(U256, Address), Vote>,
-    voters: VecMapping<U256, Option<Address>>,
+    votings: Mapping<VotingId, Option<Voting>>,
+    ballots: Mapping<(VotingId, Address), Ballot>,
+    voters: VecMapping<VotingId, Option<Address>>,
     votings_count: Variable<U256>,
     dust_amount: Variable<U256>,
 }
@@ -59,17 +64,24 @@ impl GovernanceVoting {
         runtime_args: RuntimeArgs,
     ) {
         let variable_repo_address = self.get_variable_repo_address();
+        let reputation_token_address = self.get_reputation_token_address();
+        let minimum_governance_reputation =
+            VariableRepoContractProxy::minimum_governance_reputation(variable_repo_address);
+
+        if stake < minimum_governance_reputation {
+            revert(Error::NotEnoughReputation)
+        }
         let informal_voting_time =
             VariableRepoContractProxy::informal_voting_time(variable_repo_address);
         let formal_voting_time =
             VariableRepoContractProxy::formal_voting_time(variable_repo_address);
-        let minimum_governance_reputation =
-            VariableRepoContractProxy::minimum_governance_reputation(variable_repo_address);
-
-        let informal_voting_quorum =
-            VariableRepoContractProxy::informal_voting_quorum(variable_repo_address);
+        let total_onboarded = ReputationContractProxy::total_onboarded(reputation_token_address);
+        let informal_voting_quorum = VariableRepoContractProxy::informal_voting_quorum(
+            variable_repo_address,
+            total_onboarded,
+        );
         let formal_voting_quorum =
-            VariableRepoContractProxy::formal_voting_quorum(variable_repo_address);
+            VariableRepoContractProxy::formal_voting_quorum(variable_repo_address, total_onboarded);
 
         let voting_configuration = VotingConfiguration {
             formal_voting_quorum,
@@ -85,8 +97,7 @@ impl GovernanceVoting {
         let voting_id = self.next_voting_id();
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
 
-        // Add Voting
-        self.votings.set(&voting_id, voting);
+        self.set_voting(voting);
 
         emit(VotingCreated {
             creator,
@@ -95,11 +106,11 @@ impl GovernanceVoting {
         });
 
         // Cast first vote in favor
-        self.vote(creator, voting_id, true, stake);
+        self.vote(creator, voting_id, Choice::InFavor, stake);
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
-        let voting = self.votings.get(&voting_id);
+        let voting = self.get_voting(voting_id).unwrap_or_revert();
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
@@ -122,13 +133,13 @@ impl GovernanceVoting {
 
                 let formal_voting_id = self.next_voting_id();
                 let creator_address = self.voters.get(voting.voting_id(), 0).unwrap_or_revert();
-                let creator_stake = self.votes.get(&(voting.voting_id(), creator_address)).stake;
+                let creator_stake = self
+                    .ballots
+                    .get(&(voting.voting_id(), creator_address))
+                    .stake;
 
                 // Formal voting is created and first vote cast
-                self.votings.set(
-                    &formal_voting_id,
-                    voting.create_formal_voting(formal_voting_id, get_block_time()),
-                );
+                self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
 
                 emit(VotingCreated {
                     creator: creator_address,
@@ -136,7 +147,12 @@ impl GovernanceVoting {
                     stake: creator_stake,
                 });
 
-                self.vote(creator_address, formal_voting_id, true, creator_stake);
+                self.vote(
+                    creator_address,
+                    formal_voting_id,
+                    Choice::InFavor,
+                    creator_stake,
+                );
 
                 // Informal voting is completed and referenced with formal voting
                 voting.complete(Some(formal_voting_id));
@@ -167,7 +183,7 @@ impl GovernanceVoting {
             formal_voting_id: voting.formal_voting_id(),
         });
 
-        self.votings.set(&voting.voting_id(), voting);
+        self.set_voting(voting);
     }
 
     fn finish_formal_voting(&mut self, mut voting: Voting) {
@@ -204,18 +220,18 @@ impl GovernanceVoting {
         });
 
         voting.complete(None);
-        self.votings.set(&voting.voting_id(), voting);
+        self.set_voting(voting);
     }
 
-    pub fn vote(&mut self, voter: Address, voting_id: U256, choice: bool, stake: U256) {
-        let mut voting = self.votings.get(&voting_id);
+    pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
+        let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
         // We cannot vote on a completed voting
         if voting.completed() {
             revert(Error::VoteOnCompletedVotingNotAllowed)
         }
 
-        let mut vote = self.votes.get(&(voting_id, voter));
+        let mut vote = self.ballots.get(&(voting_id, voter));
         match vote.voter {
             Some(_) => {
                 // Cannot vote twice on the same voting
@@ -226,7 +242,7 @@ impl GovernanceVoting {
                 self.transfer_reputation(voter, self_address(), stake);
 
                 // Create a new vote
-                vote = Vote {
+                vote = Ballot {
                     voter: Some(voter),
                     choice,
                     voting_id,
@@ -238,11 +254,11 @@ impl GovernanceVoting {
         }
 
         // Update the votes list
-        self.votes.set(&(voting_id, voter), vote);
+        self.ballots.set(&(voting_id, voter), vote);
 
         // update voting
         voting.stake(stake, choice);
-        self.votings.set(&voting_id, voting);
+        self.set_voting(voting);
 
         emit(VoteCast {
             voter,
@@ -264,16 +280,32 @@ impl GovernanceVoting {
         self.reputation_token.get().unwrap_or_revert()
     }
 
-    pub fn get_vote(&self, voting_id: U256, address: Address) -> Vote {
-        self.votes.get(&(voting_id, address))
+    pub fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot> {
+        self.ballots.get_or_none(&(voting_id, address))
     }
 
-    pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Address {
-        self.voters.get(voting_id, at).unwrap_or_revert()
+    pub fn get_ballot_at(&mut self, voting_id: U256, i: u32) -> Ballot {
+        let address = self
+            .get_voter(voting_id, i)
+            .unwrap_or_revert_with(Error::VoterDoesNotExist);
+        self.get_ballot(voting_id, address)
+            .unwrap_or_revert_with(Error::BallotDoesNotExist)
     }
 
-    pub fn get_voting(&self, voting_id: VotingId) -> Voting {
-        self.votings.get(&voting_id)
+    pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
+        self.voters
+            .get_or_none(voting_id, at)
+            .map(|x| x.unwrap_or_revert())
+    }
+
+    pub fn get_voting(&self, voting_id: VotingId) -> Option<Voting> {
+        self.votings
+            .get_or_none(&voting_id)
+            .map(|x| x.unwrap_or_revert())
+    }
+
+    pub fn set_voting(&self, voting: Voting) {
+        self.votings.set(&voting.voting_id(), Some(voting))
     }
 
     pub fn next_voting_id(&mut self) -> U256 {
@@ -284,13 +316,19 @@ impl GovernanceVoting {
 
     pub fn perform_action(&self, voting: &Voting) {
         call_contract(
-            voting.contract_to_call().unwrap_or_revert(),
+            voting
+                .contract_to_call()
+                .unwrap_or_revert_with(Error::ContractToCallNotSet),
             voting.entry_point(),
             voting.runtime_args().clone(),
         )
     }
 
     fn transfer_reputation(&mut self, owner: Address, recipient: Address, amount: U256) {
+        if amount == U256::zero() {
+            return;
+        }
+
         let args: RuntimeArgs = runtime_args! {
             "owner" => owner,
             "recipient" => recipient,
@@ -311,23 +349,29 @@ impl GovernanceVoting {
 
     fn burn_creators_and_return_others_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
-            let address = self.get_voter(voting_id, i);
-            let vote = self.votes.get(&(voting_id, address));
+            let ballot = self.get_ballot_at(voting_id, i);
             if i == 0 {
                 // the creator
-                self.burn_reputation(self_address(), vote.stake);
+                self.burn_reputation(self_address(), ballot.stake);
             } else {
                 // the voters - transfer from contract to them
-                self.transfer_reputation(self_address(), address, vote.stake);
+                self.transfer_reputation(
+                    self_address(),
+                    ballot.voter.unwrap_or_revert(),
+                    ballot.stake,
+                );
             }
         }
     }
 
     fn return_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
-            let address = self.get_voter(voting_id, i);
-            let vote = self.votes.get(&(voting_id, address));
-            self.transfer_reputation(self_address(), address, vote.stake);
+            let ballot = self.get_ballot_at(voting_id, i);
+            self.transfer_reputation(
+                self_address(),
+                ballot.voter.unwrap_or_revert(),
+                ballot.stake,
+            );
         }
     }
 
@@ -339,10 +383,9 @@ impl GovernanceVoting {
         let u256_max = u256_to_512(U256::MAX).unwrap_or_revert();
 
         for i in 0..self.voters.len(voting.voting_id()) {
-            let address = self.get_voter(voting.voting_id(), i);
-            let vote = self.votes.get(&(voting.voting_id(), address));
-            if vote.choice == result {
-                let to_transfer = total_stake * u256_to_512(vote.stake).unwrap_or_revert()
+            let ballot = self.get_ballot_at(voting.voting_id(), i);
+            if ballot.choice.is_in_favor() == result {
+                let to_transfer = total_stake * u256_to_512(ballot.stake).unwrap_or_revert()
                     / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
 
                 if to_transfer > u256_max {
@@ -351,9 +394,14 @@ impl GovernanceVoting {
 
                 transferred += to_transfer;
 
-                let to_transfer = u512_to_u256(to_transfer).unwrap_or_revert();
+                let to_transfer =
+                    u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
-                self.transfer_reputation(self_address(), address, to_transfer);
+                self.transfer_reputation(
+                    self_address(),
+                    ballot.voter.unwrap_or_revert(),
+                    to_transfer,
+                );
             }
         }
 
@@ -365,8 +413,10 @@ impl GovernanceVoting {
                 revert(Error::ArithmeticOverflow)
             }
 
-            self.dust_amount
-                .set(self.get_dust_amount() + u512_to_u256(dust).unwrap_or_revert());
+            self.dust_amount.set(
+                self.get_dust_amount()
+                    + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow),
+            );
         }
     }
 }

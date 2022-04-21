@@ -24,18 +24,18 @@ impl VariableRepoContractProxy {
             .get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
     }
 
-    pub fn informal_voting_quorum(contract_address: Address) -> U256 {
+    pub fn informal_voting_quorum(contract_address: Address, total_onboarded: U256) -> U256 {
         math::promils_of(
-            4.into(),
+            total_onboarded,
             VariableRepoContractProxy::caller(contract_address)
                 .get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
         )
         .unwrap_or_revert()
     }
 
-    pub fn formal_voting_quorum(contract_address: Address) -> U256 {
+    pub fn formal_voting_quorum(contract_address: Address, total_onboarded: U256) -> U256 {
         math::promils_of(
-            4.into(),
+            total_onboarded,
             VariableRepoContractProxy::caller(contract_address)
                 .get_variable(dao_consts::FORMAL_VOTING_QUORUM),
         )
