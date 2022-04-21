@@ -38,7 +38,7 @@ speculate! {
             )
         }
 
-        test "user_token_address_it_set" {
+        test "va_token_address_it_set" {
             assert_eq!(
                 contract.get_va_token_address(),
                 va_token.address()
@@ -106,34 +106,50 @@ speculate! {
                     )
                 }
 
-                context "voting_passed" {
+                context "informal_voting_passed" {
                     before {
                         let voting_id = 0.into();
                         let voting = contract.get_voting(voting_id);
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
                         let voting_id = 1.into();
-                        contract.as_account(second_va).vote(voting_id, true,  vote_amount).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
-                        contract.as_account(va).finish_voting(1.into()).unwrap();
-                        let voting = contract.get_voting(1.into());
-                        println!("voting={:?}", voting);
-                    }
-                    test "user_owns_a_user_token" {
-                        assert_eq!(va_token.balance_of(user), U256::one())
                     }
 
-                    test "remove_voting_creation_succeeds" {
-                        assert_eq!(
-                            contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
-                            Ok(())
-                        );
-                    }
-                }
+                    context "voting_passed" {
+                        before {
+                            contract.as_account(second_va).vote(voting_id, true,  vote_amount).unwrap();
+                            env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                            contract.as_account(va).finish_voting(voting_id).unwrap();
+                        }
 
-                context "voting_rejected" {
-                    test "user" {
-                        assert_eq!(va_token.balance_of(user), U256::zero())
+                        test "user_owns_a_va_token" {
+                            assert_eq!(va_token.balance_of(user), U256::one())
+                        }
+
+                        test "remove_voting_creation_succeeds" {
+                            assert_eq!(
+                                contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                                Ok(())
+                            );
+                        }
+                    }
+
+                    context "voting_rejected" {
+                        before {
+                            env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                            contract.as_account(va).finish_voting(voting_id).unwrap();
+                        }
+
+                        test "user_does_not_own_va_token" {
+                            assert_eq!(va_token.balance_of(user), U256::zero())
+                        }
+
+                        test "next_add_voting_creation_succeeds" {
+                            assert_eq!(
+                                contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                                Ok(())
+                            );
+                        }
                     }
                 }
             }
@@ -141,7 +157,9 @@ speculate! {
 
         context "user_is_already_onboarded" {
             before {
-                va_token.mint(user, 1.into()).unwrap();
+                let token_id = 1.into();
+                va_token.mint(user, token_id).unwrap();
+                va_token.as_account(user).set_approval_for_all(contract.address(), true).unwrap();
             }
 
             test "that_add_user_voting_cannot_be_created" {
@@ -160,41 +178,82 @@ speculate! {
                 }
                 test "that_voting_creation_fails" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                        contract.as_account(va)
+                            .create_voting(onboarding::Action::Remove, user, vote_amount),
                         Err(Error::InsufficientBalance)
                     )
                 }
             }
 
-            context "a_remove_voting_is_created" {
+            context "remove_voting_is_created" {
                 before {
                     reputation_token.mint(user, mint_amount).unwrap();
-                    contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount).unwrap();
+                    contract.as_account(va)
+                        .create_voting(onboarding::Action::Remove, user, vote_amount)
+                        .unwrap();
                 }
 
                 test "that_add_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                        contract.as_account(va)
+                            .create_voting(onboarding::Action::Add, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
                 test "that_remove_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                        contract.as_account(va)
+                            .create_voting(onboarding::Action::Remove, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
-                context "voting_passed" {
-                    test "that_user_has_no_user_token" {
-                        assert_eq!(va_token.balance_of(user), U256::zero())
+                context "informal_voting_passed" {
+                    before {
+                        let voting_id = 0.into();
+                        let voting = contract.get_voting(voting_id);
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
+                        contract.as_account(va).finish_voting(voting_id).unwrap();
+                        let voting_id = 1.into();
                     }
-                }
 
-                context "voting_rejected" {
-                    test "that_user_still_owns_user_token" {
-                        assert_eq!(va_token.balance_of(user), U256::one())
+                    context "voting_passed" {
+                        before {
+                            contract.as_account(second_va).vote(voting_id, true,  vote_amount).unwrap();
+                            env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                            contract.as_account(va).finish_voting(voting_id).unwrap();
+                        }
+
+                        test "that_user_has_no_va_token" {
+                            assert_eq!(va_token.balance_of(user), U256::zero())
+                        }
+
+                        test "add_voting_creation_succeeds" {
+                            kyc_token.mint(user, 1.into()).unwrap();
+                            assert_eq!(
+                                contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                                Ok(())
+                            );
+                        }
+                    }
+
+                    context "voting_rejected" {
+                        before {
+                            env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                            contract.as_account(va).finish_voting(voting_id).unwrap();
+                        }
+
+                        test "that_user_still_owns_va_token" {
+                            assert_eq!(va_token.balance_of(user), U256::one())
+                        }
+
+                        test "next_remove_voting_creation_succeeds" {
+                            assert_eq!(
+                                contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                                Ok(())
+                            );
+                        }
                     }
                 }
             }

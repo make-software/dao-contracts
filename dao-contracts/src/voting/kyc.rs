@@ -1,7 +1,6 @@
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
-    Address, Mapping, Variable,
+    casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_dao_macros::Instance, Address,
+    Variable,
 };
 use casper_types::U256;
 

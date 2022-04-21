@@ -1,3 +1,4 @@
+use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
@@ -38,6 +39,16 @@ impl OnboardingInfo {
     pub fn is_onboarded(&self, &address: &Address) -> bool {
         let va_token_contract = DaoOwnedNftContractCaller::at(self.get_va_token_address());
         va_token_contract.balance_of(address) > U256::zero()
+    }
+
+    pub fn token_id_of(&self, address: &Address) -> Option<TokenId> {
+        let va_token_contract = DaoOwnedNftContractCaller::at(self.get_va_token_address());
+        va_token_contract.token_id(*address)
+    }
+
+    pub fn owner_of(&self, token_id: TokenId) -> Address {
+        let va_token_contract = DaoOwnedNftContractCaller::at(self.get_va_token_address());
+        va_token_contract.owner_of(token_id)
     }
 }
 

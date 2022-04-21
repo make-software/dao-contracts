@@ -1,8 +1,3 @@
-use casper_dao_utils::{casper_dao_macros::casper_contract_interface, Address};
-use casper_types::U256;
-
-use crate::voting::{voting::Voting, Vote, VotingId};
-
 // #[casper_contract_interface]
 // pub trait KycVoterContractInterface {
 //     fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address);

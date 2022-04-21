@@ -110,17 +110,23 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
     }
 
     fn finish_voting(&mut self, voting_id: VotingId) {
-        self.voting.finish_voting(voting_id);
         let address = self.extract_address_from_args(voting_id);
+        self.voting.finish_voting(voting_id);
         self.onboarding.clear_voting(&address);
     }
 }
 
+// non-contract implementation
 impl OnboardingVoterContract {
     fn config_remove_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
         self.assert_onboarded(&subject_address);
+        self.assert_has_reputation(&subject_address);
 
-        let runtime_args = runtime_args! {};
+        let token_id = self.onboarding.token_id_of(&subject_address).unwrap();
+
+        let runtime_args = runtime_args! {
+            "token_id" => token_id,
+        };
         let entry_point = "burn".to_string();
 
         (entry_point, runtime_args)
@@ -145,10 +151,23 @@ impl OnboardingVoterContract {
         let arg = voting
             .runtime_args()
             .named_args()
-            .find(|arg| arg.name() == "to")
-            .unwrap();
+            .find(|arg| arg.name() == "to");
 
-        arg.cl_value().clone().into_t().unwrap()
+        if let Some(to_arg) = arg {
+            return to_arg.cl_value().clone().into_t().unwrap();
+        }
+
+        let arg = voting
+            .runtime_args()
+            .named_args()
+            .find(|arg| arg.name() == "token_id");
+
+        if let Some(token_id_arg) = arg {
+            let token_id = token_id_arg.cl_value().clone().into_t().unwrap();
+            return self.onboarding.owner_of(token_id);
+        }
+
+        casper_env::revert(Error::BytesConversionError)
     }
 
     fn assert_has_reputation(&self, address: &Address) {
