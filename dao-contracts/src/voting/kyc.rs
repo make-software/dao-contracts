@@ -23,7 +23,6 @@ impl KycInfo {
     }
 
     pub fn is_kycd(&self, &address: &Address) -> bool {
-        let va_token_contract = DaoOwnedNftContractCaller::at(self.get_kyc_token_address());
-        va_token_contract.balance_of(address) > U256::zero()
+        DaoOwnedNftContractCaller::at(self.get_kyc_token_address()).balance_of(address) > U256::zero()
     }
 }
