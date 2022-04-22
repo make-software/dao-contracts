@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_dao_macros::Instance, Address, Error,
     Variable,
@@ -25,5 +27,17 @@ impl KycInfo {
     pub fn is_kycd(&self, &address: &Address) -> bool {
         DaoOwnedNftContractCaller::at(self.get_kyc_token_address()).balance_of(address)
             > U256::zero()
+    }
+
+    pub(crate) fn set_voting(&self, address: &Address) {
+        todo!()
+    }
+
+    pub(crate) fn clear_voting(&self, address: &Address) {
+        todo!()
+    }
+
+    pub(crate) fn exists_ongoing_voting(&self, address: &Address) -> bool {
+        todo!()
     }
 }
