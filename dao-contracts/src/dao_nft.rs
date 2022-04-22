@@ -40,8 +40,8 @@ pub struct DaoOwnedNftContract {
 }
 
 impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
-    fn init(&mut self, name: String, symbol: String, _base_uri: TokenUri) {
-        self.metadata.init(name, symbol);
+    fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
+        self.metadata.init(name, symbol, base_uri);
     }
 
     delegate! {

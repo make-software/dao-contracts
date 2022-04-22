@@ -12,12 +12,13 @@ mod test {
     speculate! {
         static NAME: &str = "Plascoin";
         static SYMBOL: &str = "PLS";
+        static BASE_URI: &str = "some://base/uri";
 
         context "erc721" {
 
             before {
                 let env = TestEnv::new();
-                let mut token = ERC721Test::new(&env, String::from(NAME), String::from(SYMBOL));
+                let mut token = ERC721Test::new(&env, String::from(NAME), String::from(SYMBOL), String::from(BASE_URI));
 
                 let first_token_id: TokenId = 1.into();
                 let non_existent_token_id: TokenId = 999.into();

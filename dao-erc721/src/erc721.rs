@@ -18,7 +18,7 @@ pub type TokenUri = String;
 
 #[casper_contract_interface]
 pub trait ERC721Interface {
-    fn init(&mut self, name: String, symbol: String);
+    fn init(&mut self, name: String, symbol: String, base_uri: String);
     fn name(&self) -> String;
     fn symbol(&self) -> String;
     fn owner_of(&self, token_id: TokenId) -> Address;
@@ -51,7 +51,7 @@ pub struct ERC721 {
 impl ERC721Interface for ERC721 {
     delegate! {
         to self.metadata {
-            fn init(&mut self, name: String, symbol: String);
+            fn init(&mut self, name: String, symbol: String, base_uri: String);
             fn name(&self) -> String;
             fn symbol(&self) -> String;
             fn base_uri(&self) -> TokenUri;
