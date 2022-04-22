@@ -4,7 +4,7 @@ use speculate::speculate;
 
 use casper_dao_contracts::{voting::Choice, voting::VotingId};
 
-use casper_dao_utils::BytesConversion;
+use casper_dao_utils::{BytesConversion, TestContract};
 use casper_types::{bytesrepr::FromBytes, U256};
 
 speculate! {

@@ -30,3 +30,9 @@ mod test_env;
 
 #[cfg(feature = "test-support")]
 pub use test_env::{ExecutionError, TestEnv};
+
+#[cfg(feature = "test-support")]
+mod test_contract;
+
+#[cfg(feature = "test-support")]
+pub use test_contract::TestContract;

@@ -25,6 +25,7 @@ pub trait MockVoterContractInterface {
     fn get_variable(&self) -> String;
 }
 
+#[doc(hidden)]
 #[derive(Instance)]
 pub struct MockVoterContract {
     voting: GovernanceVoting,

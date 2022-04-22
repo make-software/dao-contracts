@@ -1,5 +1,6 @@
 mod governance_voting_common;
 use casper_dao_contracts::voting::{consts, VotingEnded};
+use casper_dao_utils::TestContract;
 use casper_types::U256;
 use test_case::test_case;
 

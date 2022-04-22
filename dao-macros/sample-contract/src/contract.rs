@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use casper_dao_utils::casper_dao_macros::casper_contract_interface;
 use casper_dao_utils::casper_dao_macros::Instance;
 
-#[casper_dao_utils::casper_dao_macros::casper_contract_interface]
+#[casper_contract_interface]
 pub trait ImportantContractInterface {
     fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256);
     fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
