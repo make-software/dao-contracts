@@ -1,600 +1,338 @@
-use std::time::Duration;
+mod governance_voting_common;
+extern crate speculate;
 
-use casper_dao_contracts::{
-    voting::{
-        consts as gv_consts, voting::Voting, Vote, VoteCast, VotingContractCreated, VotingCreated,
-        VotingEnded, VotingId,
-    },
-    MockVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
+use casper_dao_contracts::voting::{
+    consts as gv_consts, Ballot, Choice, VoteCast, VotingContractCreated, VotingCreated,
+    VotingEnded, VotingId,
 };
-
-use casper_dao_utils::{consts, Address, Error, TestContract, TestEnv};
-use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
-    U256,
-};
-
-pub fn into_bytes(val: &str) -> Bytes {
-    val.as_bytes().into()
-}
-
-#[test]
-fn test_contract_deploy() {
-    let (_env, mock_voter_contract, variable_repo_contract, reputation_token_contract) = setup();
-
-    assert_eq!(
-        mock_voter_contract.get_variable_repo_address(),
-        Address::from(variable_repo_contract.get_package_hash())
-    );
-    assert_eq!(
-        mock_voter_contract.get_reputation_token_address(),
-        Address::from(reputation_token_contract.get_package_hash())
-    );
-
-    mock_voter_contract.assert_event_at(
-        0,
-        VotingContractCreated {
-            variable_repo: Address::from(variable_repo_contract.get_package_hash()),
-            reputation_token: Address::from(reputation_token_contract.get_package_hash()),
-            voter_contract: Address::from(mock_voter_contract.get_package_hash()),
-        },
-    )
-}
-
-#[test]
-fn test_create_voting() {
-    // Create voting
-    let (env, mut mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_voting();
-
-    // check voting event
-    mock_voter_contract.assert_event_at(
-        1,
-        VotingCreated {
-            creator: env.get_account(0),
-            voting_id: VotingId::zero(),
-            stake: U256::from(500),
-        },
-    );
-
-    let voting_created_event: VotingCreated = mock_voter_contract.event(1);
-    let vote_cast_event: VoteCast = mock_voter_contract.event(2);
-
-    // check if voting was created correctly
-    let voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id(), vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id(), VotingId::zero());
-    assert_eq!(voting.formal_voting_time(), 432000000);
-    assert_eq!(voting.formal_voting_quorum(), U256::from(3));
-    assert_eq!(voting.informal_voting_time(), 86400000);
-    assert_eq!(voting.informal_voting_quorum(), U256::from(3));
-    assert_eq!(voting_created_event.voting_id, voting.voting_id());
-    assert_eq!(voting_created_event.creator, env.get_account(0));
-    assert_eq!(voting_created_event.stake, U256::from(500));
-
-    // check if first vote was created correctly
-    let vote: Vote = mock_voter_contract.get_vote(voting.voting_id(), env.get_account(0));
-    assert_eq!(vote.voting_id, voting.voting_id());
-    assert_eq!(vote.voter, Some(env.get_account(0)));
-    assert_eq!(vote.choice, true);
-    assert_eq!(vote.stake, U256::from(500));
-
-    // check if first vote was created by a caller
-    let first_voter = mock_voter_contract.get_voter(voting.voting_id(), 0);
-    assert_eq!(first_voter, env.get_account(0));
-
-    // check if the reputation was staked
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        500.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 - 500).into()
-    );
-
-    // check the voting counter after creating next voting
-    mock_voter_contract
-        .create_voting("some_other_value".to_string(), U256::from(321))
-        .unwrap();
-    let vote_cast_event: VoteCast = mock_voter_contract.event(4);
-    let voting: Voting = mock_voter_contract.get_voting(vote_cast_event.voting_id);
-    assert_eq!(voting.voting_id(), VotingId::from(1));
-}
-
-#[test]
-fn test_informal_before_end() {
-    // create voting
-    let (_env, mut mock_voter_contract, _variable_repo_contract, _reputation_token_contract) =
-        create_voting();
-
-    // We cannot finish voting which time didn't elapse
-    let voting_id = VotingId::zero();
-    let result = mock_voter_contract.finish_voting(voting_id);
-
-    assert_eq!(result.unwrap_err(), Error::InformalVotingTimeNotReached);
-}
-
-#[test]
-fn test_informal_vote_without_a_quorum() {
-    // create voting
-    let (env, mut mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_voting();
-
-    let voting_id = VotingId::zero();
-    let voting: Voting = mock_voter_contract.get_voting(VotingId::zero());
-
-    // cast a vote
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .vote(voting_id, false, U256::from(500))
-        .unwrap();
-
-    // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
-
-    // Now the time should be fine, but a single vote should not reach quorum
-    mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_last_event(VotingEnded {
-        voting_id,
-        result: gv_consts::INFORMAL_VOTING_QUORUM_NOT_REACHED.into(),
-        votes_count: U256::from(2),
-        stake_in_favor: U256::from(500),
-        stake_against: U256::from(500),
-        informal_voting_id: VotingId::zero(),
-        formal_voting_id: None,
-    });
-
-    // voting status should be completed
-    let voting: Voting = mock_voter_contract.get_voting(U256::zero());
-    assert_eq!((voting.completed()), true);
-
-    // cast a vote on a finished voting should return an error
-    let result = mock_voter_contract.vote(U256::zero(), false, U256::from(500));
-    assert_eq!(result.unwrap_err(), Error::VoteOnCompletedVotingNotAllowed);
-
-    // the same goes for finishing voting
-    let result = mock_voter_contract.finish_voting(voting_id);
-    assert_eq!(
-        result.unwrap_err(),
-        Error::FinishingCompletedVotingNotAllowed
-    );
-
-    // creator's reputation should be burned and voters' returned
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        0.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 - 500).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(1)),
-        10000.into()
-    );
-}
-
-#[test]
-fn test_informal_voting_rejected() {
-    // create voting
-    let (env, mut mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_voting();
-    let voting_id = VotingId::zero();
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-
-    // cast votes against
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .vote(voting_id, false, U256::from(500))
-        .unwrap();
-    mock_voter_contract
-        .as_account(env.get_account(2))
-        .vote(voting_id, false, U256::from(500))
-        .unwrap();
-
-    // fast-forward
-    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
-
-    // finish voting
-    mock_voter_contract.finish_voting(voting_id).unwrap();
-
-    // voting status should be completed
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-    assert_eq!((voting.completed()), true);
-
-    // the status should be rejected
-    mock_voter_contract.assert_event_at(
-        5,
-        VotingEnded {
-            voting_id,
-            result: gv_consts::INFORMAL_VOTING_REJECTED.into(),
-            votes_count: U256::from(3),
-            stake_in_favor: U256::from(500),
-            stake_against: U256::from(1000),
-            informal_voting_id: VotingId::zero(),
-            formal_voting_id: None,
-        },
-    );
-
-    // creator's reputation should be burned and voters' returned
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        0.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 - 500).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(1)),
-        10000.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(2)),
-        10000.into()
-    );
-}
-
-#[test]
-fn test_informal_voting_converted() {
-    // create voting
-    let (env, mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_formal_voting();
-    let voting_id = VotingId::zero();
-
-    // voting status should be completed
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-    assert_eq!((voting.completed()), true);
-
-    // new voting should be created with first creator
-    mock_voter_contract.assert_event_at(
-        -3,
-        VotingCreated {
-            creator: env.get_account(0),
-            voting_id: VotingId::from(1),
-            stake: 500.into(),
-        },
-    );
-
-    // with initial vote as creator
-    mock_voter_contract.assert_event_at(
-        -2,
-        VoteCast {
-            voter: env.get_account(0),
-            voting_id: VotingId::from(1),
-            choice: true,
-            stake: 500.into(),
-        },
-    );
-
-    // the status should be converted
-    mock_voter_contract.assert_last_event(VotingEnded {
-        voting_id,
-        result: gv_consts::INFORMAL_VOTING_PASSED.into(),
-        votes_count: U256::from(3),
-        stake_in_favor: U256::from(1000),
-        stake_against: U256::from(500),
-        informal_voting_id: VotingId::zero(),
-        formal_voting_id: Some(VotingId::from(1)),
-    });
-
-    // creator's reputation should stay staked and voters' returned
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        500.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 - 500).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(1)),
-        10000.into()
-    );
-}
-
-#[test]
-fn test_formal_voting_before_end() {
-    let (_env, mut mock_voter_contract, _variable_repo_contract, _reputation_token_contract) =
-        create_formal_voting();
-    let voting_id = VotingId::from(1);
-
-    let result = mock_voter_contract.finish_voting(voting_id);
-    assert_eq!(result.unwrap_err(), Error::FormalVotingTimeNotReached);
-}
-
-#[test]
-fn test_formal_vote_without_a_quorum() {
-    let (env, mut mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_formal_voting();
-    let voting_id = VotingId::from(1);
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-
-    // cast a vote
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .vote(voting_id, false, U256::from(500))
-        .unwrap();
-
-    // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
-
-    // Now the time should be fine, but a single vote should not reach quorum
-    mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_last_event(VotingEnded {
-        voting_id,
-        result: gv_consts::FORMAL_VOTING_QUORUM_NOT_REACHED.into(),
-        votes_count: U256::from(2),
-        stake_in_favor: U256::from(500),
-        stake_against: U256::from(500),
-        informal_voting_id: VotingId::zero(),
-        formal_voting_id: Some(voting_id),
-    });
-
-    // voting status should be completed
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-    assert_eq!((voting.completed()), true);
-
-    // cast a vote on a finished voting should return an error
-    let result = mock_voter_contract.vote(voting_id, false, U256::from(500));
-    assert_eq!(result.unwrap_err(), Error::VoteOnCompletedVotingNotAllowed);
-
-    // the same goes for finishing voting
-    let result = mock_voter_contract.finish_voting(voting_id);
-    assert_eq!(
-        result.unwrap_err(),
-        Error::FinishingCompletedVotingNotAllowed
-    );
-
-    // creator's reputation should be burned and voters' returned
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        0.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 - 500).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(1)),
-        10000.into()
-    );
-}
-
-#[test]
-fn test_formal_vote_rejected() {
-    let (env, mut mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_formal_voting();
-    let voting_id = VotingId::from(1);
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-
-    // vote to reach quorum
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .vote(voting_id, false, 1000.into())
-        .unwrap();
-    mock_voter_contract
-        .as_account(env.get_account(2))
-        .vote(voting_id, false, 1000.into())
-        .unwrap();
-
-    // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
-
-    // Now the time should be fine, the result should be rejected
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        2500.into()
-    );
-    mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_last_event(VotingEnded {
-        voting_id,
-        result: gv_consts::FORMAL_VOTING_REJECTED.into(),
-        votes_count: U256::from(3),
-        stake_in_favor: U256::from(500),
-        stake_against: U256::from(2000),
-        informal_voting_id: VotingId::zero(),
-        formal_voting_id: Some(voting_id),
-    });
-
-    // voting status should be completed
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-    assert_eq!((voting.completed()), true);
-
-    // creator's reputation should be transferred to voters proportionally
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        0.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 - 500).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(1)),
-        10250.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(2)),
-        10250.into()
-    );
-}
-
-#[test]
-fn test_formal_vote_completed() {
-    let (env, mut mock_voter_contract, _variable_repo_contract, reputation_token_contract) =
-        create_formal_voting();
-    let voting_id = VotingId::from(1);
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-
-    // vote to reach quorum
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .vote(voting_id, true, 1000.into())
-        .unwrap();
-    mock_voter_contract
-        .as_account(env.get_account(2))
-        .vote(voting_id, false, 1000.into())
-        .unwrap();
-
-    // advance time, so voting can be finished
-    env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
-
-    // Now the time should be fine, the result should be completed
-    mock_voter_contract.finish_voting(voting_id).unwrap();
-    mock_voter_contract.assert_event_at(
-        -1,
-        VotingEnded {
-            voting_id,
-            result: gv_consts::FORMAL_VOTING_PASSED.into(),
-            votes_count: U256::from(3),
-            stake_in_favor: U256::from(1500),
-            stake_against: U256::from(1000),
-            informal_voting_id: VotingId::zero(),
-            formal_voting_id: Some(voting_id),
-        },
-    );
-
-    // voting status should be completed
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-    assert_eq!((voting.completed()), true);
-
-    // the action should be performed
-    let variable = mock_voter_contract.get_variable();
-    assert_eq!(variable, "some_value");
-
-    // those who voted against' reputation should be transferred to for voters proportionally
-    assert_eq!(
-        reputation_token_contract.balance_of(mock_voter_contract.address()),
-        1.into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(0)),
-        (10000 + 333).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(1)),
-        (10000 + 666).into()
-    );
-    assert_eq!(
-        reputation_token_contract.balance_of(env.get_account(2)),
-        (10000 - 1000).into()
-    );
-
-    // as the reputation was not divisible entirely, we check the dust amount
-    assert_eq!(mock_voter_contract.get_dust_amount(), 1.into());
-}
-
-pub fn setup() -> (
-    TestEnv,
-    MockVoterContractTest,
-    VariableRepositoryContractTest,
-    ReputationContractTest,
-) {
-    let env = TestEnv::new();
-    let mut variable_repo_contract = VariableRepositoryContractTest::new(&env);
-    let mut reputation_token_contract = ReputationContractTest::new(&env);
-    let mock_voter_contract = MockVoterContractTest::new(
-        &env,
-        Address::from(variable_repo_contract.get_package_hash()),
-        Address::from(reputation_token_contract.get_package_hash()),
-    );
-
-    variable_repo_contract
-        .add_to_whitelist(mock_voter_contract.address())
-        .unwrap();
-
-    // TODO: Currently there are 4 hardcoded onboarded members, quorum at 750 should make the quorum when there are 3 votes
-    variable_repo_contract
-        .update_at(
-            consts::INFORMAL_VOTING_QUORUM.into(),
-            U256::from(750).to_bytes().unwrap().into(),
-            None,
-        )
-        .unwrap();
-    variable_repo_contract
-        .update_at(
-            consts::FORMAL_VOTING_QUORUM.into(),
-            U256::from(750).to_bytes().unwrap().into(),
-            None,
-        )
-        .unwrap();
-
-    reputation_token_contract
-        .add_to_whitelist(mock_voter_contract.address())
-        .unwrap();
-
-    reputation_token_contract
-        .mint(env.get_account(0), 10000.into())
-        .unwrap();
-    reputation_token_contract
-        .mint(env.get_account(1), 10000.into())
-        .unwrap();
-    reputation_token_contract
-        .mint(env.get_account(2), 10000.into())
-        .unwrap();
-
-    (
-        env,
-        mock_voter_contract,
-        variable_repo_contract,
-        reputation_token_contract,
-    )
-}
-
-pub fn create_voting() -> (
-    TestEnv,
-    MockVoterContractTest,
-    VariableRepositoryContractTest,
-    ReputationContractTest,
-) {
-    let (env, mut mock_voter_contract, variable_repo_contract, reputation_token_contract) = setup();
-    mock_voter_contract
-        .create_voting("some_value".to_string(), U256::from(500))
-        .unwrap();
-    (
-        env,
-        mock_voter_contract,
-        variable_repo_contract,
-        reputation_token_contract,
-    )
-}
-
-pub fn create_formal_voting() -> (
-    TestEnv,
-    MockVoterContractTest,
-    VariableRepositoryContractTest,
-    ReputationContractTest,
-) {
-    let (env, mut mock_voter_contract, variable_repo_contract, reputation_token_contract) =
-        create_voting();
-    let voting_id = VotingId::zero();
-    let voting: Voting = mock_voter_contract.get_voting(voting_id);
-
-    // cast votes
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .vote(voting_id, true, U256::from(500))
-        .unwrap();
-    mock_voter_contract
-        .as_account(env.get_account(2))
-        .vote(voting_id, false, U256::from(500))
-        .unwrap();
-
-    // fast-forward
-    env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
-
-    // finish voting as somebody else
-    mock_voter_contract
-        .as_account(env.get_account(1))
-        .finish_voting(voting_id)
-        .unwrap();
-
-    (
-        env,
-        mock_voter_contract,
-        variable_repo_contract,
-        reputation_token_contract,
-    )
+use casper_dao_utils::Error;
+use casper_dao_utils::TestContract;
+use casper_types::U256;
+use speculate::speculate;
+
+speculate! {
+    context "governance voting" {
+        before {
+            let informal_quorum = U256::from(500);
+            let formal_quorum = U256::from(750);
+            let total_onboarded = 4;
+            #[allow(unused_variables)]
+            let minimum_reputation = U256::from(500);
+            #[allow(unused_variables)]
+            let minted_reputation = 10_000;
+            let informal_voting_time: u64 = 3_600;
+            let formal_voting_time: u64 = 2 * informal_voting_time;
+            #[allow(unused_variables)]
+            let after_informal_voting_time = informal_voting_time + 1;
+            #[allow(unused_variables)]
+            let after_formal_voting_time = formal_voting_time + 1;
+        }
+
+        describe "voting contact" {
+            before {
+                #[allow(unused_mut, unused_variables)]
+                let (mut mock_voter_contract, variable_repo_contract, reputation_token_contract) = governance_voting_common::setup_voting_contract(informal_quorum, formal_quorum, total_onboarded);
+            }
+
+            it "emits event with correct values" {
+                assert_eq!(mock_voter_contract.get_reputation_token_address(), reputation_token_contract.address());
+                assert_eq!(mock_voter_contract.get_variable_repo_address(), variable_repo_contract.address());
+
+                mock_voter_contract.assert_last_event(
+                    VotingContractCreated {
+                        variable_repo: variable_repo_contract.address(),
+                        reputation_token: reputation_token_contract.address(),
+                        voter_contract: mock_voter_contract.address(),
+                    },
+                );
+            }
+
+            it "disallows creating voting with not enough reputation staked" {
+                assert_eq!(
+                mock_voter_contract
+                    .create_voting("some_value".to_string(), minimum_reputation - U256::one()),
+                    Err(Error::NotEnoughReputation)
+                );
+            }
+
+            it "disallows creating voting with reputation that creator doesn't have" {
+                assert_eq!(
+                mock_voter_contract
+                    .create_voting("some_value".to_string(), U256::from(minted_reputation) + U256::one()),
+                    Err(Error::InsufficientBalance)
+                );
+            }
+
+            it "can count votings" {
+                mock_voter_contract
+                    .create_voting("some_value".to_string(), minimum_reputation)
+                    .unwrap(); // id = 0
+                mock_voter_contract
+                    .create_voting("another_value".to_string(), minimum_reputation)
+                    .unwrap(); // id = 1
+                mock_voter_contract
+                    .create_voting("yet_another_value".to_string(), minimum_reputation)
+                    .unwrap(); // id = 2
+
+                let voting_created_event: VotingCreated = mock_voter_contract.event(-2);
+
+                assert_eq!(voting_created_event.voting_id, VotingId::from(2));
+            }
+        }
+
+        describe "creating informal voting" {
+            before {
+                #[allow(unused_mut, unused_variables)]
+                let (mut mock_voter_contract, reputation_token_contract, informal_voting) = governance_voting_common::setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
+                #[allow(unused_variables)]
+                let creator = mock_voter_contract.get_env().get_account(0);
+            }
+
+            it "emits an event" {
+                mock_voter_contract.assert_event_at(-2, VotingCreated {
+                    creator,
+                    voting_id: VotingId::zero(),
+                    stake: minimum_reputation,
+                });
+            }
+
+            test "that voting is created correctly" {
+                let voting_created_event : VotingCreated = mock_voter_contract.event(-2);
+                let ballot_cast_event: VoteCast = mock_voter_contract.event(-1);
+                let first_ballot: Ballot = mock_voter_contract.get_ballot(informal_voting.voting_id(), creator).unwrap();
+
+                assert_eq!(informal_voting.voting_id(), VotingId::zero());
+                assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
+                assert_eq!(informal_voting.informal_voting_time(), informal_voting_time);
+                assert_eq!(informal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), formal_quorum).unwrap());
+                assert_eq!(informal_voting.informal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
+                assert_eq!(voting_created_event.voting_id, informal_voting.voting_id());
+                assert_eq!(voting_created_event.creator, creator);
+                assert_eq!(voting_created_event.stake, minimum_reputation);
+
+                // first vote is cast automatically
+                assert_eq!(first_ballot.voting_id, informal_voting.voting_id());
+                assert_eq!(first_ballot.voter, Some(creator));
+                assert!(first_ballot.choice.is_in_favor());
+                assert_eq!(first_ballot.stake, minimum_reputation);
+                assert_eq!(ballot_cast_event, VoteCast { voter: creator, voting_id: informal_voting.voting_id(), choice: Choice::InFavor, stake: minimum_reputation });
+                assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 0).unwrap(), creator);
+
+                // only one vote is cast TODO: Check harder
+                assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 1), None);
+            }
+
+            test "that creator cannot vote on his own voting" {
+                assert_eq!(
+                    mock_voter_contract.as_account(creator).vote(informal_voting.voting_id(), casper_dao_contracts::voting::Choice::InFavor, minimum_reputation),
+                    Err(Error::CannotVoteTwice)
+                );
+            }
+
+            test "that someone else cannot vote twice on the same voting" {
+                mock_voter_contract.as_nth_account(1).vote(informal_voting.voting_id(), casper_dao_contracts::voting::Choice::InFavor, minimum_reputation).unwrap();
+                assert_eq!(
+                    mock_voter_contract.as_nth_account(1).vote(informal_voting.voting_id(), casper_dao_contracts::voting::Choice::InFavor, minimum_reputation),
+                    Err(Error::CannotVoteTwice)
+                );
+            }
+
+            describe "when informal voting ends without reaching quorum" {
+                before {
+                    mock_voter_contract.advance_block_time_by(after_informal_voting_time);
+                    mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
+                }
+
+                it "emits proper event" {
+                    mock_voter_contract.assert_last_event(VotingEnded {
+                        voting_id: informal_voting.voting_id(),
+                        result: gv_consts::INFORMAL_VOTING_QUORUM_NOT_REACHED.into(),
+                        votes_count: U256::from(1),
+                        stake_in_favor: minimum_reputation,
+                        stake_against: U256::zero(),
+                        informal_voting_id: VotingId::zero(),
+                        formal_voting_id: None,
+                    });
+                }
+
+                it "is completed" {
+                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
+                }
+
+                it "doesn't create new voting" {
+                    assert_eq!(
+                        mock_voter_contract.get_voting(informal_voting.voting_id() + 1),
+                        None
+                    );
+                }
+            }
+
+            describe "when informal voting is rejected" {
+                before {
+                    governance_voting_common::mass_vote(0, 3, &mut mock_voter_contract, &informal_voting);
+                    mock_voter_contract.advance_block_time_by(after_informal_voting_time);
+                    mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
+                }
+
+                it "emits proper event" {
+                    mock_voter_contract.assert_last_event(VotingEnded {
+                        voting_id: informal_voting.voting_id(),
+                        result: gv_consts::INFORMAL_VOTING_REJECTED.into(),
+                        votes_count: U256::from(4),
+                        stake_in_favor: minimum_reputation,
+                        stake_against: minimum_reputation * 3,
+                        informal_voting_id: VotingId::zero(),
+                        formal_voting_id: None,
+                    });
+                }
+
+                it "is completed" {
+                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
+                }
+
+                it "doesn't create new voting" {
+                    assert_eq!(
+                        mock_voter_contract.get_voting(informal_voting.voting_id() + 1),
+                        None
+                    );
+                }
+            }
+
+            describe "when informal voting is completed" {
+                before {
+                    governance_voting_common::mass_vote(3, 1, &mut mock_voter_contract, &informal_voting);
+                    mock_voter_contract.advance_block_time_by(after_informal_voting_time);
+                    mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
+                }
+
+                it "emits proper event" {
+                    mock_voter_contract.assert_last_event(VotingEnded {
+                        voting_id: informal_voting.voting_id(),
+                        result: gv_consts::INFORMAL_VOTING_PASSED.into(),
+                        votes_count: U256::from(4),
+                        stake_in_favor: minimum_reputation * 3,
+                        stake_against: minimum_reputation,
+                        informal_voting_id: informal_voting.voting_id(),
+                        formal_voting_id: Some(informal_voting.voting_id() + 1),
+                    });
+                }
+
+                it "is completed" {
+                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
+                }
+
+                it "created new formal voting" {
+                    let formal_voting = mock_voter_contract.get_voting(informal_voting.voting_id() + 1).unwrap();
+                    assert_eq!(formal_voting.voting_id(), informal_voting.voting_id()+1);
+                    assert_eq!(formal_voting.informal_voting_id(), informal_voting.voting_id());
+                    assert_eq!(formal_voting.formal_voting_id(), Some(formal_voting.voting_id()));
+                    assert!(!formal_voting.completed());
+                }
+            }
+
+        }
+
+        describe "creating formal voting" {
+            before {
+                #[allow(unused_mut, unused_variables)]
+                let (mut mock_voter_contract, reputation_token_contract, formal_voting) = governance_voting_common::setup_voting_contract_with_formal_voting(informal_quorum, formal_quorum, total_onboarded);
+                #[allow(unused_variables)]
+                let creator = mock_voter_contract.get_env().get_account(0);
+            }
+
+            it "emits proper event" {
+                mock_voter_contract.assert_event_at(-3, VotingCreated {
+                    creator,
+                    voting_id: VotingId::one(),
+                    stake: minimum_reputation,
+                });
+            }
+
+            describe "when formal voting ends without reaching quorum" {
+                before {
+                    mock_voter_contract.advance_block_time_by(after_formal_voting_time);
+                    mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
+                }
+
+                it "emits proper event" {
+                    mock_voter_contract.assert_last_event(VotingEnded {
+                        voting_id: formal_voting.voting_id(),
+                        result: gv_consts::FORMAL_VOTING_QUORUM_NOT_REACHED.into(),
+                        votes_count: U256::from(1),
+                        stake_in_favor: minimum_reputation,
+                        stake_against: U256::zero(),
+                        informal_voting_id: VotingId::zero(),
+                        formal_voting_id: Some(VotingId::one()),
+                    });
+                }
+
+                it "is completed" {
+                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
+                }
+
+                it "does not perform its action" {
+                    let variable = mock_voter_contract.get_variable();
+                    assert_eq!(variable, "");
+                }
+            }
+
+            describe "when formal voting is rejected" {
+                before {
+                    governance_voting_common::mass_vote(1, 3, &mut mock_voter_contract, &formal_voting);
+                    mock_voter_contract.advance_block_time_by(after_formal_voting_time);
+                    mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
+                }
+
+                it "emits proper event" {
+                    mock_voter_contract.assert_last_event(VotingEnded {
+                        voting_id: formal_voting.voting_id(),
+                        result: gv_consts::FORMAL_VOTING_REJECTED.into(),
+                        votes_count: U256::from(4),
+                        stake_in_favor: minimum_reputation,
+                        stake_against: minimum_reputation * 3,
+                        informal_voting_id: VotingId::zero(),
+                        formal_voting_id: Some(VotingId::one()),
+                    });
+                }
+
+                it "is completed" {
+                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
+                }
+
+                it "does not perform its action" {
+                    let variable = mock_voter_contract.get_variable();
+                    assert_eq!(variable, "");
+                }
+            }
+
+            describe "when formal voting is completed" {
+                before {
+                    governance_voting_common::mass_vote(3, 1, &mut mock_voter_contract, &formal_voting);
+                    mock_voter_contract.advance_block_time_by(after_formal_voting_time);
+                    mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
+                }
+
+                it "emits proper event" {
+                    mock_voter_contract.assert_last_event(VotingEnded {
+                        voting_id: formal_voting.voting_id(),
+                        result: gv_consts::FORMAL_VOTING_PASSED.into(),
+                        votes_count: U256::from(4),
+                        stake_in_favor: minimum_reputation * 3,
+                        stake_against: minimum_reputation,
+                        informal_voting_id: VotingId::zero(),
+                        formal_voting_id: Some(VotingId::one()),
+                    });
+                }
+
+                it "is completed" {
+                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
+                }
+
+                it "does perform its action" {
+                    let variable = mock_voter_contract.get_variable();
+                    assert_ne!(variable, "");
+                }
+            }
+        }
+    }
 }

@@ -47,6 +47,10 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
 
         #[cfg(feature = "test-support")]
         impl casper_dao_utils::TestContract for #contract_test_ident {
+            fn get_env(&self) -> &casper_dao_utils::TestEnv {
+                &self.env
+            }
+
             fn get_package_hash(&self) -> casper_types::ContractPackageHash {
                 self.package_hash
             }
@@ -60,8 +64,23 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
                 self
             }
 
-            fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: u32) -> T {
-                let raw_event: std::option::Option<casper_types::bytesrepr::Bytes> = self.env.get_dict_value(self.package_hash, "events", index);
+            fn as_nth_account(&mut self, account: usize) -> &mut Self {
+                self.env.as_account(self.env.get_account(account));
+                self
+            }
+
+            fn advance_block_time_by(&mut self, seconds: u64) -> &mut Self {
+                self.env.advance_block_time_by(core::time::Duration::from_secs(seconds));
+                self
+            }
+
+            fn events_count(&self) -> i32 {
+                let length: u32 = self.env.get_value(self.package_hash, "events_length");
+                length as i32
+            }
+
+            fn event<T: casper_types::bytesrepr::FromBytes>(&self, index: i32) -> T {
+                let raw_event: std::option::Option<casper_types::bytesrepr::Bytes> = self.env.get_dict_value(self.package_hash, "events", self.index_to_u32(index));
                 let raw_event = raw_event.unwrap();
                 let (event, bytes) = T::from_bytes(&raw_event).unwrap();
                 assert!(bytes.is_empty());
@@ -69,19 +88,23 @@ fn generate_test_implementation(input: &CasperContractItem) -> Result<TokenStrea
             }
 
             fn assert_event_at<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, index: i32, event: T) {
-                let length: u32 = self.env.get_value(self.package_hash, "events_length");
-                let index: u32 = if index.is_negative() {
-                    length - index.wrapping_abs() as u32
-                } else {
-                    index as u32
-                };
-
                 assert_eq!(self.event::<T>(index), event);
             }
 
             fn assert_last_event<T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug>(&self, event: T) {
+                self.assert_event_at(-1, event);
+            }
+        }
+
+        #[cfg(feature = "test-support")]
+        impl #contract_test_ident {
+            fn index_to_u32(&self, index: i32) -> u32 {
                 let length: u32 = self.env.get_value(self.package_hash, "events_length");
-                assert_eq!(self.event::<T>(length - 1), event);
+                if index.is_negative() {
+                    length - index.wrapping_abs() as u32
+                } else {
+                    index as u32
+                }
             }
         }
     })

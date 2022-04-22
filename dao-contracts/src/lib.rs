@@ -1,3 +1,5 @@
+pub mod action;
+mod admin;
 #[doc(hidden)]
 pub mod mocks;
 mod repo_voter;
@@ -6,6 +8,7 @@ mod variable_repository;
 /// Utilities to manage the voting process
 pub mod voting;
 
+pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 #[doc(hidden)]
 pub use mocks::mock_voter::{
     MockVoterContract, MockVoterContractCaller, MockVoterContractInterface,
@@ -27,5 +30,8 @@ pub use variable_repository::VariableRepositoryContractTest;
 pub use repo_voter::RepoVoterContractTest;
 
 #[doc(hidden)]
+#[cfg(feature = "test-support")]
+pub use admin::AdminContractTest;
+
 #[cfg(feature = "test-support")]
 pub use mocks::mock_voter::MockVoterContractTest;

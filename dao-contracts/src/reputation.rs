@@ -2,7 +2,7 @@ use casper_dao_modules::{Owner, TokenWithStaking, Whitelist};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address,
+    Address, Variable,
 };
 use casper_types::U256;
 
@@ -123,6 +123,8 @@ pub trait ReputationContractInterface {
     fn get_staked_balance_of(&self, address: Address) -> U256;
 
     fn total_onboarded(&self) -> U256;
+
+    fn set_total_onboarded(&mut self, total: U256);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -131,6 +133,7 @@ pub struct ReputationContract {
     pub token: TokenWithStaking,
     pub owner: Owner,
     pub whitelist: Whitelist,
+    pub total_onboarded: Variable<U256>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -202,7 +205,10 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn total_onboarded(&self) -> U256 {
-        // TODO: To implement
-        U256::from(4)
+        self.total_onboarded.get()
+    }
+
+    fn set_total_onboarded(&mut self, total: U256) {
+        self.total_onboarded.set(total);
     }
 }

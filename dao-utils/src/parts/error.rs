@@ -12,6 +12,7 @@ pub enum Error {
     ValueNotAvailable,
     ActivationTimeInPast,
     ArithmeticOverflow,
+    BytesConversionError,
     Unknown,
     NoSuchMethod(String),
     InvalidContext,
@@ -25,13 +26,15 @@ pub enum Error {
     ApproveToCaller,
     InvalidTokenOwner,
     InformalVotingTimeNotReached,
-    FormalQuorumNotReached,
     FormalVotingTimeNotReached,
     VoteOnCompletedVotingNotAllowed,
     FinishingCompletedVotingNotAllowed,
     CannotVoteTwice,
-    BytesConversionError,
+    NotEnoughReputation,
     MappingIndexDoesNotExist,
+    BallotDoesNotExist,
+    VoterDoesNotExist,
+    ContractToCallNotSet,
 }
 
 impl From<Error> for ApiError {
@@ -60,12 +63,15 @@ impl From<Error> for ApiError {
             Error::ApproveToCaller => 1707,
             Error::InvalidTokenOwner => 1708,
             Error::InformalVotingTimeNotReached => 2101, // Voting errors start with 21xx
-            Error::FormalQuorumNotReached => 2102,
-            Error::FormalVotingTimeNotReached => 2103,
-            Error::VoteOnCompletedVotingNotAllowed => 2104,
-            Error::FinishingCompletedVotingNotAllowed => 2105,
-            Error::CannotVoteTwice => 2106,
+            Error::FormalVotingTimeNotReached => 2102,
+            Error::VoteOnCompletedVotingNotAllowed => 2103,
+            Error::FinishingCompletedVotingNotAllowed => 2104,
+            Error::CannotVoteTwice => 2105,
+            Error::NotEnoughReputation => 2106,
+            Error::ContractToCallNotSet => 2107,
             Error::MappingIndexDoesNotExist => 3404,
+            Error::BallotDoesNotExist => 3405,
+            Error::VoterDoesNotExist => 3406,
         };
         ApiError::User(id)
     }
@@ -94,12 +100,15 @@ impl From<u16> for Error {
             1707 => Error::ApproveToCaller,
             1708 => Error::InvalidTokenOwner,
             2101 => Error::InformalVotingTimeNotReached,
-            2102 => Error::FormalQuorumNotReached,
-            2103 => Error::FormalVotingTimeNotReached,
-            2104 => Error::VoteOnCompletedVotingNotAllowed,
-            2105 => Error::FinishingCompletedVotingNotAllowed,
-            2106 => Error::CannotVoteTwice,
+            2102 => Error::FormalVotingTimeNotReached,
+            2103 => Error::VoteOnCompletedVotingNotAllowed,
+            2104 => Error::FinishingCompletedVotingNotAllowed,
+            2105 => Error::CannotVoteTwice,
+            2106 => Error::NotEnoughReputation,
+            2107 => Error::ContractToCallNotSet,
             3404 => Error::MappingIndexDoesNotExist,
+            3405 => Error::BallotDoesNotExist,
+            3406 => Error::VoterDoesNotExist,
             _ => Error::Unknown,
         }
     }
