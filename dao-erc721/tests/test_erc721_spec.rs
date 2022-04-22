@@ -7,7 +7,7 @@ mod test {
         events::{Approval, ApprovalForAll, Transfer},
         ERC721Test, MockERC721NonReceiverTest, MockERC721ReceiverTest, Received, TokenId,
     };
-    use casper_dao_utils::{Address, BytesConversion, Error, TestEnv};
+    use casper_dao_utils::{Address, BytesConversion, Error, TestContract, TestEnv};
 
     speculate! {
         static NAME: &str = "Plascoin";

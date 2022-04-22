@@ -3,8 +3,7 @@ mod governance_voting_common;
 use speculate::speculate;
 
 use casper_dao_contracts::voting::{Choice, VotingId};
-
-use casper_dao_utils::Error;
+use casper_dao_utils::{Error, TestContract};
 use casper_types::U256;
 
 speculate! {

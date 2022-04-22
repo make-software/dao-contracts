@@ -11,6 +11,11 @@ use casper_types::{
 
 use self::events::ValueUpdated;
 
+/// A data struct stored in the repository.
+///
+/// The first value represents the current value.
+///
+/// The second value is an optional tuple consisting of the future value and its activation time.
 pub type Record = (Bytes, Option<(Bytes, u64)>);
 
 #[derive(Instance)]

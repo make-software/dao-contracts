@@ -5,9 +5,9 @@ use casper_dao_contracts::voting::{
     VotingEnded, VotingId,
 };
 use casper_dao_utils::Error;
-use speculate::speculate;
-
+use casper_dao_utils::TestContract;
 use casper_types::U256;
+use speculate::speculate;
 
 speculate! {
     context "governance voting" {

@@ -3,7 +3,7 @@ use casper_dao_modules::events::{
     AddedToWhitelist, Burn, Mint, OwnerChanged, RemovedFromWhitelist, TokensStaked, TokensUnstaked,
     Transfer,
 };
-use casper_dao_utils::{Error, TestEnv};
+use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
 
 #[test]

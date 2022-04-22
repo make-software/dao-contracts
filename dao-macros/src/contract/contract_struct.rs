@@ -123,11 +123,15 @@ pub mod interface {
 
     pub fn generate_code(model: &CasperContractItem) -> TokenStream {
         let id = &model.ident;
+        let contract_name = &model.contract_name();
 
         let mut methods = TokenStream::new();
         methods.append_all(&model.trait_methods);
 
         quote! {
+            #[doc = "Defines the "]
+            #[doc = #contract_name]
+            #[doc = " contract's public interface."]
             pub trait #id {
                 #methods
             }
