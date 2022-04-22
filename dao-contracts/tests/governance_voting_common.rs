@@ -5,7 +5,7 @@ use casper_dao_contracts::{
     VariableRepositoryContractTest,
 };
 
-use casper_dao_utils::{consts, Error, TestEnv};
+use casper_dao_utils::{consts, Error, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,

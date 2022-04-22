@@ -2,16 +2,19 @@ pub mod action;
 mod admin;
 mod dao_nft;
 mod kyc_voter;
+#[doc(hidden)]
 pub mod mocks;
 mod onboarding_voter;
 pub mod proxy;
 mod repo_voter;
 mod reputation;
 mod variable_repository;
+/// Utilities to manage the voting process
 pub mod voting;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 pub use dao_nft::{DaoOwnedNftContract, DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
+#[doc(hidden)]
 pub use mocks::mock_voter::{
     MockVoterContract, MockVoterContractCaller, MockVoterContractInterface,
 };
@@ -34,6 +37,7 @@ pub use variable_repository::VariableRepositoryContractTest;
 #[cfg(feature = "test-support")]
 pub use repo_voter::RepoVoterContractTest;
 
+#[doc(hidden)]
 #[cfg(feature = "test-support")]
 pub use admin::AdminContractTest;
 

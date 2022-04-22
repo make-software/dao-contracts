@@ -7,13 +7,10 @@ use casper_dao_utils::{
 use casper_types::U256;
 use delegate::delegate;
 
-// TODO: Put it lower.
-//
 // Interface of the Reputation Contract.
 //
 // It should be implemented by [`ReputationContract`], [`ReputationContractCaller`]
 // and [`ReputationContractTest`].
-
 #[casper_contract_interface]
 pub trait ReputationContractInterface {
     /// Constructor method.
@@ -24,8 +21,8 @@ pub trait ReputationContractInterface {
     /// * Set [`caller`] as the owner of the contract.
     /// * Add [`caller`] to the whitelist.
     ///
-    /// It emits [`OwnerChanged`](casper_dao_utils::owner::events::OwnerChanged),
-    /// [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) events.
+    /// It emits [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) events.
     fn init(&mut self);
 
     /// Mint new tokens. Add `amount` of new tokens to the balance of the `recipient` and
@@ -34,7 +31,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Mint`](casper_dao_utils::token::events::Mint) event.
+    /// It emits [`Mint`](casper_dao_modules::events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U256);
 
     /// Burn existing tokens. Remove `amount` of existing tokens from the balance of the `owner`
@@ -44,7 +41,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Burn`](casper_dao_utils::token::events::Burn) event.
+    /// It emits [`Burn`](casper_dao_modules::events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U256);
 
     /// Transfer `amount` of tokens from `owner` to `recipient`. Only whitelisted addresses are
@@ -56,7 +53,7 @@ pub trait ReputationContractInterface {
     /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
     /// if `recipient`'s balance is less then `amount`.
     ///
-    /// It emits [`Transfer`](casper_dao_utils::token::events::Transfer) event.
+    /// It emits [`Transfer`](casper_dao_modules::events::Transfer) event.
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
 
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
@@ -65,8 +62,8 @@ pub trait ReputationContractInterface {
     /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
-    /// It emits [`OwnerChanged`](casper_dao_utils::owner::events::OwnerChanged),
-    /// [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) events.
+    /// It emits [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) events.
     fn change_ownership(&mut self, owner: Address);
 
     /// Add new address to the whitelist.
@@ -74,7 +71,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
-    /// It emits [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) event.
+    /// It emits [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) event.
     fn add_to_whitelist(&mut self, address: Address);
 
     /// Remove address from the whitelist.
@@ -82,7 +79,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
-    /// It emits [`RemovedFromWhitelist`](casper_dao_utils::whitelist::events::RemovedFromWhitelist)
+    /// It emits [`RemovedFromWhitelist`](casper_dao_modules::events::RemovedFromWhitelist)
     /// event.
     fn remove_from_whitelist(&mut self, address: Address);
 
@@ -94,7 +91,7 @@ pub trait ReputationContractInterface {
     /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
     /// if `address`'s balance is less then `amount`.
     ///
-    /// It emits [`TokensStaked`](casper_dao_utils::staking::events::TokensStaked)
+    /// It emits [`TokensStaked`](casper_dao_modules::events::TokensStaked)
     /// event.
     fn stake(&mut self, address: Address, amount: U256);
 
@@ -107,18 +104,23 @@ pub trait ReputationContractInterface {
     /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
     /// if `address`'s staked amount is less then `amount`.
     ///
-    /// It emits [`TokensUnstaked`](casper_dao_utils::staking::events::TokensUnstaked)
+    /// It emits [`TokensUnstaked`](casper_dao_modules::events::TokensUnstaked)
     /// event.
     fn unstake(&mut self, address: Address, amount: U256);
 
+    /// Returns the address of the current owner.
     fn get_owner(&self) -> Option<Address>;
 
+    /// Returns the total token supply.
     fn total_supply(&self) -> U256;
 
+    /// Returns the current token balance of the given address.
     fn balance_of(&self, address: Address) -> U256;
 
+    /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
 
+    /// Returns the amount of staked tokens of the given address.
     fn get_staked_balance_of(&self, address: Address) -> U256;
 
     fn total_onboarded(&self) -> U256;

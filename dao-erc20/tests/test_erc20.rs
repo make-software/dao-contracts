@@ -2,7 +2,7 @@ use casper_dao_erc20::{
     events::{Approval, Transfer},
     ERC20Test,
 };
-use casper_dao_utils::{Error, TestEnv};
+use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
 
 static NAME: &str = "Plascoin";
