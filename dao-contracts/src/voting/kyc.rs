@@ -1,16 +1,18 @@
-use std::ops::Add;
-
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_dao_macros::Instance, Address, Error,
-    Variable,
+    Mapping, Variable,
 };
 use casper_types::U256;
 
 use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 
+use super::VotingId;
+
 #[derive(Instance)]
 pub struct KycInfo {
     kyc_token: Variable<Option<Address>>,
+    votings: Mapping<Address, bool>,
+    documents: Mapping<VotingId, String>,
 }
 
 impl KycInfo {
@@ -30,14 +32,22 @@ impl KycInfo {
     }
 
     pub(crate) fn set_voting(&self, address: &Address) {
-        todo!()
+        self.votings.set(address, true);
     }
 
     pub(crate) fn clear_voting(&self, address: &Address) {
-        todo!()
+        self.votings.set(address, false);
     }
 
     pub(crate) fn exists_ongoing_voting(&self, address: &Address) -> bool {
-        todo!()
+        self.votings.get(address)
+    }
+
+    pub(crate) fn set_document_hash(&mut self, voting_id: VotingId, document_hash: String) {
+        self.documents.set(&voting_id, document_hash);
+    }
+
+    pub(crate) fn get_document_hash(&self, voting_id: VotingId) -> Option<String> {
+        self.documents.get_or_none(&voting_id)
     }
 }

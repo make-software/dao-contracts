@@ -26,9 +26,10 @@ pub trait KycVoterContractInterface {
     fn get_variable_repo_address(&self) -> Address;
     fn get_reputation_token_address(&self) -> Address;
     fn get_kyc_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+    fn get_document_hash(&self, voting_id: VotingId) -> Option<String>;
 }
 
 #[derive(Instance)]
@@ -47,6 +48,7 @@ impl KycVoterContractInterface for KycVoterContract {
     delegate! {
         to self.kyc {
             fn get_kyc_token_address(&self) -> Address;
+            fn get_document_hash(&self, voting_id: VotingId) -> Option<String>;
         }
 
         to self.voting {
@@ -61,21 +63,22 @@ impl KycVoterContractInterface for KycVoterContract {
 
     fn create_voting(&mut self, address_to_onboard: Address, document_hash: String, stake: U256) {
         self.assert_no_ongoing_voting(&address_to_onboard);
+        self.assert_not_kyced(&address_to_onboard);
 
         let creator = caller();
         let contract_to_call = self.get_kyc_token_address();
-        self.assert_kyced(&address_to_onboard);
-
         let token_id = self.sequence.next_value();
-
         let runtime_args = runtime_args! {
             ARG_TO => address_to_onboard,
             ARG_TOKEN_ID => token_id,
         };
         let entry_point = ENTRY_POINT_MINT.to_string();
+
         self.voting
             .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
+
         self.kyc.set_voting(&address_to_onboard);
+        self.kyc.set_document_hash(1.into(), document_hash);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
@@ -110,8 +113,8 @@ impl KycVoterContract {
             .unwrap_or_revert_with(Error::UnexpectedOnboardingError)
     }
 
-    fn assert_kyced(&self, address: &Address) {
-        if !self.kyc.is_kycd(address) {
+    fn assert_not_kyced(&self, address: &Address) {
+        if self.kyc.is_kycd(address) {
             casper_env::revert(Error::VaNotKyced);
         }
     }
