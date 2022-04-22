@@ -157,7 +157,7 @@ impl OnboardingVoterContract {
         let voting = self
             .voting
             .get_voting(voting_id)
-            .unwrap_or_revert_with(Error::VoterDoesNotExist);
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
         // If the action is `Add` we pass an `Address` as the `to` parameter
         let arg = voting
@@ -166,7 +166,11 @@ impl OnboardingVoterContract {
             .find(|arg| arg.name() == ARG_TO);
 
         if let Some(to_arg) = arg {
-            return to_arg.cl_value().clone().into_t().unwrap();
+            return to_arg
+                .cl_value()
+                .clone()
+                .into_t()
+                .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
         }
 
         // If the action is `Remove` do not pass any `Address` but `token_id`
@@ -177,7 +181,11 @@ impl OnboardingVoterContract {
             .find(|arg| arg.name() == ARG_TOKEN_ID);
 
         if let Some(token_id_arg) = arg {
-            let token_id = token_id_arg.cl_value().clone().into_t().unwrap();
+            let token_id = token_id_arg
+                .cl_value()
+                .clone()
+                .into_t()
+                .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
             return self.onboarding.owner_of(token_id);
         }
 
