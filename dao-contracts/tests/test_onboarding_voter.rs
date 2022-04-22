@@ -2,7 +2,7 @@ use casper_dao_contracts::{
     DaoOwnedNftContractTest, OnboardingVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{Address, TestEnv};
+use casper_dao_utils::{Address, TestContract, TestEnv};
 use casper_types::U256;
 use speculate::speculate;
 

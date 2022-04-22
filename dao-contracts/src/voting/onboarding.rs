@@ -41,8 +41,10 @@ impl OnboardingInfo {
         self.dao_nft_caller().balance_of(address) > U256::zero()
     }
 
-    pub fn token_id_of(&self, address: &Address) -> Option<TokenId> {
-        self.dao_nft_caller().token_id(*address)
+    pub fn token_id_of(&self, address: &Address) -> TokenId {
+        self.dao_nft_caller()
+            .token_id(*address)
+            .unwrap_or_revert_with(Error::InvalidTokenOwner)
     }
 
     pub fn owner_of(&self, token_id: TokenId) -> Address {

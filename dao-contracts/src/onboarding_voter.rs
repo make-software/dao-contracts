@@ -127,7 +127,7 @@ impl OnboardingVoterContract {
         self.assert_onboarded(&subject_address);
         self.assert_has_reputation(&subject_address);
 
-        let token_id = self.onboarding.token_id_of(&subject_address).unwrap();
+        let token_id = self.onboarding.token_id_of(&subject_address);
 
         let runtime_args = runtime_args! {
             ARG_TOKEN_ID => token_id,
@@ -159,6 +159,7 @@ impl OnboardingVoterContract {
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VoterDoesNotExist);
 
+        // If the action is `Add` we pass an `Address` as the `to` parameter
         let arg = voting
             .runtime_args()
             .named_args()
@@ -168,6 +169,8 @@ impl OnboardingVoterContract {
             return to_arg.cl_value().clone().into_t().unwrap();
         }
 
+        // If the action is `Remove` do not pass any `Address` but `token_id`
+        // Having that we can obtain the `Address` by getting the token owner
         let arg = voting
             .runtime_args()
             .named_args()
@@ -178,6 +181,7 @@ impl OnboardingVoterContract {
             return self.onboarding.owner_of(token_id);
         }
 
+        // If the voting was created with some unexpected args an error is thrown
         casper_env::revert(Error::UnexpectedOnboardingError)
     }
 
