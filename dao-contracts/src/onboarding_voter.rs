@@ -115,8 +115,13 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
 
     fn finish_voting(&mut self, voting_id: VotingId) {
         let address = self.extract_address_from_args(voting_id);
-        self.voting.finish_voting(voting_id);
-        self.onboarding.clear_voting(&address);
+        let summary = self.voting.finish_voting(voting_id);
+        // The voting is ended when:
+        // 1. Informal voting has been rejected.
+        // 2. Formal voting has been finish (regardless of the final result).
+        if summary.is_voting_process_finished() {
+            self.onboarding.clear_voting(&address);
+        }
     }
 }
 

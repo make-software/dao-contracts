@@ -112,7 +112,14 @@ speculate! {
                         let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
-                        let voting_id = 1.into();
+                        let voting_id: casper_dao_contracts::voting::VotingId = 1.into();
+                    }
+
+                    test "that_add_voting_cannot_be_created" {
+                        assert_eq!(
+                            contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                            Err(Error::OnboardingAlreadyInProgress)
+                        )
                     }
 
                     context "voting_passed" {
