@@ -1,3 +1,4 @@
+//! Voting struct with logic for governance voting
 use crate::voting::ballot::{Choice, VotingId};
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
@@ -5,17 +6,20 @@ use casper_dao_utils::{
 };
 use casper_types::{RuntimeArgs, U256};
 
+/// Result of a Voting
 pub enum VotingResult {
     InFavor,
     Against,
     QuorumNotReached,
 }
 
+/// Type of Voting (Formal or Informal)
 pub enum VotingType {
     Informal,
     Formal,
 }
 
+/// Voting configuration, created and persisted since voting start
 #[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]
 pub struct VotingConfiguration {
     pub formal_voting_quorum: U256,

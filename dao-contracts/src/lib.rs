@@ -1,9 +1,13 @@
+//! A selection of contracts implemented for usage in DAO
+
+#[doc(hidden)]
 pub mod action;
 mod admin;
 #[doc(hidden)]
 pub mod mocks;
 mod repo_voter;
 mod reputation;
+/// Variable Repo
 mod variable_repository;
 /// Utilities to manage the voting process
 pub mod voting;

@@ -4,9 +4,8 @@ use casper_dao_utils::{
 };
 use casper_types::U256;
 
+/// Id of a Voting
 pub type VotingId = U256;
-pub type AccountId = usize;
-pub type ReputationAmount = usize;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]

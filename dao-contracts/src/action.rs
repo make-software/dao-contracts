@@ -1,6 +1,6 @@
 use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
 
-/// Enum for actions that (AdminContract)[AdminContract] can perform
+/// Enum for actions that (AdminContract)[crate::AdminContract] can perform
 ///
 /// - `AddToWhitelists` - calls `add_to_whitelist` method
 /// - `RemoveFromWhitelist` - calls `remove_from_whitelist` method

@@ -3,6 +3,7 @@ use casper_types::U256;
 
 use crate::voting::ballot::{Choice, VotingId};
 
+/// Event thrown after voting contract is created
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingContractCreated {
     pub voter_contract: Address,
@@ -10,14 +11,16 @@ pub struct VotingContractCreated {
     pub reputation_token: Address,
 }
 
+/// Event thrown after ballot is cast
 #[derive(Debug, PartialEq, Event)]
-pub struct VoteCast {
+pub struct BallotCast {
     pub voter: Address,
     pub voting_id: VotingId,
     pub choice: Choice,
     pub stake: U256,
 }
 
+/// Event thrown after voting is created
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingCreated {
     pub creator: Address,
@@ -25,6 +28,7 @@ pub struct VotingCreated {
     pub stake: U256,
 }
 
+/// Event thrown when voting ends
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingEnded {
     pub voting_id: U256,

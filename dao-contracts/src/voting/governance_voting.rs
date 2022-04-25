@@ -18,7 +18,7 @@ use crate::{
 };
 
 use self::{
-    events::{VoteCast, VotingContractCreated, VotingCreated},
+    events::{BallotCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
@@ -78,7 +78,7 @@ impl GovernanceVoting {
     ///
     /// It automatically casts first vote in favor in name of the creator.
     ///
-    /// Emits [VotingCreated](VotingCreated), [VoteCast](VoteCast)
+    /// Emits [VotingCreated](VotingCreated), [BallotCast](BallotCast)
     ///
     /// Throws `Error::NotEnoughReputation`
     pub fn create_voting(
@@ -148,7 +148,7 @@ impl GovernanceVoting {
     /// For formal voting an action will be performed if the result is in favor. Reputation is redistributed to the winning voters. When no quorum is reached,
     /// the reputation is returned, except for the creator - its reputation is then burned.
     ///
-    /// Emits [VotingEnded](VotingEnded), [VotingCreated](VotingCreated), [VoteCast](VoteCast)
+    /// Emits [VotingEnded](VotingEnded), [VotingCreated](VotingCreated), [BallotCast](BallotCast)
     ///
     /// Throws `Error::FinishingCompletedVotingNotAllowed`, `Error::FormalVotingTimeNotReached`, `Error::InformalVotingTimeNotReached`, `Error::ArithmeticOverflow`
     pub fn finish_voting(&mut self, voting_id: VotingId) {
@@ -267,7 +267,7 @@ impl GovernanceVoting {
 
     /// Casts a vote
     ///
-    /// Emits [VoteCast](VoteCast)
+    /// Emits [BallotCast](BallotCast)
     ///
     /// Throws `Error::VoteOnCompletedVotingNotAllowed`, `Error::CannotVoteTwice`
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
@@ -307,7 +307,7 @@ impl GovernanceVoting {
         voting.stake(stake, choice);
         self.set_voting(voting);
 
-        emit(VoteCast {
+        emit(BallotCast {
             voter,
             voting_id,
             choice,
