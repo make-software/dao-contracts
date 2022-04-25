@@ -17,6 +17,7 @@ pub enum VotingType {
     Formal,
 }
 
+#[allow(dead_code)]
 pub struct VotingSummary {
     result: VotingResult,
     ty: VotingType,

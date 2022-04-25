@@ -11,6 +11,7 @@ speculate! {
     use casper_dao_contracts::voting::{Choice, onboarding};
     use casper_dao_utils::Error;
     use std::time::Duration;
+    use casper_dao_contracts::voting::VotingId;
 
     before {
         #[allow(unused_variables, unused_mut)]
@@ -112,7 +113,8 @@ speculate! {
                         let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
-                        let voting_id: casper_dao_contracts::voting::VotingId = 1.into();
+                        #[allow(unused_variables)]
+                        let voting_id: VotingId = 1.into();
                     }
 
                     test "that_add_voting_cannot_be_created" {
