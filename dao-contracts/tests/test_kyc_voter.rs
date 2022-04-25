@@ -10,6 +10,8 @@ speculate! {
     use casper_types::U256;
     use casper_dao_utils::Error;
     use std::time::Duration;
+    use casper_dao_contracts::voting::VotingId;
+    use casper_dao_contracts::voting::Choice;
 
     before {
         #[allow(unused_variables, unused_mut)]
@@ -30,7 +32,6 @@ speculate! {
     }
 
     describe "voting" {
-
         test "kyc_token_address_is_set" {
             assert_eq!(
                 contract.get_kyc_token_address(),
@@ -45,43 +46,91 @@ speculate! {
 
             test "voting_creation_succeeds" {
                 assert_eq!(
-                    contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
+                    contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount),
                     Ok(())
                 );
             }
 
             context "voting_is_created" {
                 before {
-                    contract.as_account(voter).create_voting(applicant, document_hash, vote_amount).unwrap();
+                    let voting_id: VotingId = 0.into();
+                    contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount).unwrap();
                 }
 
-                test "cannot_create_next_voting_on_the_same_applicant" {
-
+                test "cannot_create_next_voting_for_the_same_applicant" {
+                    assert_eq!(
+                        contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
+                        Err(Error::KycAlreadyInProgress)
+                    );
                 }
 
-                test "can_create_next_voting_on_a_different_applicant" {
-
+                test "can_create_next_voting_for_a_different_applicant" {
+                    assert_eq!(
+                        contract.as_account(voter).create_voting(another_applicant, document_hash, vote_amount),
+                        Ok(())
+                    );
                 }
 
                 test "document_hash_is_available" {
-
+                    assert_eq!(
+                        contract.get_document_hash(voting_id),
+                        Some(document_hash)
+                    )
                 }
 
                 context "voting_finished" {
+                    before {
+                        let voting_id = 0.into();
+                        let voting = contract.get_voting(voting_id).unwrap();
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
+                        contract.as_account(voter).finish_voting(voting_id).unwrap();
+                        let voting_id: VotingId = 1.into();
+                    }
 
                     test "document_hash_is_available" {
-
+                        assert_eq!(
+                            contract.get_document_hash(voting_id),
+                            Some(document_hash)
+                        );
                     }
 
                     context "passed" {
-                        test "applicant_owns_kyc_token" {
+                        before {
+                            contract.as_account(second_voter).vote(voting_id, Choice::InFavor,  vote_amount).unwrap();
+                            env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                            contract.as_account(voter).finish_voting(voting_id).unwrap();
+                            let voting = contract.get_voting(voting_id).unwrap();
+                            println!("voting = {:?}", voting);
+                        }
 
+                        test "applicant_owns_kyc_token" {
+                            assert_eq!(
+                                kyc_token.balance_of(applicant),
+                                U256::one()
+                            );
                         }
                     }
 
                     context "rejected" {
-                        test "next_voting_creation_on_the_same_applicant_succeds" {
+                        before {
+                            contract.as_account(second_voter).vote(voting_id, Choice::Against, vote_amount + U256::one()).unwrap();
+                            env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
+                            contract.as_account(voter).finish_voting(voting_id).unwrap();
+                            let voting = contract.get_voting(voting_id).unwrap();
+                            println!("voting = {:?}", voting);
+                        }
+                        test "next_voting_creation_for_the_same_applicant_succeeds" {
+                            assert_eq!(
+                                contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
+                                Ok(())
+                            );
+                        }
 
+                        test "applicant_does_not_own_kyc_token" {
+                            assert_eq!(
+                                kyc_token.balance_of(applicant),
+                                U256::zero()
+                            );
                         }
                     }
                 }
@@ -90,13 +139,13 @@ speculate! {
 
         context "applicant_is_kyced" {
             before {
-                assert_eq!(kyc_token.balance_of(applicant), U256::one());
+                kyc_token.mint(applicant, 1.into()).unwrap();
             }
 
             test "voting_cannot_be_created" {
                 assert_eq!(
                     contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
-                    Err(Error::VaNotKyced)
+                    Err(Error::UserKycedAlready)
                 );
             }
         }
@@ -144,8 +193,9 @@ fn setup() -> (
         .change_ownership(onboarding_voter.address())
         .unwrap();
     let applicant = env.get_account(1);
-    let voter = env.get_account(2);
-    let second_voter = env.get_account(3);
+    let another_applicant = env.get_account(2);
+    let voter = env.get_account(3);
+    let second_voter = env.get_account(4);
     // The voter has to have some tokens
     let mint_amount = 10_000.into();
     let vote_amount = 1_000.into();
