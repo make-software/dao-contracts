@@ -5,6 +5,7 @@ use casper_dao_utils::{
 };
 use casper_types::{RuntimeArgs, U256};
 
+#[derive(PartialEq)]
 pub enum VotingResult {
     InFavor,
     Against,
@@ -14,6 +15,51 @@ pub enum VotingResult {
 pub enum VotingType {
     Informal,
     Formal,
+}
+
+pub struct VotingSummary {
+    result: VotingResult,
+    ty: VotingType,
+    informal_voting_id: VotingId,
+    formal_voting_id: Option<VotingId>,
+}
+
+impl VotingSummary {
+    pub fn new(
+        result: VotingResult,
+        ty: VotingType,
+        informal_voting_id: VotingId,
+        formal_voting_id: Option<VotingId>,
+    ) -> Self {
+        Self {
+            result,
+            ty,
+            informal_voting_id,
+            formal_voting_id,
+        }
+    }
+
+    pub fn is_voting_process_finished(&self) -> bool {
+        match self.ty {
+            VotingType::Informal => self.is_rejected(),
+            VotingType::Formal => true,
+        }
+    }
+
+    pub fn is_informal_voting_in_favor(&self) -> bool {
+        match self.ty {
+            VotingType::Informal => self.result == VotingResult::InFavor,
+            VotingType::Formal => false,
+        }
+    }
+
+    pub fn formal_voting_id(&self) -> Option<VotingId> {
+        self.formal_voting_id
+    }
+
+    fn is_rejected(&self) -> bool {
+        vec![VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
+    }
 }
 
 #[derive(Debug, Default, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]

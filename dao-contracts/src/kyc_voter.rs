@@ -74,11 +74,12 @@ impl KycVoterContractInterface for KycVoterContract {
         };
         let entry_point = ENTRY_POINT_MINT.to_string();
 
-        self.voting
-            .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
+        let voting_id =
+            self.voting
+                .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
 
         self.kyc.set_voting(&address_to_onboard);
-        self.kyc.set_document_hash(1.into(), document_hash);
+        self.kyc.set_document_hash(voting_id, document_hash);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
@@ -87,20 +88,36 @@ impl KycVoterContractInterface for KycVoterContract {
     }
 
     fn finish_voting(&mut self, voting_id: VotingId) {
-        let address = self.extract_address_from_args(voting_id);
-        self.voting.finish_voting(voting_id);
-        self.kyc.clear_voting(&address);
+        let summary = self.voting.finish_voting(voting_id);
+        // The voting is ended when:
+        // 1. Informal voting has been rejected.
+        // 2. Formal voting has been finish (regardless of the final result).
+        if summary.is_voting_process_finished() {
+            let voting = self
+                .voting
+                .get_voting(voting_id)
+                .unwrap_or_revert_with(Error::VotingDoesNotExist);
+            let address = self.extract_address_from_args(&voting);
+            self.kyc.clear_voting(&address);
+        }
+
+        // If informal voting turns into formal voting, the same document hash should be available for
+        // both formal and informal voting the hash is extracted from the informal voting.
+        if summary.is_informal_voting_in_favor() {
+            let document_hash = self
+                .get_document_hash(voting_id)
+                .unwrap_or_revert_with(Error::UnexpectedKycError);
+            let formal_voting_id = summary
+                .formal_voting_id()
+                .unwrap_or_revert_with(Error::UnexpectedKycError);
+            self.kyc.set_document_hash(formal_voting_id, document_hash);
+        }
     }
 }
 
 // non-contract implementation
 impl KycVoterContract {
-    fn extract_address_from_args(&self, voting_id: VotingId) -> Address {
-        let voting = self
-            .voting
-            .get_voting(voting_id)
-            .unwrap_or_revert_with(Error::VotingDoesNotExist);
-
+    fn extract_address_from_args(&self, voting: &Voting) -> Address {
         let arg = voting
             .runtime_args()
             .named_args()
@@ -115,13 +132,13 @@ impl KycVoterContract {
 
     fn assert_not_kyced(&self, address: &Address) {
         if self.kyc.is_kycd(address) {
-            casper_env::revert(Error::VaNotKyced);
+            casper_env::revert(Error::UserKycedAlready);
         }
     }
 
     fn assert_no_ongoing_voting(&self, address: &Address) {
         if self.kyc.exists_ongoing_voting(address) {
-            casper_env::revert(Error::OnboardingAlreadyInProgress);
+            casper_env::revert(Error::KycAlreadyInProgress);
         }
     }
 }

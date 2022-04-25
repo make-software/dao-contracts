@@ -16,6 +16,7 @@ use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 use crate::proxy::reputation_proxy::ReputationContractProxy;
 use crate::proxy::variable_repo_proxy::VariableRepoContractProxy;
 
+use self::voting::VotingSummary;
 use self::{
     events::{VoteCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
@@ -62,7 +63,7 @@ impl GovernanceVoting {
         contract_to_call: Address,
         entry_point: String,
         runtime_args: RuntimeArgs,
-    ) {
+    ) -> VotingId {
         let variable_repo_address = self.get_variable_repo_address();
         let reputation_token_address = self.get_reputation_token_address();
         let minimum_governance_reputation =
@@ -107,10 +108,13 @@ impl GovernanceVoting {
 
         // Cast first vote in favor
         self.vote(creator, voting_id, Choice::InFavor, stake);
+        voting_id
     }
 
-    pub fn finish_voting(&mut self, voting_id: VotingId) {
-        let voting = self.get_voting(voting_id).unwrap_or_revert();
+    pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {
+        let voting = self
+            .get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
@@ -122,12 +126,13 @@ impl GovernanceVoting {
         }
     }
 
-    fn finish_informal_voting(&mut self, mut voting: Voting) {
+    fn finish_informal_voting(&mut self, mut voting: Voting) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
         let voters_len = self.voters.len(voting.voting_id());
-        let result = match voting.get_result(voters_len) {
+        let voting_result = voting.get_result(voters_len);
+        let result = match voting_result {
             VotingResult::InFavor => {
                 self.return_reputation(voting.voting_id());
 
@@ -173,27 +178,37 @@ impl GovernanceVoting {
             }
         };
 
+        let informal_voting_id = voting.voting_id();
+        let formal_voting_id = voting.formal_voting_id();
         emit(VotingEnded {
-            voting_id: voting.voting_id(),
+            voting_id: informal_voting_id,
             result: result.into(),
             votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
-            informal_voting_id: voting.informal_voting_id(),
+            informal_voting_id,
             formal_voting_id: voting.formal_voting_id(),
         });
 
         self.set_voting(voting);
+
+        VotingSummary::new(
+            voting_result,
+            VotingType::Informal,
+            informal_voting_id,
+            formal_voting_id,
+        )
     }
 
-    fn finish_formal_voting(&mut self, mut voting: Voting) {
+    fn finish_formal_voting(&mut self, mut voting: Voting) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::FormalVotingTimeNotReached)
         }
 
         let voters_len = self.voters.len(voting.voting_id());
+        let voting_result = voting.get_result(voters_len);
 
-        let result = match voting.get_result(voters_len) {
+        let result = match voting_result {
             VotingResult::InFavor => {
                 self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
@@ -209,18 +224,27 @@ impl GovernanceVoting {
             }
         };
 
+        let formal_voting_id = voting.voting_id();
+        let informal_voting_id = voting.informal_voting_id();
         emit(VotingEnded {
-            voting_id: voting.voting_id(),
+            voting_id: formal_voting_id,
             result: result.into(),
             votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
-            informal_voting_id: voting.informal_voting_id(),
-            formal_voting_id: Some(voting.voting_id()),
+            informal_voting_id,
+            formal_voting_id: Some(formal_voting_id),
         });
 
         voting.complete(None);
         self.set_voting(voting);
+
+        VotingSummary::new(
+            voting_result,
+            VotingType::Formal,
+            informal_voting_id,
+            Some(formal_voting_id),
+        )
     }
 
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {

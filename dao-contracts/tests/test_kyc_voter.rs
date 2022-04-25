@@ -46,14 +46,14 @@ speculate! {
 
             test "voting_creation_succeeds" {
                 assert_eq!(
-                    contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount),
+                    contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
                     Ok(())
                 );
             }
 
             context "voting_is_created" {
                 before {
-                    let voting_id: VotingId = 0.into();
+                    #[allow(clippy::redundant_clone)]
                     contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount).unwrap();
                 }
 
@@ -72,18 +72,20 @@ speculate! {
                 }
 
                 test "document_hash_is_available" {
+                    let voting_id: VotingId = 0.into();
                     assert_eq!(
                         contract.get_document_hash(voting_id),
                         Some(document_hash)
                     )
                 }
 
-                context "voting_finished" {
+                context "informal_voting_passed" {
                     before {
                         let voting_id = 0.into();
                         let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(voter).finish_voting(voting_id).unwrap();
+                        #[allow(unused_variables)]
                         let voting_id: VotingId = 1.into();
                     }
 
@@ -94,13 +96,18 @@ speculate! {
                         );
                     }
 
+                    test "cannot_create_next_voting_for_the_same_applicant" {
+                        assert_eq!(
+                            contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
+                            Err(Error::KycAlreadyInProgress)
+                        );
+                    }
+
                     context "passed" {
                         before {
                             contract.as_account(second_voter).vote(voting_id, Choice::InFavor,  vote_amount).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(voter).finish_voting(voting_id).unwrap();
-                            let voting = contract.get_voting(voting_id).unwrap();
-                            println!("voting = {:?}", voting);
                         }
 
                         test "applicant_owns_kyc_token" {
@@ -116,8 +123,6 @@ speculate! {
                             contract.as_account(second_voter).vote(voting_id, Choice::Against, vote_amount + U256::one()).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(voter).finish_voting(voting_id).unwrap();
-                            let voting = contract.get_voting(voting_id).unwrap();
-                            println!("voting = {:?}", voting);
                         }
                         test "next_voting_creation_for_the_same_applicant_succeeds" {
                             assert_eq!(
