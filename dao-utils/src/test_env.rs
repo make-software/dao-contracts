@@ -16,7 +16,7 @@ use casper_types::{
     account::{AccountHash, Account},
     bytesrepr::{self, Bytes, FromBytes, ToBytes},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
-    SecretKey, URef, U512, Gas,
+    SecretKey, URef, U512,
 };
 
 use blake2::{
@@ -25,7 +25,7 @@ use blake2::{
 };
 
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
-pub use casper_engine_test_support::DEFAULT_PAYMENT;
+use casper_engine_test_support::DEFAULT_PAYMENT;
 
 /// CasperVM based testing environment.
 #[derive(Clone)]
@@ -211,7 +211,6 @@ impl TestEnvState {
             .with_block_time(self.block_time)
             .build();
         self.context.exec(execute_request).commit();
-        self.collect_gas();
 
         let active_account = self.active_account_hash();
 
@@ -223,15 +222,14 @@ impl TestEnvState {
         } else {
             Ok(None)
         };
+        self.collect_gas();
         self.active_account = self.get_account(0);
         result
     }
 
     fn collect_gas(&mut self) {
-        let cost: U512 = self.context.last_exec_gas_cost().value();
-        dbg!(cost);
-        *self.gas_used.entry(self.active_account).or_insert(U512::zero()) += cost;
-        dbg!(&self.gas_used);
+        // let cost: U512 = self.context.last_exec_gas_cost().value();
+        *self.gas_used.entry(self.active_account).or_insert(U512::zero()) += *DEFAULT_PAYMENT;
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -336,7 +334,10 @@ impl TestEnvState {
         };
         let account: Account = self.context.get_account(*account.as_account_hash().unwrap()).unwrap();
         let purse = account.main_purse();
-        self.context.get_purse_balance(purse) + gas_used
+        let val = self.context.get_purse_balance(purse) + gas_used;
+        dbg!(self.context.get_exec_results_count());
+        // dbg!(val);
+        val
     }
 }
 
