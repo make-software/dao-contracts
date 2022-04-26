@@ -38,7 +38,7 @@ impl OnboardingInfo {
     }
 
     pub fn is_onboarded(&self, &address: &Address) -> bool {
-        self.dao_nft_caller().balance_of(address) > U256::zero()
+        !self.dao_nft_caller().balance_of(address).is_zero()
     }
 
     pub fn token_id_of(&self, address: &Address) -> TokenId {
