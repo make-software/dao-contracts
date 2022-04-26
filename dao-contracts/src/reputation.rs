@@ -17,7 +17,7 @@ pub trait ReputationContractInterface {
     ///
     /// It initializes contract elements:
     /// * Events dictionary.
-    /// * Named keys of [`TokenWithStaking`], [`Owner`] and [`Whitelist`].
+    /// * Named keys of [`TokenWithStaking`], [`AccessControl`].
     /// * Set [`caller`] as the owner of the contract.
     /// * Add [`caller`] to the whitelist.
     ///
