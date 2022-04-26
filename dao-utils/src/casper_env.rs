@@ -1,17 +1,17 @@
 use std::{collections::BTreeSet, convert::TryInto};
 
 use casper_contract::{
-    contract_api::{runtime, storage},
+    contract_api::{runtime, storage, system::create_purse},
     unwrap_or_revert::UnwrapOrRevert,
 };
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    ApiError, CLTyped, ContractPackageHash, EntryPoints, RuntimeArgs, URef,
+    ApiError, CLTyped, ContractPackageHash, EntryPoints, RuntimeArgs, URef, Key,
 };
 
-use crate::{events::Events, Address};
+use crate::{events::Events, Address, consts::CONTRACT_MAIN_PURSE};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
@@ -135,4 +135,15 @@ pub fn get_block_time() -> u64 {
 
 pub fn revert<T: Into<ApiError>>(error: T) -> ! {
     runtime::revert(error);
+}
+
+pub fn contract_main_purse() -> URef {
+    match runtime::get_key(CONTRACT_MAIN_PURSE) {
+        None => {
+            let main_purse = create_purse();
+            runtime::put_key(CONTRACT_MAIN_PURSE, Key::from(main_purse));
+            main_purse
+        },
+        Some(value) => *value.as_uref().unwrap_or_revert()
+    }
 }

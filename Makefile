@@ -6,6 +6,7 @@ prepare:
 	rustup target add wasm32-unknown-unknown
 	cargo install cargo-expand
 
+
 build-proxy-getter:
 	$(CARGO_BUILD) -p casper-dao-utils --bin getter_proxy
 	@wasm-strip $(OUTPUT_DIR)/getter_proxy.wasm 2>/dev/null | true
@@ -22,6 +23,8 @@ build-dao-contracts:
 
 build-erc20:
 	$(CARGO_BUILD) -p casper-dao-erc20
+	$(CARGO_BUILD) -p casper-dao-erc20 --bin send_cspr
+	@wasm-strip $(OUTPUT_DIR)/send_cspr.wasm 2>/dev/null | true
 
 build-erc721:
 	$(CARGO_BUILD) -p casper-dao-erc721

@@ -29,7 +29,7 @@ pub use conversions::BytesConversion;
 mod test_env;
 
 #[cfg(feature = "test-support")]
-pub use test_env::{ExecutionError, TestEnv};
+pub use test_env::{ExecutionError, TestEnv, DEFAULT_PAYMENT};
 
 #[cfg(feature = "test-support")]
 mod test_contract;

@@ -42,3 +42,7 @@ pub const VOTING_TIME: &str = "voting_time";
 pub const MINIMUM_GOVERNANCE_REPUTATION: &str = "minimum_governance_reputation";
 pub const MINIMUM_VOTING_REPUTATION: &str = "minimum_voting_reputation";
 pub const FLOAT_DIVISOR: &str = "float_divisor";
+
+// Contract keys.
+pub const CONTRACT_MAIN_PURSE: &str = "__contract_main_purse";
+
