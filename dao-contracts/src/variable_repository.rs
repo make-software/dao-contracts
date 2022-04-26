@@ -164,7 +164,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 }
 
 impl VariableRepositoryContractCaller {
-    /// Retrieves a value for the given key and returns a deserialized struct.
+    /// Retrieves the value for the given key and returns a deserialized struct.
     ///
     /// # Errors
     /// Throws [`ValueNotAvailable`](casper_dao_utils::Error::NotAnOwner) if a value
@@ -178,18 +178,22 @@ impl VariableRepositoryContractCaller {
         variable
     }
 
+    /// Retrieves the value stored under the [INFORMAL_VOTING_TIME](dao_consts::INFORMAL_VOTING_TIME) key.
     pub fn informal_voting_time(&self) -> u64 {
         self.get_variable(dao_consts::INFORMAL_VOTING_TIME)
     }
 
+    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
     pub fn formal_voting_time(&self) -> u64 {
         self.get_variable(dao_consts::FORMAL_VOTING_TIME)
     }
 
+    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
     pub fn minimum_governance_reputation(&self) -> U256 {
         self.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
     }
 
+    /// Retrieves a normalized value stored under the [INFORMAL_VOTING_QUORUM](dao_consts::INFORMAL_VOTING_QUORUM) key.
     pub fn informal_voting_quorum(&self, total_onboarded: U256) -> U256 {
         math::promils_of(
             total_onboarded,
@@ -198,6 +202,7 @@ impl VariableRepositoryContractCaller {
         .unwrap_or_revert()
     }
 
+    /// Retrieves a normalized value stored under the [FORMAL_VOTING_QUORUM](dao_consts::FORMAL_VOTING_QUORUM) key.
     pub fn formal_voting_quorum(&self, total_onboarded: U256) -> U256 {
         math::promils_of(
             total_onboarded,
