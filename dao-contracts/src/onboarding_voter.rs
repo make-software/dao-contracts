@@ -7,13 +7,13 @@ use casper_dao_utils::{
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::{
-    proxy::reputation_proxy::ReputationContractProxy,
     voting::{
-        kyc::KycInfo,
-        onboarding::{self, OnboardingInfo},
+        kyc_info::KycInfo,
+        onboarding_info::{OnboardingAction, OnboardingInfo},
         voting::Voting,
         Ballot, Choice, GovernanceVoting, VotingId,
     },
+    ReputationContractCaller,
 };
 use delegate::delegate;
 
@@ -40,7 +40,7 @@ pub trait OnboardingVoterContractInterface {
     // For Removing existing VA:
     // - Check if VA is already onboarderd.
     // - Check if `address` has positive reputation amount.
-    fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256);
+    fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256);
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
@@ -93,12 +93,12 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         }
     }
 
-    fn create_voting(&mut self, action: onboarding::Action, subject_address: Address, stake: U256) {
+    fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256) {
         self.assert_no_ongoing_voting(&subject_address);
 
         let (entry_point, runtime_args) = match action {
-            onboarding::Action::Add => self.configure_add_voting(subject_address),
-            onboarding::Action::Remove => self.configure_remove_voting(subject_address),
+            OnboardingAction::Add => self.configure_add_voting(subject_address),
+            OnboardingAction::Remove => self.configure_remove_voting(subject_address),
         };
         let creator = caller();
         let contract_to_call = self.get_va_token_address();
@@ -120,7 +120,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
     }
 }
 
-// non-contract implementation
+// non-public implementation
 impl OnboardingVoterContract {
     fn configure_remove_voting(&mut self, subject_address: Address) -> (String, RuntimeArgs) {
         self.assert_onboarded(&subject_address);
@@ -193,7 +193,8 @@ impl OnboardingVoterContract {
     }
 
     fn assert_has_reputation(&self, address: &Address) {
-        if !ReputationContractProxy::has_reputation(self.get_reputation_token_address(), address) {
+        let caller = ReputationContractCaller::at(self.get_reputation_token_address());
+        if !caller.has_reputation(address) {
             casper_env::revert(Error::InsufficientBalance)
         }
     }

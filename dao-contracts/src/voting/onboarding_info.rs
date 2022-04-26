@@ -1,12 +1,10 @@
+use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
     Address, Error, Mapping, Variable,
 };
-use casper_types::U256;
-
-use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 
 #[derive(Instance)]
 pub struct OnboardingInfo {
@@ -57,7 +55,7 @@ impl OnboardingInfo {
 }
 
 #[derive(ToBytes, FromBytes, CLTyped)]
-pub enum Action {
+pub enum OnboardingAction {
     Add,
     Remove,
 }

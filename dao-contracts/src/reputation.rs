@@ -197,3 +197,10 @@ impl ReputationContractInterface for ReputationContract {
         self.total_onboarded.set(total);
     }
 }
+
+impl ReputationContractCaller {
+    /// Indicates whether balance of the `address` is greater than 0.
+    pub fn has_reputation(&self, address: &Address) -> bool {
+        !self.balance_of(*address).is_zero()
+    }
+}

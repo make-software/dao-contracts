@@ -3,9 +3,12 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
-    Address, Error,
+    consts as dao_consts, math, Address, Error,
 };
-use casper_types::bytesrepr::{Bytes, FromBytes};
+use casper_types::{
+    bytesrepr::{Bytes, FromBytes},
+    U256,
+};
 use delegate::delegate;
 
 // Interface of the Variable Repository Contract.
@@ -173,5 +176,33 @@ impl VariableRepositoryContractCaller {
             revert(Error::ValueNotAvailable)
         }
         variable
+    }
+
+    pub fn informal_voting_time(&self) -> u64 {
+        self.get_variable(dao_consts::INFORMAL_VOTING_TIME)
+    }
+
+    pub fn formal_voting_time(&self) -> u64 {
+        self.get_variable(dao_consts::FORMAL_VOTING_TIME)
+    }
+
+    pub fn minimum_governance_reputation(&self) -> U256 {
+        self.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
+    }
+
+    pub fn informal_voting_quorum(&self, total_onboarded: U256) -> U256 {
+        math::promils_of(
+            total_onboarded,
+            self.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
+        )
+        .unwrap_or_revert()
+    }
+
+    pub fn formal_voting_quorum(&self, total_onboarded: U256) -> U256 {
+        math::promils_of(
+            total_onboarded,
+            self.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
+        )
+        .unwrap_or_revert()
     }
 }

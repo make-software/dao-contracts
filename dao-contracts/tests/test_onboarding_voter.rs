@@ -8,7 +8,7 @@ use speculate::speculate;
 
 speculate! {
     use casper_types::U256;
-    use casper_dao_contracts::voting::{Choice, onboarding};
+    use casper_dao_contracts::voting::{Choice, onboarding_info::OnboardingAction};
     use casper_dao_utils::Error;
     use std::time::Duration;
 
@@ -52,7 +52,7 @@ speculate! {
 
             test "remove_user_voting_creation_fails" {
                 assert_eq!(
-                    contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                    contract.as_account(va).create_voting(OnboardingAction::Remove, user, vote_amount),
                     Err(Error::VaNotOnboarded)
                 )
             }
@@ -65,7 +65,7 @@ speculate! {
 
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                        contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
                         Err(Error::VaNotKyced)
                     )
                 }
@@ -79,7 +79,7 @@ speculate! {
 
                 test "voting_creation_fails" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                        contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
                         Err(Error::InsufficientBalance)
                     )
                 }
@@ -89,19 +89,19 @@ speculate! {
                 before {
                     reputation_token.mint(user, mint_amount).unwrap();
                     kyc_token.mint(user, 1.into()).unwrap();
-                    contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount).unwrap();
+                    contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount).unwrap();
                 }
 
                 test "that_add_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                        contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
 
                 test "that_remove_voting_cannot_be_created" {
                     assert_eq!(
-                        contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                        contract.as_account(va).create_voting(OnboardingAction::Remove, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
@@ -117,7 +117,7 @@ speculate! {
 
                     context "voting_passed" {
                         before {
-                            contract.as_account(second_va).vote(voting_id, Choice::InFavor,  vote_amount).unwrap();
+                            contract.as_account(second_va).vote(voting_id, Choice::InFavor, vote_amount).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(va).finish_voting(voting_id).unwrap();
                         }
@@ -128,7 +128,7 @@ speculate! {
 
                         test "remove_voting_creation_succeeds" {
                             assert_eq!(
-                                contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                                contract.as_account(va).create_voting(OnboardingAction::Remove, user, vote_amount),
                                 Ok(())
                             );
                         }
@@ -147,7 +147,7 @@ speculate! {
 
                         test "next_add_voting_creation_succeeds" {
                             assert_eq!(
-                                contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                                contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
                                 Ok(())
                             );
                         }
@@ -165,7 +165,7 @@ speculate! {
 
             test "that_add_user_voting_cannot_be_created" {
                 assert_eq!(
-                    contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                    contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
                     Err(Error::VaOnboardedAlready)
                 )
             }
@@ -180,7 +180,7 @@ speculate! {
                 test "that_voting_creation_fails" {
                     assert_eq!(
                         contract.as_account(va)
-                            .create_voting(onboarding::Action::Remove, user, vote_amount),
+                            .create_voting(OnboardingAction::Remove, user, vote_amount),
                         Err(Error::InsufficientBalance)
                     )
                 }
@@ -190,14 +190,14 @@ speculate! {
                 before {
                     reputation_token.mint(user, mint_amount).unwrap();
                     contract.as_account(va)
-                        .create_voting(onboarding::Action::Remove, user, vote_amount)
+                        .create_voting(OnboardingAction::Remove, user, vote_amount)
                         .unwrap();
                 }
 
                 test "that_add_voting_cannot_be_created" {
                     assert_eq!(
                         contract.as_account(va)
-                            .create_voting(onboarding::Action::Add, user, vote_amount),
+                            .create_voting(OnboardingAction::Add, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
@@ -205,7 +205,7 @@ speculate! {
                 test "that_remove_voting_cannot_be_created" {
                     assert_eq!(
                         contract.as_account(va)
-                            .create_voting(onboarding::Action::Remove, user, vote_amount),
+                            .create_voting(OnboardingAction::Remove, user, vote_amount),
                         Err(Error::OnboardingAlreadyInProgress)
                     )
                 }
@@ -233,7 +233,7 @@ speculate! {
                         test "add_voting_creation_succeeds" {
                             kyc_token.mint(user, 1.into()).unwrap();
                             assert_eq!(
-                                contract.as_account(va).create_voting(onboarding::Action::Add, user, vote_amount),
+                                contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
                                 Ok(())
                             );
                         }
@@ -252,7 +252,7 @@ speculate! {
 
                         test "next_remove_voting_creation_succeeds" {
                             assert_eq!(
-                                contract.as_account(va).create_voting(onboarding::Action::Remove, user, vote_amount),
+                                contract.as_account(va).create_voting(OnboardingAction::Remove, user, vote_amount),
                                 Ok(())
                             );
                         }
