@@ -8,10 +8,10 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     contracts::NamedKeys,
     system::CallStackElement,
-    ApiError, CLTyped, ContractPackageHash, EntryPoints, RuntimeArgs, URef, Key,
+    ApiError, CLTyped, ContractPackageHash, EntryPoints, Key, RuntimeArgs, URef,
 };
 
-use crate::{events::Events, Address, consts::CONTRACT_MAIN_PURSE};
+use crate::{consts::CONTRACT_MAIN_PURSE, events::Events, Address};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
@@ -143,7 +143,7 @@ pub fn contract_main_purse() -> URef {
             let main_purse = create_purse();
             runtime::put_key(CONTRACT_MAIN_PURSE, Key::from(main_purse));
             main_purse
-        },
-        Some(value) => *value.as_uref().unwrap_or_revert()
+        }
+        Some(value) => *value.as_uref().unwrap_or_revert(),
     }
 }

@@ -1,7 +1,8 @@
 use std::{
+    collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Duration, collections::HashMap,
+    time::Duration,
 };
 
 use crate::{Address, Error};
@@ -13,7 +14,7 @@ use casper_execution_engine::core::engine_state::{
     self, run_genesis_request::RunGenesisRequest, GenesisAccount,
 };
 use casper_types::{
-    account::{AccountHash, Account},
+    account::{Account, AccountHash},
     bytesrepr::{self, Bytes, FromBytes, ToBytes},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, URef, U512,
@@ -24,8 +25,8 @@ use blake2::{
     VarBlake2b,
 };
 
-pub use casper_execution_engine::core::execution::Error as ExecutionError;
 use casper_engine_test_support::DEFAULT_PAYMENT;
+pub use casper_execution_engine::core::execution::Error as ExecutionError;
 
 /// CasperVM based testing environment.
 #[derive(Clone)]
@@ -119,7 +120,7 @@ pub struct TestEnvState {
     context: InMemoryWasmTestBuilder,
     block_time: u64,
     calls_counter: u32,
-    gas_used: HashMap<Address, U512>
+    gas_used: HashMap<Address, U512>,
 }
 
 impl TestEnvState {
@@ -160,7 +161,7 @@ impl TestEnvState {
             accounts,
             block_time: 0,
             calls_counter: 0,
-            gas_used: HashMap::new()
+            gas_used: HashMap::new(),
         }
     }
 
@@ -229,7 +230,10 @@ impl TestEnvState {
 
     fn collect_gas(&mut self) {
         // let cost: U512 = self.context.last_exec_gas_cost().value();
-        *self.gas_used.entry(self.active_account).or_insert(U512::zero()) += *DEFAULT_PAYMENT;
+        *self
+            .gas_used
+            .entry(self.active_account)
+            .or_insert(U512::zero()) += *DEFAULT_PAYMENT;
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -332,7 +336,10 @@ impl TestEnvState {
             Some(value) => value.clone(),
             None => U512::zero(),
         };
-        let account: Account = self.context.get_account(*account.as_account_hash().unwrap()).unwrap();
+        let account: Account = self
+            .context
+            .get_account(*account.as_account_hash().unwrap())
+            .unwrap();
         let purse = account.main_purse();
         let val = self.context.get_purse_balance(purse) + gas_used;
         dbg!(self.context.get_exec_results_count());

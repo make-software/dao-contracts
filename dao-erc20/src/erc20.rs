@@ -1,10 +1,16 @@
-use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{self, emit, set_key},
-    Address, Error, Mapping, Variable, casper_contract::{contract_api::{system::{create_purse, transfer_from_purse_to_purse, get_purse_balance, transfer_from_purse_to_account}, runtime}, unwrap_or_revert::UnwrapOrRevert},
-};
-use casper_types::{U256, URef, U512, Key, runtime_args, RuntimeArgs};
 use self::events::{Approval, Transfer};
+use casper_dao_utils::{
+    casper_contract::{
+        contract_api::system::{
+            get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
+        },
+        unwrap_or_revert::UnwrapOrRevert,
+    },
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{self, emit},
+    Address, Error, Mapping, Variable,
+};
+use casper_types::{URef, U256, U512};
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
@@ -102,10 +108,6 @@ impl ERC20Interface for ERC20 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
-        // let balance = self.get_cspr_balance();
-        // if balance.is_zero() {
-        //     casper_env::revert(Error::InsufficientBalance);
-        // }
     }
 
     fn get_cspr_balance(&self) -> U512 {
@@ -116,7 +118,13 @@ impl ERC20Interface for ERC20 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(main_purse).unwrap_or_revert();
         let recipient = casper_env::caller();
-        transfer_from_purse_to_account(main_purse, *recipient.as_account_hash().unwrap_or_revert(), amount, None).unwrap_or_revert();
+        transfer_from_purse_to_account(
+            main_purse,
+            *recipient.as_account_hash().unwrap_or_revert(),
+            amount,
+            None,
+        )
+        .unwrap_or_revert();
     }
 }
 
@@ -156,10 +164,15 @@ impl ERC20 {
 #[cfg(feature = "test-support")]
 impl ERC20Test {
     pub fn deposit_with_cspr(&mut self, amount: U512) {
-        self.env.deploy_wasm_file("send_cspr.wasm", runtime_args! {
-            "token_address" => self.address(),
-            "cspr_amount" => amount
-        });
+        use casper_types::{runtime_args, RuntimeArgs};
+
+        self.env.deploy_wasm_file(
+            "send_cspr.wasm",
+            runtime_args! {
+                "token_address" => self.address(),
+                "cspr_amount" => amount
+            },
+        );
     }
 }
 

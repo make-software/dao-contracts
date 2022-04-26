@@ -45,4 +45,3 @@ pub const FLOAT_DIVISOR: &str = "float_divisor";
 
 // Contract keys.
 pub const CONTRACT_MAIN_PURSE: &str = "__contract_main_purse";
-
