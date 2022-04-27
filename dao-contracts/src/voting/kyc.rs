@@ -6,13 +6,10 @@ use casper_types::U256;
 
 use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 
-use super::VotingId;
-
 #[derive(Instance)]
 pub struct KycInfo {
     kyc_token: Variable<Option<Address>>,
     votings: Mapping<Address, bool>,
-    documents: Mapping<VotingId, String>,
 }
 
 impl KycInfo {
@@ -41,13 +38,5 @@ impl KycInfo {
 
     pub(crate) fn exists_ongoing_voting(&self, address: &Address) -> bool {
         self.votings.get(address)
-    }
-
-    pub(crate) fn set_document_hash(&mut self, voting_id: VotingId, document_hash: String) {
-        self.documents.set(&voting_id, document_hash);
-    }
-
-    pub(crate) fn get_document_hash(&self, voting_id: VotingId) -> Option<String> {
-        self.documents.get_or_none(&voting_id)
     }
 }

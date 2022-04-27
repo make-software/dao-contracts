@@ -53,8 +53,7 @@ speculate! {
 
             context "voting_is_created" {
                 before {
-                    #[allow(clippy::redundant_clone)]
-                    contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount).unwrap();
+                    contract.as_account(voter).create_voting(applicant, document_hash, vote_amount).unwrap();
                 }
 
                 test "cannot_create_next_voting_for_the_same_applicant" {
@@ -71,14 +70,6 @@ speculate! {
                     );
                 }
 
-                test "document_hash_is_available" {
-                    let voting_id: VotingId = 0.into();
-                    assert_eq!(
-                        contract.get_document_hash(voting_id),
-                        Some(document_hash)
-                    )
-                }
-
                 context "informal_voting_passed" {
                     before {
                         let voting_id = 0.into();
@@ -88,14 +79,6 @@ speculate! {
                         #[allow(unused_variables)]
                         let voting_id: VotingId = 1.into();
                     }
-
-                    test "document_hash_is_available" {
-                        assert_eq!(
-                            contract.get_document_hash(voting_id),
-                            Some(document_hash)
-                        );
-                    }
-
                     test "cannot_create_next_voting_for_the_same_applicant" {
                         assert_eq!(
                             contract.as_account(voter).create_voting(applicant, document_hash, vote_amount),
@@ -164,7 +147,7 @@ fn setup() -> (
     Address,
     U256,
     U256,
-    String,
+    U256,
     DaoOwnedNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
@@ -206,6 +189,7 @@ fn setup() -> (
     let vote_amount = 1_000.into();
     reputation_token.mint(voter, mint_amount).unwrap();
     reputation_token.mint(second_voter, mint_amount).unwrap();
+    let document_hash = 1234.into();
 
     (
         applicant,
@@ -214,7 +198,7 @@ fn setup() -> (
         second_voter,
         mint_amount,
         vote_amount,
-        "hash".to_string(),
+        document_hash,
         kyc_token,
         reputation_token,
         variable_repo,
