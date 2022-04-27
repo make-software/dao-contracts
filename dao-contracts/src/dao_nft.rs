@@ -3,8 +3,9 @@ use casper_dao_erc721::{
 };
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
-    Address, Mapping,
+    Address, Error, Mapping,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -19,7 +20,7 @@ pub trait DaoOwnedNftContractInterface {
     fn is_whitelisted(&self, address: Address) -> bool;
     fn name(&self) -> String;
     fn symbol(&self) -> String;
-    fn owner_of(&self, token_id: TokenId) -> Address;
+    fn owner_of(&self, token_id: TokenId) -> Option<Address>;
     fn token_id(&self, address: Address) -> Option<TokenId>;
     fn balance_of(&self, owner: Address) -> U256;
     fn total_supply(&self) -> U256;
@@ -60,7 +61,7 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
         }
 
         to self.token {
-            fn owner_of(&self, token_id: TokenId) -> Address;
+            fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
             fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
@@ -78,7 +79,10 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
     }
 
     fn burn(&mut self, token_id: TokenId) {
-        let owner = self.token.owner_of(token_id);
+        let owner = self
+            .token
+            .owner_of(token_id)
+            .unwrap_or_revert_with(Error::InvalidTokenOwner);
         BurnableERC721::burn(&mut self.token, token_id);
         self.tokens.set(&owner, None);
     }

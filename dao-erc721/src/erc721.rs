@@ -21,7 +21,7 @@ pub trait ERC721Interface {
     fn init(&mut self, name: String, symbol: String);
     fn name(&self) -> String;
     fn symbol(&self) -> String;
-    fn owner_of(&self, token_id: TokenId) -> Address;
+    fn owner_of(&self, token_id: TokenId) -> Option<Address>;
     fn balance_of(&self, owner: Address) -> U256;
     fn total_supply(&self) -> U256;
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
@@ -58,7 +58,7 @@ impl ERC721Interface for ERC721 {
         }
 
         to self.core {
-            fn owner_of(&self, token_id: TokenId) -> Address;
+            fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
             fn approve(&mut self, to: Option<Address>, token_id: TokenId);

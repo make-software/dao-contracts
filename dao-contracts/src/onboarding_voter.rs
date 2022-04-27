@@ -185,7 +185,10 @@ impl OnboardingVoterContract {
                 .clone()
                 .into_t()
                 .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
-            return self.onboarding.owner_of(token_id);
+            return self
+                .onboarding
+                .owner_of(token_id)
+                .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
         }
 
         // If the voting was created with some unexpected args an error is thrown

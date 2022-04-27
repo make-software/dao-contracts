@@ -45,7 +45,7 @@ impl OnboardingInfo {
             .unwrap_or_revert_with(Error::InvalidTokenOwner)
     }
 
-    pub fn owner_of(&self, token_id: TokenId) -> Address {
+    pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
         self.dao_nft_caller().owner_of(token_id)
     }
 
