@@ -7,6 +7,7 @@ edition = "2018"
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 casper-dao-modules = { path = "../dao-modules", default-features = false }
+casper-dao-erc721 = { path = "../dao-erc721", default-features = false }
 delegate = "0.6.2"
 
 [dev-dependencies]
@@ -31,6 +32,20 @@ test = false
 [[bin]]
 name = "repo_voter_contract"
 path = "bin/repo_voter_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "dao_owned_nft_contract"
+path = "bin/dao_owned_nft_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "onboarding_voter_contract"
+path = "bin/onboarding_voter_contract.rs"
 bench = false
 doctest = false
 test = false
