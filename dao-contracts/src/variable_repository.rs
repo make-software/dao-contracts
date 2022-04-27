@@ -1,11 +1,15 @@
-use casper_dao_modules::{Owner, Record, Repository, Whitelist};
+use casper_dao_modules::{AccessControl, Record, Repository};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
-    Address, Error,
+    consts as dao_consts, math, Address, Error,
 };
-use casper_types::bytesrepr::{Bytes, FromBytes};
+use casper_types::{
+    bytesrepr::{Bytes, FromBytes},
+    U256,
+};
+use delegate::delegate;
 
 // Interface of the Variable Repository Contract.
 //
@@ -116,37 +120,29 @@ pub trait VariableRepositoryContractInterface {
 /// Variable Repository Contract implementation. See [`VariableRepositoryContractInterface`].
 #[derive(Instance)]
 pub struct VariableRepositoryContract {
-    pub owner: Owner,
-    pub whitelist: Whitelist,
+    pub access_control: AccessControl,
     pub repository: Repository,
 }
 
 impl VariableRepositoryContractInterface for VariableRepositoryContract {
+    delegate! {
+        to self.access_control {
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+        }
+    }
+
     fn init(&mut self) {
         let deployer = caller();
-        self.owner.init(deployer);
-        self.whitelist.add_to_whitelist(deployer);
+        self.access_control.init(deployer);
         self.repository.init();
     }
 
-    fn change_ownership(&mut self, owner: Address) {
-        self.owner.ensure_owner();
-        self.owner.change_ownership(owner);
-        self.whitelist.add_to_whitelist(owner);
-    }
-
-    fn add_to_whitelist(&mut self, address: Address) {
-        self.owner.ensure_owner();
-        self.whitelist.add_to_whitelist(address);
-    }
-
-    fn remove_from_whitelist(&mut self, address: Address) {
-        self.owner.ensure_owner();
-        self.whitelist.remove_from_whitelist(address);
-    }
-
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.repository.update_at(key, value, activation_time);
     }
 
@@ -165,18 +161,10 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     fn keys_count(&self) -> u32 {
         self.repository.keys.size()
     }
-
-    fn get_owner(&self) -> Option<Address> {
-        self.owner.get_owner()
-    }
-
-    fn is_whitelisted(&self, address: Address) -> bool {
-        self.whitelist.is_whitelisted(&address)
-    }
 }
 
 impl VariableRepositoryContractCaller {
-    /// Retrieves a value for the given key and returns a deserialized struct.
+    /// Retrieves the value for the given key and returns a deserialized struct.
     ///
     /// # Errors
     /// Throws [`ValueNotAvailable`](casper_dao_utils::Error::NotAnOwner) if a value
@@ -188,5 +176,38 @@ impl VariableRepositoryContractCaller {
             revert(Error::ValueNotAvailable)
         }
         variable
+    }
+
+    /// Retrieves the value stored under the [INFORMAL_VOTING_TIME](dao_consts::INFORMAL_VOTING_TIME) key.
+    pub fn informal_voting_time(&self) -> u64 {
+        self.get_variable(dao_consts::INFORMAL_VOTING_TIME)
+    }
+
+    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
+    pub fn formal_voting_time(&self) -> u64 {
+        self.get_variable(dao_consts::FORMAL_VOTING_TIME)
+    }
+
+    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
+    pub fn minimum_governance_reputation(&self) -> U256 {
+        self.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
+    }
+
+    /// Retrieves a normalized value stored under the [INFORMAL_VOTING_QUORUM](dao_consts::INFORMAL_VOTING_QUORUM) key.
+    pub fn informal_voting_quorum(&self, total_onboarded: U256) -> U256 {
+        math::promils_of(
+            total_onboarded,
+            self.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
+        )
+        .unwrap_or_revert()
+    }
+
+    /// Retrieves a normalized value stored under the [FORMAL_VOTING_QUORUM](dao_consts::FORMAL_VOTING_QUORUM) key.
+    pub fn formal_voting_quorum(&self, total_onboarded: U256) -> U256 {
+        math::promils_of(
+            total_onboarded,
+            self.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
+        )
+        .unwrap_or_revert()
     }
 }

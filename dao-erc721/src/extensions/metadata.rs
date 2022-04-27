@@ -1,4 +1,6 @@
-use casper_dao_utils::{casper_dao_macros::Instance, Variable};
+use casper_dao_utils::{casper_dao_macros::Instance, casper_env, Error, Variable};
+
+use crate::{core::ERC721Token, TokenId, TokenUri};
 
 #[derive(Instance)]
 pub struct MetadataERC721 {
@@ -18,5 +20,16 @@ impl MetadataERC721 {
 
     pub fn symbol(&self) -> String {
         self.symbol.get()
+    }
+
+    pub fn token_uri(&self, erc721: &ERC721Token, token_id: TokenId) -> TokenUri {
+        if !erc721.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
+        format!("{}{}", self.base_uri(), token_id)
+    }
+
+    pub fn base_uri(&self) -> TokenUri {
+        "ipfs://".to_string()
     }
 }

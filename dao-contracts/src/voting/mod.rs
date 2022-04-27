@@ -1,5 +1,7 @@
 mod ballot;
 mod governance_voting;
+pub mod kyc_info;
+pub mod onboarding_info;
 
 pub use ballot::AccountId;
 pub use ballot::Ballot;

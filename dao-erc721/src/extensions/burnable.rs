@@ -13,7 +13,7 @@ impl BurnableERC721 {
             casper_env::revert(Error::CallerIsNotOwnerNorApproved);
         }
 
-        let owner = erc721.owner_of(token_id);
+        let owner = erc721.owner_of_or_revert(token_id);
 
         erc721.approve(None, token_id);
         erc721.decrement_balance(owner);
