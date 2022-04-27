@@ -3,10 +3,8 @@ mod governance_voting;
 pub mod kyc_info;
 pub mod onboarding_info;
 
-pub use ballot::AccountId;
 pub use ballot::Ballot;
 pub use ballot::Choice;
-pub use ballot::ReputationAmount;
 pub use ballot::VotingId;
 pub use governance_voting::consts;
 pub use governance_voting::events::*;

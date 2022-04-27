@@ -1,8 +1,7 @@
 mod governance_voting_common;
-extern crate speculate;
 
 use casper_dao_contracts::voting::{
-    consts as gv_consts, Ballot, Choice, VoteCast, VotingContractCreated, VotingCreated,
+    consts as gv_consts, Ballot, BallotCast, Choice, VotingContractCreated, VotingCreated,
     VotingEnded, VotingId,
 };
 use casper_dao_utils::Error;
@@ -98,7 +97,7 @@ speculate! {
 
             test "that voting is created correctly" {
                 let voting_created_event : VotingCreated = mock_voter_contract.event(-2);
-                let ballot_cast_event: VoteCast = mock_voter_contract.event(-1);
+                let ballot_cast_event: BallotCast = mock_voter_contract.event(-1);
                 let first_ballot: Ballot = mock_voter_contract.get_ballot(informal_voting.voting_id(), creator).unwrap();
 
                 assert_eq!(informal_voting.voting_id(), VotingId::zero());
@@ -113,9 +112,9 @@ speculate! {
                 // first vote is cast automatically
                 assert_eq!(first_ballot.voting_id, informal_voting.voting_id());
                 assert_eq!(first_ballot.voter, Some(creator));
-                assert!(first_ballot.choice.is_in_favor());
+                assert_eq!(first_ballot.choice, Choice::InFavor);
                 assert_eq!(first_ballot.stake, minimum_reputation);
-                assert_eq!(ballot_cast_event, VoteCast { voter: creator, voting_id: informal_voting.voting_id(), choice: Choice::InFavor, stake: minimum_reputation });
+                assert_eq!(ballot_cast_event, BallotCast { voter: creator, voting_id: informal_voting.voting_id(), choice: Choice::InFavor, stake: minimum_reputation });
                 assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 0).unwrap(), creator);
 
                 // only one vote is cast TODO: Check harder

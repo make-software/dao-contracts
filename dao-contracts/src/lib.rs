@@ -1,3 +1,6 @@
+//! A selection of contracts implemented for usage in DAO
+
+#[doc(hidden)]
 pub mod action;
 mod admin;
 mod dao_nft;
@@ -6,6 +9,7 @@ pub mod mocks;
 mod onboarding_voter;
 mod repo_voter;
 mod reputation;
+/// Variable Repo
 mod variable_repository;
 /// Utilities to manage the voting process
 pub mod voting;
