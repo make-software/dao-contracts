@@ -22,7 +22,7 @@ use self::{
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
-use casper_dao_utils::{consts as dao_consts, math, VecMapping};
+use casper_dao_utils::VecMapping;
 
 use super::ballot::Choice;
 use super::VotingEnded;
@@ -89,29 +89,18 @@ impl GovernanceVoting {
         entry_point: String,
         runtime_args: RuntimeArgs,
     ) {
-        let repo_caller = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
-        let reputation_caller = ReputationContractCaller::at(self.get_reputation_token_address());
-
-        let minimum_governance_reputation =
-            repo_caller.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION);
+        let variable_repo = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
+        let minimum_governance_reputation = variable_repo.minimum_governance_reputation();
 
         if stake < minimum_governance_reputation {
             revert(Error::NotEnoughReputation)
         }
-        let informal_voting_time = repo_caller.get_variable(dao_consts::INFORMAL_VOTING_TIME);
-        let formal_voting_time = repo_caller.get_variable(dao_consts::FORMAL_VOTING_TIME);
-        let voting_id = self.next_voting_id();
-
-        let informal_voting_quorum = math::promils_of(
-            reputation_caller.total_onboarded(),
-            repo_caller.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
-        )
-        .unwrap_or_revert();
-        let formal_voting_quorum = math::promils_of(
-            reputation_caller.total_onboarded(),
-            repo_caller.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
-        )
-        .unwrap_or_revert();
+        let reputation_token = ReputationContractCaller::at(self.get_reputation_token_address());
+        let informal_voting_time = variable_repo.informal_voting_time();
+        let formal_voting_time = variable_repo.formal_voting_time();
+        let total_onboarded = reputation_token.total_onboarded();
+        let informal_voting_quorum = variable_repo.informal_voting_quorum(total_onboarded);
+        let formal_voting_quorum = variable_repo.formal_voting_quorum(total_onboarded);
 
         let voting_configuration = VotingConfiguration {
             formal_voting_quorum,
@@ -124,6 +113,7 @@ impl GovernanceVoting {
             runtime_args,
         };
 
+        let voting_id = self.next_voting_id();
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
 
         self.set_voting(voting);

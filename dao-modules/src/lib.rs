@@ -1,9 +1,11 @@
+mod access_control;
 mod owner;
 mod repository;
 mod staking;
 mod token;
 mod whitelist;
 
+pub use access_control::AccessControl;
 pub use owner::Owner;
 pub use repository::{Record, Repository, RepositoryDefaults};
 pub use staking::TokenWithStaking;
