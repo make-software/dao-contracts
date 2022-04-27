@@ -5,8 +5,8 @@ use casper_dao_utils::{
 use casper_types::U256;
 
 pub type VotingId = U256;
-pub type AccountId = usize;
-pub type ReputationAmount = usize;
+pub type AccountId = u32;
+pub type ReputationAmount = u32;
 
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]
 pub enum Choice {
