@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    Address, Error, SequenceGenerator,
+    consts, Address, Error, SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -16,11 +16,6 @@ use crate::{
     },
 };
 use delegate::delegate;
-
-const ARG_TO: &str = "to";
-const ARG_TOKEN_ID: &str = "token_id";
-const ENTRY_POINT_MINT: &str = "mint";
-const ENTRY_POINT_BURN: &str = "burn";
 
 #[casper_contract_interface]
 pub trait OnboardingVoterContractInterface {
@@ -134,9 +129,9 @@ impl OnboardingVoterContract {
         let token_id = self.onboarding.token_id_of(&subject_address);
 
         let runtime_args = runtime_args! {
-            ARG_TOKEN_ID => token_id,
+            consts::ARG_TOKEN_ID => token_id,
         };
-        let entry_point = ENTRY_POINT_BURN.to_string();
+        let entry_point = consts::EP_BURN.to_string();
 
         (entry_point, runtime_args)
     }
@@ -149,10 +144,10 @@ impl OnboardingVoterContract {
         let token_id = self.sequence.next_value();
 
         let runtime_args = runtime_args! {
-            ARG_TO => subject_address,
-            ARG_TOKEN_ID => token_id,
+            consts::ARG_TO => subject_address,
+            consts::ARG_TOKEN_ID => token_id,
         };
-        let entry_point = ENTRY_POINT_MINT.to_string();
+        let entry_point = consts::EP_MINT.to_string();
 
         (entry_point, runtime_args)
     }
@@ -167,7 +162,7 @@ impl OnboardingVoterContract {
         let arg = voting
             .runtime_args()
             .named_args()
-            .find(|arg| arg.name() == ARG_TO);
+            .find(|arg| arg.name() == consts::ARG_TO);
 
         if let Some(to_arg) = arg {
             return to_arg
@@ -182,7 +177,7 @@ impl OnboardingVoterContract {
         let arg = voting
             .runtime_args()
             .named_args()
-            .find(|arg| arg.name() == ARG_TOKEN_ID);
+            .find(|arg| arg.name() == consts::ARG_TOKEN_ID);
 
         if let Some(token_id_arg) = arg {
             let token_id = token_id_arg

@@ -2,16 +2,12 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    Address, Error, SequenceGenerator,
+    consts, Address, Error, SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::voting::{kyc::KycInfo, voting::Voting, Ballot, Choice, GovernanceVoting, VotingId};
 use delegate::delegate;
-
-const ARG_TO: &str = "to";
-const ARG_TOKEN_ID: &str = "token_id";
-const ENTRY_POINT_MINT: &str = "mint";
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
@@ -69,10 +65,10 @@ impl KycVoterContractInterface for KycVoterContract {
         let contract_to_call = self.get_kyc_token_address();
         let token_id = self.sequence.next_value();
         let runtime_args = runtime_args! {
-            ARG_TO => address_to_onboard,
-            ARG_TOKEN_ID => token_id,
+            consts::ARG_TO => address_to_onboard,
+            consts::ARG_TOKEN_ID => token_id,
         };
-        let entry_point = ENTRY_POINT_MINT.to_string();
+        let entry_point = consts::EP_MINT.to_string();
 
         let voting_id =
             self.voting
@@ -121,7 +117,7 @@ impl KycVoterContract {
         let arg = voting
             .runtime_args()
             .named_args()
-            .find(|arg| arg.name() == ARG_TO)
+            .find(|arg| arg.name() == consts::ARG_TO)
             .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
 
         arg.cl_value()
