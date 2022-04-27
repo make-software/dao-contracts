@@ -35,6 +35,7 @@ pub enum Error {
     BallotDoesNotExist,
     VoterDoesNotExist,
     ContractToCallNotSet,
+    CannotPostJobForSelf,
 }
 
 impl From<Error> for ApiError {
@@ -72,6 +73,7 @@ impl From<Error> for ApiError {
             Error::MappingIndexDoesNotExist => 3404,
             Error::BallotDoesNotExist => 3405,
             Error::VoterDoesNotExist => 3406,
+            Error::CannotPostJobForSelf => 4000,
         };
         ApiError::User(id)
     }
@@ -109,6 +111,7 @@ impl From<u16> for Error {
             3404 => Error::MappingIndexDoesNotExist,
             3405 => Error::BallotDoesNotExist,
             3406 => Error::VoterDoesNotExist,
+            4000 => Error::CannotPostJobForSelf,
             _ => Error::Unknown,
         }
     }

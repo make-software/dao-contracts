@@ -17,6 +17,7 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/variable_repository_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/repo_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/admin_contract.wasm 2>/dev/null | true
+	@wasm-strip $(OUTPUT_DIR)/bid_escrow_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/mock_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_20.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_721.wasm 2>/dev/null | true
