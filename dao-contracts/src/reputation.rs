@@ -17,7 +17,7 @@ pub trait ReputationContractInterface {
     ///
     /// It initializes contract elements:
     /// * Events dictionary.
-    /// * Named keys of [`TokenWithStaking`], [`Owner`] and [`Whitelist`].
+    /// * Named keys of [`TokenWithStaking`], [`AccessControl`].
     /// * Set [`caller`] as the owner of the contract.
     /// * Add [`caller`] to the whitelist.
     ///
@@ -195,5 +195,12 @@ impl ReputationContractInterface for ReputationContract {
 
     fn set_total_onboarded(&mut self, total: U256) {
         self.total_onboarded.set(total);
+    }
+}
+
+impl ReputationContractCaller {
+    /// Indicates whether balance of the `address` is greater than 0.
+    pub fn has_reputation(&self, address: &Address) -> bool {
+        !self.balance_of(*address).is_zero()
     }
 }

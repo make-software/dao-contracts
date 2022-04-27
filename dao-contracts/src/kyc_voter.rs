@@ -6,7 +6,9 @@ use casper_dao_utils::{
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{kyc::KycInfo, voting::Voting, Ballot, Choice, GovernanceVoting, VotingId};
+use crate::voting::{
+    kyc_info::KycInfo, voting::Voting, Ballot, Choice, GovernanceVoting, VotingId,
+};
 use delegate::delegate;
 
 #[casper_contract_interface]

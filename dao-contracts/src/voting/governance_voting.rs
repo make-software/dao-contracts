@@ -13,8 +13,9 @@ use casper_dao_utils::{
 
 use casper_types::{runtime_args, RuntimeArgs, U256, U512};
 
-use crate::proxy::reputation_proxy::ReputationContractProxy;
-use crate::proxy::variable_repo_proxy::VariableRepoContractProxy;
+use crate::{
+    ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
+};
 
 use self::voting::VotingSummary;
 use self::{
@@ -63,26 +64,19 @@ impl GovernanceVoting {
         contract_to_call: Address,
         entry_point: String,
         runtime_args: RuntimeArgs,
-    ) -> VotingId {
-        let variable_repo_address = self.get_variable_repo_address();
-        let reputation_token_address = self.get_reputation_token_address();
-        let minimum_governance_reputation =
-            VariableRepoContractProxy::minimum_governance_reputation(variable_repo_address);
+    ) {
+        let variable_repo = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
+        let minimum_governance_reputation = variable_repo.minimum_governance_reputation();
 
         if stake < minimum_governance_reputation {
             revert(Error::NotEnoughReputation)
         }
-        let informal_voting_time =
-            VariableRepoContractProxy::informal_voting_time(variable_repo_address);
-        let formal_voting_time =
-            VariableRepoContractProxy::formal_voting_time(variable_repo_address);
-        let total_onboarded = ReputationContractProxy::total_onboarded(reputation_token_address);
-        let informal_voting_quorum = VariableRepoContractProxy::informal_voting_quorum(
-            variable_repo_address,
-            total_onboarded,
-        );
-        let formal_voting_quorum =
-            VariableRepoContractProxy::formal_voting_quorum(variable_repo_address, total_onboarded);
+        let reputation_token = ReputationContractCaller::at(self.get_reputation_token_address());
+        let informal_voting_time = variable_repo.informal_voting_time();
+        let formal_voting_time = variable_repo.formal_voting_time();
+        let total_onboarded = reputation_token.total_onboarded();
+        let informal_voting_quorum = variable_repo.informal_voting_quorum(total_onboarded);
+        let formal_voting_quorum = variable_repo.formal_voting_quorum(total_onboarded);
 
         let voting_configuration = VotingConfiguration {
             formal_voting_quorum,
@@ -108,7 +102,6 @@ impl GovernanceVoting {
 
         // Cast first vote in favor
         self.vote(creator, voting_id, Choice::InFavor, stake);
-        voting_id
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {

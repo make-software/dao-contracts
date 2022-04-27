@@ -25,14 +25,11 @@ pub struct ERC721Token {
 }
 
 impl ERC721Token {
-    pub fn owner_of(&self, token_id: TokenId) -> Address {
+    pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
         }
-        match self.owners.get(&token_id) {
-            Some(owner) => owner,
-            None => casper_env::revert(Error::InvalidTokenOwner),
-        }
+        self.owners.get(&token_id)
     }
 
     pub fn balance_of(&self, owner: Address) -> U256 {
@@ -44,7 +41,7 @@ impl ERC721Token {
     }
 
     pub fn approve(&mut self, approved: Option<Address>, token_id: TokenId) {
-        let owner = self.owner_of(token_id);
+        let owner = self.owner_of_or_revert(token_id);
         if Some(owner) == approved {
             casper_env::revert(Error::ApprovalToCurrentOwner);
         }
@@ -104,6 +101,16 @@ impl ERC721Token {
 }
 
 impl ERC721Token {
+    pub fn owner_of_or_revert(&self, token_id: TokenId) -> Address {
+        if !self.exists(&token_id) {
+            casper_env::revert(Error::TokenDoesNotExist)
+        }
+        match self.owners.get(&token_id) {
+            Some(owner) => owner,
+            None => casper_env::revert(Error::InvalidTokenOwner),
+        }
+    }
+
     pub fn increment_balance(&mut self, owner: Address) {
         self.balances.set(&owner, self.balance_of(owner) + 1);
     }
@@ -152,7 +159,7 @@ impl ERC721Token {
     }
 
     fn transfer(&mut self, from: Address, to: Address, token_id: TokenId) {
-        let owner = self.owner_of(token_id);
+        let owner = self.owner_of_or_revert(token_id);
         if owner != from {
             casper_env::revert(Error::TransferFromIncorrectOwner)
         }
@@ -175,7 +182,7 @@ impl ERC721Token {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
         }
-        let owner = self.owner_of(token_id);
+        let owner = self.owner_of_or_revert(token_id);
         approved == owner
             || self.is_approved_for_all(owner, approved)
             || self.get_approved(token_id) == Some(approved)

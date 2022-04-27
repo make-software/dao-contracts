@@ -60,7 +60,7 @@ mod test {
                 }
 
                 it "sets the ownership to the new token owner" {
-                    assert_eq!(token.owner_of(first_token_id), token_owner);
+                    assert_eq!(token.owner_of(first_token_id), Some(token_owner));
                 }
 
                 it "emits a Transfer event" {
@@ -112,7 +112,7 @@ mod test {
                     context "when the given token id was tracked by this token" {
                         it "returns the owner of the given token ID" {
                             let token_id = first_token_id;
-                            assert_eq!(token.owner_of(token_id), token_owner);
+                            assert_eq!(token.owner_of(token_id), Some(token_owner));
                         }
 
                     }
@@ -379,7 +379,7 @@ mod test {
                         //transfers the ownership of the given token id to the given address
                         assert_eq!(
                             token.owner_of(token_id),
-                            new_owner.unwrap(),
+                            new_owner,
                         );
 
                         //emits a Transfer event
@@ -459,7 +459,7 @@ mod test {
                             it "keeps ownership of the token" {
                                 assert_eq!(
                                     token.owner_of(first_token_id),
-                                    token_owner,
+                                    Some(token_owner),
                                 );
                             }
                             it "clears the approval for the token id" {
@@ -563,7 +563,7 @@ mod test {
                                 it "keeps ownership of the token" {
                                     assert_eq!(
                                         token.owner_of(first_token_id),
-                                        token_owner,
+                                        Some(token_owner),
                                     );
                                 }
                                 it "clears the approval for the token id" {

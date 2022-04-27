@@ -1,12 +1,10 @@
+use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
     Address, Error, Mapping, Variable,
 };
-use casper_types::U256;
-
-use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 
 #[derive(Instance)]
 pub struct OnboardingInfo {
@@ -38,7 +36,7 @@ impl OnboardingInfo {
     }
 
     pub fn is_onboarded(&self, &address: &Address) -> bool {
-        self.dao_nft_caller().balance_of(address) > U256::zero()
+        !self.dao_nft_caller().balance_of(address).is_zero()
     }
 
     pub fn token_id_of(&self, address: &Address) -> TokenId {
@@ -47,7 +45,7 @@ impl OnboardingInfo {
             .unwrap_or_revert_with(Error::InvalidTokenOwner)
     }
 
-    pub fn owner_of(&self, token_id: TokenId) -> Address {
+    pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
         self.dao_nft_caller().owner_of(token_id)
     }
 
@@ -57,7 +55,7 @@ impl OnboardingInfo {
 }
 
 #[derive(ToBytes, FromBytes, CLTyped)]
-pub enum Action {
+pub enum OnboardingAction {
     Add,
     Remove,
 }
