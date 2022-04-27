@@ -43,7 +43,7 @@ pub trait GovernanceVotingTrait {
 /// Governance voting uses [Reputation Token](crate::ReputationContract) to handle reputation staking and
 /// [Variable Repo](crate::VariableRepositoryContract) for reading voting configuration.
 ///
-/// For example implementation see [MockVoterContract](crate::mocks::mock_voter::MockVoterContract)
+/// For example implementation see [AdminContract](crate::admin::AdminContract)
 #[derive(Instance)]
 pub struct GovernanceVoting {
     variable_repo: Variable<Option<Address>>,
@@ -57,8 +57,9 @@ pub struct GovernanceVoting {
 
 impl GovernanceVoting {
     /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract) and [Variable Repo](crate::VariableRepositoryContract)
-    ///
-    /// Emits [VotingContractCreated](VotingContractCreated)
+    /// 
+    /// # Events
+    /// Emits [`VotingContractCreated`](VotingContractCreated)
     pub fn init(&mut self, variable_repo: Address, reputation_token: Address) {
         self.variable_repo.set(Some(variable_repo));
         self.reputation_token.set(Some(reputation_token));
@@ -77,10 +78,12 @@ impl GovernanceVoting {
     /// It collects configuration from [Variable Repo](crate::VariableRepositoryContract) and persists it, so they won't change during the voting process.
     ///
     /// It automatically casts first vote in favor in name of the creator.
+    /// 
+    /// # Events
+    /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
-    /// Emits [VotingCreated](VotingCreated), [BallotCast](BallotCast)
-    ///
-    /// Throws `Error::NotEnoughReputation`
+    /// # Errors
+    /// Throws [`Error::NotEnoughReputation`](casper_dao_utils::Error::NotEnoughReputation) when the creator does not have enough reputation to create a voting
     pub fn create_voting(
         &mut self,
         creator: Address,
@@ -137,10 +140,18 @@ impl GovernanceVoting {
     ///
     /// For formal voting an action will be performed if the result is in favor. Reputation is redistributed to the winning voters. When no quorum is reached,
     /// the reputation is returned, except for the creator - its reputation is then burned.
+    /// 
+    /// # Events
+    /// Emits [`VotingEnded`](VotingEnded), [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
-    /// Emits [VotingEnded](VotingEnded), [VotingCreated](VotingCreated), [BallotCast](BallotCast)
-    ///
-    /// Throws `Error::FinishingCompletedVotingNotAllowed`, `Error::FormalVotingTimeNotReached`, `Error::InformalVotingTimeNotReached`, `Error::ArithmeticOverflow`
+    /// # Errors
+    /// Throws [`FinishingCompletedVotingNotAllowed`](casper_dao_utils::Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
+    /// 
+    /// Throws [`FormalVotingTimeNotReached`](casper_dao_utils::Error::FormalVotingTimeNotReached) if formal voting time did not pass
+    /// 
+    /// Throws [`InformalVotingTimeNotReached`](casper_dao_utils::Error::InformalVotingTimeNotReached) if informal voting time did not pass
+    /// 
+    /// Throws [`ArithmeticOverflow`](casper_dao_utils::Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
     pub fn finish_voting(&mut self, voting_id: VotingId) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
 
@@ -257,9 +268,13 @@ impl GovernanceVoting {
 
     /// Casts a vote
     ///
-    /// Emits [BallotCast](BallotCast)
+    /// # Events
+    /// Emits [`BallotCast`](BallotCast)
     ///
-    /// Throws `Error::VoteOnCompletedVotingNotAllowed`, `Error::CannotVoteTwice`
+    /// # Errors
+    /// Throws [`VoteOnCompletedVotingNotAllowed`](casper_dao_utils::Error::VoteOnCompletedVotingNotAllowed) if voting is completed
+    /// 
+    /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
         let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
