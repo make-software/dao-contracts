@@ -1,30 +1,15 @@
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance, CLTyped, ToBytes, FromBytes},
+    casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
-    Address, Mapping, VecMapping, Variable, Error,
+    Address, Mapping,  Variable, Error, casper_contract::unwrap_or_revert::UnwrapOrRevert,
 };
-use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::{
-    action::Action,
-    voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId, ReputationAmount},
+    voting::{GovernanceVoting, ReputationAmount},
+    bid::{job::{Job, JobStatus}, types::{BidId, Description}},
 };
 
 use delegate::delegate;
-
-type BidId = u32;
-type Description = String;
-
-#[derive(CLTyped, ToBytes, FromBytes, Default)]
-struct Job {
-    bid_id: BidId,
-    description: Description,
-    result: Description,
-    required_stake_for_va: ReputationAmount,
-    job_poster: Option<Address>,
-    worker: Option<Address>,
-    accepted: bool,
-}
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -33,10 +18,10 @@ pub trait BidEscrowContractInterface {
         &mut self,
         worker: Address,
         description: Description,
-        required_stake_for_va: ReputationAmount
+        required_stake_for_va: Option<ReputationAmount>
     );
     fn accept_bid(&mut self, bid_id: BidId);
-    fn cancel_bid_for_va_worker(&mut self, bid_id: BidId);
+    fn cancel_bid(&mut self, bid_id: BidId);
     fn submit_result(&mut self, bid_id: BidId, result: Description);
 }
 
@@ -48,50 +33,47 @@ pub struct BidEscrowContract {
 }
 
 impl BidEscrowContractInterface for BidEscrowContract {
-    fn pick_bid(&mut self,worker:Address,description:Description,required_stake_for_va:ReputationAmount) {
+    fn pick_bid(&mut self, worker: Address, description: Description, required_stake_for_va: Option<ReputationAmount>) {
         if worker == caller() {
             revert(Error::CannotPostJobForSelf)
         }
 
         let bid_id = self.next_bid_id();
 
-        let job = Job {
-            bid_id,
-            description,
-            result: Description::new(),
-            required_stake_for_va,
-            job_poster: Some(caller()),
-            worker: Some(worker),
-            accepted: !BidEscrowContract::is_kycd(worker),
-        };
+        let job = Job::new(
+            bid_id, description, caller(), worker, required_stake_for_va
+        );
 
         self.jobs.set(&bid_id, job);
     }
 
 
-    fn accept_bid(&mut self,bid_id:BidId) {
+    fn accept_bid(&mut self,bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        if job.accepted {
+        if *job.status() == JobStatus::Accepted {
             revert(Error::InvalidContext);
         }
 
-        if job.worker == Some(caller()) {
-            job.accepted = true;
+        if *job.worker() == Some(caller()) {
+            job.accept();
             self.jobs.set(&bid_id, job);
         } else {
             revert(Error::InvalidContext);
         }
     }
 
+    fn cancel_bid(&mut self, bid_id: BidId) {
+        let mut job = self.jobs.get_or_revert(&bid_id);
+        if job.poster().unwrap_or_revert() != caller() {
+            revert(Error::InvalidContext);
+        }
 
-    fn cancel_bid_for_va_worker(&mut self,bid_id:BidId) {
-        todo!()
+        job.cancel()
     }
 
-
-    fn submit_result(&mut self,bid_id:BidId,result:Description) {
+    fn submit_result(&mut self, bid_id: BidId, result: Description) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        job.result = result;
+        job.set_result(result);
         self.jobs.set(&bid_id, job);
     }
 
