@@ -17,6 +17,7 @@ use crate::{
     ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
 };
 
+use self::voting::VotingSummary;
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
@@ -57,7 +58,7 @@ pub struct GovernanceVoting {
 
 impl GovernanceVoting {
     /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract) and [Variable Repo](crate::VariableRepositoryContract)
-    /// 
+    ///
     /// # Events
     /// Emits [`VotingContractCreated`](VotingContractCreated)
     pub fn init(&mut self, variable_repo: Address, reputation_token: Address) {
@@ -78,7 +79,7 @@ impl GovernanceVoting {
     /// It collects configuration from [Variable Repo](crate::VariableRepositoryContract) and persists it, so they won't change during the voting process.
     ///
     /// It automatically casts first vote in favor in name of the creator.
-    /// 
+    ///
     /// # Events
     /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
@@ -140,20 +141,22 @@ impl GovernanceVoting {
     ///
     /// For formal voting an action will be performed if the result is in favor. Reputation is redistributed to the winning voters. When no quorum is reached,
     /// the reputation is returned, except for the creator - its reputation is then burned.
-    /// 
+    ///
     /// # Events
     /// Emits [`VotingEnded`](VotingEnded), [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors
     /// Throws [`FinishingCompletedVotingNotAllowed`](casper_dao_utils::Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
-    /// 
+    ///
     /// Throws [`FormalVotingTimeNotReached`](casper_dao_utils::Error::FormalVotingTimeNotReached) if formal voting time did not pass
-    /// 
+    ///
     /// Throws [`InformalVotingTimeNotReached`](casper_dao_utils::Error::InformalVotingTimeNotReached) if informal voting time did not pass
-    /// 
+    ///
     /// Throws [`ArithmeticOverflow`](casper_dao_utils::Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
-    pub fn finish_voting(&mut self, voting_id: VotingId) {
-        let voting = self.get_voting(voting_id).unwrap_or_revert();
+    pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {
+        let voting = self
+            .get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
@@ -165,12 +168,13 @@ impl GovernanceVoting {
         }
     }
 
-    fn finish_informal_voting(&mut self, mut voting: Voting) {
+    fn finish_informal_voting(&mut self, mut voting: Voting) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
         let voters_len = self.voters.len(voting.voting_id());
-        let result = match voting.get_result(voters_len) {
+        let voting_result = voting.get_result(voters_len);
+        let result = match voting_result {
             VotingResult::InFavor => {
                 self.return_reputation(voting.voting_id());
 
@@ -216,27 +220,37 @@ impl GovernanceVoting {
             }
         };
 
+        let informal_voting_id = voting.voting_id();
+        let formal_voting_id = voting.formal_voting_id();
         emit(VotingEnded {
-            voting_id: voting.voting_id(),
+            voting_id: informal_voting_id,
             result: result.into(),
             votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
-            informal_voting_id: voting.informal_voting_id(),
+            informal_voting_id,
             formal_voting_id: voting.formal_voting_id(),
         });
 
         self.set_voting(voting);
+
+        VotingSummary::new(
+            voting_result,
+            VotingType::Informal,
+            informal_voting_id,
+            formal_voting_id,
+        )
     }
 
-    fn finish_formal_voting(&mut self, mut voting: Voting) {
+    fn finish_formal_voting(&mut self, mut voting: Voting) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::FormalVotingTimeNotReached)
         }
 
         let voters_len = self.voters.len(voting.voting_id());
+        let voting_result = voting.get_result(voters_len);
 
-        let result = match voting.get_result(voters_len) {
+        let result = match voting_result {
             VotingResult::InFavor => {
                 self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
@@ -252,18 +266,27 @@ impl GovernanceVoting {
             }
         };
 
+        let formal_voting_id = voting.voting_id();
+        let informal_voting_id = voting.informal_voting_id();
         emit(VotingEnded {
-            voting_id: voting.voting_id(),
+            voting_id: formal_voting_id,
             result: result.into(),
             votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
-            informal_voting_id: voting.informal_voting_id(),
-            formal_voting_id: Some(voting.voting_id()),
+            informal_voting_id,
+            formal_voting_id: Some(formal_voting_id),
         });
 
         voting.complete(None);
         self.set_voting(voting);
+
+        VotingSummary::new(
+            voting_result,
+            VotingType::Formal,
+            informal_voting_id,
+            Some(formal_voting_id),
+        )
     }
 
     /// Casts a vote
@@ -273,7 +296,7 @@ impl GovernanceVoting {
     ///
     /// # Errors
     /// Throws [`VoteOnCompletedVotingNotAllowed`](casper_dao_utils::Error::VoteOnCompletedVotingNotAllowed) if voting is completed
-    /// 
+    ///
     /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
         let mut voting = self.get_voting(voting_id).unwrap_or_revert();
