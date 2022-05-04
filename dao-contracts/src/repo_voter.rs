@@ -11,7 +11,13 @@ use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
+    /// see [GovernanceVoting](GovernanceVoting)
     fn init(&mut self, variable_repo: Address, reputation_token: Address);
+    /// Creates new RepoVoter voting.
+    ///
+    /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
+    ///
+    /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
     fn create_voting(
         &mut self,
         variable_repo_to_edit: Address,
@@ -20,16 +26,29 @@ pub trait RepoVoterContractInterface {
         activation_time: Option<u64>,
         stake: U256,
     );
+    /// see [GovernanceVoting](GovernanceVoting)
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
+    /// see [GovernanceVoting](GovernanceVoting)
     fn finish_voting(&mut self, voting_id: VotingId);
+    /// see [GovernanceVoting](GovernanceVoting)
     fn get_dust_amount(&self) -> U256;
+    /// see [GovernanceVoting](GovernanceVoting)
     fn get_variable_repo_address(&self) -> Address;
+    /// see [GovernanceVoting](GovernanceVoting)
     fn get_reputation_token_address(&self) -> Address;
+    /// see [GovernanceVoting](GovernanceVoting)
     fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    /// see [GovernanceVoting](GovernanceVoting)
     fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    /// see [GovernanceVoting](GovernanceVoting)
     fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
 }
 
+/// RepoVoterContract
+///
+/// It is responsible for managing variables held in [Variable Repo](crate::VariableRepositoryContract).
+///
+/// Each change to the variable is being voted on, and when the voting passes, a change is made at given time.
 #[derive(Instance)]
 pub struct RepoVoterContract {
     voting: GovernanceVoting,
