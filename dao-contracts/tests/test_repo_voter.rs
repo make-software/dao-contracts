@@ -1,5 +1,5 @@
 mod governance_voting_common;
-extern crate speculate;
+
 use speculate::speculate;
 
 use casper_dao_contracts::{voting::Choice, voting::VotingId};

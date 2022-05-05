@@ -6,12 +6,14 @@ use crate::{core::ERC721Token, TokenId, TokenUri};
 pub struct MetadataERC721 {
     name: Variable<String>,
     symbol: Variable<String>,
+    base_uri: Variable<String>,
 }
 
 impl MetadataERC721 {
-    pub fn init(&mut self, name: String, symbol: String) {
+    pub fn init(&mut self, name: String, symbol: String, base_uri: String) {
         self.name.set(name);
         self.symbol.set(symbol);
+        self.base_uri.set(base_uri);
     }
 
     pub fn name(&self) -> String {
@@ -30,6 +32,6 @@ impl MetadataERC721 {
     }
 
     pub fn base_uri(&self) -> TokenUri {
-        "ipfs://".to_string()
+        self.base_uri.get()
     }
 }

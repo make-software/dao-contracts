@@ -1,12 +1,17 @@
+//! A selection of contracts implemented for usage in DAO
+
+#[doc(hidden)]
 pub mod action;
 mod admin;
 mod bid_escrow;
 mod dao_nft;
+mod kyc_voter;
 #[doc(hidden)]
 pub mod mocks;
 mod onboarding_voter;
 mod repo_voter;
 mod reputation;
+/// Variable Repo
 mod variable_repository;
 /// Utilities to manage the voting process
 pub mod voting;
@@ -15,6 +20,7 @@ pub mod bid;
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
 pub use dao_nft::{DaoOwnedNftContract, DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
+pub use kyc_voter::{KycVoterContract, KycVoterContractCaller, KycVoterContractInterface};
 #[doc(hidden)]
 pub use mocks::mock_voter::{
     MockVoterContract, MockVoterContractCaller, MockVoterContractInterface,
@@ -53,3 +59,6 @@ pub use onboarding_voter::OnboardingVoterContractTest;
 
 #[cfg(feature = "test-support")]
 pub use dao_nft::DaoOwnedNftContractTest;
+
+#[cfg(feature = "test-support")]
+pub use kyc_voter::KycVoterContractTest;

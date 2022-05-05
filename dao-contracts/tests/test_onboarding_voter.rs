@@ -8,8 +8,9 @@ use speculate::speculate;
 
 speculate! {
     use casper_types::U256;
-    use casper_dao_contracts::voting::{Choice, onboarding_info::OnboardingAction};
+    use casper_dao_contracts::voting::{Choice, onboarding_info::OnboardingAction, VotingId};
     use casper_dao_utils::Error;
+
     use std::time::Duration;
 
     before {
@@ -112,7 +113,15 @@ speculate! {
                         let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
-                        let voting_id = 1.into();
+                        #[allow(unused_variables)]
+                        let voting_id: VotingId = 1.into();
+                    }
+
+                    test "that_add_voting_cannot_be_created" {
+                        assert_eq!(
+                            contract.as_account(va).create_voting(OnboardingAction::Add, user, vote_amount),
+                            Err(Error::OnboardingAlreadyInProgress)
+                        )
                     }
 
                     context "voting_passed" {

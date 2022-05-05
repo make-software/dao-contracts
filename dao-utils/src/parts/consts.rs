@@ -12,12 +12,14 @@ pub const EP_CHANGE_OWNERSHIP: &str = "change_ownership";
 pub const EP_SET_OR_UPDATE: &str = "set_or_update";
 pub const EP_GET: &str = "get";
 
-pub const PARAM_RECIPIENT: &str = "recipient";
-pub const PARAM_AMOUNT: &str = "amount";
-pub const PARAM_OWNER: &str = "owner";
-pub const PARAM_ADDRESS: &str = "address";
-pub const PARAM_KEY: &str = "key";
-pub const PARAM_VALUE: &str = "value";
+pub const ARG_RECIPIENT: &str = "recipient";
+pub const ARG_AMOUNT: &str = "amount";
+pub const ARG_OWNER: &str = "owner";
+pub const ARG_ADDRESS: &str = "address";
+pub const ARG_KEY: &str = "key";
+pub const ARG_VALUE: &str = "value";
+pub const ARG_TO: &str = "to";
+pub const ARG_TOKEN_ID: &str = "token_id";
 
 pub const NAME_OWNER: &str = "owner";
 pub const NAME_STAKES: &str = "stakes";

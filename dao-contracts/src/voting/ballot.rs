@@ -4,10 +4,12 @@ use casper_dao_utils::{
 };
 use casper_types::U256;
 
+/// Id of a Voting
 pub type VotingId = U256;
 pub type AccountId = u32;
 pub type ReputationAmount = u32;
 
+/// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]
 pub enum Choice {
     Against,
@@ -21,7 +23,7 @@ impl Default for Choice {
 }
 
 impl Choice {
-    pub fn is_in_favor(&self) -> bool {
+    pub(crate) fn is_in_favor(&self) -> bool {
         match self {
             Choice::InFavor => true,
             Choice::Against => false,
@@ -29,6 +31,7 @@ impl Choice {
     }
 }
 
+/// Ballot struct
 #[derive(Debug, Default, FromBytes, ToBytes, CLTyped)]
 pub struct Ballot {
     pub voter: Option<Address>,

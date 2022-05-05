@@ -1,5 +1,10 @@
 use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
 
+/// Enum for actions that (AdminContract)[crate::AdminContract] can perform
+///
+/// - `AddToWhitelists` - calls `add_to_whitelist` method
+/// - `RemoveFromWhitelist` - calls `remove_from_whitelist` method
+/// - `ChangeOwner` - calls `change_ownership` method
 #[derive(CLTyped, PartialEq, Debug, FromBytes, ToBytes)]
 pub enum Action {
     AddToWhitelist,
@@ -8,7 +13,7 @@ pub enum Action {
 }
 
 impl Action {
-    pub fn get_entry_point(&self) -> String {
+    pub(crate) fn get_entry_point(&self) -> String {
         match self {
             Action::AddToWhitelist => "add_to_whitelist",
             Action::RemoveFromWhitelist => "remove_from_whitelist",
@@ -17,7 +22,7 @@ impl Action {
         .to_string()
     }
 
-    pub fn get_arg(&self) -> &str {
+    pub(crate) fn get_arg(&self) -> &str {
         match self {
             Action::AddToWhitelist => "address",
             Action::RemoveFromWhitelist => "address",

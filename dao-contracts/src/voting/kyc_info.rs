@@ -1,6 +1,6 @@
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_dao_macros::Instance, Address, Error,
-    Variable,
+    Mapping, Variable,
 };
 use casper_types::U256;
 
@@ -9,6 +9,7 @@ use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 #[derive(Instance)]
 pub struct KycInfo {
     kyc_token: Variable<Option<Address>>,
+    votings: Mapping<Address, bool>,
 }
 
 impl KycInfo {
@@ -25,5 +26,17 @@ impl KycInfo {
     pub fn is_kycd(&self, &address: &Address) -> bool {
         DaoOwnedNftContractCaller::at(self.get_kyc_token_address()).balance_of(address)
             > U256::zero()
+    }
+
+    pub(crate) fn set_voting(&self, address: &Address) {
+        self.votings.set(address, true);
+    }
+
+    pub(crate) fn clear_voting(&self, address: &Address) {
+        self.votings.set(address, false);
+    }
+
+    pub(crate) fn exists_ongoing_voting(&self, address: &Address) -> bool {
+        self.votings.get(address)
     }
 }
