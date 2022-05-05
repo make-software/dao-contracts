@@ -1,145 +1,78 @@
-use casper_types::ApiError;
-
-/// All possible errors that can be raised by the utils crate.
-#[derive(Debug, PartialEq)]
-pub enum Error {
-    NotAnOwner,
-    OwnerIsNotInitialized,
-    NotWhitelisted,
-    InsufficientBalance,
-    InsufficientAllowance,
-    TotalSupplyOverflow,
-    ValueNotAvailable,
-    ActivationTimeInPast,
-    ArithmeticOverflow,
-    BytesConversionError,
-    Unknown,
-    NoSuchMethod(String),
-    InvalidContext,
-    TokenDoesNotExist,
-    TokenAlreadyExists,
-    ApprovalToCurrentOwner,
-    ApproveCallerIsNotOwnerNorApprovedForAll,
-    CallerIsNotOwnerNorApproved,
-    TransferToNonERC721ReceiverImplementer,
-    TransferFromIncorrectOwner,
-    ApproveToCaller,
-    InvalidTokenOwner,
-    InformalVotingTimeNotReached,
-    FormalVotingTimeNotReached,
-    VoteOnCompletedVotingNotAllowed,
-    FinishingCompletedVotingNotAllowed,
-    CannotVoteTwice,
-    NotEnoughReputation,
-    MappingIndexDoesNotExist,
-    VaOnboardedAlready,
-    OnboardingAlreadyInProgress,
-    VaNotOnboarded,
-    VaNotKyced,
-    UnexpectedOnboardingError,
-    UserKycedAlready,
-    KycAlreadyInProgress,
-    UnexpectedKycError,
-    BallotDoesNotExist,
-    VoterDoesNotExist,
-    VotingDoesNotExist,
-    ContractToCallNotSet,
-    VariableValueNotSet,
-}
-
-impl From<Error> for ApiError {
-    fn from(val: Error) -> Self {
-        let id = match val {
-            Error::InsufficientBalance => 404,
-            Error::InsufficientAllowance => 401,
-            Error::NotAnOwner => 1000,
-            Error::OwnerIsNotInitialized => 1001,
-            Error::NotWhitelisted => 1002,
-            Error::TotalSupplyOverflow => 1004,
-            Error::ValueNotAvailable => 1005,
-            Error::ActivationTimeInPast => 1006,
-            Error::ArithmeticOverflow => 1007,
-            Error::BytesConversionError => 1008,
-            Error::InvalidContext => 1099,
-            Error::Unknown => 1100,
-            Error::NoSuchMethod(_) => 1101,
-            Error::VariableValueNotSet => 1102,
-            Error::TokenDoesNotExist => 1700,
-            Error::TokenAlreadyExists => 1701,
-            Error::ApprovalToCurrentOwner => 1702,
-            Error::ApproveCallerIsNotOwnerNorApprovedForAll => 1703,
-            Error::CallerIsNotOwnerNorApproved => 1704,
-            Error::TransferToNonERC721ReceiverImplementer => 1705,
-            Error::TransferFromIncorrectOwner => 1706,
-            Error::ApproveToCaller => 1707,
-            Error::InvalidTokenOwner => 1708,
-            Error::InformalVotingTimeNotReached => 2101, // Voting errors start with 21xx
-            Error::FormalVotingTimeNotReached => 2102,
-            Error::VoteOnCompletedVotingNotAllowed => 2103,
-            Error::FinishingCompletedVotingNotAllowed => 2104,
-            Error::CannotVoteTwice => 2105,
-            Error::NotEnoughReputation => 2106,
-            Error::ContractToCallNotSet => 2107,
-            Error::VaOnboardedAlready => 2201,
-            Error::OnboardingAlreadyInProgress => 2202,
-            Error::VaNotOnboarded => 2203,
-            Error::VaNotKyced => 2204,
-            Error::UnexpectedOnboardingError => 2205,
-            Error::KycAlreadyInProgress => 2206,
-            Error::UserKycedAlready => 2207,
-            Error::UnexpectedKycError => 2208,
-            Error::MappingIndexDoesNotExist => 3404,
-            Error::BallotDoesNotExist => 3405,
-            Error::VoterDoesNotExist => 3406,
-            Error::VotingDoesNotExist => 3407,
-        };
-        ApiError::User(id)
-    }
-}
-
-impl From<u16> for Error {
-    fn from(val: u16) -> Self {
-        match val {
-            401 => Error::InsufficientAllowance,
-            404 => Error::InsufficientBalance,
-            1000 => Error::NotAnOwner,
-            1001 => Error::OwnerIsNotInitialized,
-            1002 => Error::NotWhitelisted,
-            1004 => Error::TotalSupplyOverflow,
-            1005 => Error::ValueNotAvailable,
-            1006 => Error::ActivationTimeInPast,
-            1007 => Error::ArithmeticOverflow,
-            1008 => Error::BytesConversionError,
-            1102 => Error::VariableValueNotSet,
-            1700 => Error::TokenDoesNotExist,
-            1701 => Error::TokenAlreadyExists,
-            1702 => Error::ApprovalToCurrentOwner,
-            1703 => Error::ApproveCallerIsNotOwnerNorApprovedForAll,
-            1704 => Error::CallerIsNotOwnerNorApproved,
-            1705 => Error::TransferToNonERC721ReceiverImplementer,
-            1706 => Error::TransferFromIncorrectOwner,
-            1707 => Error::ApproveToCaller,
-            1708 => Error::InvalidTokenOwner,
-            2101 => Error::InformalVotingTimeNotReached,
-            2102 => Error::FormalVotingTimeNotReached,
-            2103 => Error::VoteOnCompletedVotingNotAllowed,
-            2104 => Error::FinishingCompletedVotingNotAllowed,
-            2105 => Error::CannotVoteTwice,
-            2106 => Error::NotEnoughReputation,
-            2107 => Error::ContractToCallNotSet,
-            2201 => Error::VaOnboardedAlready,
-            2202 => Error::OnboardingAlreadyInProgress,
-            2203 => Error::VaNotOnboarded,
-            2204 => Error::VaNotKyced,
-            2205 => Error::UnexpectedOnboardingError,
-            2206 => Error::KycAlreadyInProgress,
-            2207 => Error::UserKycedAlready,
-            2208 => Error::UnexpectedKycError,
-            3404 => Error::MappingIndexDoesNotExist,
-            3405 => Error::BallotDoesNotExist,
-            3406 => Error::VoterDoesNotExist,
-            3407 => Error::VoterDoesNotExist,
-            _ => Error::Unknown,
+macro_rules! dao_errors {
+    ( $($name:ident $( ($optional_arg:ident) )? => $value:expr,)* ) => {
+        #[doc = "All possible errors that can be raised by the utils crate."]
+        #[derive(Debug, PartialEq)]
+        pub enum Error {
+            $($name$(($optional_arg))*),*
         }
-    }
+
+        impl From<Error> for casper_types::ApiError {
+            fn from(val: Error) -> Self {
+                let id = match val {
+                    $(Error::$name$( ( wildcard!($optional_arg) ) )* => $value),*
+                };
+                casper_types::ApiError::User(id)
+            }
+        }
+
+        impl From<u16> for Error {
+            fn from(val: u16) -> Self {
+                match val {
+                    $($value => Error::$name $( ($optional_arg::default()) )*),*,
+                    _ => Error::Unknown,
+                }
+            }
+        }
+    };
 }
+
+macro_rules! wildcard {
+    ($t:tt) => {
+        _
+    };
+}
+
+dao_errors!(
+    InsufficientBalance => 404,
+    InsufficientAllowance => 401,
+    NotAnOwner => 1000,
+    OwnerIsNotInitialized => 1001,
+    NotWhitelisted => 1002,
+    TotalSupplyOverflow => 1004,
+    ValueNotAvailable => 1005,
+    ActivationTimeInPast => 1006,
+    ArithmeticOverflow => 1007,
+    BytesConversionError => 1008,
+    InvalidContext => 1099,
+    Unknown => 1100,
+    NoSuchMethod(String) => 1101,
+    VariableValueNotSet => 1102,
+    TokenDoesNotExist => 1700,
+    TokenAlreadyExists => 1701,
+    ApprovalToCurrentOwner => 1702,
+    ApproveCallerIsNotOwnerNorApprovedForAll => 1703,
+    CallerIsNotOwnerNorApproved => 1704,
+    TransferToNonERC721ReceiverImplementer => 1705,
+    TransferFromIncorrectOwner => 1706,
+    ApproveToCaller => 1707,
+    InvalidTokenOwner => 1708,
+    InformalVotingTimeNotReached => 2101,
+    FormalVotingTimeNotReached => 2102,
+    VoteOnCompletedVotingNotAllowed => 2103,
+    FinishingCompletedVotingNotAllowed => 2104,
+    CannotVoteTwice => 2105,
+    NotEnoughReputation => 2106,
+    ContractToCallNotSet => 2107,
+    VaOnboardedAlready => 2201,
+    OnboardingAlreadyInProgress => 2202,
+    VaNotOnboarded => 2203,
+    VaNotKyced => 2204,
+    UnexpectedOnboardingError => 2205,
+    KycAlreadyInProgress => 2206,
+    UserKycedAlready => 2207,
+    UnexpectedKycError => 2208,
+    MappingIndexDoesNotExist => 3404,
+    BallotDoesNotExist => 3405,
+    VoterDoesNotExist => 3406,
+    VotingDoesNotExist => 3407,
+);
