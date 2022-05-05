@@ -2,7 +2,7 @@ use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice, VotingId},
     AdminContractTest, MockVoterContractTest, RepoVoterContractTest, ReputationContractTest,
-    VariableRepositoryContractTest,
+    VariableRepositoryContractTest, BidEscrowContractTest, DaoOwnedNftContractTest,
 };
 
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
@@ -10,6 +10,41 @@ use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
+
+#[allow(dead_code)]
+pub fn setup_bid_escrow() -> (BidEscrowContractTest, ReputationContractTest, DaoOwnedNftContractTest, DaoOwnedNftContractTest) {
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 3;
+
+    let (variable_repo_contract, reputation_token_contract) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+
+    let va_token = DaoOwnedNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "user token".to_string(),
+        "usert".to_string(),
+        "".to_string(),
+    );
+
+    let kyc_token = DaoOwnedNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "kyc token".to_string(),
+        "kyt".to_string(),
+        "".to_string(),
+    );
+
+    #[allow(unused_mut)]
+    let mut bid_escrow_contract = BidEscrowContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+        kyc_token.address(),
+        va_token.address(),
+    );
+
+    (bid_escrow_contract, reputation_token_contract, va_token, kyc_token)
+}
 
 #[allow(dead_code)]
 pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {

@@ -43,6 +43,8 @@ pub enum Error {
     ContractToCallNotSet,
     VariableValueNotSet,
     CannotPostJobForSelf,
+    JobPosterNotKycd,
+    WorkerNotKycd,
 }
 
 impl From<Error> for ApiError {
@@ -88,6 +90,8 @@ impl From<Error> for ApiError {
             Error::VoterDoesNotExist => 3406,
             Error::VotingDoesNotExist => 3407,
             Error::CannotPostJobForSelf => 4000,
+            Error::JobPosterNotKycd => 4001,
+            Error::WorkerNotKycd => 4002,
         };
         ApiError::User(id)
     }
@@ -133,6 +137,7 @@ impl From<u16> for Error {
             3406 => Error::VoterDoesNotExist,
             3407 => Error::VoterDoesNotExist,
             4000 => Error::CannotPostJobForSelf,
+            4001 => Error::WorkerNotKycd,
             _ => Error::Unknown,
         }
     }
