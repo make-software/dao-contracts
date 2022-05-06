@@ -71,7 +71,10 @@ dao_errors!(
     KycAlreadyInProgress => 2206,
     UserKycedAlready => 2207,
     UnexpectedKycError => 2208,
+<<<<<<< HEAD
     UserAlreadyHasToken => 2309,
+=======
+>>>>>>> develop
     MappingIndexDoesNotExist => 3404,
     BallotDoesNotExist => 3405,
     VoterDoesNotExist => 3406,
