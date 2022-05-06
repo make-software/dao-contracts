@@ -85,11 +85,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn accept_job(&mut self,bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        if job.status() == JobStatus::Accepted {
-            revert(Error::CannotAcceptJob);
-        }
-
-        if job.worker() == caller() {
+        
+        if job.can_accept(caller(), get_block_time()) {
             job.accept();
             emit(JobAccepted {
                 bid_id,
@@ -104,15 +101,12 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn cancel_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        if job.poster() != caller() {
+        if !job.can_cancel(caller()) {
             revert(Error::CannotCancelJob);
         }
 
-        if job.status() != JobStatus::Created {
-            revert(Error::CannotCancelJob)
-        }
-
-        job.cancel()
+        job.cancel();
+        self.jobs.set(&bid_id, job);
     }
 
     fn submit_result(&mut self, bid_id: BidId, result: Description) {

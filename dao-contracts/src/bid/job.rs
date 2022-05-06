@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use casper_dao_utils::{casper_dao_macros::{CLTyped, ToBytes, FromBytes}, Address, BlockTime};
 
 use crate::voting::ReputationAmount;
@@ -59,10 +61,29 @@ impl Job {
             if caller == self.worker() || caller == self.poster() {
                 return true
             }
-        } else if caller == self.worker() {
+        } else if caller == self.worker() && self.status() == JobStatus::Accepted {
             return true
         }
 
+        false
+    }
+
+    pub fn can_cancel(&self, caller: Address) -> bool {
+        if self.status() == JobStatus::Created && self.poster() == caller {
+            return true
+        }
+        false
+    }
+
+    pub fn can_accept(&self, caller: Address, block_time: BlockTime) -> bool {
+        if self.status() != JobStatus::Created {
+            return false
+        }
+
+        if self.worker() == caller && !self.time_ended(block_time) {
+            return true
+        }
+        
         false
     }
 
