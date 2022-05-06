@@ -364,7 +364,9 @@ impl GovernanceVoting {
 
     /// Returns the address of [VA Token](crate::DaoOwnedNftContract) connected to the contract
     pub fn get_va_token_address(&self) -> Address {
-        self.va_token.get().unwrap_or_revert(Error::VariableValueNotSet)
+        self.va_token
+            .get()
+            .unwrap_or_revert_with(Error::VariableValueNotSet)
     }
 
     /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
