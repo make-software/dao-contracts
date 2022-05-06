@@ -54,7 +54,7 @@ speculate! {
             test "remove_user_voting_creation_fails" {
                 assert_eq!(
                     contract.as_account(va).create_voting(OnboardingAction::Remove, user, vote_amount),
-                    Err(Error::VaNotOnboarded)
+                    Err(Error::NotVa)
                 )
             }
 

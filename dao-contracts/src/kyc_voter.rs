@@ -13,7 +13,13 @@ use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address);
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    );
     // Require no voting for a given `address` is on.
     // Precondition: KycNft.balance_of(address_to_onboard) == 0;
     // Action: KycNft.mint(address_to_onboard, next_token_id)
@@ -36,9 +42,15 @@ pub struct KycVoterContract {
 }
 
 impl KycVoterContractInterface for KycVoterContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address) {
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    ) {
         self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token, kyc_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     delegate! {

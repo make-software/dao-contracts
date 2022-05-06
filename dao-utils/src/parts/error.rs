@@ -65,7 +65,7 @@ dao_errors!(
     ContractToCallNotSet => 2107,
     VaOnboardedAlready => 2201,
     OnboardingAlreadyInProgress => 2202,
-    VaNotOnboarded => 2203,
+    NotVa => 2203,
     VaNotKyced => 2204,
     UnexpectedOnboardingError => 2205,
     KycAlreadyInProgress => 2206,

@@ -2,6 +2,7 @@ use casper_dao_contracts::{
     DaoOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
 };
+use casper_dao_erc721::TokenId;
 use casper_dao_utils::{Address, TestContract, TestEnv};
 use casper_types::U256;
 use speculate::speculate;
@@ -162,6 +163,12 @@ fn setup() -> (
         "kyt".to_string(),
         "".to_string(),
     );
+    let mut va_token = DaoOwnedNftContractTest::new(
+        &env,
+        "va token".to_string(),
+        "va_symbol".to_string(),
+        "".to_string(),
+    );
     let mut reputation_token = ReputationContractTest::new(&env);
     let mut variable_repo = VariableRepositoryContractTest::new(&env);
 
@@ -170,6 +177,7 @@ fn setup() -> (
         variable_repo.address(),
         reputation_token.address(),
         kyc_token.address(),
+        va_token.address(),
     );
 
     // Voter Contract becomes the owner of Variable Repo and Reputation Token
@@ -189,6 +197,8 @@ fn setup() -> (
     let vote_amount = 1_000.into();
     reputation_token.mint(voter, mint_amount).unwrap();
     reputation_token.mint(second_voter, mint_amount).unwrap();
+    va_token.mint(voter, TokenId::from(1)).unwrap();
+    va_token.mint(second_voter, TokenId::from(2)).unwrap();
     let document_hash = 1234.into();
 
     (

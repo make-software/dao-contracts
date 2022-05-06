@@ -300,6 +300,11 @@ impl GovernanceVoting {
     ///
     /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
     pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
+        let va_token = DaoOwnedNftContractCaller::at(self.get_va_token_address());
+        if va_token.balance_of(voter).is_zero() {
+            revert(Error::NotVa)
+        }
+
         let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
         // We cannot vote on a completed voting

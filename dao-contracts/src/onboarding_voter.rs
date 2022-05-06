@@ -222,7 +222,7 @@ impl OnboardingVoterContract {
 
     fn assert_onboarded(&self, address: &Address) {
         if !self.onboarding.is_onboarded(address) {
-            casper_env::revert(Error::VaNotOnboarded);
+            casper_env::revert(Error::NotVa);
         }
     }
 }
