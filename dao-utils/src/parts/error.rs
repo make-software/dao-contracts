@@ -48,6 +48,10 @@ pub enum Error {
     CannotPostJobForSelf,
     JobPosterNotKycd,
     WorkerNotKycd,
+    CannotCancelJob,
+    NotAuthorizedToSubmitResult,
+    CannotAcceptJob,
+    CannotSubmitJob,
 }
 
 impl From<Error> for ApiError {
@@ -98,6 +102,10 @@ impl From<Error> for ApiError {
             Error::CannotPostJobForSelf => 4000,
             Error::JobPosterNotKycd => 4001,
             Error::WorkerNotKycd => 4002,
+            Error::CannotCancelJob => 4003,
+            Error::NotAuthorizedToSubmitResult => 4004,
+            Error::CannotAcceptJob => 4005,
+            Error::CannotSubmitJob => 4006,
         };
         ApiError::User(id)
     }
@@ -146,7 +154,12 @@ impl From<u16> for Error {
             3406 => Error::VoterDoesNotExist,
             3407 => Error::VoterDoesNotExist,
             4000 => Error::CannotPostJobForSelf,
-            4001 => Error::WorkerNotKycd,
+            4001 => Error::JobPosterNotKycd,
+            4002 => Error::WorkerNotKycd,
+            4003 => Error::CannotCancelJob,
+            4004 => Error::NotAuthorizedToSubmitResult,
+            4005 => Error::CannotAcceptJob,
+            4006 => Error::CannotSubmitJob,
             _ => Error::Unknown,
         }
     }

@@ -6,7 +6,6 @@ use casper_types::U256;
 
 /// Id of a Voting
 pub type VotingId = U256;
-pub type AccountId = u32;
 pub type ReputationAmount = u32;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`

@@ -22,6 +22,7 @@ pub use parts::mapping::Mapping;
 pub use parts::mapping::VecMapping;
 pub use parts::sequence::SequenceGenerator;
 pub use parts::variable::Variable;
+pub use parts::types::BlockTime;
 
 #[cfg(feature = "test-support")]
 pub use conversions::BytesConversion;

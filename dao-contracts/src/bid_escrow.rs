@@ -1,18 +1,13 @@
-use std::ops::Add;
-
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{caller, revert, emit},
-    Address, Mapping,  Variable, Error, casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_env::{caller, revert, emit, get_block_time},
+    Address, Mapping,  Variable, Error, BlockTime,
 };
-use casper_types::{RuntimeArgs, runtime_args};
 
 use crate::{
     voting::{GovernanceVoting, ReputationAmount, kyc_info::KycInfo, onboarding_info::OnboardingInfo},
-    bid::{job::{Job, JobStatus}, types::{BidId, Description}, events::JobCreated},
+    bid::{job::{Job, JobStatus}, types::{BidId, Description}, events::{JobCreated, JobAccepted, JobSubmitted}},
 };
-
-use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -21,10 +16,11 @@ pub trait BidEscrowContractInterface {
         &mut self,
         worker: Address,
         description: Description,
+        time: BlockTime,
         required_stake: Option<ReputationAmount>
     );
-    fn accept_bid(&mut self, bid_id: BidId);
-    fn cancel_bid(&mut self, bid_id: BidId);
+    fn accept_job(&mut self, bid_id: BidId);
+    fn cancel_job(&mut self, bid_id: BidId);
     fn submit_result(&mut self, bid_id: BidId, result: Description);
     fn get_job(&self, bid_id: BidId) -> Option<Job>;
 }
@@ -45,7 +41,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.onboarding.init(va_token);
     }
 
-    fn pick_bid(&mut self, worker: Address, description: Description, required_stake: Option<ReputationAmount>) {
+    fn pick_bid(&mut self, worker: Address, description: Description, time: BlockTime, required_stake: Option<ReputationAmount>) {
         if worker == caller() {
             revert(Error::CannotPostJobForSelf);
         }
@@ -59,46 +55,61 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         let bid_id = self.next_bid_id();
+        let finish_time = get_block_time() + time;
 
         let mut job = Job::new(
-            bid_id, description.clone(), caller(), worker, required_stake
+            bid_id, description.clone(), caller(), worker, finish_time, required_stake
         );
-
-        // TODO Automatically accept for non VAs
-        if !self.onboarding.is_onboarded(&worker) {
-            job.accept();
-        }
-
-        self.jobs.set(&bid_id, job);
 
         emit(JobCreated {
             bid_id,
             job_poster: caller(),
             worker,
             description,
+            finish_time,
             required_stake,
         });
+
+        if !self.onboarding.is_onboarded(&worker) {
+            job.accept();
+            emit(JobAccepted {
+                bid_id,
+                job_poster: job.poster(),
+                worker: job.worker(),
+            });
+        }
+
+        self.jobs.set(&bid_id, job);
     }
 
 
-    fn accept_bid(&mut self,bid_id: BidId) {
+    fn accept_job(&mut self,bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
         if job.status() == JobStatus::Accepted {
-            revert(Error::InvalidContext);
+            revert(Error::CannotAcceptJob);
         }
 
         if job.worker() == caller() {
             job.accept();
+            emit(JobAccepted {
+                bid_id,
+                job_poster: job.poster(),
+                worker: job.worker(),
+            });
             self.jobs.set(&bid_id, job);
         } else {
-            revert(Error::InvalidContext);
+            revert(Error::CannotAcceptJob);
         }
     }
 
-    fn cancel_bid(&mut self, bid_id: BidId) {
+    fn cancel_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
         if job.poster() != caller() {
-            revert(Error::InvalidContext);
+            revert(Error::CannotCancelJob);
+        }
+
+        if job.status() != JobStatus::Created {
+            revert(Error::CannotCancelJob)
         }
 
         job.cancel()
@@ -106,7 +117,18 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn submit_result(&mut self, bid_id: BidId, result: Description) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        job.set_result(result);
+        if !job.can_submit(caller(), get_block_time()) {
+            revert(Error::NotAuthorizedToSubmitResult)
+        }
+        
+        emit(JobSubmitted {
+            bid_id,
+            job_poster: job.poster(),
+            worker: job.worker(),
+            result: result.clone(),
+        });
+
+        job.submit(result);
         self.jobs.set(&bid_id, job);
     }
 

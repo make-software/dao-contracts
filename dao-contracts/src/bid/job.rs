@@ -1,4 +1,4 @@
-use casper_dao_utils::{casper_dao_macros::{CLTyped, ToBytes, FromBytes}, Address, casper_contract::unwrap_or_revert::UnwrapOrRevert};
+use casper_dao_utils::{casper_dao_macros::{CLTyped, ToBytes, FromBytes}, Address, BlockTime};
 
 use crate::voting::ReputationAmount;
 
@@ -9,6 +9,7 @@ pub enum JobStatus {
     Created,
     Accepted,
     Cancelled,
+    Submitted,
     NotCompleted,
     Completed,
 }
@@ -24,6 +25,7 @@ pub struct Job {
     bid_id: BidId,
     description: Description,
     result: Option<Description>,
+    finish_time: BlockTime,
     required_stake: Option<ReputationAmount>,
     poster: Option<Address>,
     worker: Option<Address>,
@@ -31,11 +33,12 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new(bid_id: BidId, description: Description, poster: Address, worker: Address, required_stake: Option<ReputationAmount>) -> Self {
+    pub fn new(bid_id: BidId, description: Description, poster: Address, worker: Address, finish_time: BlockTime, required_stake: Option<ReputationAmount>) -> Self {
         Job {
             bid_id,
             description,
             result: None,
+            finish_time,
             required_stake,
             poster: Some(poster),
             worker: Some(worker),
@@ -49,6 +52,27 @@ impl Job {
 
     pub fn cancel(&mut self) {
         self.status = JobStatus::Cancelled;
+    }
+
+    pub fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
+        if self.time_ended(block_time) {
+            if caller == self.worker() || caller == self.poster() {
+                return true
+            }
+        } else if caller == self.worker() {
+            return true
+        }
+
+        false
+    }
+
+    pub fn time_ended(&self, block_time: BlockTime) -> bool {
+        self.finish_time <= block_time
+    }
+
+    pub fn submit(&mut self, result: Description) {
+        self.result = Some(result);
+        self.status = JobStatus::Submitted;
     }
 
     /// Get the job's status.
@@ -65,11 +89,6 @@ impl Job {
     #[must_use]
     pub fn poster(&self) -> Address {
         self.poster.unwrap()
-    }
-
-    /// Set the job's result.
-    pub fn set_result(&mut self, result: Description) {
-        self.result = Some(result);
     }
 
     /// Get the job's result.
