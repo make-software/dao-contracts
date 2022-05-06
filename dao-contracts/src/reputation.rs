@@ -61,10 +61,8 @@ pub trait ReputationContractInterface {
     /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
-    /// It emits [`OwnerChanged`](casper_dao_utils::owner::events::OwnerChanged),
-    /// [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) and
-    /// [`RemovedFromWhitelist`](casper_dao_utils::whitelist::events::RemovedFromWhitelist)
-    /// events.
+    /// It emits [`OwnerChanged`](casper_dao_utils::owner::events::OwnerChanged) and
+    /// [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) events.
     fn change_ownership(&mut self, owner: Address);
 
     /// Add new address to the whitelist.
