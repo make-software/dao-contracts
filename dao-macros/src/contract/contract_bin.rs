@@ -7,18 +7,26 @@ use crate::contract::utils;
 use super::CasperContractItem;
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
+    let contract_ident = &input.contract_ident;
     let macro_ident = format_ident!(
         "{}",
-        &input
-            .contract_ident
+        contract_ident
             .to_string()
             .to_case(convert_case::Case::Snake)
     );
 
     let call = generate_call(input);
     let interface_methods = generate_interface_methods(input);
-
+    let docs = match macro_ident.to_string().contains("mock") {
+        true => quote! { #[doc(hidden)]},
+        false => quote! {
+            #[doc = "Generates a "]
+            #[doc = stringify!(#contract_ident)]
+            #[doc = " binary with all the required no_mangle functions."]
+        },
+    };
     quote! {
+        #docs
         #[macro_export]
         macro_rules! #macro_ident {
             () => {
@@ -93,6 +101,9 @@ mod tests {
         let generated = generate_code(&item);
 
         let expected = quote! {
+            #[doc = "Generates a "]
+            #[doc = stringify!(Contract)]
+            #[doc = " binary with all the required no_mangle functions."]
             #[macro_export]
             macro_rules! contract {
                 () => {

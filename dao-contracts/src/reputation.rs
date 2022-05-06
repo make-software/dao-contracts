@@ -1,19 +1,17 @@
 use casper_dao_erc20::{ERC20Interface, ERC20};
-use casper_dao_modules::{Owner, Whitelist};
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
 };
 use casper_types::U256;
+use delegate::delegate;
 
-// TODO: Put it lower.
-//
 // Interface of the Reputation Contract.
 //
 // It should be implemented by [`ReputationContract`], [`ReputationContractCaller`]
 // and [`ReputationContractTest`].
-
 #[casper_contract_interface]
 pub trait ReputationContractInterface {
     /// Constructor method.
@@ -22,8 +20,8 @@ pub trait ReputationContractInterface {
     /// * Set [`caller`] as the owner of the contract.
     /// * Add [`caller`] to the whitelist.
     ///
-    /// It emits [`OwnerChanged`](casper_dao_utils::owner::events::OwnerChanged),
-    /// [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) events.
+    /// It emits [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) events.
     fn init(&mut self);
 
     /// Mint new tokens. Add `amount` of new tokens to the balance of the `recipient` and
@@ -74,7 +72,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
-    /// It emits [`AddedToWhitelist`](casper_dao_utils::whitelist::events::AddedToWhitelist) event.
+    /// It emits [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) event.
     fn add_to_whitelist(&mut self, address: Address);
 
     /// Remove address from the whitelist.
@@ -82,7 +80,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
-    /// It emits [`RemovedFromWhitelist`](casper_dao_utils::whitelist::events::RemovedFromWhitelist)
+    /// It emits [`RemovedFromWhitelist`](casper_dao_modules::events::RemovedFromWhitelist)
     /// event.
     fn remove_from_whitelist(&mut self, address: Address);
 
@@ -103,62 +101,51 @@ pub trait ReputationContractInterface {
 #[derive(Instance)]
 pub struct ReputationContract {
     pub token: ERC20,
-    pub owner: Owner,
-    pub whitelist: Whitelist,
+    pub access_control: AccessControl,
 }
 
 impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
         let deployer = caller();
-        self.owner.init(deployer);
-        self.whitelist.add_to_whitelist(deployer);
+        self.access_control.init(deployer);
+    }
+
+    delegate! {
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
+        }
+    }
+
+    delegate! {
+        to self.token {
+            fn total_supply(&self) -> U256;
+            fn balance_of(&self, address: Address) -> U256;
+        }
     }
 
     fn mint(&mut self, recipient: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.mint(&recipient, amount);
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.burn(&owner, amount);
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
-        self.whitelist.ensure_whitelisted();
+        self.access_control.ensure_whitelisted();
         self.token.raw_transfer(owner, recipient, amount);
     }
+}
 
-    fn change_ownership(&mut self, owner: Address) {
-        self.owner.ensure_owner();
-        self.owner.change_ownership(owner);
-        self.whitelist.add_to_whitelist(owner);
-        self.whitelist.remove_from_whitelist(caller());
-    }
-
-    fn add_to_whitelist(&mut self, address: Address) {
-        self.owner.ensure_owner();
-        self.whitelist.add_to_whitelist(address);
-    }
-
-    fn remove_from_whitelist(&mut self, address: Address) {
-        self.owner.ensure_owner();
-        self.whitelist.remove_from_whitelist(address);
-    }
-
-    fn get_owner(&self) -> Option<Address> {
-        self.owner.get_owner()
-    }
-
-    fn total_supply(&self) -> U256 {
-        self.token.total_supply()
-    }
-
-    fn balance_of(&self, address: Address) -> U256 {
-        self.token.balance_of(address)
-    }
-
-    fn is_whitelisted(&self, address: Address) -> bool {
-        self.whitelist.is_whitelisted(&address)
+impl ReputationContractCaller {
+    /// Indicates whether balance of the `address` is greater than 0.
+    pub fn has_reputation(&self, address: &Address) -> bool {
+        !self.balance_of(*address).is_zero()
     }
 }

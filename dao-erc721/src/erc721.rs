@@ -18,10 +18,10 @@ pub type TokenUri = String;
 
 #[casper_contract_interface]
 pub trait ERC721Interface {
-    fn init(&mut self, name: String, symbol: String);
+    fn init(&mut self, name: String, symbol: String, base_uri: String);
     fn name(&self) -> String;
     fn symbol(&self) -> String;
-    fn owner_of(&self, token_id: TokenId) -> Address;
+    fn owner_of(&self, token_id: TokenId) -> Option<Address>;
     fn balance_of(&self, owner: Address) -> U256;
     fn total_supply(&self) -> U256;
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
@@ -51,17 +51,16 @@ pub struct ERC721 {
 impl ERC721Interface for ERC721 {
     delegate! {
         to self.metadata {
-            fn init(&mut self, name: String, symbol: String);
+            fn init(&mut self, name: String, symbol: String, base_uri: String);
             fn name(&self) -> String;
             fn symbol(&self) -> String;
+            fn base_uri(&self) -> TokenUri;
         }
 
         to self.core {
-            fn owner_of(&self, token_id: TokenId) -> Address;
+            fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
-            fn token_uri(&self, token_id: TokenId) -> TokenUri;
-            fn base_uri(&self) -> TokenUri;
             fn approve(&mut self, to: Option<Address>, token_id: TokenId);
             fn get_approved(&self, token_id: TokenId) -> Option<Address>;
             fn set_approval_for_all(&mut self, operator: Address, approved: bool);
@@ -69,6 +68,10 @@ impl ERC721Interface for ERC721 {
             fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId);
             fn safe_transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId, data: Option<Bytes>);
         }
+    }
+
+    fn token_uri(&self, token_id: TokenId) -> TokenUri {
+        self.metadata.token_uri(&self.core, token_id)
     }
 
     fn mint(&mut self, to: Address, token_id: TokenId) {

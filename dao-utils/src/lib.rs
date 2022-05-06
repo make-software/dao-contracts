@@ -20,6 +20,7 @@ pub use parts::consts;
 pub use parts::error::Error;
 pub use parts::mapping::Mapping;
 pub use parts::mapping::VecMapping;
+pub use parts::sequence::SequenceGenerator;
 pub use parts::variable::Variable;
 
 #[cfg(feature = "test-support")]
@@ -30,3 +31,9 @@ mod test_env;
 
 #[cfg(feature = "test-support")]
 pub use test_env::{ExecutionError, TestEnv};
+
+#[cfg(feature = "test-support")]
+mod test_contract;
+
+#[cfg(feature = "test-support")]
+pub use test_contract::TestContract;

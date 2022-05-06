@@ -15,7 +15,10 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/reputation_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/variable_repository_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/repo_voter_contract.wasm 2>/dev/null | true
+	@wasm-strip $(OUTPUT_DIR)/admin_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/mock_voter_contract.wasm 2>/dev/null | true
+	@wasm-strip $(OUTPUT_DIR)/onboarding_voter_contract.wasm 2>/dev/null | true
+	@wasm-strip $(OUTPUT_DIR)/dao_owned_nft_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_20.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_721.wasm 2>/dev/null | true
 
@@ -60,4 +63,4 @@ clean:
 	cargo clean
 	
 docs:
-	cargo doc --features test-support --no-deps --open
+	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open

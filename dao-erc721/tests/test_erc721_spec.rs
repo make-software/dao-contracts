@@ -7,17 +7,18 @@ mod test {
         events::{Approval, ApprovalForAll, Transfer},
         ERC721Test, MockERC721NonReceiverTest, MockERC721ReceiverTest, Received, TokenId,
     };
-    use casper_dao_utils::{Address, BytesConversion, Error, TestEnv};
+    use casper_dao_utils::{Address, BytesConversion, Error, TestContract, TestEnv};
 
     speculate! {
         static NAME: &str = "Plascoin";
         static SYMBOL: &str = "PLS";
+        static BASE_URI: &str = "some://base/uri";
 
         context "erc721" {
 
             before {
                 let env = TestEnv::new();
-                let mut token = ERC721Test::new(&env, String::from(NAME), String::from(SYMBOL));
+                let mut token = ERC721Test::new(&env, String::from(NAME), String::from(SYMBOL), String::from(BASE_URI));
 
                 let first_token_id: TokenId = 1.into();
                 let non_existent_token_id: TokenId = 999.into();
@@ -59,7 +60,7 @@ mod test {
                 }
 
                 it "sets the ownership to the new token owner" {
-                    assert_eq!(token.owner_of(first_token_id), token_owner);
+                    assert_eq!(token.owner_of(first_token_id), Some(token_owner));
                 }
 
                 it "emits a Transfer event" {
@@ -111,7 +112,7 @@ mod test {
                     context "when the given token id was tracked by this token" {
                         it "returns the owner of the given token ID" {
                             let token_id = first_token_id;
-                            assert_eq!(token.owner_of(token_id), token_owner);
+                            assert_eq!(token.owner_of(token_id), Some(token_owner));
                         }
 
                     }
@@ -378,7 +379,7 @@ mod test {
                         //transfers the ownership of the given token id to the given address
                         assert_eq!(
                             token.owner_of(token_id),
-                            new_owner.unwrap(),
+                            new_owner,
                         );
 
                         //emits a Transfer event
@@ -458,7 +459,7 @@ mod test {
                             it "keeps ownership of the token" {
                                 assert_eq!(
                                     token.owner_of(first_token_id),
-                                    token_owner,
+                                    Some(token_owner),
                                 );
                             }
                             it "clears the approval for the token id" {
@@ -562,7 +563,7 @@ mod test {
                                 it "keeps ownership of the token" {
                                     assert_eq!(
                                         token.owner_of(first_token_id),
-                                        token_owner,
+                                        Some(token_owner),
                                     );
                                 }
                                 it "clears the approval for the token id" {

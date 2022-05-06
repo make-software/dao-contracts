@@ -1,6 +1,6 @@
 use casper_dao_contracts::{erc20_events::Transfer, ReputationContractTest};
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
-use casper_dao_utils::{Error, TestEnv};
+use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
 
 #[test]
@@ -225,24 +225,25 @@ fn test_ownership() {
     assert_eq!(contract.get_owner(), Some(owner));
 
     contract.change_ownership(new_owner).unwrap();
+    // New onwer is changed.
     assert_eq!(contract.get_owner().unwrap(), new_owner);
+    // New onwer is whitelisted.
+    assert_eq!(contract.is_whitelisted(new_owner), true);
+    // Old owner is still whitelisted.
+    assert_eq!(contract.is_whitelisted(owner), true);
 
     let result = contract.change_ownership(new_owner);
     assert_eq!(result.unwrap_err(), Error::NotAnOwner);
-
-    assert_eq!(contract.is_whitelisted(owner), false);
 }
 
 fn setup() -> (TestEnv, ReputationContractTest) {
     let env = TestEnv::new();
     let contract = ReputationContractTest::new(&env);
-
     (env, contract)
 }
 
 fn setup_with_initial_supply(amount: U256) -> (TestEnv, ReputationContractTest) {
     let (env, mut contract) = setup();
     contract.mint(env.get_account(0), amount).unwrap();
-
     (env, contract)
 }

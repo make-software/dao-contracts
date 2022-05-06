@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use casper_dao_contracts::VariableRepositoryContractTest;
 use casper_dao_modules::{events::ValueUpdated, RepositoryDefaults};
-use casper_dao_utils::{consts, BytesConversion, Error, TestEnv};
+use casper_dao_utils::{consts, BytesConversion, Error, TestContract, TestEnv};
 use casper_types::{bytesrepr::Bytes, U256};
 
 static KEY: &str = "key";
@@ -138,7 +138,7 @@ fn test_get_uninitialized_value() {
 // 18. current_value(not_set) + current_activation_time(in_future) + arg_activation_time(None)
 
 #[test]
-fn test_update_at_1() {
+fn test_update_at_case_1() {
     // Given no record.
     let (_, mut contract) = setup();
 
@@ -157,7 +157,7 @@ fn test_update_at_1() {
 }
 
 #[test]
-fn test_update_at_2() {
+fn test_update_at_case_2() {
     // Given no record.
     let (env, mut contract) = setup();
     env.advance_block_time_by(TWO_DAYS);
@@ -170,7 +170,7 @@ fn test_update_at_2() {
 }
 
 #[test]
-fn test_update_at_3() {
+fn test_update_at_case_3() {
     // Given no record.
     let (_, mut contract) = setup();
 
@@ -182,7 +182,7 @@ fn test_update_at_3() {
 }
 
 #[test]
-fn test_update_at_4() {
+fn test_update_at_case_4() {
     // Given value and no next value.
     let (env, mut contract) = setup_with(KEY, VALUE);
     env.advance_block_time_by(TWO_DAYS);
@@ -195,7 +195,7 @@ fn test_update_at_4() {
 }
 
 #[test]
-fn test_update_at_5() {
+fn test_update_at_case_5() {
     // Given value and no next value.
     let (_, mut contract) = setup_with(KEY, VALUE);
 
@@ -210,7 +210,7 @@ fn test_update_at_5() {
 }
 
 #[test]
-fn test_update_at_6() {
+fn test_update_at_case_6() {
     // Given value and no next value.
     let (_, mut contract) = setup_with(KEY, VALUE);
 
@@ -222,7 +222,7 @@ fn test_update_at_6() {
 }
 
 #[test]
-fn test_update_at_7() {
+fn test_update_at_case_7() {
     // Given value and next value with activation_time in past.
     let (env, mut contract) = setup_with(KEY, VALUE);
     contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
@@ -236,7 +236,7 @@ fn test_update_at_7() {
 }
 
 #[test]
-fn test_update_at_8() {
+fn test_update_at_case_8() {
     // Given value and next value with activation_time in past.
     let (env, mut contract) = setup_with(KEY, VALUE);
     contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
@@ -256,7 +256,7 @@ fn test_update_at_8() {
 }
 
 #[test]
-fn test_update_at_9() {
+fn test_update_at_case_9() {
     // Given value and next value with activation_time in past.
     let (env, mut contract) = setup_with(KEY, VALUE);
     contract.update_at(KEY, VALUE_2, Some(AT_DAY_ONE)).unwrap();
@@ -270,7 +270,7 @@ fn test_update_at_9() {
 }
 
 #[test]
-fn test_update_at_10() {
+fn test_update_at_case_10() {
     // Given value and next value with activation_time in future.
     let (env, mut contract) = setup_with(KEY, VALUE);
     contract
@@ -286,7 +286,7 @@ fn test_update_at_10() {
 }
 
 #[test]
-fn test_update_at_11() {
+fn test_update_at_case_11() {
     // Given value and next value with activation_time in future.
     let (_, mut contract) = setup_with(KEY, VALUE);
     contract
@@ -305,7 +305,7 @@ fn test_update_at_11() {
 }
 
 #[test]
-fn test_update_at_12() {
+fn test_update_at_case_12() {
     // Given value and next value with activation_time in future.
     let (_, mut contract) = setup_with(KEY, VALUE);
     contract

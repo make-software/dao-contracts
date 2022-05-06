@@ -191,6 +191,10 @@ impl<
         self.mapping.get(&(key, at))
     }
 
+    pub fn get_or_none(&self, key: K, at: u32) -> Option<V> {
+        self.mapping.get_or_none(&(key, at))
+    }
+
     pub fn add(&self, key: K, value: V) {
         let length = self.lengths.get(&key);
         self.lengths.set(&key, length + 1);
