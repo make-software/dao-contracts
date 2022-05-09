@@ -233,7 +233,7 @@ impl TestEnvState {
         *self
             .gas_used
             .entry(self.active_account)
-            .or_insert(U512::zero()) += *DEFAULT_PAYMENT;
+            .or_insert_with(U512::zero) += *DEFAULT_PAYMENT;
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -333,7 +333,7 @@ impl TestEnvState {
 
     pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
         let gas_used = match self.gas_used.get(&account) {
-            Some(value) => value.clone(),
+            Some(value) => *value,
             None => U512::zero(),
         };
         let account: Account = self

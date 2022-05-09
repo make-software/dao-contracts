@@ -1,8 +1,8 @@
 use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice, VotingId},
-    AdminContractTest, MockVoterContractTest, RepoVoterContractTest, ReputationContractTest,
-    VariableRepositoryContractTest, BidEscrowContractTest, DaoOwnedNftContractTest,
+    AdminContractTest, BidEscrowContractTest, DaoOwnedNftContractTest, MockVoterContractTest,
+    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
@@ -12,7 +12,12 @@ use casper_types::{
 };
 
 #[allow(dead_code)]
-pub fn setup_bid_escrow() -> (BidEscrowContractTest, ReputationContractTest, DaoOwnedNftContractTest, DaoOwnedNftContractTest) {
+pub fn setup_bid_escrow() -> (
+    BidEscrowContractTest,
+    ReputationContractTest,
+    DaoOwnedNftContractTest,
+    DaoOwnedNftContractTest,
+) {
     let informal_quorum = 500.into();
     let formal_quorum = 500.into();
     let total_onboarded = 3;
@@ -43,7 +48,12 @@ pub fn setup_bid_escrow() -> (BidEscrowContractTest, ReputationContractTest, Dao
         va_token.address(),
     );
 
-    (bid_escrow_contract, reputation_token_contract, va_token, kyc_token)
+    (
+        bid_escrow_contract,
+        reputation_token_contract,
+        va_token,
+        kyc_token,
+    )
 }
 
 #[allow(dead_code)]

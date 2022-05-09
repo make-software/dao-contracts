@@ -3,6 +3,7 @@
 #[doc(hidden)]
 pub mod action;
 mod admin;
+pub mod bid;
 mod bid_escrow;
 mod dao_nft;
 mod kyc_voter;
@@ -15,7 +16,6 @@ mod reputation;
 mod variable_repository;
 /// Utilities to manage the voting process
 pub mod voting;
-pub mod bid;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};

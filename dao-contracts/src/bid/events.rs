@@ -1,8 +1,9 @@
-use casper_dao_utils::{Address, casper_dao_macros::Event, BlockTime};
+use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime};
+use casper_types::U512;
 
 use crate::voting::ReputationAmount;
 
-use super::{types::{Description, BidId}};
+use super::types::{BidId, Description};
 
 #[derive(Debug, PartialEq, Event)]
 pub struct JobCreated {
@@ -11,7 +12,8 @@ pub struct JobCreated {
     pub worker: Address,
     pub description: Description,
     pub finish_time: BlockTime,
-    pub required_stake: Option<ReputationAmount>
+    pub required_stake: Option<ReputationAmount>,
+    pub cspr_amount: U512,
 }
 
 #[derive(Debug, PartialEq, Event)]

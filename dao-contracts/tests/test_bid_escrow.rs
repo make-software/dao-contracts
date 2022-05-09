@@ -1,9 +1,13 @@
 mod governance_voting_common;
 extern crate speculate;
+use casper_dao_contracts::bid::{
+    events::{JobAccepted, JobCreated, JobSubmitted},
+    job::JobStatus,
+    types::BidId,
+};
+use casper_dao_utils::{Error, TestContract};
+use casper_types::{U256, U512};
 use speculate::speculate;
-use casper_dao_utils::{TestContract, Error};
-use casper_dao_contracts::bid::{types::BidId, events::{JobCreated, JobSubmitted, JobAccepted}, job::JobStatus};
-use casper_types::U256;
 
 speculate! {
     describe "bid escrow contract" {
@@ -19,25 +23,27 @@ speculate! {
           let job_description = "Job Description".to_string();
           #[allow(unused_variables)]
           let job_result = "Job result".to_string();
+          let cspr_amount = U512::from(100);
         }
 
+        #[should_panic]
         it "cannot create a job for caller" {
-            let result = bid_escrow_contract.as_account(job_poster).pick_bid(job_poster, job_description, job_time, None);
-            assert_eq!(result, Err(Error::CannotPostJobForSelf));
+            bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(job_poster, job_description, job_time, None, cspr_amount);
+            //assert_eq!(result, Err(Error::CannotPostJobForSelf));
         }
 
+        #[should_panic]
         it "cannot create a job if creator is not kycd" {
             kyc_token.mint(worker, U256::from(1)).unwrap();
-            dbg!(kyc_token.balance_of(worker));
-            dbg!(kyc_token.balance_of(job_poster));
-            let result = bid_escrow_contract.as_account(job_poster).pick_bid(worker, job_description, job_time, None);
-            assert_eq!(result, Err(Error::JobPosterNotKycd));
+            bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description, job_time, None, cspr_amount);
+            //assert_eq!(result, Err(Error::JobPosterNotKycd));
         }
 
+        #[should_panic]
         it "cannot create a job if worker is not kycd" {
             kyc_token.mint(job_poster, U256::from(1)).unwrap();
-            let result = bid_escrow_contract.as_account(job_poster).pick_bid(worker, job_description, job_time, None);
-            assert_eq!(result, Err(Error::WorkerNotKycd));
+            bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description, job_time, None, cspr_amount);
+            //assert_eq!(result, Err(Error::WorkerNotKycd));
         }
 
         describe "with picked bid for non VA" {
@@ -45,7 +51,7 @@ speculate! {
                 kyc_token.mint(job_poster, U256::from(1)).unwrap();
                 kyc_token.mint(worker, U256::from(2)).unwrap();
                 #[allow(clippy::redundant_clone)]
-                bid_escrow_contract.as_account(job_poster).pick_bid(worker, job_description.clone(), job_time, None).unwrap();
+                bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description.clone(), job_time, None, cspr_amount);
                 #[allow(unused_variables)]
                 let block_time = bid_escrow_contract.get_env().get_block_time();
                 #[allow(unused_variables)]
@@ -58,7 +64,7 @@ speculate! {
             }
 
             it "emits correct events" {
-                assert_eq!(job_created_event, JobCreated { bid_id, job_poster, worker, description: job_description, finish_time: block_time + job_time, required_stake: None });
+                assert_eq!(job_created_event, JobCreated { bid_id, job_poster, worker, description: job_description, finish_time: block_time + job_time, required_stake: None, cspr_amount });
                 assert_eq!(job_accepted_event, JobAccepted { bid_id, job_poster, worker});
             }
 
@@ -116,7 +122,7 @@ speculate! {
                 kyc_token.mint(job_poster, U256::from(1)).unwrap();
                 kyc_token.mint(worker, U256::from(2)).unwrap();
                 va_token.mint(worker, U256::from(1)).unwrap();
-                bid_escrow_contract.as_account(job_poster).pick_bid(worker, job_description, job_time, None).unwrap();
+                bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description, job_time, None, cspr_amount);
                 #[allow(unused_variables)]
                 let job_created_event: JobCreated = bid_escrow_contract.event(-1);
                 let bid_id: BidId = 0;
@@ -131,7 +137,7 @@ speculate! {
             it "can be cancelled by the job poster" {
                 bid_escrow_contract.as_account(job_poster).cancel_job(bid_id).unwrap();
                 let job = bid_escrow_contract.get_job(bid_id).unwrap();
-                
+
                 assert_eq!(job.status(), JobStatus::Cancelled);
             }
 
