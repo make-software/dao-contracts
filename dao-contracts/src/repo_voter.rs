@@ -11,7 +11,7 @@ use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::init())
     fn init(&mut self, variable_repo: Address, reputation_token: Address);
     /// Creates new RepoVoter voting.
     ///
@@ -26,21 +26,21 @@ pub trait RepoVoterContractInterface {
         activation_time: Option<u64>,
         stake: U256,
     );
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::vote())
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId);
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn get_variable_repo_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::get_ballot())
     fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
 }
 

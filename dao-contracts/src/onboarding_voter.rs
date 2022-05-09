@@ -19,6 +19,11 @@ use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait OnboardingVoterContractInterface {
+    /// Contract constructor
+    /// 
+    /// Initializes modules. 
+    /// 
+    /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init()), [OnboardingInfo](OnboardingInfo::init())
     fn init(
         &mut self,
         variable_repo: Address,
@@ -26,28 +31,55 @@ pub trait OnboardingVoterContractInterface {
         kyc_token: Address,
         va_token: Address,
     );
-
-    // - Require no voting for a given `address` is in progress.
-    // For Adding new VA:
-    // - Check if VA is not onboarderd.
-    // - Check if `address` is KYCed.
-    // - Check if `address` has positive reputation amount.
-    // For Removing existing VA:
-    // - Check if VA is already onboarderd.
-    // - Check if `address` has positive reputation amount.
+    /// Creates new Onboarding\Offboarding voting.
+    /// 
+    /// # Prerequisites
+    /// 
+    /// * no voting on the given `subject_address` is in progress.
+    /// 
+    /// To onboard a new VA:
+    /// * `subject_address` must not be already onboarded,
+    /// * `subject_address` must be KYCd,
+    /// * `subject_address` must have a positive reputation token amount.
+    /// 
+    /// To offboard a VA:
+    /// * `subject_address` must be already onboarded,
+    /// * `subject_address` must have a positive reputation token amount.
+    /// 
+    /// # Note
+    ///
+    /// `action` - the mode of newly created voting can be either onboarding ([Add](OnboardingAction::Add)) or offboarding ([Remove](OnboardingAction::Remove)). 
+    /// 
+    /// `subject_address` - an [Address](Address) to be on/offboarded.
     fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256);
+    /// see [GovernanceVoting](GovernanceVoting::vote())
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
+    /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId);
+    /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
+    /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn get_variable_repo_address(&self) -> Address;
+    /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
+    /// see [GovernanceVoting](GovernanceVoting::get_voting())
+    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    /// see [GovernanceVoting](GovernanceVoting::get_ballot())
+    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    /// see [GovernanceVoting](GovernanceVoting::get_voter())
+    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
+    /// see [OnboardingInfo](OnboardingInfo::get_va_token_address())
     fn get_va_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
 }
 
+
+/// OnboardingVoterContract
+///
+/// It is responsible for managing va tokens (see [DaoOwnedNftContract](crate::DaoOwnedNftContract).
+///
+/// When the voting passes, a va token is minted (onboarding) or burned (offboarding).
 #[derive(Instance)]
 pub struct OnboardingVoterContract {
     onboarding: OnboardingInfo,

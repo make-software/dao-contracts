@@ -13,22 +13,51 @@ use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
+    /// Contract constructor
+    /// 
+    /// Initializes modules. 
+    /// 
+    /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init())
     fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address);
-    // Require no voting for a given `address` is on.
-    // Precondition: KycNft.balance_of(address_to_onboard) == 0;
-    // Action: KycNft.mint(address_to_onboard, next_token_id)
-    fn create_voting(&mut self, address_to_onboard: Address, document_hash: U256, stake: U256);
+    /// Creates new kyc voting. Once the voting passes a kyc token is minted to the `subject_address`.
+    /// 
+    /// # Prerequisites
+    /// 
+    /// * no voting on the given `subject_address` is in progress,
+    /// * `subject_address` does not own a kyc token.
+    /// 
+    /// # Note
+    ///
+    /// `subject_address` - [address](Address) of a user to be verified. 
+    /// `document_hash` - a hash of a document that vefify the user. The hash is used as an id of a freshly minted  kyc token.
+    /// `subject_address` - an [Address](Address) to be on/offboarded.
+    fn create_voting(&mut self, subject_address: Address, document_hash: U256, stake: U256);
+    /// see [GovernanceVoting](GovernanceVoting::vote())
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
+    /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId);
+    /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
+    /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn get_variable_repo_address(&self) -> Address;
+    /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
+    /// see [GovernanceVoting](GovernanceVoting::get_voting())
+    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    /// see [GovernanceVoting](GovernanceVoting::get_ballot())
+    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    /// see [GovernanceVoting](GovernanceVoting::get_voter())
+    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
 }
 
+
+/// KycVoterContract
+///
+/// It is responsible for managing kyc tokens (see [DaoOwnedNftContract](crate::DaoOwnedNftContract).
+///
+/// When the voting passes, a kyc token is minted.
 #[derive(Instance)]
 pub struct KycVoterContract {
     kyc: KycInfo,
@@ -56,14 +85,14 @@ impl KycVoterContractInterface for KycVoterContract {
         }
     }
 
-    fn create_voting(&mut self, address_to_onboard: Address, document_hash: U256, stake: U256) {
-        self.assert_no_ongoing_voting(&address_to_onboard);
-        self.assert_not_kyced(&address_to_onboard);
+    fn create_voting(&mut self, subject_address: Address, document_hash: U256, stake: U256) {
+        self.assert_no_ongoing_voting(&subject_address);
+        self.assert_not_kyced(&subject_address);
 
         let creator = caller();
         let contract_to_call = self.get_kyc_token_address();
         let runtime_args = runtime_args! {
-            consts::ARG_TO => address_to_onboard,
+            consts::ARG_TO => subject_address,
             consts::ARG_TOKEN_ID => document_hash,
         };
         let entry_point = consts::EP_MINT.to_string();
@@ -71,7 +100,7 @@ impl KycVoterContractInterface for KycVoterContract {
         self.voting
             .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
 
-        self.kyc.set_voting(&address_to_onboard);
+        self.kyc.set_voting(&subject_address);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {

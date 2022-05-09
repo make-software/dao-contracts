@@ -59,28 +59,17 @@ pub trait ReputationContractInterface {
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
     /// is permited to call this method.
     ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It emits [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) events.
+    /// See [AccessControl](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
 
     /// Add new address to the whitelist.
     ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It emits [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) event.
+    /// See [AccessControl](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
 
     /// Remove address from the whitelist.
     ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It emits [`RemovedFromWhitelist`](casper_dao_modules::events::RemovedFromWhitelist)
-    /// event.
+    /// See [AccessControl](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
 
     /// Stake `amount` of tokens for the `address`. It decrements `address`'s balance by `amount`.

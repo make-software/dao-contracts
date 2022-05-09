@@ -37,35 +37,17 @@ pub trait VariableRepositoryContractInterface {
     /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
     /// Only the current owner is permited to call this method.
     ///
-    /// # Events
-    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist).
-    ///
-    /// # Errors
-    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if the caller
-    /// is not the current owner.
+    /// See [`AccessControl`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
 
     /// Adds a new address to the whitelist.
     ///
-    /// # Events
-    /// Emits [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) event.
-    ///
-    /// # Errors
-    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
+    /// See [`AccessControl`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
 
     /// Remove address from the whitelist.
     ///
-    /// # Events
-    /// Emits [`RemovedFromWhitelist`](casper_dao_modules::events::RemovedFromWhitelist)
-    /// event.
-    ///
-    /// # Errors
-    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
+    /// See [`AccessControl`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
 
     /// Inserts or updates the value under the given key.

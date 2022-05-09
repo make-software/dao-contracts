@@ -288,7 +288,7 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let va_token = DaoOwnedNftContractTest::new(
+    let mut va_token = DaoOwnedNftContractTest::new(
         &env,
         "user token".to_string(),
         "usert".to_string(),
@@ -311,12 +311,16 @@ fn setup() -> (
         va_token.address(),
     );
 
-    // Voter Contract becomes the owner of Variable Repo and Reputation Token
+    // Voter Contract becomes the owner of Variable Repo, Reputation Token and VA Token
     variable_repo
         .change_ownership(onboarding_voter.address())
         .unwrap();
 
     reputation_token
+        .change_ownership(onboarding_voter.address())
+        .unwrap();
+
+    va_token
         .change_ownership(onboarding_voter.address())
         .unwrap();
     let user = env.get_account(1);
