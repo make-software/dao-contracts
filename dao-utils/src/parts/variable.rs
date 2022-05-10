@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use casper_contract::unwrap_or_revert::UnwrapOrRevert;
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped,
@@ -8,6 +9,7 @@ use casper_types::{
 use crate::{
     casper_env::{get_key, set_key},
     instance::Instanced,
+    Error,
 };
 
 /// Data structure for storing a single value.
@@ -16,7 +18,7 @@ pub struct Variable<T> {
     ty: PhantomData<T>,
 }
 
-impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
+impl<T: FromBytes + ToBytes + CLTyped> Variable<T> {
     /// Create a new Variable instance.
     pub fn new(name: String) -> Self {
         Variable {
@@ -25,9 +27,14 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
         }
     }
 
-    /// Read from the storage or return default value.
-    pub fn get(&self) -> T {
-        get_key(&self.name).unwrap_or_default()
+    /// Read from the storage or return none
+    pub fn get(&self) -> Option<T> {
+        get_key(&self.name)
+    }
+
+    /// Read from the storage or revert
+    pub fn get_or_revert(&self) -> T {
+        get_key(&self.name).unwrap_or_revert_with(Error::VariableValueNotSet)
     }
 
     /// Store `value` to the storage.
@@ -41,13 +48,13 @@ impl<T: Default + FromBytes + ToBytes + CLTyped> Variable<T> {
     }
 }
 
-impl<T: Default + FromBytes + ToBytes + CLTyped> From<&str> for Variable<T> {
+impl<T: FromBytes + ToBytes + CLTyped> From<&str> for Variable<T> {
     fn from(name: &str) -> Self {
         Variable::new(name.to_string())
     }
 }
 
-impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for Variable<T> {
+impl<T: FromBytes + ToBytes + CLTyped> Instanced for Variable<T> {
     fn instance(namespace: &str) -> Self {
         namespace.into()
     }

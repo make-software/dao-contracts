@@ -37,16 +37,20 @@ impl TokenWithStaking {
     /// Stake `amount` of tokens for the `address`. It decrements `address`'s balance by `amount`.
     pub fn stake(&mut self, address: Address, amount: U256) {
         self.ensure_balance(&address, amount);
-        self.stakes
-            .set(&address, self.stakes.get(&address) + amount);
+        self.stakes.set(
+            &address,
+            self.stakes.get(&address).unwrap_or_default() + amount,
+        );
         emit(TokensStaked { address, amount });
     }
 
     /// Unstake `amount` of tokens for the `address`. It increments `address`'s balance by `amount`.
     pub fn unstake(&mut self, address: Address, amount: U256) {
         self.ensure_staked_balance(&address, amount);
-        self.stakes
-            .set(&address, self.stakes.get(&address) - amount);
+        self.stakes.set(
+            &address,
+            self.stakes.get(&address).unwrap_or_default() - amount,
+        );
         emit(TokensUnstaked { address, amount });
     }
 
@@ -59,16 +63,16 @@ impl TokenWithStaking {
     }
 
     pub fn get_stake_of(&self, address: &Address) -> U256 {
-        self.stakes.get(address)
+        self.stakes.get(address).unwrap_or_default()
     }
 
     fn ensure_balance(&mut self, address: &Address, amount: U256) {
-        let staked_amount = self.stakes.get(address);
+        let staked_amount = self.stakes.get(address).unwrap_or_default();
         self.token.ensure_balance(address, staked_amount + amount);
     }
 
     fn ensure_staked_balance(&mut self, address: &Address, amount: U256) {
-        if self.stakes.get(address) < amount {
+        if self.stakes.get(address).unwrap_or_default() < amount {
             casper_env::revert(Error::InsufficientBalance);
         }
     }

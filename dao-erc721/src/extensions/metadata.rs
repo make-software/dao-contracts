@@ -17,11 +17,11 @@ impl MetadataERC721 {
     }
 
     pub fn name(&self) -> String {
-        self.name.get()
+        self.name.get_or_revert()
     }
 
     pub fn symbol(&self) -> String {
-        self.symbol.get()
+        self.symbol.get_or_revert()
     }
 
     pub fn token_uri(&self, erc721: &ERC721Token, token_id: TokenId) -> TokenUri {
@@ -32,6 +32,6 @@ impl MetadataERC721 {
     }
 
     pub fn base_uri(&self) -> TokenUri {
-        self.base_uri.get()
+        self.base_uri.get_or_revert()
     }
 }

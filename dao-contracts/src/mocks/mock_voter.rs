@@ -54,7 +54,7 @@ impl MockVoterContractInterface for MockVoterContract {
     }
 
     fn get_variable(&self) -> String {
-        self.variable.get()
+        self.variable.get().unwrap_or_default()
     }
 
     delegate! {

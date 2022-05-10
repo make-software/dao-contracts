@@ -190,7 +190,7 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn total_onboarded(&self) -> U256 {
-        self.total_onboarded.get()
+        self.total_onboarded.get().unwrap_or_default()
     }
 
     fn set_total_onboarded(&mut self, total: U256) {

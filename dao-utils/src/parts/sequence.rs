@@ -8,11 +8,11 @@ pub struct SequenceGenerator {
 
 impl SequenceGenerator {
     pub fn get_current_value(&self) -> U256 {
-        self.value.get()
+        self.value.get().unwrap_or_default()
     }
 
     pub fn next_value(&mut self) -> U256 {
-        let next = self.value.get() + U256::one();
+        let next = self.get_current_value() + U256::one();
         self.value.set(next);
         next
     }

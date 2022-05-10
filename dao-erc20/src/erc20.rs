@@ -59,23 +59,23 @@ impl ERC20Interface for ERC20 {
     }
 
     fn name(&self) -> String {
-        self.name.get()
+        self.name.get_or_revert()
     }
 
     fn symbol(&self) -> String {
-        self.symbol.get()
+        self.symbol.get_or_revert()
     }
 
     fn decimals(&self) -> u8 {
-        self.decimals.get()
+        self.decimals.get_or_revert()
     }
 
     fn total_supply(&self) -> U256 {
-        self.total_supply.get()
+        self.total_supply.get().unwrap_or_default()
     }
 
     fn balance_of(&self, address: Address) -> U256 {
-        self.balances.get(&address)
+        self.balances.get(&address).unwrap_or_default()
     }
 
     fn transfer(&mut self, recipient: Address, amount: U256) {
@@ -95,7 +95,7 @@ impl ERC20Interface for ERC20 {
     }
 
     fn allowance(&self, owner: Address, spender: Address) -> U256 {
-        self.allowances.get(&(owner, spender))
+        self.allowances.get(&(owner, spender)).unwrap_or_default()
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
@@ -130,8 +130,8 @@ impl ERC20Interface for ERC20 {
 
 impl ERC20 {
     pub fn raw_transfer(&mut self, owner: Address, recipient: Address, amount: U256) {
-        let owner_balance = self.balances.get(&owner);
-        let recipient_balance = self.balances.get(&recipient);
+        let owner_balance = self.balance_of(owner);
+        let recipient_balance = self.balance_of(recipient);
         if owner_balance < amount {
             casper_env::revert(Error::InsufficientBalance)
         }
@@ -146,12 +146,11 @@ impl ERC20 {
     }
 
     pub fn spend_allowance(&mut self, owner: Address, spender: Address, amount: U256) {
-        let key = (owner, spender);
-        let allowance = self.allowances.get(&key);
+        let allowance = self.allowance(owner, spender);
         if amount > allowance {
             casper_env::revert(Error::InsufficientAllowance);
         }
-        self.allowances.set(&key, allowance - amount);
+        self.allowances.set(&(owner, spender), allowance - amount);
 
         emit(Approval {
             owner,

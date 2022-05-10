@@ -8,13 +8,13 @@ use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 
 #[derive(Instance)]
 pub struct KycInfo {
-    kyc_token: Variable<Option<Address>>,
+    kyc_token: Variable<Address>,
     votings: Mapping<Address, bool>,
 }
 
 impl KycInfo {
     pub fn init(&mut self, kyc_token: Address) {
-        self.kyc_token.set(Some(kyc_token));
+        self.kyc_token.set(kyc_token);
     }
 
     pub fn get_kyc_token_address(&self) -> Address {
@@ -37,6 +37,6 @@ impl KycInfo {
     }
 
     pub(crate) fn exists_ongoing_voting(&self, address: &Address) -> bool {
-        self.votings.get(address)
+        self.votings.get(address).unwrap_or(false)
     }
 }
