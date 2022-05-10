@@ -8,13 +8,13 @@ use casper_dao_utils::{
 
 #[derive(Instance)]
 pub struct OnboardingInfo {
-    va_token: Variable<Option<Address>>,
+    va_token: Variable<Address>,
     votings: Mapping<Address, bool>,
 }
 
 impl OnboardingInfo {
     pub fn init(&mut self, va_token: Address) {
-        self.va_token.set(Some(va_token));
+        self.va_token.set(va_token);
     }
 
     pub fn get_va_token_address(&self) -> Address {
@@ -32,7 +32,7 @@ impl OnboardingInfo {
     }
 
     pub fn exists_ongoing_voting(&self, address: &Address) -> bool {
-        self.votings.get(address)
+        self.votings.get(address).unwrap_or(false)
     }
 
     pub fn is_onboarded(&self, &address: &Address) -> bool {

@@ -47,11 +47,11 @@ pub trait GovernanceVotingTrait {
 /// For example implementation see [AdminContract](crate::admin::AdminContract)
 #[derive(Instance)]
 pub struct GovernanceVoting {
-    variable_repo: Variable<Option<Address>>,
-    reputation_token: Variable<Option<Address>>,
+    variable_repo: Variable<Address>,
+    reputation_token: Variable<Address>,
     votings: Mapping<VotingId, Option<Voting>>,
     ballots: Mapping<(VotingId, Address), Ballot>,
-    voters: VecMapping<VotingId, Option<Address>>,
+    voters: VecMapping<VotingId, Address>,
     votings_count: Variable<U256>,
     dust_amount: Variable<U256>,
 }
@@ -62,8 +62,8 @@ impl GovernanceVoting {
     /// # Events
     /// Emits [`VotingContractCreated`](VotingContractCreated)
     pub fn init(&mut self, variable_repo: Address, reputation_token: Address) {
-        self.variable_repo.set(Some(variable_repo));
-        self.reputation_token.set(Some(reputation_token));
+        self.variable_repo.set(variable_repo);
+        self.reputation_token.set(reputation_token);
 
         emit(VotingContractCreated {
             variable_repo,
@@ -183,6 +183,7 @@ impl GovernanceVoting {
                 let creator_stake = self
                     .ballots
                     .get(&(voting.voting_id(), creator_address))
+                    .unwrap_or_revert_with(Error::BallotDoesNotExist)
                     .stake;
 
                 // Formal voting is created and first vote cast
@@ -306,7 +307,7 @@ impl GovernanceVoting {
             revert(Error::VoteOnCompletedVotingNotAllowed)
         }
 
-        let mut vote = self.ballots.get(&(voting_id, voter));
+        let mut vote = self.ballots.get(&(voting_id, voter)).unwrap_or_default();
         match vote.voter {
             Some(_) => {
                 // Cannot vote twice on the same voting
@@ -324,7 +325,7 @@ impl GovernanceVoting {
                     stake,
                 };
                 // Add a voter to the list
-                self.voters.add(voting_id, Some(voter));
+                self.voters.add(voting_id, voter);
             }
         }
 
@@ -348,7 +349,7 @@ impl GovernanceVoting {
     /// Those are leftovers from redistribution of reputation tokens. For example, when 10 tokens needs to be redistributed between 3 voters,
     /// each will recieve 3 reputation, with 1 reputation left in the contract's balance.
     pub fn get_dust_amount(&self) -> U256 {
-        self.dust_amount.get()
+        self.dust_amount.get().unwrap_or_default()
     }
 
     /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
@@ -377,9 +378,7 @@ impl GovernanceVoting {
 
     /// Returns the address of nth voter who voted on Voting with `voting_id`
     pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
-        self.voters
-            .get_or_none(voting_id, at)
-            .map(|x| x.unwrap_or_revert())
+        self.voters.get_or_none(voting_id, at)
     }
 
     /// Returns the [Voting](Voting) for given id
@@ -394,7 +393,7 @@ impl GovernanceVoting {
     }
 
     fn next_voting_id(&mut self) -> U256 {
-        let voting_id = self.votings_count.get();
+        let voting_id = self.votings_count.get().unwrap_or_default();
         self.votings_count.set(voting_id + 1);
         voting_id
     }

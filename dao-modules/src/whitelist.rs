@@ -29,13 +29,13 @@ impl Whitelist {
 
     /// Assert the caller is on the list. Revert otherwise.
     pub fn ensure_whitelisted(&self) {
-        if !self.whitelist.get(&caller()) {
+        if !self.is_whitelisted(&caller()) {
             casper_env::revert(Error::NotWhitelisted);
         }
     }
 
     pub fn is_whitelisted(&self, address: &Address) -> bool {
-        self.whitelist.get(address)
+        self.whitelist.get(address).unwrap_or(false)
     }
 }
 

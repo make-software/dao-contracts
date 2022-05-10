@@ -1,4 +1,5 @@
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     casper_env::{self, emit},
     Address, Error, Mapping, Variable,
@@ -29,15 +30,15 @@ impl ERC721Token {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
         }
-        self.owners.get(&token_id)
+        self.owners.get(&token_id).unwrap_or(None)
     }
 
     pub fn balance_of(&self, owner: Address) -> U256 {
-        self.balances.get(&owner)
+        self.balances.get(&owner).unwrap_or_default()
     }
 
     pub fn total_supply(&self) -> U256 {
-        self.total_supply.get()
+        self.total_supply.get().unwrap_or_default()
     }
 
     pub fn approve(&mut self, approved: Option<Address>, token_id: TokenId) {
@@ -58,7 +59,7 @@ impl ERC721Token {
             casper_env::revert(Error::TokenDoesNotExist)
         }
 
-        self.token_approvals.get(&token_id)
+        self.token_approvals.get(&token_id).unwrap_or(None)
     }
 
     pub fn set_approval_for_all(&mut self, operator: Address, approved: bool) {
@@ -76,7 +77,9 @@ impl ERC721Token {
     }
 
     pub fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool {
-        self.operator_approvals.get(&(owner, operator))
+        self.operator_approvals
+            .get(&(owner, operator))
+            .unwrap_or(false)
     }
 
     pub fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId) {
@@ -105,7 +108,11 @@ impl ERC721Token {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
         }
-        match self.owners.get(&token_id) {
+        match self
+            .owners
+            .get(&token_id)
+            .unwrap_or_revert_with(Error::InvalidTokenOwner)
+        {
             Some(owner) => owner,
             None => casper_env::revert(Error::InvalidTokenOwner),
         }
@@ -167,8 +174,8 @@ impl ERC721Token {
         // Clear approvals from the previous owner
         self.approve_owner(Some(owner), None, token_id);
 
-        self.balances.set(&from, self.balances.get(&from) - 1);
-        self.balances.set(&to, self.balances.get(&to) + 1);
+        self.balances.set(&from, self.balance_of(from) - 1);
+        self.balances.set(&to, self.balance_of(to) + 1);
         self.owners.set(&token_id, Some(to));
 
         emit(Transfer {
