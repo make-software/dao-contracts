@@ -20,9 +20,9 @@ use delegate::delegate;
 #[casper_contract_interface]
 pub trait OnboardingVoterContractInterface {
     /// Contract constructor
-    /// 
-    /// Initializes modules. 
-    /// 
+    ///
+    /// Initializes modules.
+    ///
     /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init()), [OnboardingInfo](OnboardingInfo::init())
     fn init(
         &mut self,
@@ -32,24 +32,24 @@ pub trait OnboardingVoterContractInterface {
         va_token: Address,
     );
     /// Creates new Onboarding\Offboarding voting.
-    /// 
+    ///
     /// # Prerequisites
-    /// 
+    ///
     /// * no voting on the given `subject_address` is in progress.
-    /// 
+    ///
     /// To onboard a new VA:
     /// * `subject_address` must not be already onboarded,
     /// * `subject_address` must be KYCd,
     /// * `subject_address` must have a positive reputation token amount.
-    /// 
+    ///
     /// To offboard a VA:
     /// * `subject_address` must be already onboarded,
     /// * `subject_address` must have a positive reputation token amount.
-    /// 
+    ///
     /// # Note
     ///
-    /// `action` - the mode of newly created voting can be either onboarding ([Add](OnboardingAction::Add)) or offboarding ([Remove](OnboardingAction::Remove)). 
-    /// 
+    /// `action` - the mode of newly created voting can be either onboarding ([Add](OnboardingAction::Add)) or offboarding ([Remove](OnboardingAction::Remove)).
+    ///
     /// `subject_address` - an [Address](Address) to be on/offboarded.
     fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::vote())
@@ -73,7 +73,6 @@ pub trait OnboardingVoterContractInterface {
     /// see [OnboardingInfo](OnboardingInfo::get_va_token_address())
     fn get_va_token_address(&self) -> Address;
 }
-
 
 /// OnboardingVoterContract
 ///

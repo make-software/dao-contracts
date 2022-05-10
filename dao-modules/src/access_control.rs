@@ -13,9 +13,9 @@ pub struct AccessControl {
 
 impl AccessControl {
     /// Module constructor.
-    /// 
-    /// Initializes submodules. 
-    /// 
+    ///
+    /// Initializes submodules.
+    ///
     /// See [`Owner`] and [`Whitelist`].
     pub fn init(&mut self, address: Address) {
         self.owner.init(address);
@@ -76,7 +76,7 @@ impl AccessControl {
     }
 
     /// Returns the address of the current owner.
-    /// 
+    ///
     /// See [`Owner`].
     pub fn get_owner(&self) -> Option<Address> {
         self.owner.get_owner()

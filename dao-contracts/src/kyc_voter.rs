@@ -14,21 +14,21 @@ use delegate::delegate;
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
     /// Contract constructor
-    /// 
-    /// Initializes modules. 
-    /// 
+    ///
+    /// Initializes modules.
+    ///
     /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init())
     fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address);
     /// Creates new kyc voting. Once the voting passes a kyc token is minted to the `subject_address`.
-    /// 
+    ///
     /// # Prerequisites
-    /// 
+    ///
     /// * no voting on the given `subject_address` is in progress,
     /// * `subject_address` does not own a kyc token.
-    /// 
+    ///
     /// # Note
     ///
-    /// `subject_address` - [address](Address) of a user to be verified. 
+    /// `subject_address` - [address](Address) of a user to be verified.
     /// `document_hash` - a hash of a document that vefify the user. The hash is used as an id of a freshly minted  kyc token.
     /// `subject_address` - an [Address](Address) to be on/offboarded.
     fn create_voting(&mut self, subject_address: Address, document_hash: U256, stake: U256);
@@ -51,7 +51,6 @@ pub trait KycVoterContractInterface {
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
 }
-
 
 /// KycVoterContract
 ///
