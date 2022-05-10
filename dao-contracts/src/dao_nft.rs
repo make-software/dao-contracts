@@ -88,6 +88,6 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
     }
 
     fn token_id(&self, address: Address) -> Option<TokenId> {
-        self.tokens.get(&address)
+        self.tokens.get(&address).unwrap_or(None)
     }
 }

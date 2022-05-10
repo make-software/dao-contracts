@@ -13,7 +13,7 @@ use self::events::OwnerChanged;
 /// The Owner module.
 #[derive(Instance)]
 pub struct Owner {
-    pub owner: Variable<Option<Address>>,
+    pub owner: Variable<Address>,
 }
 
 impl Owner {
@@ -24,7 +24,7 @@ impl Owner {
 
     /// Set the owner to the new address.
     pub fn change_ownership(&mut self, owner: Address) {
-        self.owner.set(Some(owner));
+        self.owner.set(owner);
         emit(OwnerChanged { new_owner: owner });
     }
 

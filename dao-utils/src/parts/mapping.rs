@@ -32,7 +32,7 @@ lazy_static! {
     static ref SEEDS: Mutex<BTreeMap<String, URef>> = Mutex::new(BTreeMap::new());
 }
 
-impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K, V> {
+impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
     /// Create new Mapping instance.
     pub fn new(name: String) -> Self {
         Mapping {
@@ -42,9 +42,9 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
         }
     }
 
-    /// Read `key` from the storage or return default value.
-    pub fn get(&self, key: &K) -> V {
-        self.get_or_none(key).unwrap_or_default()
+    /// Read `key` from the storage or return None
+    pub fn get(&self, key: &K) -> Option<V> {
+        self.get_or_none(key)
     }
 
     /// Read `key` from the storage or revert if the key stores no value.
@@ -88,15 +88,13 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Mapping<K
     }
 }
 
-impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> Instanced for Mapping<K, V> {
+impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Instanced for Mapping<K, V> {
     fn instance(namespace: &str) -> Self {
         namespace.into()
     }
 }
 
-impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped + Default> From<&str>
-    for Mapping<K, V>
-{
+impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> From<&str> for Mapping<K, V> {
     fn from(name: &str) -> Self {
         Mapping::new(name.to_string())
     }
@@ -107,7 +105,7 @@ pub struct IndexedMapping<V> {
     index: Index,
 }
 
-impl<V: ToBytes + FromBytes + CLTyped + Default + Hash> IndexedMapping<V> {
+impl<V: ToBytes + FromBytes + CLTyped + Hash> IndexedMapping<V> {
     pub fn new(name: String) -> Self {
         IndexedMapping {
             mapping: Mapping::new(name.clone()),
@@ -121,7 +119,7 @@ impl<V: ToBytes + FromBytes + CLTyped + Default + Hash> IndexedMapping<V> {
     }
 
     pub fn get(&self, index: u32) -> Option<V> {
-        self.mapping.get(&index)
+        self.mapping.get(&index).unwrap_or(None)
     }
 
     pub fn remove(&self, value: V) -> (bool, u32) {
@@ -152,7 +150,7 @@ impl<V: ToBytes + FromBytes + CLTyped + Default + Hash> IndexedMapping<V> {
     }
 }
 
-impl<T: Default + FromBytes + ToBytes + CLTyped> Instanced for IndexedMapping<T> {
+impl<T: FromBytes + ToBytes + CLTyped> Instanced for IndexedMapping<T> {
     fn instance(namespace: &str) -> Self {
         Self {
             mapping: Instanced::instance(&format!("{}:{}", namespace, "mapping")),
@@ -166,11 +164,7 @@ pub struct VecMapping<K, V> {
     lengths: Mapping<K, u32>,
 }
 
-impl<
-        K: Default + CLTyped + FromBytes + ToBytes + Hash,
-        V: ToBytes + FromBytes + CLTyped + Default,
-    > VecMapping<K, V>
-{
+impl<K: CLTyped + FromBytes + ToBytes + Hash, V: ToBytes + FromBytes + CLTyped> VecMapping<K, V> {
     pub fn new(name: String) -> Self {
         VecMapping {
             mapping: Mapping::new(name.clone()),
@@ -179,7 +173,7 @@ impl<
     }
 
     pub fn replace(&self, key: K, at: u32, value: V) -> Result<(), Error> {
-        let length = self.lengths.get(&key);
+        let length = self.lengths.get(&key).unwrap_or(0);
         if at >= length {
             return Err(Error::MappingIndexDoesNotExist);
         }
@@ -187,7 +181,7 @@ impl<
         Ok(())
     }
 
-    pub fn get(&self, key: K, at: u32) -> V {
+    pub fn get(&self, key: K, at: u32) -> Option<V> {
         self.mapping.get(&(key, at))
     }
 
@@ -195,21 +189,23 @@ impl<
         self.mapping.get_or_none(&(key, at))
     }
 
+    pub fn get_or_revert(&self, key: K, at: u32) -> V {
+        self.mapping.get_or_revert(&(key, at))
+    }
+
     pub fn add(&self, key: K, value: V) {
-        let length = self.lengths.get(&key);
+        let length = self.lengths.get(&key).unwrap_or(0);
         self.lengths.set(&key, length + 1);
         self.mapping.set(&(key, length), value);
     }
 
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self, key: K) -> u32 {
-        self.lengths.get(&key)
+        self.lengths.get(&key).unwrap_or(0)
     }
 }
 
-impl<K: Default + ToBytes + CLTyped, V: Default + FromBytes + ToBytes + CLTyped> Instanced
-    for VecMapping<K, V>
-{
+impl<K: ToBytes + CLTyped, V: FromBytes + ToBytes + CLTyped> Instanced for VecMapping<K, V> {
     fn instance(namespace: &str) -> Self {
         Self {
             mapping: Instanced::instance(&format!("{}:{}", namespace, "mapping")),
@@ -229,22 +225,22 @@ impl Index {
         }
     }
 
-    pub fn set<V: ToBytes + FromBytes + CLTyped + Default + Hash>(&self, index: u32, value: &V) {
+    pub fn set<V: ToBytes + FromBytes + CLTyped + Hash>(&self, index: u32, value: &V) {
         let value_hash = Index::calculate_hash(value);
         self.index.set(&value_hash, Some(index));
     }
 
-    pub fn unset<V: ToBytes + FromBytes + CLTyped + Default + Hash>(&self, value: &V) {
+    pub fn unset<V: ToBytes + FromBytes + CLTyped + Hash>(&self, value: &V) {
         let value_hash = Index::calculate_hash(value);
         self.index.set(&value_hash, None);
     }
 
-    pub fn get<V: ToBytes + FromBytes + CLTyped + Default + Hash>(&self, value: &V) -> Option<u32> {
+    pub fn get<V: ToBytes + FromBytes + CLTyped + Hash>(&self, value: &V) -> Option<u32> {
         let value_hash = Index::calculate_hash(value);
-        self.index.get(&value_hash)
+        self.index.get(&value_hash).unwrap_or(None)
     }
 
-    fn calculate_hash<V: ToBytes + FromBytes + CLTyped + Default + Hash>(value: &V) -> u64 {
+    fn calculate_hash<V: ToBytes + FromBytes + CLTyped + Hash>(value: &V) -> u64 {
         let mut hasher = DefaultHasher::new();
         value.hash(&mut hasher);
         hasher.finish()

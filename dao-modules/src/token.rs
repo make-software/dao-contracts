@@ -24,14 +24,20 @@ impl Token {
     ///
     /// It emits [`Mint`](events::Mint) event.
     pub fn mint(&mut self, recipient: Address, amount: U256) {
-        let (new_supply, is_overflowed) = self.total_supply.get().overflowing_add(amount);
+        let (new_supply, is_overflowed) = self
+            .total_supply
+            .get()
+            .unwrap_or_default()
+            .overflowing_add(amount);
         if is_overflowed {
             casper_env::revert(Error::TotalSupplyOverflow);
         }
 
         self.total_supply.set(new_supply);
-        self.balances
-            .set(&recipient, self.balances.get(&recipient) + amount);
+        self.balances.set(
+            &recipient,
+            self.balances.get(&recipient).unwrap_or_default() + amount,
+        );
 
         emit(Mint {
             recipient,
@@ -46,9 +52,12 @@ impl Token {
     ///
     /// It emits [`Burn`](events::Burn) event.
     pub fn burn(&mut self, owner: Address, amount: U256) {
-        self.total_supply.set(self.total_supply.get() - amount);
-        self.balances
-            .set(&owner, self.balances.get(&owner) - amount);
+        self.total_supply
+            .set(self.total_supply.get().unwrap_or_default() - amount);
+        self.balances.set(
+            &owner,
+            self.balances.get(&owner).unwrap_or_default() - amount,
+        );
         emit(Burn {
             owner,
             value: amount,
@@ -59,10 +68,14 @@ impl Token {
     ///
     /// It emits [`Transfer`](events::Transfer) event.
     pub fn raw_transfer(&mut self, sender: Address, recipient: Address, amount: U256) {
-        self.balances
-            .set(&sender, self.balances.get(&sender) - amount);
-        self.balances
-            .set(&recipient, self.balances.get(&recipient) + amount);
+        self.balances.set(
+            &sender,
+            self.balances.get(&sender).unwrap_or_default() - amount,
+        );
+        self.balances.set(
+            &recipient,
+            self.balances.get(&recipient).unwrap_or_default() + amount,
+        );
 
         emit(Transfer {
             from: sender,
@@ -75,17 +88,17 @@ impl Token {
     ///
     /// Revert otherwise.
     pub fn ensure_balance(&mut self, address: &Address, amount: U256) {
-        if self.balances.get(address) < amount {
+        if self.balances.get(address).unwrap_or_default() < amount {
             casper_env::revert(Error::InsufficientBalance);
         }
     }
 
     pub fn total_supply(&self) -> U256 {
-        self.total_supply.get()
+        self.total_supply.get().unwrap_or_default()
     }
 
     pub fn balance_of(&self, address: &Address) -> U256 {
-        self.balances.get(address)
+        self.balances.get(address).unwrap_or_default()
     }
 }
 
