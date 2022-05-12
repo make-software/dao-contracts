@@ -68,6 +68,14 @@ impl Job {
         self.status = JobStatus::Cancelled;
     }
 
+    pub fn complete(&mut self) {
+        self.status = JobStatus::Completed;
+    }
+
+    pub fn mark_as_not_completed(&mut self) {
+        self.status = JobStatus::NotCompleted;
+    }
+
     pub fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
         if self.time_ended(block_time) {
             if caller == self.worker() || caller == self.poster() {

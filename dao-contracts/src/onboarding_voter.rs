@@ -158,9 +158,9 @@ impl OnboardingVoterContract {
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
+        let runtime_args = voting.runtime_args().clone().unwrap_or_revert();
         // If the action is `Add` we pass an `Address` as the `to` parameter
-        let arg = voting
-            .runtime_args()
+        let arg = runtime_args
             .named_args()
             .find(|arg| arg.name() == consts::ARG_TO);
 
@@ -174,8 +174,7 @@ impl OnboardingVoterContract {
 
         // If the action is `Remove` do not pass any `Address` but `token_id`
         // Having that we can obtain the `Address` by getting the token owner
-        let arg = voting
-            .runtime_args()
+        let arg = runtime_args
             .named_args()
             .find(|arg| arg.name() == consts::ARG_TOKEN_ID);
 

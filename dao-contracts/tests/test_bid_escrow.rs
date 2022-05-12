@@ -25,8 +25,10 @@ speculate! {
           #[allow(unused_variables)]
           let job_result = "Job result".to_string();
           let cspr_amount = U512::from(100);
-          let informal_voting_time: u64 = 3_601;
-          let formal_voting_time: u64 = 2 * informal_voting_time + 1;
+          #[allow(unused_variables)]
+          let informal_voting_time: u64 = 3_600;
+          #[allow(unused_variables)]
+          let formal_voting_time: u64 = 2 * informal_voting_time;
         }
 
         #[should_panic]
@@ -214,7 +216,7 @@ speculate! {
             }
 
         }
-    
+
         describe "with job submitted" {
             before {
                 let bid_id: BidId = 0;
@@ -265,16 +267,18 @@ speculate! {
                     bid_escrow_contract.as_account(anyone2).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
                     bid_escrow_contract.as_account(anyone3).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
                     bid_escrow_contract.advance_block_time_by(informal_voting_time);
-                    bid_escrow_contract.as_account(worker).finish_voting(informal_voting_id).unwrap();
+                    bid_escrow_contract.as_account(worker).finish_voting(bid_id, informal_voting_id).unwrap();
                     bid_escrow_contract.as_account(anyone).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
                     bid_escrow_contract.as_account(anyone2).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
                     bid_escrow_contract.as_account(anyone3).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
                     bid_escrow_contract.advance_block_time_by(formal_voting_time);
-                    let voting_summary = bid_escrow_contract.as_account(worker).finish_voting(formal_voting_id).unwrap();
+                    #[allow(unused_variables)]
+                    let voting_summary = bid_escrow_contract.as_account(worker).finish_voting(bid_id, formal_voting_id);
                 }
 
-                it "something" {
-                    assert!(voting_summary.res);
+                it "changes job status to completed" {
+                    let job = bid_escrow_contract.get_job(bid_id).unwrap();
+                    assert_eq!(job.status(), JobStatus::Completed);
                 }
             }
 
@@ -284,7 +288,12 @@ speculate! {
                     bid_escrow_contract.as_account(anyone2).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
                     bid_escrow_contract.as_account(anyone3).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
                     bid_escrow_contract.advance_block_time_by(informal_voting_time);
-                    bid_escrow_contract.as_account(job_poster).finish_voting(informal_voting_id);
+                    bid_escrow_contract.as_account(job_poster).finish_voting(bid_id, informal_voting_id).unwrap();
+                }
+
+                it "changes job status to not completed" {
+                    let job = bid_escrow_contract.get_job(bid_id).unwrap();
+                    assert_eq!(job.status(), JobStatus::NotCompleted);
                 }
             }
         }

@@ -79,8 +79,8 @@ pub struct VotingConfiguration {
     pub informal_voting_time: u64,
     pub minimum_governance_reputation: U256,
     pub contract_to_call: Option<Address>,
-    pub entry_point: String,
-    pub runtime_args: RuntimeArgs,
+    pub entry_point: Option<String>,
+    pub runtime_args: Option<RuntimeArgs>,
 }
 
 /// Voting struct
@@ -152,10 +152,10 @@ impl Voting {
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.get_voting_type() {
             VotingType::Informal => {
-                self.start_time + self.voting_configuration.informal_voting_time < block_time
+                self.start_time + self.voting_configuration.informal_voting_time <= block_time
             }
             VotingType::Formal => {
-                self.start_time + self.voting_configuration.formal_voting_time < block_time
+                self.start_time + self.voting_configuration.formal_voting_time <= block_time
             }
         }
     }
@@ -258,12 +258,12 @@ impl Voting {
     }
 
     /// Get a reference to the voting's entry point.
-    pub fn entry_point(&self) -> &str {
+    pub fn entry_point(&self) -> &Option<String> {
         &self.voting_configuration.entry_point
     }
 
     /// Get a reference to the voting's runtime args.
-    pub fn runtime_args(&self) -> &RuntimeArgs {
+    pub fn runtime_args(&self) -> &Option<RuntimeArgs> {
         &self.voting_configuration.runtime_args
     }
 
@@ -293,8 +293,8 @@ fn test_voting_serialization() {
             informal_voting_time: 2,
             minimum_governance_reputation: U256::from(2),
             contract_to_call: None,
-            entry_point: "update_variable".into(),
-            runtime_args: RuntimeArgs::new(),
+            entry_point: Some("update_variable".into()),
+            runtime_args: Some(RuntimeArgs::new()),
         },
     };
 

@@ -113,8 +113,8 @@ impl GovernanceVoting {
             informal_voting_time,
             minimum_governance_reputation,
             contract_to_call: Some(contract_to_call),
-            entry_point,
-            runtime_args,
+            entry_point: Some(entry_point),
+            runtime_args: Some(runtime_args),
         };
 
         let voting_id = self.next_voting_id();
@@ -132,13 +132,7 @@ impl GovernanceVoting {
         self.vote(creator, voting_id, Choice::InFavor, stake);
     }
 
-    pub fn create_escrow_voting(  
-        &mut self,
-        creator: Address,
-        contract_to_call: Address,
-        entry_point: String,
-        runtime_args: RuntimeArgs,
-    ) -> VotingId {
+    pub fn create_escrow_voting(&mut self, creator: Address) -> VotingId {
         let variable_repo = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
         let reputation_token = ReputationContractCaller::at(self.get_reputation_token_address());
 
@@ -154,9 +148,9 @@ impl GovernanceVoting {
             informal_voting_quorum,
             informal_voting_time,
             minimum_governance_reputation: U256::zero(),
-            contract_to_call: Some(contract_to_call),
-            entry_point,
-            runtime_args,
+            contract_to_call: None,
+            entry_point: None,
+            runtime_args: None,
         };
 
         let voting_id = self.next_voting_id();
@@ -172,7 +166,7 @@ impl GovernanceVoting {
 
         // Cast first vote in favor
         self.vote(creator, voting_id, Choice::InFavor, U256::zero());
-        
+
         voting_id
     }
 
@@ -443,12 +437,14 @@ impl GovernanceVoting {
     }
 
     fn perform_action(&self, voting: &Voting) {
+        if voting.contract_to_call().is_none() || voting.entry_point().is_none() {
+            return;
+        }
+
         call_contract(
-            voting
-                .contract_to_call()
-                .unwrap_or_revert_with(Error::ContractToCallNotSet),
-            voting.entry_point(),
-            voting.runtime_args().clone(),
+            voting.contract_to_call().unwrap_or_revert(),
+            voting.entry_point().as_ref().unwrap_or_revert().as_str(),
+            voting.runtime_args().as_ref().unwrap_or_revert().clone(),
         )
     }
 

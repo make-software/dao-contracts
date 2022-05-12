@@ -51,7 +51,7 @@ pub fn setup_bid_escrow() -> (
     reputation_token_contract
         .add_to_whitelist(bid_escrow_contract.address())
         .unwrap();
-    
+
     (
         bid_escrow_contract,
         reputation_token_contract,

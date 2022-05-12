@@ -1,13 +1,28 @@
 use casper_dao_utils::{
+    casper_contract::{
+        contract_api::system::{
+            get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
+        },
+        unwrap_or_revert::UnwrapOrRevert,
+    },
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{caller, revert, emit, get_block_time, self, self_address},
-    Address, Mapping,  Variable, Error, BlockTime, casper_contract::{contract_api::system::{get_purse_balance, transfer_from_purse_to_purse}, unwrap_or_revert::UnwrapOrRevert},
+    casper_env::{self, caller, emit, get_block_time, revert},
+    Address, BlockTime, Error, Mapping, Variable,
 };
-use casper_types::{URef, U512, U256, RuntimeArgs};
+use casper_types::{RuntimeArgs, URef, U256, U512};
 
 use crate::{
-    voting::{GovernanceVoting, ReputationAmount, kyc_info::KycInfo, onboarding_info::OnboardingInfo, Choice, VotingId, voting::{Voting, VotingResult}, Ballot},
-    bid::{job::Job, types::{BidId, Description}, events::{JobCreated, JobAccepted, JobSubmitted}},
+    bid::{
+        events::{JobAccepted, JobCreated, JobSubmitted},
+        job::Job,
+        types::{BidId, Description},
+    },
+    voting::{
+        kyc_info::KycInfo,
+        onboarding_info::OnboardingInfo,
+        voting::{Voting, VotingResult},
+        Ballot, Choice, GovernanceVoting, ReputationAmount, VotingId,
+    },
 };
 
 use delegate::delegate;
@@ -17,7 +32,13 @@ use casper_dao_utils::TestContract;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address, va_token: Address);
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    );
     fn pick_bid(
         &mut self,
         worker: Address,
@@ -50,13 +71,26 @@ pub struct BidEscrowContract {
 }
 
 impl BidEscrowContractInterface for BidEscrowContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address, va_token: Address) {
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    ) {
         self.voting.init(variable_repo, reputation_token);
         self.kyc.init(kyc_token);
         self.onboarding.init(va_token);
     }
 
-    fn pick_bid(&mut self, worker: Address, description: Description, time: BlockTime, required_stake: Option<ReputationAmount>, purse: URef) {
+    fn pick_bid(
+        &mut self,
+        worker: Address,
+        description: Description,
+        time: BlockTime,
+        required_stake: Option<ReputationAmount>,
+        purse: URef,
+    ) {
         let cspr_amount = self.deposit(purse);
 
         if worker == caller() {
@@ -75,7 +109,13 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let finish_time = get_block_time() + time;
 
         let mut job = Job::new(
-            bid_id, description.clone(), caller(), worker, finish_time, required_stake, cspr_amount
+            bid_id,
+            description.clone(),
+            caller(),
+            worker,
+            finish_time,
+            required_stake,
+            cspr_amount,
         );
 
         emit(JobCreated {
@@ -100,8 +140,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.jobs.set(&bid_id, job);
     }
 
-
-    fn accept_job(&mut self,bid_id: BidId) {
+    fn accept_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
 
         if job.can_accept(caller(), get_block_time()) {
@@ -132,7 +171,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         if !job.can_submit(caller(), get_block_time()) {
             revert(Error::NotAuthorizedToSubmitResult)
         }
-        
+
         emit(JobSubmitted {
             bid_id,
             job_poster: job.poster(),
@@ -141,7 +180,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         });
 
         job.submit(result);
-        self.voting.create_escrow_voting(job.poster(), self_address(), "redistribute_cspr".to_string(), RuntimeArgs::new());
+        self.voting.create_escrow_voting(job.poster());
         self.jobs.set(&bid_id, job);
     }
 
@@ -161,10 +200,12 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_summary = self.voting.finish_voting(voting_id);
         if voting_summary.is_formal() {
             match voting_summary.result() {
-                VotingResult::InFavor => self.job_finished(bid_id),
-                VotingResult::Against => self.job_not_finished(bid_id),
-                VotingResult::QuorumNotReached => self.job_not_finished(bid_id),
+                VotingResult::InFavor => self.job_completed(bid_id),
+                VotingResult::Against => self.job_not_completed(bid_id),
+                VotingResult::QuorumNotReached => self.job_not_completed(bid_id),
             }
+        } else if voting_summary.result() != VotingResult::InFavor {
+            self.job_not_completed(bid_id);
         }
     }
 
@@ -194,19 +235,45 @@ impl BidEscrowContract {
         amount
     }
 
-    fn job_finished(&mut self, bid_id: BidId) {
-
+    fn withdraw(&mut self, address: Address, amount: U512) {
+        let main_purse = casper_env::contract_main_purse();
+        transfer_from_purse_to_account(
+            main_purse,
+            *address
+                .as_account_hash()
+                .unwrap_or_revert_with(Error::InvalidAddress),
+            amount,
+            None,
+        )
+        .unwrap_or_revert_with(Error::TransferError);
     }
 
-    fn job_not_finished(&mut self, bid_id: BidId) {
-        
+    fn job_completed(&mut self, bid_id: BidId) {
+        let mut job = self.jobs.get_or_revert(&bid_id);
+        self.withdraw(job.worker(), job.cspr_amount());
+        job.complete();
+        self.jobs.set(&bid_id, job);
+    }
+
+    fn job_not_completed(&mut self, bid_id: BidId) {
+        let mut job = self.jobs.get_or_revert(&bid_id);
+        self.withdraw(job.poster(), job.cspr_amount());
+        job.mark_as_not_completed();
+        self.jobs.set(&bid_id, job);
     }
 }
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
-    pub fn pick_bid_with_cspr_amount(&mut self, worker: Address, description: Description, time: BlockTime, required_stake: Option<ReputationAmount>, cspr_amount: U512) {
-        use casper_types::{runtime_args};
+    pub fn pick_bid_with_cspr_amount(
+        &mut self,
+        worker: Address,
+        description: Description,
+        time: BlockTime,
+        required_stake: Option<ReputationAmount>,
+        cspr_amount: U512,
+    ) {
+        use casper_types::runtime_args;
         self.env.deploy_wasm_file(
             "pick_bid.wasm",
             runtime_args! {

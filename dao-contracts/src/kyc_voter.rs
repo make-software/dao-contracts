@@ -98,8 +98,8 @@ impl KycVoterContractInterface for KycVoterContract {
 // non-contract implementation
 impl KycVoterContract {
     fn extract_address_from_args(&self, voting: &Voting) -> Address {
-        let arg = voting
-            .runtime_args()
+        let runtime_args = voting.runtime_args().clone().unwrap_or_revert();
+        let arg = runtime_args
             .named_args()
             .find(|arg| arg.name() == consts::ARG_TO)
             .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
