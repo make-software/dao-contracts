@@ -5,6 +5,7 @@ use casper_dao_contracts::bid::{
     job::JobStatus,
     types::BidId,
 };
+use casper_dao_contracts::voting::{Choice, VotingCreated};
 use casper_dao_utils::{Error, TestContract};
 use casper_types::{U256, U512};
 use speculate::speculate;
@@ -24,26 +25,25 @@ speculate! {
           #[allow(unused_variables)]
           let job_result = "Job result".to_string();
           let cspr_amount = U512::from(100);
+          let informal_voting_time: u64 = 3_601;
+          let formal_voting_time: u64 = 2 * informal_voting_time + 1;
         }
 
         #[should_panic]
         it "cannot create a job for caller" {
             bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(job_poster, job_description, job_time, None, cspr_amount);
-            //assert_eq!(result, Err(Error::CannotPostJobForSelf));
         }
 
         #[should_panic]
         it "cannot create a job if creator is not kycd" {
             kyc_token.mint(worker, U256::from(1)).unwrap();
             bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description, job_time, None, cspr_amount);
-            //assert_eq!(result, Err(Error::JobPosterNotKycd));
         }
 
         #[should_panic]
         it "cannot create a job if worker is not kycd" {
             kyc_token.mint(job_poster, U256::from(1)).unwrap();
             bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description, job_time, None, cspr_amount);
-            //assert_eq!(result, Err(Error::WorkerNotKycd));
         }
 
         describe "with picked bid for non VA" {
@@ -89,9 +89,10 @@ speculate! {
             }
 
             it "can be finished by worker before the time ends" {
-                bid_escrow_contract.as_account(worker).submit_result(bid_id, job_result.clone()).unwrap();
-                let job_submitted_event: JobSubmitted = bid_escrow_contract.event(-1);
-                assert_eq!(job_submitted_event, JobSubmitted { bid_id, job_poster, worker, result: job_result })
+                bid_escrow_contract.as_account(worker).submit_result(bid_id, job_result).unwrap();
+                let job = bid_escrow_contract.get_job(bid_id).unwrap();
+
+                assert_eq!(job.status(), JobStatus::Submitted);
             }
 
             it "cannot be finished by anyone else before the time ends" {
@@ -106,11 +107,21 @@ speculate! {
                     bid_escrow_contract.advance_block_time_by(job_time);
                 }
 
-                it "can be completed by a job poster" {
+                it "can be submitted by a job poster" {
                     bid_escrow_contract.as_account(job_poster).submit_result(bid_id, job_result).unwrap();
+                    let job = bid_escrow_contract.get_job(bid_id).unwrap();
+
+                    assert_eq!(job.status(), JobStatus::Submitted);
                 }
 
-                it "cannot be completed by anyone" {
+                it "can be submitted by a worker" {
+                    bid_escrow_contract.as_account(worker).submit_result(bid_id, job_result).unwrap();
+                    let job = bid_escrow_contract.get_job(bid_id).unwrap();
+
+                    assert_eq!(job.status(), JobStatus::Submitted);
+                }
+
+                it "cannot be submitted by anyone else" {
                     let result = bid_escrow_contract.as_account(anyone).submit_result(bid_id, job_result);
                     assert_eq!(result, Err(Error::NotAuthorizedToSubmitResult))
                 }
@@ -192,9 +203,90 @@ speculate! {
 
                         assert_eq!(job.status(), JobStatus::Submitted);
                     }
+
+                    test "the job can be finished by the worker" {
+                        bid_escrow_contract.as_account(worker).submit_result(bid_id, job_result).unwrap();
+                        let job = bid_escrow_contract.get_job(bid_id).unwrap();
+
+                        assert_eq!(job.status(), JobStatus::Submitted);
+                    }
                 }
             }
 
+        }
+    
+        describe "with job submitted" {
+            before {
+                let bid_id: BidId = 0;
+                #[allow(unused_variables)]
+                let informal_voting_id = U256::zero();
+                #[allow(unused_variables)]
+                let formal_voting_id = U256::one();
+
+                kyc_token.mint(job_poster, U256::from(1)).unwrap();
+                kyc_token.mint(worker, U256::from(2)).unwrap();
+                va_token.mint(worker, U256::from(1)).unwrap();
+                bid_escrow_contract.as_account(job_poster).pick_bid_with_cspr_amount(worker, job_description, job_time, None, cspr_amount);
+                bid_escrow_contract.as_account(worker).accept_job(bid_id).unwrap();
+                #[allow(clippy::redundant_clone)]
+                bid_escrow_contract.as_account(worker).submit_result(bid_id, job_result.clone()).unwrap();
+
+                #[allow(unused_variables)]
+                let job = bid_escrow_contract.get_job(bid_id).unwrap();
+                #[allow(unused_variables)]
+                let anyone2 = bid_escrow_contract.get_env().get_account(4);
+                #[allow(unused_variables)]
+                let anyone3 = bid_escrow_contract.get_env().get_account(5);
+            }
+
+            it "emits proper events" {
+                // last event is first empty vote of the creator
+                let voting_created_event: VotingCreated = bid_escrow_contract.event(-2);
+                let job_submitted_event: JobSubmitted = bid_escrow_contract.event(-3);
+                assert_eq!(job_submitted_event, JobSubmitted { bid_id, job_poster, worker, result: job_result });
+                assert_eq!(voting_created_event, VotingCreated { creator: job_poster, voting_id: casper_dao_contracts::voting::VotingId::zero(), stake: U256::from(0) });
+            }
+
+            it "prevents job poster and worker from voting" {
+                let result = bid_escrow_contract.as_account(worker).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10));
+                assert_eq!(result, Err(Error::CannotVoteOnOwnJob));
+                let result = bid_escrow_contract.as_account(job_poster).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10));
+                assert_eq!(result, Err(Error::CannotVoteOnOwnJob));
+            }
+
+            it "allows anyone else to vote" {
+                let result = bid_escrow_contract.as_account(anyone).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10));
+                assert_eq!(result, Ok(()));
+            }
+
+            describe "when vote passes" {
+                before {
+                    bid_escrow_contract.as_account(anyone).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone2).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone3).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.advance_block_time_by(informal_voting_time);
+                    bid_escrow_contract.as_account(worker).finish_voting(informal_voting_id).unwrap();
+                    bid_escrow_contract.as_account(anyone).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone2).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone3).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.advance_block_time_by(formal_voting_time);
+                    let voting_summary = bid_escrow_contract.as_account(worker).finish_voting(formal_voting_id).unwrap();
+                }
+
+                it "something" {
+                    assert!(voting_summary.res);
+                }
+            }
+
+            describe "when vote fails" {
+                before {
+                    bid_escrow_contract.as_account(anyone).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone2).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone3).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
+                    bid_escrow_contract.advance_block_time_by(informal_voting_time);
+                    bid_escrow_contract.as_account(job_poster).finish_voting(informal_voting_id);
+                }
+            }
         }
     }
 }

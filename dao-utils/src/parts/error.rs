@@ -82,4 +82,5 @@ dao_errors!(
     NotAuthorizedToSubmitResult => 4004,
     CannotAcceptJob => 4005,
     CannotSubmitJob => 4006,
+    CannotVoteOnOwnJob => 4007,
 );

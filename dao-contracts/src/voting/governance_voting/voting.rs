@@ -7,7 +7,7 @@ use casper_dao_utils::{
 use casper_types::{RuntimeArgs, U256};
 
 /// Result of a Voting
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, CLTyped, FromBytes, ToBytes)]
 pub enum VotingResult {
     InFavor,
     Against,
@@ -15,6 +15,7 @@ pub enum VotingResult {
 }
 
 /// Type of Voting (Formal or Informal)
+#[derive(CLTyped, FromBytes, ToBytes)]
 pub enum VotingType {
     Informal,
     Formal,
@@ -22,6 +23,7 @@ pub enum VotingType {
 
 /// Finished Voting summary
 #[allow(dead_code)]
+#[derive(CLTyped, FromBytes, ToBytes)]
 pub struct VotingSummary {
     result: VotingResult,
     ty: VotingType,
@@ -51,12 +53,20 @@ impl VotingSummary {
         }
     }
 
+    pub fn is_formal(&self) -> bool {
+        self.formal_voting_id().is_some()
+    }
+
     pub fn formal_voting_id(&self) -> Option<VotingId> {
         self.formal_voting_id
     }
 
     fn is_rejected(&self) -> bool {
         vec![VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
+    }
+
+    pub fn result(&self) -> VotingResult {
+        self.result.clone()
     }
 }
 

@@ -20,9 +20,9 @@ pub fn setup_bid_escrow() -> (
 ) {
     let informal_quorum = 500.into();
     let formal_quorum = 500.into();
-    let total_onboarded = 3;
+    let total_onboarded = 6;
 
-    let (variable_repo_contract, reputation_token_contract) =
+    let (variable_repo_contract, mut reputation_token_contract) =
         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
     let va_token = DaoOwnedNftContractTest::new(
@@ -48,6 +48,10 @@ pub fn setup_bid_escrow() -> (
         va_token.address(),
     );
 
+    reputation_token_contract
+        .add_to_whitelist(bid_escrow_contract.address())
+        .unwrap();
+    
     (
         bid_escrow_contract,
         reputation_token_contract,

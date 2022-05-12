@@ -6,9 +6,11 @@ use casper_dao_utils::{
 use casper_types::{URef, U512, U256, RuntimeArgs};
 
 use crate::{
-    voting::{GovernanceVoting, ReputationAmount, kyc_info::KycInfo, onboarding_info::OnboardingInfo},
+    voting::{GovernanceVoting, ReputationAmount, kyc_info::KycInfo, onboarding_info::OnboardingInfo, Choice, VotingId, voting::{Voting, VotingResult}, Ballot},
     bid::{job::Job, types::{BidId, Description}, events::{JobCreated, JobAccepted, JobSubmitted}},
 };
+
+use delegate::delegate;
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
@@ -27,7 +29,15 @@ pub trait BidEscrowContractInterface {
     fn accept_job(&mut self, bid_id: BidId);
     fn cancel_job(&mut self, bid_id: BidId);
     fn submit_result(&mut self, bid_id: BidId, result: Description);
+    fn vote(&mut self, bid_id: BidId, voting_id: VotingId, choice: Choice, stake: U256);
     fn get_job(&self, bid_id: BidId) -> Option<Job>;
+    fn finish_voting(&mut self, bid_id: BidId, voting_id: VotingId);
+    fn get_dust_amount(&self) -> U256;
+    fn get_variable_repo_address(&self) -> Address;
+    fn get_reputation_token_address(&self) -> Address;
+    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
 }
 
 #[derive(Instance)]
@@ -131,19 +141,48 @@ impl BidEscrowContractInterface for BidEscrowContract {
         });
 
         job.submit(result);
+        self.voting.create_escrow_voting(job.poster(), self_address(), "redistribute_cspr".to_string(), RuntimeArgs::new());
         self.jobs.set(&bid_id, job);
+    }
 
-       self.voting.create_voting(caller(), U256::zero(), self_address(), "redistribute_cspr".to_string(), RuntimeArgs::new());
+    fn vote(&mut self, bid_id: BidId, voting_id: VotingId, choice: Choice, stake: U256) {
+        let job = self.jobs.get_or_revert(&bid_id);
+        if caller() == job.poster() || caller() == job.worker() {
+            revert(Error::CannotVoteOnOwnJob);
+        }
+        self.voting.vote(caller(), voting_id, choice, stake);
     }
 
     fn get_job(&self, bid_id: BidId) -> Option<Job> {
         self.jobs.get_or_none(&bid_id)
     }
+
+    fn finish_voting(&mut self, bid_id: BidId, voting_id: VotingId) {
+        let voting_summary = self.voting.finish_voting(voting_id);
+        if voting_summary.is_formal() {
+            match voting_summary.result() {
+                VotingResult::InFavor => self.job_finished(bid_id),
+                VotingResult::Against => self.job_not_finished(bid_id),
+                VotingResult::QuorumNotReached => self.job_not_finished(bid_id),
+            }
+        }
+    }
+
+    delegate! {
+        to self.voting {
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+        }
+    }
 }
 
 impl BidEscrowContract {
     fn next_bid_id(&mut self) -> BidId {
-        let bid_id = self.jobs_count.get();
+        let bid_id = self.jobs_count.get().unwrap_or_default();
         self.jobs_count.set(bid_id + 1);
         bid_id
     }
@@ -153,6 +192,14 @@ impl BidEscrowContract {
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
         amount
+    }
+
+    fn job_finished(&mut self, bid_id: BidId) {
+
+    }
+
+    fn job_not_finished(&mut self, bid_id: BidId) {
+        
     }
 }
 

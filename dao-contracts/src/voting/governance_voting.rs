@@ -132,6 +132,50 @@ impl GovernanceVoting {
         self.vote(creator, voting_id, Choice::InFavor, stake);
     }
 
+    pub fn create_escrow_voting(  
+        &mut self,
+        creator: Address,
+        contract_to_call: Address,
+        entry_point: String,
+        runtime_args: RuntimeArgs,
+    ) -> VotingId {
+        let variable_repo = VariableRepositoryContractCaller::at(self.get_variable_repo_address());
+        let reputation_token = ReputationContractCaller::at(self.get_reputation_token_address());
+
+        let informal_voting_time = variable_repo.informal_voting_time();
+        let formal_voting_time = variable_repo.formal_voting_time();
+        let total_onboarded = reputation_token.total_onboarded();
+        let informal_voting_quorum = variable_repo.informal_voting_quorum(total_onboarded);
+        let formal_voting_quorum = variable_repo.formal_voting_quorum(total_onboarded);
+
+        let voting_configuration = VotingConfiguration {
+            formal_voting_quorum,
+            formal_voting_time,
+            informal_voting_quorum,
+            informal_voting_time,
+            minimum_governance_reputation: U256::zero(),
+            contract_to_call: Some(contract_to_call),
+            entry_point,
+            runtime_args,
+        };
+
+        let voting_id = self.next_voting_id();
+        let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
+
+        self.set_voting(voting);
+
+        emit(VotingCreated {
+            creator,
+            voting_id,
+            stake: U256::zero(),
+        });
+
+        // Cast first vote in favor
+        self.vote(creator, voting_id, Choice::InFavor, U256::zero());
+        
+        voting_id
+    }
+
     /// Finishes voting.
     ///
     /// Depending on type of voting, different actions are performed.
