@@ -258,9 +258,8 @@ speculate! {
             }
 
             it "emits proper events" {
-                // last event is first empty vote of the creator
-                let voting_created_event: VotingCreated = bid_escrow_contract.event(-2);
-                let job_submitted_event: JobSubmitted = bid_escrow_contract.event(-3);
+                let voting_created_event: VotingCreated = bid_escrow_contract.event(-1);
+                let job_submitted_event: JobSubmitted = bid_escrow_contract.event(-2);
                 assert_eq!(job_submitted_event, JobSubmitted { bid_id, job_poster, worker, result: job_result });
                 assert_eq!(voting_created_event, VotingCreated { creator: job_poster, voting_id: casper_dao_contracts::voting::VotingId::zero(), stake: U256::from(0) });
             }

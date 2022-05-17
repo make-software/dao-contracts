@@ -5,11 +5,13 @@ pub mod action;
 mod admin;
 pub mod bid;
 mod bid_escrow;
+mod builder;
 mod dao_nft;
 mod kyc_voter;
 #[doc(hidden)]
 pub mod mocks;
 mod onboarding_voter;
+mod proxy;
 mod repo_voter;
 mod reputation;
 /// Variable Repo
@@ -19,6 +21,7 @@ pub mod voting;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
+pub use builder::voting_configuration_builder::VotingConfigurationBuilder;
 pub use dao_nft::{DaoOwnedNftContract, DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 pub use kyc_voter::{KycVoterContract, KycVoterContractCaller, KycVoterContractInterface};
 #[doc(hidden)]

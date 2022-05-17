@@ -9,7 +9,7 @@ use casper_dao_utils::{
     casper_env::{self, caller, emit, get_block_time, revert},
     Address, BlockTime, Error, Mapping, Variable,
 };
-use casper_types::{RuntimeArgs, URef, U256, U512};
+use casper_types::{URef, U256, U512};
 
 use crate::{
     bid::{
@@ -23,6 +23,7 @@ use crate::{
         voting::{Voting, VotingResult},
         Ballot, Choice, GovernanceVoting, ReputationAmount, VotingId,
     },
+    VotingConfigurationBuilder,
 };
 
 use delegate::delegate;
@@ -181,7 +182,14 @@ impl BidEscrowContractInterface for BidEscrowContract {
         });
 
         job.submit(result);
-        self.voting.create_escrow_voting(job.poster());
+
+        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
+            .with_cast_first_vote(false)
+            .with_create_minimum_reputation(U256::zero())
+            .build();
+
+        self.voting
+            .create_voting(job.poster(), U256::zero(), voting_configuration);
         self.jobs.set(&bid_id, job);
     }
 
@@ -278,7 +286,7 @@ impl BidEscrowContractTest {
         required_stake: Option<ReputationAmount>,
         cspr_amount: U512,
     ) {
-        use casper_types::runtime_args;
+        use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "pick_bid.wasm",
             runtime_args! {

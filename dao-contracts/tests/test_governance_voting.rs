@@ -102,9 +102,9 @@ speculate! {
 
                 assert_eq!(informal_voting.voting_id(), VotingId::zero());
                 assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
-                assert_eq!(informal_voting.informal_voting_time(), informal_voting_time);
+                assert_eq!(informal_voting.informal_voting_time().unwrap(), informal_voting_time);
                 assert_eq!(informal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), formal_quorum).unwrap());
-                assert_eq!(informal_voting.informal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
+                assert_eq!(informal_voting.informal_voting_quorum().unwrap(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
                 assert_eq!(voting_created_event.voting_id, informal_voting.voting_id());
                 assert_eq!(voting_created_event.creator, creator);
                 assert_eq!(voting_created_event.stake, minimum_reputation);

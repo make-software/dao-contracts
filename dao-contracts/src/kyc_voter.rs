@@ -2,12 +2,13 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, Error,
+    consts, Address, ContractCall, Error,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{
-    kyc_info::KycInfo, voting::Voting, Ballot, Choice, GovernanceVoting, VotingId,
+use crate::{
+    voting::{kyc_info::KycInfo, voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
+    VotingConfigurationBuilder,
 };
 use delegate::delegate;
 
@@ -61,15 +62,20 @@ impl KycVoterContractInterface for KycVoterContract {
         self.assert_not_kyced(&address_to_onboard);
 
         let creator = caller();
-        let contract_to_call = self.get_kyc_token_address();
-        let runtime_args = runtime_args! {
-            consts::ARG_TO => address_to_onboard,
-            consts::ARG_TOKEN_ID => document_hash,
-        };
-        let entry_point = consts::EP_MINT.to_string();
+
+        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
+            .with_contract_call(ContractCall {
+                address: self.get_kyc_token_address(),
+                entry_point: consts::EP_MINT.to_string(),
+                runtime_args: runtime_args! {
+                    consts::ARG_TO => address_to_onboard,
+                    consts::ARG_TOKEN_ID => document_hash,
+                },
+            })
+            .build();
 
         self.voting
-            .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
+            .create_voting(creator, stake, voting_configuration);
 
         self.kyc.set_voting(&address_to_onboard);
     }
@@ -98,7 +104,11 @@ impl KycVoterContractInterface for KycVoterContract {
 // non-contract implementation
 impl KycVoterContract {
     fn extract_address_from_args(&self, voting: &Voting) -> Address {
-        let runtime_args = voting.runtime_args().clone().unwrap_or_revert();
+        let runtime_args = voting
+            .contract_call()
+            .clone()
+            .unwrap_or_revert()
+            .runtime_args();
         let arg = runtime_args
             .named_args()
             .find(|arg| arg.name() == consts::ARG_TO)

@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, Error, SequenceGenerator,
+    consts, Address, ContractCall, Error, SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -13,7 +13,7 @@ use crate::{
         voting::Voting,
         Ballot, Choice, GovernanceVoting, VotingId,
     },
-    ReputationContractCaller,
+    ReputationContractCaller, VotingConfigurationBuilder,
 };
 use delegate::delegate;
 
@@ -91,15 +91,22 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
     fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256) {
         self.assert_no_ongoing_voting(&subject_address);
 
+        let creator = caller();
         let (entry_point, runtime_args) = match action {
             OnboardingAction::Add => self.configure_add_voting(subject_address),
             OnboardingAction::Remove => self.configure_remove_voting(subject_address),
         };
-        let creator = caller();
-        let contract_to_call = self.get_va_token_address();
+
+        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
+            .with_contract_call(ContractCall {
+                address: self.get_va_token_address(),
+                entry_point,
+                runtime_args,
+            })
+            .build();
 
         self.voting
-            .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
+            .create_voting(creator, stake, voting_configuration);
         self.onboarding.set_voting(&subject_address);
     }
 
@@ -158,7 +165,11 @@ impl OnboardingVoterContract {
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
-        let runtime_args = voting.runtime_args().clone().unwrap_or_revert();
+        let runtime_args = voting
+            .contract_call()
+            .clone()
+            .unwrap_or_revert()
+            .runtime_args();
         // If the action is `Add` we pass an `Address` as the `to` parameter
         let arg = runtime_args
             .named_args()

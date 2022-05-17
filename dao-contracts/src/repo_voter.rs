@@ -1,11 +1,14 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address,
+    Address, ContractCall,
 };
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId};
+use crate::{
+    voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
+    VotingConfigurationBuilder,
+};
 
 use delegate::delegate;
 
@@ -63,17 +66,20 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        self.voting.create_voting(
-            caller(),
-            stake,
-            variable_repo_to_edit,
-            "update_at".into(),
-            runtime_args! {
-                "key" => key,
-                "value" => value,
-                "activation_time" => activation_time,
-            },
-        );
+        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
+            .with_contract_call(ContractCall {
+                address: variable_repo_to_edit,
+                entry_point: "update_at".into(),
+                runtime_args: runtime_args! {
+                    "key" => key,
+                    "value" => value,
+                    "activation_time" => activation_time,
+                },
+            })
+            .build();
+
+        self.voting
+            .create_voting(caller(), stake, voting_configuration);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {

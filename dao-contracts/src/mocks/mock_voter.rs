@@ -1,11 +1,14 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, self_address},
-    Address, Variable,
+    Address, ContractCall, Variable,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId};
+use crate::{
+    voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
+    VotingConfigurationBuilder,
+};
 
 use delegate::delegate;
 
@@ -34,15 +37,18 @@ pub struct MockVoterContract {
 
 impl MockVoterContractInterface for MockVoterContract {
     fn create_voting(&mut self, value: String, stake: U256) {
-        self.voting.create_voting(
-            caller(),
-            stake,
-            self_address(),
-            "set_variable".into(),
-            runtime_args! {
-                "variable" => value,
-            },
-        );
+        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
+            .with_contract_call(ContractCall {
+                address: self_address(),
+                entry_point: "set_variable".into(),
+                runtime_args: runtime_args! {
+                    "variable" => value,
+                },
+            })
+            .build();
+
+        self.voting
+            .create_voting(caller(), stake, voting_configuration);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {

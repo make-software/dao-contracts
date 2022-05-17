@@ -1,13 +1,14 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address,
+    Address, ContractCall,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::{
     action::Action,
     voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
+    VotingConfigurationBuilder,
 };
 
 use delegate::delegate;
@@ -67,15 +68,18 @@ impl AdminContractInterface for AdminContract {
         address: Address,
         stake: U256,
     ) {
-        self.voting.create_voting(
-            caller(),
-            stake,
-            contract_to_update,
-            action.get_entry_point(),
-            runtime_args! {
-                action.get_arg() => address,
-            },
-        );
+        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
+            .with_contract_call(ContractCall {
+                address: contract_to_update,
+                entry_point: action.get_entry_point(),
+                runtime_args: runtime_args! {
+                    action.get_arg() => address,
+                },
+            })
+            .build();
+
+        self.voting
+            .create_voting(caller(), stake, voting_configuration);
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
