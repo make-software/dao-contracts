@@ -29,6 +29,10 @@ speculate! {
           let informal_voting_time: u64 = 3_600;
           #[allow(unused_variables)]
           let formal_voting_time: u64 = 2 * informal_voting_time;
+          #[allow(unused_variables)]
+          let job_poster_initial_cspr = bid_escrow_contract.get_env().get_account_cspr_balance(job_poster);
+          #[allow(unused_variables)]
+          let worker_initial_cspr = bid_escrow_contract.get_env().get_account_cspr_balance(worker);
         }
 
         #[should_panic]
@@ -63,6 +67,12 @@ speculate! {
                 let bid_id: BidId = 0;
                 #[allow(unused_variables)]
                 let job = bid_escrow_contract.get_job(bid_id).unwrap();
+            }
+
+            it "transfers cspr from job poster to the contract" {
+                assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(job_poster), job_poster_initial_cspr - cspr_amount);
+                assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(worker), worker_initial_cspr);
+                assert_eq!(bid_escrow_contract.get_cspr_balance(), cspr_amount);
             }
 
             it "emits correct events" {
@@ -141,6 +151,12 @@ speculate! {
                 let bid_id: BidId = 0;
                 #[allow(unused_variables)]
                 let job = bid_escrow_contract.get_job(bid_id).unwrap();
+            }
+
+            it "transfers cspr from job poster to the contract" {
+                assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(job_poster), job_poster_initial_cspr - cspr_amount);
+                assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(worker), worker_initial_cspr);
+                assert_eq!(bid_escrow_contract.get_cspr_balance(), cspr_amount);
             }
 
             it "is not automatically accepted" {
@@ -276,6 +292,12 @@ speculate! {
                     let voting_summary = bid_escrow_contract.as_account(worker).finish_voting(bid_id, formal_voting_id);
                 }
 
+                it "transfers cspr from the contract to the worker" {
+                    assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(job_poster), job_poster_initial_cspr - cspr_amount);
+                    assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(worker), worker_initial_cspr + cspr_amount);
+                    assert_eq!(bid_escrow_contract.get_cspr_balance(), U512::zero());
+                }
+
                 it "changes job status to completed" {
                     let job = bid_escrow_contract.get_job(bid_id).unwrap();
                     assert_eq!(job.status(), JobStatus::Completed);
@@ -294,6 +316,12 @@ speculate! {
                 it "changes job status to not completed" {
                     let job = bid_escrow_contract.get_job(bid_id).unwrap();
                     assert_eq!(job.status(), JobStatus::NotCompleted);
+                }
+
+                it "transfers cspr from the contract to the job poster" {
+                    assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(job_poster), job_poster_initial_cspr);
+                    assert_eq!(bid_escrow_contract.get_env().get_account_cspr_balance(worker), worker_initial_cspr);
+                    assert_eq!(bid_escrow_contract.get_cspr_balance(), U512::zero());
                 }
             }
         }

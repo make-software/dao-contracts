@@ -341,10 +341,7 @@ impl TestEnvState {
             .get_account(*account.as_account_hash().unwrap())
             .unwrap();
         let purse = account.main_purse();
-        let val = self.context.get_purse_balance(purse) + gas_used;
-        dbg!(self.context.get_exec_results_count());
-        // dbg!(val);
-        val
+        self.context.get_purse_balance(purse) + gas_used
     }
 }
 

@@ -59,6 +59,7 @@ pub trait BidEscrowContractInterface {
     fn get_voting(&self, voting_id: U256) -> Option<Voting>;
     fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
     fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    fn get_cspr_balance(&self) -> U512;
 }
 
 #[derive(Instance)]
@@ -207,6 +208,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
         } else if voting_summary.result() != VotingResult::InFavor {
             self.job_not_completed(bid_id);
         }
+    }
+
+    fn get_cspr_balance(&self) -> U512 {
+        get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
     }
 
     delegate! {
