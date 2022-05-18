@@ -7,7 +7,7 @@ use casper_dao_utils::{
 use casper_types::U256;
 
 /// Result of a Voting
-#[derive(PartialEq, Clone, CLTyped, FromBytes, ToBytes)]
+#[derive(PartialEq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
 pub enum VotingResult {
     InFavor,
     Against,
@@ -15,7 +15,7 @@ pub enum VotingResult {
 }
 
 /// Type of Voting (Formal or Informal)
-#[derive(CLTyped, FromBytes, ToBytes)]
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone)]
 pub enum VotingType {
     Informal,
     Formal,
@@ -23,7 +23,7 @@ pub enum VotingType {
 
 /// Finished Voting summary
 #[allow(dead_code)]
-#[derive(CLTyped, FromBytes, ToBytes)]
+#[derive(CLTyped, FromBytes, ToBytes, Clone, Debug)]
 pub struct VotingSummary {
     result: VotingResult,
     ty: VotingType,
@@ -67,6 +67,11 @@ impl VotingSummary {
 
     pub fn result(&self) -> VotingResult {
         self.result.clone()
+    }
+
+    /// Get a reference to the voting summary's ty.
+    pub fn voting_type(&self) -> &VotingType {
+        &self.ty
     }
 }
 

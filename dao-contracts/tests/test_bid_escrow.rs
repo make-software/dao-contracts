@@ -14,7 +14,7 @@ speculate! {
     describe "bid escrow contract" {
         before {
           #[allow(unused_mut, unused_variables)]
-          let (mut bid_escrow_contract, _reputation_token_contract, mut va_token, mut kyc_token) = governance_voting_common::setup_bid_escrow();
+          let (mut bid_escrow_contract, reputation_token_contract, mut va_token, mut kyc_token) = governance_voting_common::setup_bid_escrow();
           let job_poster = bid_escrow_contract.get_env().get_account(1);
           #[allow(unused_variables)]
           let worker = bid_escrow_contract.get_env().get_account(2);
@@ -24,7 +24,7 @@ speculate! {
           let job_description = "Job Description".to_string();
           #[allow(unused_variables)]
           let job_result = "Job result".to_string();
-          let cspr_amount = U512::from(100);
+          let cspr_amount = U512::from(1_000_000);
           #[allow(unused_variables)]
           let informal_voting_time: u64 = 3_600;
           #[allow(unused_variables)]
@@ -265,30 +265,30 @@ speculate! {
             }
 
             it "prevents job poster and worker from voting" {
-                let result = bid_escrow_contract.as_account(worker).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10));
+                let result = bid_escrow_contract.as_account(worker).vote(bid_id, Choice::InFavor, U256::from(10));
                 assert_eq!(result, Err(Error::CannotVoteOnOwnJob));
-                let result = bid_escrow_contract.as_account(job_poster).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10));
+                let result = bid_escrow_contract.as_account(job_poster).vote(bid_id, Choice::InFavor, U256::from(10));
                 assert_eq!(result, Err(Error::CannotVoteOnOwnJob));
             }
 
             it "allows anyone else to vote" {
-                let result = bid_escrow_contract.as_account(anyone).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10));
+                let result = bid_escrow_contract.as_account(anyone).vote(bid_id, Choice::InFavor, U256::from(10));
                 assert_eq!(result, Ok(()));
             }
 
             describe "when vote passes" {
                 before {
-                    bid_escrow_contract.as_account(anyone).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
-                    bid_escrow_contract.as_account(anyone2).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
-                    bid_escrow_contract.as_account(anyone3).vote(bid_id, informal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone).vote(bid_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone2).vote(bid_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone3).vote(bid_id, Choice::Against, U256::from(10)).unwrap();
                     bid_escrow_contract.advance_block_time_by(informal_voting_time);
-                    bid_escrow_contract.as_account(worker).finish_voting(bid_id, informal_voting_id).unwrap();
-                    bid_escrow_contract.as_account(anyone).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
-                    bid_escrow_contract.as_account(anyone2).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
-                    bid_escrow_contract.as_account(anyone3).vote(bid_id, formal_voting_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(worker).finish_voting(bid_id).unwrap();
+                    bid_escrow_contract.as_account(anyone).vote(bid_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone2).vote(bid_id, Choice::InFavor, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone3).vote(bid_id, Choice::Against, U256::from(10)).unwrap();
                     bid_escrow_contract.advance_block_time_by(formal_voting_time);
                     #[allow(unused_variables)]
-                    let voting_summary = bid_escrow_contract.as_account(worker).finish_voting(bid_id, formal_voting_id);
+                    bid_escrow_contract.as_account(worker).finish_voting(bid_id).unwrap();
                 }
 
                 it "transfers cspr from the contract to the worker" {
@@ -301,15 +301,23 @@ speculate! {
                     let job = bid_escrow_contract.get_job(bid_id).unwrap();
                     assert_eq!(job.status(), JobStatus::Completed);
                 }
+
+                it "mints reputation and transfers it to voters and worker" {
+                    assert_eq!(reputation_token_contract.balance_of(worker), U256::from(17000));
+                    assert_eq!(reputation_token_contract.balance_of(job_poster), U256::from(10000));
+                    assert_eq!(reputation_token_contract.balance_of(anyone), U256::from(11505));
+                    assert_eq!(reputation_token_contract.balance_of(anyone2), U256::from(11505));
+                    assert_eq!(reputation_token_contract.balance_of(anyone3), U256::from(9990));
+                }
             }
 
             describe "when vote fails" {
                 before {
-                    bid_escrow_contract.as_account(anyone).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
-                    bid_escrow_contract.as_account(anyone2).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
-                    bid_escrow_contract.as_account(anyone3).vote(bid_id, informal_voting_id, Choice::Against, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone).vote(bid_id, Choice::Against, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone2).vote(bid_id, Choice::Against, U256::from(10)).unwrap();
+                    bid_escrow_contract.as_account(anyone3).vote(bid_id, Choice::Against, U256::from(10)).unwrap();
                     bid_escrow_contract.advance_block_time_by(informal_voting_time);
-                    bid_escrow_contract.as_account(job_poster).finish_voting(bid_id, informal_voting_id).unwrap();
+                    bid_escrow_contract.as_account(job_poster).finish_voting(bid_id).unwrap();
                 }
 
                 it "changes job status to not completed" {

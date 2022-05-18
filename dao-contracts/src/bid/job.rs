@@ -4,7 +4,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::voting::ReputationAmount;
+use crate::voting::{ReputationAmount, VotingId};
 
 use super::types::{BidId, Description};
 
@@ -24,9 +24,11 @@ impl Default for JobStatus {
     }
 }
 
-#[derive(CLTyped, ToBytes, FromBytes, Default)]
+#[derive(CLTyped, ToBytes, FromBytes, Default, Debug)]
 pub struct Job {
     bid_id: BidId,
+    informal_voting_id: Option<VotingId>,
+    formal_voting_id: Option<VotingId>,
     description: Description,
     result: Option<Description>,
     finish_time: BlockTime,
@@ -57,6 +59,8 @@ impl Job {
             poster: Some(poster),
             worker: Some(worker),
             status: JobStatus::default(),
+            informal_voting_id: None,
+            formal_voting_id: None,
         }
     }
 
@@ -77,6 +81,7 @@ impl Job {
     }
 
     pub fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
+        // TODO check if voting exists
         if self.time_ended(block_time) {
             if caller == self.worker() || caller == self.poster() {
                 return true;
@@ -154,5 +159,35 @@ impl Job {
     /// Get the job's cspr amount.
     pub fn cspr_amount(&self) -> U512 {
         self.cspr_amount
+    }
+
+    /// Get the job's informal voting id.
+    pub fn informal_voting_id(&self) -> Option<VotingId> {
+        self.informal_voting_id
+    }
+
+    /// Get the job's formal voting id.
+    pub fn formal_voting_id(&self) -> Option<VotingId> {
+        self.formal_voting_id
+    }
+
+    /// Set the job's informal voting id.
+    pub fn set_informal_voting_id(&mut self, informal_voting_id: Option<VotingId>) {
+        self.informal_voting_id = informal_voting_id;
+    }
+
+    /// Set the job's formal voting id.
+    pub fn set_formal_voting_id(&mut self, formal_voting_id: Option<VotingId>) {
+        self.formal_voting_id = formal_voting_id;
+    }
+
+    pub fn current_voting_id(&self) -> Option<VotingId> {
+        if self.formal_voting_id.is_some() {
+            return self.formal_voting_id;
+        } else if self.informal_voting_id.is_some() {
+            return self.informal_voting_id;
+        }
+
+        None
     }
 }

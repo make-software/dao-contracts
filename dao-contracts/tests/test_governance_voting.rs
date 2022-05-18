@@ -111,7 +111,7 @@ speculate! {
 
                 // first vote is cast automatically
                 assert_eq!(first_ballot.voting_id, informal_voting.voting_id());
-                assert_eq!(first_ballot.voter, Some(creator));
+                assert_eq!(first_ballot.voter, creator);
                 assert_eq!(first_ballot.choice, Choice::InFavor);
                 assert_eq!(first_ballot.stake, minimum_reputation);
                 assert_eq!(ballot_cast_event, BallotCast { voter: creator, voting_id: informal_voting.voting_id(), choice: Choice::InFavor, stake: minimum_reputation });

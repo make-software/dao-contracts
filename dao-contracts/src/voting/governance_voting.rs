@@ -89,7 +89,7 @@ impl GovernanceVoting {
         creator: Address,
         stake: U256,
         voting_configuration: VotingConfiguration,
-    ) {
+    ) -> VotingId {
         if stake < voting_configuration.create_minimum_reputation {
             revert(Error::NotEnoughReputation)
         }
@@ -111,6 +111,8 @@ impl GovernanceVoting {
         if cast_first_vote {
             self.vote(creator, voting_id, Choice::InFavor, stake);
         }
+
+        voting_id
     }
 
     /// Finishes voting.
@@ -291,39 +293,37 @@ impl GovernanceVoting {
             revert(Error::VoteOnCompletedVotingNotAllowed)
         }
 
-        let mut vote = self.ballots.get(&(voting_id, voter)).unwrap_or_default();
-        match vote.voter {
-            Some(_) => {
-                // Cannot vote twice on the same voting
-                revert(Error::CannotVoteTwice)
-            }
-            None => {
-                // Stake the reputation
-                ReputationContractProxy::transfer(
-                    self.get_reputation_token_address(),
-                    voter,
-                    self_address(),
-                    stake,
-                );
+        let vote = self.ballots.get(&(voting_id, voter));
 
-                // Create a new vote
-                vote = Ballot {
-                    voter: Some(voter),
-                    choice,
-                    voting_id,
-                    stake,
-                };
-                // Add a voter to the list
-                self.voters.add(voting_id, voter);
-            }
+        if vote.is_some() {
+            revert(Error::CannotVoteTwice)
         }
+
+        // Stake the reputation
+        ReputationContractProxy::transfer(
+            self.get_reputation_token_address(),
+            voter,
+            self_address(),
+            stake,
+        );
+
+        // Create a new vote
+        let vote = Ballot {
+            voter,
+            choice,
+            voting_id,
+            stake,
+        };
+
+        // Add a voter to the list
+        self.voters.add(voting_id, voter);
 
         // Update the votes list
         self.ballots.set(&(voting_id, voter), vote);
 
         // update voting
         voting.stake(stake, choice);
-        self.set_voting(voting);
+        self.set_voting(voting);      
 
         BallotCast {
             voter,
@@ -412,7 +412,7 @@ impl GovernanceVoting {
                 ReputationContractProxy::transfer(
                     self.get_reputation_token_address(),
                     self_address(),
-                    ballot.voter.unwrap_or_revert(),
+                    ballot.voter,
                     ballot.stake,
                 );
             }
@@ -425,7 +425,7 @@ impl GovernanceVoting {
             ReputationContractProxy::transfer(
                 self.get_reputation_token_address(),
                 self_address(),
-                ballot.voter.unwrap_or_revert(),
+                ballot.voter,
                 ballot.stake,
             );
         }
@@ -456,7 +456,7 @@ impl GovernanceVoting {
                 ReputationContractProxy::transfer(
                     self.get_reputation_token_address(),
                     self_address(),
-                    ballot.voter.unwrap_or_revert(),
+                    ballot.voter,
                     to_transfer,
                 );
             }
@@ -475,5 +475,10 @@ impl GovernanceVoting {
                     + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow),
             );
         }
+    }
+
+    /// Get a reference to the governance voting's voters.
+    pub fn voters(&self) -> &VecMapping<VotingId, Address> {
+        &self.voters
     }
 }

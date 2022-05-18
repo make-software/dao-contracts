@@ -15,12 +15,6 @@ pub enum Choice {
     InFavor,
 }
 
-impl Default for Choice {
-    fn default() -> Self {
-        Self::InFavor
-    }
-}
-
 impl Choice {
     pub(crate) fn is_in_favor(&self) -> bool {
         match self {
@@ -31,9 +25,9 @@ impl Choice {
 }
 
 /// Ballot struct
-#[derive(Debug, Default, FromBytes, ToBytes, CLTyped)]
+#[derive(Debug, FromBytes, ToBytes, CLTyped)]
 pub struct Ballot {
-    pub voter: Option<Address>,
+    pub voter: Address,
     pub voting_id: VotingId,
     pub choice: Choice,
     pub stake: U256,
@@ -47,7 +41,7 @@ fn test_vote_serialization() {
     let address = Address::Account(AccountHash::default());
 
     let vote = Ballot {
-        voter: Some(address),
+        voter: address,
         voting_id: U256::from(123),
         choice: Choice::InFavor,
         stake: U256::from(456),

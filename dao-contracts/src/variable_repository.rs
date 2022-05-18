@@ -11,8 +11,6 @@ use casper_types::{
 };
 use delegate::delegate;
 
-use crate::voting::voting::VotingConfiguration;
-
 // Interface of the Variable Repository Contract.
 //
 // It should be implemented by [`VariableRepositoryContract`], [`VariableRepositoryContractCaller`]
@@ -211,18 +209,5 @@ impl VariableRepositoryContractCaller {
             self.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
         )
         .unwrap_or_revert()
-    }
-
-    pub fn voting_configuration_defaults(&self, total_onboarded: U256) -> VotingConfiguration {
-        VotingConfiguration {
-            formal_voting_quorum: self.formal_voting_quorum(total_onboarded),
-            formal_voting_time: self.formal_voting_time(),
-            informal_voting_quorum: Some(self.informal_voting_quorum(total_onboarded)),
-            informal_voting_time: Some(self.informal_voting_time()),
-            cast_first_vote: true,
-            create_minimum_reputation: self.minimum_governance_reputation(),
-            cast_minimum_reputation: U256::zero(),
-            contract_call: None,
-        }
     }
 }

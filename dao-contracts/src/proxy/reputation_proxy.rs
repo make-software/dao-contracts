@@ -30,4 +30,8 @@ impl ReputationContractProxy {
     pub fn burn(contract_address: Address, owner: Address, amount: U256) {
         ReputationContractProxy::caller(contract_address).burn(owner, amount);
     }
+
+    pub fn mint(contract_address: Address, recipient: Address, amount: U256) {
+        ReputationContractProxy::caller(contract_address).mint(recipient, amount);
+    }
 }
