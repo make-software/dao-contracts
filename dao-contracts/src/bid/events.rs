@@ -30,3 +30,12 @@ pub struct JobSubmitted {
     pub worker: Address,
     pub result: Description,
 }
+
+#[derive(Debug, PartialEq, Event)]
+pub struct JobCancelled {
+    pub bid_id: BidId,
+    pub caller: Address,
+    pub job_poster: Address,
+    pub worker: Address,
+    pub reason: Description,
+}

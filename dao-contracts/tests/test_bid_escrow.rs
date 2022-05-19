@@ -13,26 +13,28 @@ use speculate::speculate;
 speculate! {
     describe "bid escrow contract" {
         before {
-          #[allow(unused_mut, unused_variables)]
-          let (mut bid_escrow_contract, reputation_token_contract, mut va_token, mut kyc_token) = governance_voting_common::setup_bid_escrow();
-          let job_poster = bid_escrow_contract.get_env().get_account(1);
-          #[allow(unused_variables)]
-          let worker = bid_escrow_contract.get_env().get_account(2);
-          #[allow(unused_variables)]
-          let anyone = bid_escrow_contract.get_env().get_account(3);
-          let job_time : casper_dao_utils::BlockTime = 60;
-          let job_description = "Job Description".to_string();
-          #[allow(unused_variables)]
-          let job_result = "Job result".to_string();
-          let cspr_amount = U512::from(1_000_000);
-          #[allow(unused_variables)]
-          let informal_voting_time: u64 = 3_600;
-          #[allow(unused_variables)]
-          let formal_voting_time: u64 = 2 * informal_voting_time;
-          #[allow(unused_variables)]
-          let job_poster_initial_cspr = bid_escrow_contract.get_env().get_account_cspr_balance(job_poster);
-          #[allow(unused_variables)]
-          let worker_initial_cspr = bid_escrow_contract.get_env().get_account_cspr_balance(worker);
+            #[allow(unused_mut, unused_variables)]
+            let (mut bid_escrow_contract, reputation_token_contract, mut va_token, mut kyc_token) = governance_voting_common::setup_bid_escrow();
+            let job_poster = bid_escrow_contract.get_env().get_account(1);
+            #[allow(unused_variables)]
+            let worker = bid_escrow_contract.get_env().get_account(2);
+            #[allow(unused_variables)]
+            let anyone = bid_escrow_contract.get_env().get_account(3);
+            let job_time : casper_dao_utils::BlockTime = 60;
+            let job_description = "Job Description".to_string();
+            #[allow(unused_variables)]
+            let job_result = "Job result".to_string();
+            #[allow(unused_variables)]
+            let cancel_reason = "Not finished".to_string();
+            let cspr_amount = U512::from(1_000_000);
+            #[allow(unused_variables)]
+            let informal_voting_time: u64 = 3_600;
+            #[allow(unused_variables)]
+            let formal_voting_time: u64 = 2 * informal_voting_time;
+            #[allow(unused_variables)]
+            let job_poster_initial_cspr = bid_escrow_contract.get_env().get_account_cspr_balance(job_poster);
+            #[allow(unused_variables)]
+            let worker_initial_cspr = bid_escrow_contract.get_env().get_account_cspr_balance(worker);
         }
 
         #[should_panic]
@@ -91,7 +93,7 @@ speculate! {
             }
 
             it "cannot be cancelled" {
-                let result = bid_escrow_contract.as_account(job_poster).cancel_job(bid_id);
+                let result = bid_escrow_contract.as_account(job_poster).cancel_job(bid_id, cancel_reason);
                 assert_eq!(result, Err(Error::CannotCancelJob));
             }
 
@@ -164,7 +166,7 @@ speculate! {
             }
 
             it "can be cancelled by the job poster" {
-                bid_escrow_contract.as_account(job_poster).cancel_job(bid_id).unwrap();
+                bid_escrow_contract.as_account(job_poster).cancel_job(bid_id, cancel_reason).unwrap();
                 let job = bid_escrow_contract.get_job(bid_id).unwrap();
 
                 assert_eq!(job.status(), JobStatus::Cancelled);
@@ -188,7 +190,7 @@ speculate! {
                 }
 
                 test "the job can be cancelled" {
-                    bid_escrow_contract.as_account(job_poster).cancel_job(bid_id).unwrap();
+                    bid_escrow_contract.as_account(job_poster).cancel_job(bid_id, cancel_reason).unwrap();
                     let job = bid_escrow_contract.get_job(bid_id).unwrap();
 
                     assert_eq!(job.status(), JobStatus::Cancelled);
@@ -206,7 +208,7 @@ speculate! {
                 }
 
                 it "cannot be cancelled" {
-                    let result = bid_escrow_contract.as_account(job_poster).cancel_job(bid_id);
+                    let result = bid_escrow_contract.as_account(job_poster).cancel_job(bid_id, cancel_reason);
                     assert_eq!(result, Err(Error::CannotCancelJob));
                 }
 
