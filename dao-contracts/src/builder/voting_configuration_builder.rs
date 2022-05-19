@@ -2,7 +2,9 @@ use casper_dao_utils::ContractCall;
 use casper_types::U256;
 
 use crate::{
-    proxy::{reputation_proxy::ReputationContractProxy, variable_repo_proxy::VariableRepoContractProxy},
+    proxy::{
+        reputation_proxy::ReputationContractProxy, variable_repo_proxy::VariableRepoContractProxy,
+    },
     voting::{voting::VotingConfiguration, GovernanceVoting},
 };
 
@@ -15,7 +17,10 @@ impl VotingConfigurationBuilder {
         let total_onboarded =
             ReputationContractProxy::total_onboarded(voting.get_reputation_token_address());
         VotingConfigurationBuilder {
-            voting_configuration: VariableRepoContractProxy::voting_configuration_defaults(voting.get_variable_repo_address(), total_onboarded),
+            voting_configuration: VariableRepoContractProxy::voting_configuration_defaults(
+                voting.get_variable_repo_address(),
+                total_onboarded,
+            ),
         }
     }
 

@@ -323,7 +323,7 @@ impl GovernanceVoting {
 
         // update voting
         voting.stake(stake, choice);
-        self.set_voting(voting);      
+        self.set_voting(voting);
 
         BallotCast {
             voter,

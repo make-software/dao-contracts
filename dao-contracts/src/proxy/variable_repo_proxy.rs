@@ -5,8 +5,8 @@ use casper_dao_utils::{consts as dao_consts, math};
 use casper_types::bytesrepr::FromBytes;
 use casper_types::{U256, U512};
 
-use crate::VariableRepositoryContractCaller;
 use crate::voting::voting::VotingConfiguration;
+use crate::VariableRepositoryContractCaller;
 
 #[derive(Instance)]
 pub struct VariableRepoContractProxy {}
@@ -82,7 +82,10 @@ impl VariableRepoContractProxy {
         VariableRepoContractProxy::caller(contract_address).get_variable(key)
     }
 
-    pub fn voting_configuration_defaults(contract_address: Address, total_onboarded: U256) -> VotingConfiguration {
+    pub fn voting_configuration_defaults(
+        contract_address: Address,
+        total_onboarded: U256,
+    ) -> VotingConfiguration {
         let caller = VariableRepoContractProxy::caller(contract_address);
         VotingConfiguration {
             formal_voting_quorum: caller.formal_voting_quorum(total_onboarded),
