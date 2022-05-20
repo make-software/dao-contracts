@@ -169,7 +169,7 @@ impl Job {
     }
 
     /// Get the job's required stake for va.
-    pub fn required_stake(&self) -> Option<u32> {
+    pub fn required_stake(&self) -> Option<ReputationAmount> {
         self.required_stake
     }
 

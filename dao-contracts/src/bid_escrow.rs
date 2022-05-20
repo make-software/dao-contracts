@@ -29,6 +29,7 @@ use crate::{
     VotingConfigurationBuilder,
 };
 
+use casper_dao_utils::casper_env::self_address;
 use delegate::delegate;
 
 use crate::bid::events::{JobCancelled, JobDone, JobRejected};
@@ -181,6 +182,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::WorkerNotKycd);
         }
 
+        if !self.onboarding.is_onboarded(&worker) && required_stake.is_some() {
+            revert(Error::NotOnboardedWorkerCannotStakeReputation);
+        }
+
         let bid_id = self.next_bid_id();
         let finish_time = get_block_time() + time;
 
@@ -207,6 +212,15 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn accept_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
+        if job.required_stake().is_some() {
+            ReputationContractProxy::transfer(
+                self.voting.get_variable_repo_address(),
+                job.worker(),
+                self_address(),
+                job.required_stake().unwrap_or_default(),
+            );
+        }
+
         job.accept(caller(), get_block_time()).unwrap_or_revert();
 
         JobAccepted::new(&job).emit();
@@ -344,11 +358,26 @@ impl BidEscrowContract {
 
     fn job_done(&mut self, job: &mut Job) {
         self.pay_for_job(job);
+        if job.required_stake().is_some() {
+            ReputationContractProxy::transfer(
+                self.voting.get_reputation_token_address(),
+                self_address(),
+                job.worker(),
+                job.required_stake().unwrap_or_default(),
+            );
+        }
         job.complete();
         JobDone::new(job, caller()).emit();
     }
 
     fn job_rejected(&mut self, job: &mut Job) {
+        if job.required_stake().is_some() {
+            ReputationContractProxy::burn(
+                self.voting.get_reputation_token_address(),
+                self_address(),
+                job.required_stake().unwrap_or_default(),
+            );
+        }
         self.refund(job);
         job.not_completed();
         JobRejected::new(job, caller()).emit();
