@@ -212,4 +212,9 @@ impl Job {
 
         None
     }
+
+    /// Get the job's finish time
+    pub fn finish_time(&self) -> BlockTime {
+        self.finish_time
+    }
 }

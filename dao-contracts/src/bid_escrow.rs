@@ -31,7 +31,7 @@ use crate::{
 
 use delegate::delegate;
 
-use crate::bid::events::JobCancelled;
+use crate::bid::events::{JobCancelled, JobDone, JobRejected};
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
 
@@ -185,7 +185,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let mut job = Job::new(
             bid_id,
-            description.clone(),
+            description,
             caller(),
             worker,
             finish_time,
@@ -193,26 +193,12 @@ impl BidEscrowContractInterface for BidEscrowContract {
             cspr_amount,
         );
 
-        JobCreated {
-            bid_id,
-            job_poster: caller(),
-            worker,
-            description,
-            finish_time,
-            required_stake,
-            cspr_amount,
-        }
-        .emit();
+        JobCreated::new(&job).emit();
 
         if !self.onboarding.is_onboarded(&worker) {
             job.accept(job.worker(), get_block_time())
                 .unwrap_or_revert();
-            JobAccepted {
-                bid_id,
-                job_poster: job.poster(),
-                worker: job.worker(),
-            }
-            .emit();
+            JobAccepted::new(&job).emit();
         }
 
         self.jobs.set(&bid_id, job);
@@ -222,12 +208,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let mut job = self.jobs.get_or_revert(&bid_id);
         job.accept(caller(), get_block_time()).unwrap_or_revert();
 
-        JobAccepted {
-            bid_id,
-            job_poster: job.poster(),
-            worker: job.worker(),
-        }
-        .emit();
+        JobAccepted::new(&job).emit();
 
         self.jobs.set(&bid_id, job);
     }
@@ -237,14 +218,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         job.cancel(caller()).unwrap_or_revert();
         self.refund(&job);
 
-        JobCancelled {
-            bid_id,
-            caller: caller(),
-            job_poster: job.poster(),
-            worker: job.worker(),
-            reason,
-        }
-        .emit();
+        JobCancelled::new(&job, caller(), reason).emit();
 
         self.jobs.set(&bid_id, job);
     }
@@ -255,13 +229,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         job.submit(caller(), get_block_time(), &result)
             .unwrap_or_revert();
 
-        JobSubmitted {
-            bid_id,
-            job_poster: job.poster(),
-            worker: job.worker(),
-            result,
-        }
-        .emit();
+        JobSubmitted::new(&job).emit();
 
         let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
             .with_cast_first_vote(false)
@@ -303,26 +271,21 @@ impl BidEscrowContractInterface for BidEscrowContract {
                     job.set_formal_voting_id(voting_summary.formal_voting_id());
                 }
                 VotingResult::Against => {
-                    self.refund(&job);
-                    job.not_completed();
+                    self.job_rejected(&mut job);
                 }
                 VotingResult::QuorumNotReached => {
-                    self.refund(&job);
-                    job.not_completed();
+                    self.job_rejected(&mut job);
                 }
             },
             crate::voting::voting::VotingType::Formal => match voting_summary.result() {
                 VotingResult::InFavor => {
-                    self.pay_for_job(&job);
-                    job.complete();
+                    self.job_done(&mut job);
                 }
                 VotingResult::Against => {
-                    self.refund(&job);
-                    job.not_completed();
+                    self.job_rejected(&mut job);
                 }
                 VotingResult::QuorumNotReached => {
-                    self.refund(&job);
-                    job.not_completed();
+                    self.job_rejected(&mut job);
                 }
             },
         }
@@ -376,6 +339,18 @@ impl BidEscrowContract {
     fn pay_for_job(&mut self, job: &Job) {
         self.withdraw(job.worker(), job.cspr_amount());
         self.mint_and_redistribute_reputation(job);
+    }
+
+    fn job_done(&mut self, job: &mut Job) {
+        self.pay_for_job(job);
+        job.complete();
+        JobDone::new(job, caller()).emit();
+    }
+
+    fn job_rejected(&mut self, job: &mut Job) {
+        self.refund(job);
+        job.not_completed();
+        JobRejected::new(job, caller()).emit();
     }
 
     fn refund(&mut self, job: &Job) {
