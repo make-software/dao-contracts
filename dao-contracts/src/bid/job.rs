@@ -4,7 +4,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::voting::{ReputationAmount, VotingId};
+use crate::voting::types::{ReputationAmount, VotingId};
 
 use super::types::{BidId, Description};
 

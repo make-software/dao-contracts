@@ -7,10 +7,11 @@ use casper_types::{runtime_args, RuntimeArgs, U256};
 
 use crate::{
     action::Action,
-    voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
+    voting::{voting::Voting, Ballot, Choice, GovernanceVoting},
     VotingConfigurationBuilder,
 };
 
+use crate::voting::types::VotingId;
 use delegate::delegate;
 
 #[casper_contract_interface]

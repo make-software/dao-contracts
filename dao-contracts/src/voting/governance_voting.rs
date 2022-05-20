@@ -25,7 +25,7 @@ use casper_dao_utils::VecMapping;
 
 use super::ballot::Choice;
 use super::VotingEnded;
-use super::{ballot::VotingId, Ballot};
+use super::{types::VotingId, Ballot};
 
 pub trait GovernanceVotingTrait {
     fn init(&mut self, variable_repo: Address, reputation_token: Address);
@@ -315,6 +315,8 @@ impl GovernanceVoting {
             stake,
         };
 
+        BallotCast::new(&vote).emit();
+
         // Add a voter to the list
         self.voters.add(voting_id, voter);
 
@@ -324,14 +326,6 @@ impl GovernanceVoting {
         // update voting
         voting.stake(stake, choice);
         self.set_voting(voting);
-
-        BallotCast {
-            voter,
-            voting_id,
-            choice,
-            stake,
-        }
-        .emit();
     }
 
     /// Returns the dust amount.

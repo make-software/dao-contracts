@@ -1,10 +1,11 @@
 use casper_dao_contracts::{
     action::Action,
-    voting::{voting::Voting, Choice, VotingId},
+    voting::{voting::Voting, Choice},
     AdminContractTest, BidEscrowContractTest, DaoOwnedNftContractTest, MockVoterContractTest,
     RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
+use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},

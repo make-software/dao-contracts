@@ -1,7 +1,9 @@
+use crate::voting::Ballot;
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
-use crate::voting::ballot::{Choice, VotingId};
+use crate::voting::ballot::Choice;
+use crate::voting::types::VotingId;
 
 /// Event thrown after voting contract is created
 #[derive(Debug, PartialEq, Event)]
@@ -18,6 +20,17 @@ pub struct BallotCast {
     pub voting_id: VotingId,
     pub choice: Choice,
     pub stake: U256,
+}
+
+impl BallotCast {
+    pub fn new(ballot: &Ballot) -> BallotCast {
+        BallotCast {
+            voter: ballot.voter,
+            voting_id: ballot.voting_id,
+            choice: ballot.choice,
+            stake: ballot.stake,
+        }
+    }
 }
 
 /// Event thrown after voting is created

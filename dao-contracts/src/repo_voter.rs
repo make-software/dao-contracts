@@ -6,10 +6,11 @@ use casper_dao_utils::{
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 
 use crate::{
-    voting::{voting::Voting, Ballot, Choice, GovernanceVoting, VotingId},
+    voting::{voting::Voting, Ballot, Choice, GovernanceVoting},
     VotingConfigurationBuilder,
 };
 
+use crate::voting::types::VotingId;
 use delegate::delegate;
 
 #[casper_contract_interface]

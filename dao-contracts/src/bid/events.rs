@@ -2,7 +2,7 @@ use crate::bid::job::Job;
 use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime};
 use casper_types::U512;
 
-use crate::voting::ReputationAmount;
+use crate::voting::types::ReputationAmount;
 
 use super::types::{BidId, Description};
 

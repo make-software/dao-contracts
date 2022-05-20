@@ -1,12 +1,9 @@
+use crate::voting::types::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
 };
 use casper_types::U256;
-
-/// Id of a Voting
-pub type VotingId = U256;
-pub type ReputationAmount = u32;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]

@@ -24,7 +24,7 @@ use crate::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
         voting::{Voting, VotingResult},
-        Ballot, Choice, GovernanceVoting, ReputationAmount,
+        Ballot, Choice, GovernanceVoting,
     },
     VotingConfigurationBuilder,
 };
@@ -32,6 +32,7 @@ use crate::{
 use delegate::delegate;
 
 use crate::bid::events::{JobCancelled, JobDone, JobRejected};
+use crate::voting::types::ReputationAmount;
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
 

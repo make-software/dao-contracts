@@ -1,8 +1,9 @@
 mod governance_voting_common;
 
+use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_contracts::voting::{
     consts as gv_consts, Ballot, BallotCast, Choice, VotingContractCreated, VotingCreated,
-    VotingEnded, VotingId,
+    VotingEnded,
 };
 use casper_dao_utils::Error;
 use casper_dao_utils::TestContract;
