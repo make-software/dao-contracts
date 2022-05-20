@@ -84,6 +84,7 @@ dao_errors!(
     CannotSubmitJob => 4006,
     CannotVoteOnOwnJob => 4007,
     VotingNotStarted => 4008,
+    JobAlreadySubmitted => 4009,
     InvalidAddress => 5000,
     TransferError => 6000,
 );

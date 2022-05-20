@@ -1,6 +1,6 @@
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address, BlockTime,
+    Address, BlockTime, Error,
 };
 use casper_types::U512;
 
@@ -24,6 +24,7 @@ impl Default for JobStatus {
     }
 }
 
+/// Struct holding Job
 #[derive(CLTyped, ToBytes, FromBytes, Default, Debug)]
 pub struct Job {
     bid_id: BidId,
@@ -40,6 +41,7 @@ pub struct Job {
 }
 
 impl Job {
+    /// Job constructor
     pub fn new(
         bid_id: BidId,
         description: Description,
@@ -64,25 +66,54 @@ impl Job {
         }
     }
 
-    pub fn accept(&mut self) {
+    /// Changes status to the Accepted
+    pub fn accept(&mut self, caller: Address, block_time: BlockTime) -> Result<(), Error> {
+        if !self.can_be_accepted(caller, block_time) {
+            return Err(Error::CannotAcceptJob);
+        }
+
         self.status = JobStatus::Accepted;
+        Ok(())
     }
 
-    pub fn cancel(&mut self) {
+    fn can_be_accepted(&self, caller: Address, block_time: BlockTime) -> bool {
+        if self.status() != JobStatus::Created {
+            return false;
+        }
+
+        if self.worker() == caller && !self.has_time_ended(block_time) {
+            return true;
+        }
+
+        false
+    }
+
+    /// Changes status to the Cancelled
+    pub fn cancel(&mut self, caller: Address) -> Result<(), Error> {
+        if self.status() != JobStatus::Created || self.poster() != caller {
+            return Err(Error::CannotCancelJob);
+        }
+
         self.status = JobStatus::Cancelled;
+        Ok(())
     }
 
+    /// Changes status to the Completed
     pub fn complete(&mut self) {
         self.status = JobStatus::Completed;
     }
 
-    pub fn mark_as_not_completed(&mut self) {
+    /// Changes status to the NotCompleted
+    pub fn not_completed(&mut self) {
         self.status = JobStatus::NotCompleted;
     }
 
-    pub fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
-        // TODO check if voting exists
-        if self.time_ended(block_time) {
+    pub fn has_time_ended(&self, block_time: BlockTime) -> bool {
+        self.finish_time <= block_time
+    }
+
+    fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
+        if self.has_time_ended(block_time) {
             if caller == self.worker() || caller == self.poster() {
                 return true;
             }
@@ -93,32 +124,23 @@ impl Job {
         false
     }
 
-    pub fn can_cancel(&self, caller: Address) -> bool {
-        if self.status() == JobStatus::Created && self.poster() == caller {
-            return true;
-        }
-        false
-    }
-
-    pub fn can_accept(&self, caller: Address, block_time: BlockTime) -> bool {
-        if self.status() != JobStatus::Created {
-            return false;
+    pub fn submit(
+        &mut self,
+        caller: Address,
+        block_time: BlockTime,
+        result: &str,
+    ) -> Result<(), Error> {
+        if !self.can_submit(caller, block_time) {
+            return Err(Error::NotAuthorizedToSubmitResult);
         }
 
-        if self.worker() == caller && !self.time_ended(block_time) {
-            return true;
+        if self.result().is_some() {
+            return Err(Error::JobAlreadySubmitted);
         }
 
-        false
-    }
-
-    pub fn time_ended(&self, block_time: BlockTime) -> bool {
-        self.finish_time <= block_time
-    }
-
-    pub fn submit(&mut self, result: Description) {
-        self.result = Some(result);
+        self.result = Some(result.to_string());
         self.status = JobStatus::Submitted;
+        Ok(())
     }
 
     /// Get the job's status.

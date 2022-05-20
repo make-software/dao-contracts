@@ -6,7 +6,7 @@ use casper_dao_utils::{
         unwrap_or_revert::UnwrapOrRevert,
     },
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{self, caller, emit, get_block_time, revert},
+    casper_env::{self, caller, get_block_time, revert},
     Address, BlockTime, Error, Mapping, Variable,
 };
 use casper_types::{URef, U256, U512};
@@ -99,6 +99,7 @@ pub trait BidEscrowContractInterface {
     /// Emits [`VotingCreated`](crate::voting::governance_voting::events::VotingCreated)
     ///
     /// # Errors
+    /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted
     /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
     /// job submission is not met.
     fn submit_result(&mut self, bid_id: BidId, result: Description);
@@ -204,7 +205,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         .emit();
 
         if !self.onboarding.is_onboarded(&worker) {
-            job.accept();
+            job.accept(job.worker(), get_block_time())
+                .unwrap_or_revert();
             JobAccepted {
                 bid_id,
                 job_poster: job.poster(),
@@ -218,26 +220,22 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn accept_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
+        job.accept(caller(), get_block_time()).unwrap_or_revert();
 
-        if job.can_accept(caller(), get_block_time()) {
-            job.accept();
-            JobAccepted {
-                bid_id,
-                job_poster: job.poster(),
-                worker: job.worker(),
-            }
-            .emit();
-            self.jobs.set(&bid_id, job);
-        } else {
-            revert(Error::CannotAcceptJob);
+        JobAccepted {
+            bid_id,
+            job_poster: job.poster(),
+            worker: job.worker(),
         }
+        .emit();
+
+        self.jobs.set(&bid_id, job);
     }
 
     fn cancel_job(&mut self, bid_id: BidId, reason: Description) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        if !job.can_cancel(caller()) {
-            revert(Error::CannotCancelJob);
-        }
+        job.cancel(caller()).unwrap_or_revert();
+        self.refund(&job);
 
         JobCancelled {
             bid_id,
@@ -248,25 +246,22 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
         .emit();
 
-        job.cancel();
-        self.refund(&job);
         self.jobs.set(&bid_id, job);
     }
 
     fn submit_result(&mut self, bid_id: BidId, result: Description) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        if !job.can_submit(caller(), get_block_time()) {
-            revert(Error::NotAuthorizedToSubmitResult)
-        }
 
-        emit(JobSubmitted {
+        job.submit(caller(), get_block_time(), &result)
+            .unwrap_or_revert();
+
+        JobSubmitted {
             bid_id,
             job_poster: job.poster(),
             worker: job.worker(),
-            result: result.clone(),
-        });
-
-        job.submit(result);
+            result,
+        }
+        .emit();
 
         let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
             .with_cast_first_vote(false)
@@ -309,11 +304,11 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 }
                 VotingResult::Against => {
                     self.refund(&job);
-                    job.mark_as_not_completed();
+                    job.not_completed();
                 }
                 VotingResult::QuorumNotReached => {
                     self.refund(&job);
-                    job.mark_as_not_completed();
+                    job.not_completed();
                 }
             },
             crate::voting::voting::VotingType::Formal => match voting_summary.result() {
@@ -323,11 +318,11 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 }
                 VotingResult::Against => {
                     self.refund(&job);
-                    job.mark_as_not_completed();
+                    job.not_completed();
                 }
                 VotingResult::QuorumNotReached => {
                     self.refund(&job);
-                    job.mark_as_not_completed();
+                    job.not_completed();
                 }
             },
         }
