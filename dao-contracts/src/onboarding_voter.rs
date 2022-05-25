@@ -76,7 +76,7 @@ pub trait OnboardingVoterContractInterface {
 
 /// OnboardingVoterContract
 ///
-/// It is responsible for managing va tokens (see [DaoOwnedNftContract](crate::DaoOwnedNftContract).
+/// It is responsible for managing va tokens (see [DaoOwnedNftContract](crate::DaoOwnedNftContract)).
 ///
 /// When the voting passes, a va token is minted (onboarding) or burned (offboarding).
 #[derive(Instance)]
