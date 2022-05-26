@@ -67,8 +67,8 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
-            .with_contract_call(ContractCall {
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .contract_call(ContractCall {
                 address: variable_repo_to_edit,
                 entry_point: "update_at".into(),
                 runtime_args: runtime_args! {

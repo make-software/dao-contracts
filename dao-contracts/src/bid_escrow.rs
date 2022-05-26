@@ -17,15 +17,13 @@ use crate::{
         job::Job,
         types::{BidId, Description},
     },
-    proxy::{
-        reputation_proxy::ReputationContractProxy, variable_repo_proxy::VariableRepoContractProxy,
-    },
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
         voting::{Voting, VotingResult},
         Ballot, Choice, GovernanceVoting,
     },
+    ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
     VotingConfigurationBuilder,
 };
 
@@ -213,8 +211,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn accept_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
         if job.required_stake().is_some() {
-            ReputationContractProxy::transfer(
-                self.voting.get_variable_repo_address(),
+            ReputationContractCaller::at(self.voting.get_reputation_token_address()).transfer_from(
                 job.worker(),
                 self_address(),
                 job.required_stake().unwrap_or_default(),
@@ -246,9 +243,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         JobSubmitted::new(&job).emit();
 
-        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
-            .with_cast_first_vote(false)
-            .with_create_minimum_reputation(U256::zero())
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .cast_first_vote(false)
+            .create_minimum_reputation(U256::zero())
             .build();
 
         let voting_id = self
@@ -359,8 +356,7 @@ impl BidEscrowContract {
     fn job_done(&mut self, job: &mut Job) {
         self.pay_for_job(job);
         if job.required_stake().is_some() {
-            ReputationContractProxy::transfer(
-                self.voting.get_reputation_token_address(),
+            ReputationContractCaller::at(self.voting.get_reputation_token_address()).transfer_from(
                 self_address(),
                 job.worker(),
                 job.required_stake().unwrap_or_default(),
@@ -372,11 +368,8 @@ impl BidEscrowContract {
 
     fn job_rejected(&mut self, job: &mut Job) {
         if job.required_stake().is_some() {
-            ReputationContractProxy::burn(
-                self.voting.get_reputation_token_address(),
-                self_address(),
-                job.required_stake().unwrap_or_default(),
-            );
+            ReputationContractCaller::at(self.voting.get_reputation_token_address())
+                .burn(self_address(), job.required_stake().unwrap_or_default());
         }
         self.refund(job);
         job.not_completed();
@@ -388,18 +381,15 @@ impl BidEscrowContract {
     }
 
     fn mint_and_redistribute_reputation(&mut self, job: &Job) {
-        let reputation_to_mint = VariableRepoContractProxy::reputation_to_mint(
-            self.voting.get_variable_repo_address(),
-            job.cspr_amount(),
-        );
-        let reputation_to_redistribute = VariableRepoContractProxy::reputation_to_redistribute(
-            self.voting.get_variable_repo_address(),
-            reputation_to_mint,
-        );
+        let reputation_to_mint =
+            VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
+                .reputation_to_mint(job.cspr_amount());
+        let reputation_to_redistribute =
+            VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
+                .reputation_to_redistribute(reputation_to_mint);
 
         // Worker
-        ReputationContractProxy::mint(
-            self.voting.get_reputation_token_address(),
+        ReputationContractCaller::at(self.voting.get_reputation_token_address()).mint(
             job.worker(),
             reputation_to_mint - reputation_to_redistribute,
         );
@@ -418,11 +408,8 @@ impl BidEscrowContract {
             let ballot = self.voting.get_ballot_at(voting.voting_id(), i);
             if ballot.choice.is_in_favor() == result {
                 let to_transfer = ballot.stake * amount / voting.get_winning_stake();
-                ReputationContractProxy::mint(
-                    self.voting.get_reputation_token_address(),
-                    ballot.voter,
-                    to_transfer,
-                );
+                ReputationContractCaller::at(self.voting.get_reputation_token_address())
+                    .mint(ballot.voter, to_transfer);
             }
         }
     }

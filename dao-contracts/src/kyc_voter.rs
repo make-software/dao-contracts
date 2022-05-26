@@ -65,8 +65,8 @@ impl KycVoterContractInterface for KycVoterContract {
 
         let creator = caller();
 
-        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
-            .with_contract_call(ContractCall {
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .contract_call(ContractCall {
                 address: self.get_kyc_token_address(),
                 entry_point: consts::EP_MINT.to_string(),
                 runtime_args: runtime_args! {

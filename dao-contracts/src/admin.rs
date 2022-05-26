@@ -69,8 +69,8 @@ impl AdminContractInterface for AdminContract {
         address: Address,
         stake: U256,
     ) {
-        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
-            .with_contract_call(ContractCall {
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .contract_call(ContractCall {
                 address: contract_to_update,
                 entry_point: action.get_entry_point(),
                 runtime_args: runtime_args! {

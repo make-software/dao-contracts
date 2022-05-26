@@ -11,7 +11,6 @@ mod kyc_voter;
 #[doc(hidden)]
 pub mod mocks;
 mod onboarding_voter;
-mod proxy;
 mod repo_voter;
 mod reputation;
 /// Variable Repo

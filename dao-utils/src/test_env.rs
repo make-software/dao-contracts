@@ -229,7 +229,6 @@ impl TestEnvState {
     }
 
     fn collect_gas(&mut self) {
-        // let cost: U512 = self.context.last_exec_gas_cost().value();
         *self
             .gas_used
             .entry(self.active_account)

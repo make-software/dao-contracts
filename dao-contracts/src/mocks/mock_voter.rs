@@ -37,8 +37,8 @@ pub struct MockVoterContract {
 
 impl MockVoterContractInterface for MockVoterContract {
     fn create_voting(&mut self, value: String, stake: U256) {
-        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
-            .with_contract_call(ContractCall {
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .contract_call(ContractCall {
                 address: self_address(),
                 entry_point: "set_variable".into(),
                 runtime_args: runtime_args! {

@@ -25,7 +25,7 @@ impl Default for JobStatus {
 }
 
 /// Struct holding Job
-#[derive(CLTyped, ToBytes, FromBytes, Default, Debug)]
+#[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct Job {
     bid_id: BidId,
     informal_voting_id: Option<VotingId>,
@@ -35,8 +35,8 @@ pub struct Job {
     finish_time: BlockTime,
     required_stake: Option<ReputationAmount>,
     cspr_amount: U512,
-    poster: Option<Address>,
-    worker: Option<Address>,
+    poster: Address,
+    worker: Address,
     status: JobStatus,
 }
 
@@ -58,8 +58,8 @@ impl Job {
             finish_time,
             required_stake,
             cspr_amount,
-            poster: Some(poster),
-            worker: Some(worker),
+            poster,
+            worker,
             status: JobStatus::default(),
             informal_voting_id: None,
             formal_voting_id: None,
@@ -150,12 +150,12 @@ impl Job {
 
     /// Get the job's worker.
     pub fn worker(&self) -> Address {
-        self.worker.unwrap()
+        self.worker
     }
 
     /// Get the job's poster.    
     pub fn poster(&self) -> Address {
-        self.poster.unwrap()
+        self.poster
     }
 
     /// Get the job's result.

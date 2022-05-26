@@ -13,14 +13,13 @@ use casper_dao_utils::{
 
 use casper_types::{U256, U512};
 
-use crate::proxy::reputation_proxy::ReputationContractProxy;
-
 use self::voting::VotingSummary;
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
+use crate::{ReputationContractCaller, ReputationContractInterface};
 use casper_dao_utils::VecMapping;
 
 use super::ballot::Choice;
@@ -300,8 +299,7 @@ impl GovernanceVoting {
         }
 
         // Stake the reputation
-        ReputationContractProxy::transfer(
-            self.get_reputation_token_address(),
+        ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
             voter,
             self_address(),
             stake,
@@ -396,15 +394,11 @@ impl GovernanceVoting {
             let ballot = self.get_ballot_at(voting_id, i);
             if i == 0 {
                 // the creator
-                ReputationContractProxy::burn(
-                    self.get_reputation_token_address(),
-                    self_address(),
-                    ballot.stake,
-                );
+                ReputationContractCaller::at(self.get_reputation_token_address())
+                    .burn(self_address(), ballot.stake);
             } else {
                 // the voters - transfer from contract to them
-                ReputationContractProxy::transfer(
-                    self.get_reputation_token_address(),
+                ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
                     self_address(),
                     ballot.voter,
                     ballot.stake,
@@ -416,8 +410,7 @@ impl GovernanceVoting {
     fn return_reputation(&mut self, voting_id: VotingId) {
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
-            ReputationContractProxy::transfer(
-                self.get_reputation_token_address(),
+            ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
                 self_address(),
                 ballot.voter,
                 ballot.stake,
@@ -447,8 +440,7 @@ impl GovernanceVoting {
                 let to_transfer =
                     u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
-                ReputationContractProxy::transfer(
-                    self.get_reputation_token_address(),
+                ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
                     self_address(),
                     ballot.voter,
                     to_transfer,

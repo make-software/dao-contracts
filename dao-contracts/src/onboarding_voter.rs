@@ -97,8 +97,8 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             OnboardingAction::Remove => self.configure_remove_voting(subject_address),
         };
 
-        let voting_configuration = VotingConfigurationBuilder::with_defaults(&self.voting)
-            .with_contract_call(ContractCall {
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .contract_call(ContractCall {
                 address: self.get_va_token_address(),
                 entry_point,
                 runtime_args,
