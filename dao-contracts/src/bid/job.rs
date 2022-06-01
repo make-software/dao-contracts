@@ -203,6 +203,7 @@ impl Job {
         self.formal_voting_id = formal_voting_id;
     }
 
+    /// Get the current voting Id
     pub fn current_voting_id(&self) -> Option<VotingId> {
         if self.formal_voting_id.is_some() {
             return self.formal_voting_id;

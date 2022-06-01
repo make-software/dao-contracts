@@ -56,6 +56,7 @@ dao_errors!(
     TransferFromIncorrectOwner => 1706,
     ApproveToCaller => 1707,
     InvalidTokenOwner => 1708,
+    UserAlreadyOwnsToken => 1709,
     InformalVotingTimeNotReached => 2101,
     FormalVotingTimeNotReached => 2102,
     VoteOnCompletedVotingNotAllowed => 2103,

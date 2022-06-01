@@ -6,7 +6,6 @@ prepare:
 	rustup target add wasm32-unknown-unknown
 	cargo install cargo-expand --version 1.0.17
 
-
 build-proxy-getter:
 	$(CARGO_BUILD) -p casper-dao-utils --bin getter_proxy
 	@wasm-strip $(OUTPUT_DIR)/getter_proxy.wasm 2>/dev/null | true
@@ -17,7 +16,6 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/variable_repository_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/repo_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/admin_contract.wasm 2>/dev/null | true
-	@wasm-strip $(OUTPUT_DIR)/bid_escrow_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/mock_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/onboarding_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/dao_owned_nft_contract.wasm 2>/dev/null | true
@@ -26,8 +24,6 @@ build-dao-contracts:
 
 build-erc20:
 	$(CARGO_BUILD) -p casper-dao-erc20
-	$(CARGO_BUILD) -p casper-dao-erc20 --bin send_cspr
-	@wasm-strip $(OUTPUT_DIR)/send_cspr.wasm 2>/dev/null | true
 
 build-erc721:
 	$(CARGO_BUILD) -p casper-dao-erc721

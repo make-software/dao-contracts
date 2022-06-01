@@ -156,7 +156,7 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let kyc_token = DaoOwnedNftContractTest::new(
+    let mut kyc_token = DaoOwnedNftContractTest::new(
         &env,
         "kyc token".to_string(),
         "kyt".to_string(),
@@ -178,6 +178,10 @@ fn setup() -> (
         .unwrap();
 
     reputation_token
+        .change_ownership(onboarding_voter.address())
+        .unwrap();
+
+    kyc_token
         .change_ownership(onboarding_voter.address())
         .unwrap();
     let applicant = env.get_account(1);
