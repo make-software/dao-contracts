@@ -12,11 +12,14 @@
   ],
   "dependencies": {
     "@open-rpc/client-js": "1.7.1",
+    "bignumber.js": "9.0.2",
     "casper-js-client-helper": "1.0.0",
-    "casper-js-sdk": "2.8.0"
+    "casper-js-sdk": "2.8.0",
+    "ts-results": "3.3.0",
+    "yaml": "2.1.1"
   },
   "devDependencies": {
-    "dotenv": "16.0.0",
+    "dotenv": "16.0.1",
     "ts-node": "10.5.0",
     "typescript": "4.5.5"
   },
@@ -27,6 +30,8 @@
     "dist": "npm run clean && npm run build",
     "clean": "rm -rf dist/",
     "build": "tsc -p tsconfig.build.json",
-    "e2e:reputation": "ts-node ./e2e/e2e-reputation.ts"
+    "e2e:reputation": "ts-node ./e2e/e2e-reputation.ts",
+    "e2e:generic-client": "ts-node ./e2e/e2e-generic-client.ts",
+    "e2e:generic-client-local": "ts-node ./e2e/e2e-generic-client-local.ts"
   }
 }

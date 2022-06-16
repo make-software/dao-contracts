@@ -108,24 +108,24 @@ events:
 
 named_keys:
   - name: "owner"
-    named_key: "owner_owner_access_control_contract"
+    named_key: "owner"
     cl_type: 
       - name: "Option"
         inner: "Address"
 
   - name: "total_supply"
-    named_key: "total_supply_token_token_contract"
+    named_key: "total_supply"
     cl_type: "U256"
 
   - name: "balance"
-    named_key: "balances_token_token_contract"
+    named_key: "balances"
     cl_type:
       - name: "Mapping"
         key: "Address"
         value: "U256"
 
   - name: "whitelist"
-    named_key: "whitelist_whitelist_access_control_contract"
+    named_key: "whitelist"
     cl_type:
       - name: "Mapping"
         key: "Address"
