@@ -1,9 +1,15 @@
 import { CasperContractClient } from "casper-js-client-helper";
 import {
   CasperClient,
+  CLBool,
   CLKey,
   CLPublicKey,
+  CLU128,
   CLU256,
+  CLU32,
+  CLU512,
+  CLU64,
+  CLU8,
   CLValueBuilder,
   Contracts,
   Keys,
@@ -45,8 +51,13 @@ export type GenericContractSchemaClType =
 /** CONSTANTS */
 const CLTypeDict = {
   Address: CLKey,
+  U8: CLU8,
+  U32: CLU32,
+  U64: CLU64,
+  U128: CLU128,
   U256: CLU256,
-  Bool: Boolean,
+  U512: CLU512,
+  Bool: CLBool,
 };
 
 /** MAIN */
