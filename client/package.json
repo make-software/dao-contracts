@@ -13,8 +13,8 @@
   "dependencies": {
     "@open-rpc/client-js": "1.7.1",
     "bignumber.js": "9.0.2",
-    "casper-js-client-helper": "1.0.0",
-    "casper-js-sdk": "2.8.0",
+    "casper-js-client-helper": "1.0.1",
+    "casper-js-sdk": "2.9.1",
     "ts-results": "3.3.0",
     "yaml": "2.1.1"
   },
