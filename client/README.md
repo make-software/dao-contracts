@@ -1,6 +1,6 @@
 # `dao-contracts-js-client`
 
-This JavaScript client gives you an easy way to install and interact with the DAO Reputation contract.
+This JavaScript client gives you an easy way to install and interact with all the DAO contracts.
 
 ## Installation
 
@@ -15,24 +15,29 @@ npm i dao-contracts-js-client
 ### Install the contract on the network
 
 ```ts
-const installDeployHash = await installReputationContract(
+// create deploy
+const deploy = createInstallReputationContractDeploy(
   CHAIN_NAME,
   NODE_ADDRESS,
-  KEYS, // Key pair used for signing
   200000000000, // Payment amount
   "../target/wasm32-unknown-unknown/release/reputation_contract.wasm" // Path to WASM file
+  OWNER_KEYS, // Key pair used for signing deploy
 );
+
+// send deploy to network
+const installDeployHash = await installDeploy.send(NODE_ADDRESS); 
 ```
 
-### Create an instance to interact with the contract
+### Create a client instance to interact with the contract
 
 ```ts
-const reputationContract = new ReputationContractJSClient(
+const reputationContract = new GenericContractJSClient(
   http://localhost:11101, // RPC address
   "casper-net-1", // Network name
   "http://localhost:18101/events/main", // Event stream address
   "hash-XXXXXXXXXXXXXXXXXXXXx", // contractPackageHash
   "hash-XXXXXXXXXXXXXXXXXXXXx", // contractHash
+  'path-to-contract-yaml-schema-file'
 );
 ```
 
@@ -43,8 +48,11 @@ const reputationContract = new ReputationContractJSClient(
 Use getter methods to retrieve values:
 
 ```ts
-const owner = await reputationContract.getOwner();
-const total_supply = await reputationContract.getTotalSupply();
+const total_supply =
+  await reputationContract.getNamedKey("total_supply");
+
+const isWhitelisted = 
+  await reputationContract.getNamedKey("whitelist", publicKey);
 ```
 
 ### Deploys
@@ -54,12 +62,21 @@ Use deploys to interact with contract:
 ```ts
 const mintAmount = "200000000000";
 
-const deployHashMint = await reputationContract.mint(
+const mintResult: Result<string, string> = await reputationContract.callEntryPoint(
+  "mint",
   ownerKeys,
-  ownerKeys.publicKey,
-  mintAmount,
-  DEPLOY_PAYMENT_AMOUNT
+  DEPLOY_PAYMENT_AMOUNT,
+  createRecipientAddress(ownerKeys.publicKey), // import { createRecipientAddress } from "casper-js-client-helper/dist/helpers/lib"; 
+  CLValueBuilder.u256(mintAmount)
 );
+
+if (mintResult.ok) {
+  // handle success
+  mintResult.val
+} else {
+  // handle error
+  mintResult.val
+}
 ```
 
 ## Development
