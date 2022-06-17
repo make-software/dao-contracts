@@ -4,7 +4,7 @@ CARGO_TEST = cargo test --features=test-support --no-default-features
 
 prepare:
 	rustup target add wasm32-unknown-unknown
-	cargo install cargo-expand --version 1.0.17
+	# cargo install cargo-expand
 
 build-proxy-getter:
 	$(CARGO_BUILD) -p casper-dao-utils --bin getter_proxy
