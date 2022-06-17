@@ -1,4 +1,6 @@
+use crate::voting::voting::VotingConfiguration;
 use casper_dao_modules::{AccessControl, Record, Repository};
+use casper_dao_utils::conversions::u512_to_u256;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -7,7 +9,7 @@ use casper_dao_utils::{
 };
 use casper_types::{
     bytesrepr::{Bytes, FromBytes},
-    U256,
+    U256, U512,
 };
 use delegate::delegate;
 
@@ -175,6 +177,16 @@ impl VariableRepositoryContractCaller {
         self.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
     }
 
+    /// Retrieves the value stored under the [REPUTATION_CONVERSION_RATE](dao_consts::REPUTATION_CONVERSION_RATE) key.
+    pub fn reputation_conversion_rate(&self) -> U256 {
+        self.get_variable(dao_consts::REPUTATION_CONVERSION_RATE)
+    }
+
+    /// Retrieves the value stored under the [DEFAULT_POLICING_RATE](dao_consts::DEFAULT_POLICING_RATE) key.
+    pub fn default_policing_rate(&self) -> U256 {
+        self.get_variable(dao_consts::DEFAULT_POLICING_RATE)
+    }
+
     /// Retrieves a normalized value stored under the [INFORMAL_VOTING_QUORUM](dao_consts::INFORMAL_VOTING_QUORUM) key.
     pub fn informal_voting_quorum(&self, total_onboarded: U256) -> U256 {
         math::promils_of(
@@ -191,5 +203,33 @@ impl VariableRepositoryContractCaller {
             self.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
         )
         .unwrap_or_revert()
+    }
+
+    /// Generates default voting configuration based on values stored in the repository
+    pub fn voting_configuration_defaults(&self, total_onboarded: U256) -> VotingConfiguration {
+        VotingConfiguration {
+            formal_voting_quorum: self.formal_voting_quorum(total_onboarded),
+            formal_voting_time: self.formal_voting_time(),
+            informal_voting_quorum: Some(self.informal_voting_quorum(total_onboarded)),
+            informal_voting_time: Some(self.informal_voting_time()),
+            cast_first_vote: true,
+            create_minimum_reputation: self.minimum_governance_reputation(),
+            cast_minimum_reputation: U256::zero(),
+            contract_call: None,
+        }
+    }
+
+    /// Calculates amount of reputation to be minted
+    pub fn reputation_to_mint(&self, cspr_amount: U512) -> U256 {
+        math::promils_of(
+            u512_to_u256(cspr_amount).unwrap_or_revert(),
+            self.reputation_conversion_rate(),
+        )
+        .unwrap_or_revert()
+    }
+
+    /// Calculates amount of reputation to be redistributed
+    pub fn reputation_to_redistribute(&self, reputation_amount: U256) -> U256 {
+        math::promils_of(reputation_amount, self.default_policing_rate()).unwrap_or_revert()
     }
 }

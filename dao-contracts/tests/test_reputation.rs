@@ -116,14 +116,14 @@ fn test_whitelisting_as_owner() {
     let (owner, user) = (env.get_account(0), env.get_account(1));
 
     assert!(contract.is_whitelisted(owner));
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 
     contract.add_to_whitelist(user).unwrap();
     assert!(contract.is_whitelisted(user));
     contract.assert_event_at(2, AddedToWhitelist { address: user });
 
     contract.remove_from_whitelist(user).unwrap();
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
     contract.assert_event_at(3, RemovedFromWhitelist { address: user });
 }
 
@@ -132,10 +132,10 @@ fn test_not_whitelisted_user_removal_has_no_effect() {
     let (env, mut contract) = setup();
     let user = env.get_account(1);
 
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 
     contract.remove_from_whitelist(user).unwrap();
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn test_duplicated_whitelisting() {
     contract.assert_event_at(3, AddedToWhitelist { address: user });
 
     contract.remove_from_whitelist(user).unwrap();
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
     contract.assert_event_at(4, RemovedFromWhitelist { address: user });
 }
 

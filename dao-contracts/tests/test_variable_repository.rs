@@ -89,7 +89,7 @@ fn test_deploy() {
 
     assert_eq!(U256::from(300), c.get_value(DEFAULT_POLICING_RATE));
     assert_eq!(U256::from(10), c.get_value(REPUTATION_CONVERSION_RATE));
-    assert_eq!(true, c.get_value::<_, bool>(FORUM_KYC_REQUIRED));
+    assert!(c.get_value::<_, bool>(FORUM_KYC_REQUIRED));
     assert_eq!(U256::from(500), c.get_value(FORMAL_VOTING_QUORUM));
     assert_eq!(U256::from(50), c.get_value(INFORMAL_VOTING_QUORUM));
     assert_eq!(U256::from(200), c.get_value(VOTING_QUORUM));
@@ -362,13 +362,13 @@ fn test_whitelisting() {
     let (owner, user) = (env.get_account(0), env.get_account(1));
 
     assert!(contract.is_whitelisted(owner));
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 
     contract.add_to_whitelist(user).unwrap();
     assert!(contract.is_whitelisted(user));
 
     contract.remove_from_whitelist(user).unwrap();
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 }
 
 #[test]
@@ -376,10 +376,10 @@ fn test_not_whitelisted_user_removal_has_no_effect() {
     let (env, mut contract) = setup();
     let user = env.get_account(1);
 
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 
     contract.remove_from_whitelist(user).unwrap();
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 }
 
 #[test]
@@ -392,7 +392,7 @@ fn test_duplicated_whitelisting() {
     assert!(contract.is_whitelisted(user));
 
     contract.remove_from_whitelist(user).unwrap();
-    assert_eq!(contract.is_whitelisted(user), false);
+    assert!(!contract.is_whitelisted(user));
 }
 
 #[test]

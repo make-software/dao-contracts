@@ -50,6 +50,12 @@ pub fn expand_derive_events(input: DeriveInput) -> TokenStream {
     });
 
     quote! {
+      impl #struct_ident {
+        pub fn emit(self) {
+          casper_dao_utils::casper_env::emit(self);
+        }
+      }
+
       impl casper_types::bytesrepr::FromBytes for #struct_ident {
         fn from_bytes(bytes: &[u8]) -> Result<(Self, &[u8]), casper_types::bytesrepr::Error> {
           #type_check

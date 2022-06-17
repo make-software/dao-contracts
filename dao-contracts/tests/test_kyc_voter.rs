@@ -74,7 +74,7 @@ speculate! {
                     before {
                         let voting_id = 0.into();
                         let voting = contract.get_voting(voting_id).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time().unwrap() + 1));
                         contract.as_account(voter).finish_voting(voting_id).unwrap();
                         #[allow(unused_variables)]
                         let voting_id: VotingId = 1.into();

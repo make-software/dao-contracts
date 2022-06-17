@@ -1,15 +1,65 @@
 use casper_dao_contracts::{
     action::Action,
-    voting::{voting::Voting, Choice, VotingId},
-    AdminContractTest, MockVoterContractTest, RepoVoterContractTest, ReputationContractTest,
-    VariableRepositoryContractTest,
+    voting::{voting::Voting, Choice},
+    AdminContractTest, BidEscrowContractTest, DaoOwnedNftContractTest, MockVoterContractTest,
+    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
 };
 
+use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
+
+#[allow(dead_code)]
+pub fn setup_bid_escrow() -> (
+    BidEscrowContractTest,
+    ReputationContractTest,
+    DaoOwnedNftContractTest,
+    DaoOwnedNftContractTest,
+) {
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 6;
+
+    let (variable_repo_contract, mut reputation_token_contract) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+
+    let va_token = DaoOwnedNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "user token".to_string(),
+        "usert".to_string(),
+        "".to_string(),
+    );
+
+    let kyc_token = DaoOwnedNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "kyc token".to_string(),
+        "kyt".to_string(),
+        "".to_string(),
+    );
+
+    #[allow(unused_mut)]
+    let mut bid_escrow_contract = BidEscrowContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+        kyc_token.address(),
+        va_token.address(),
+    );
+
+    reputation_token_contract
+        .add_to_whitelist(bid_escrow_contract.address())
+        .unwrap();
+
+    (
+        bid_escrow_contract,
+        reputation_token_contract,
+        va_token,
+        kyc_token,
+    )
+}
 
 #[allow(dead_code)]
 pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
@@ -48,7 +98,7 @@ pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
         .as_nth_account(1)
         .vote(voting_id, Choice::InFavor, minimum_reputation)
         .unwrap();
-    admin_contract.advance_block_time_by(voting.informal_voting_time() + 1);
+    admin_contract.advance_block_time_by(voting.informal_voting_time().unwrap() + 1);
     admin_contract.finish_voting(voting_id).unwrap();
 
     (admin_contract, reputation_token_contract)
@@ -99,7 +149,7 @@ pub fn setup_repo_voter(
         .as_nth_account(1)
         .vote(voting_id, Choice::InFavor, minimum_reputation)
         .unwrap();
-    repo_voter_contract.advance_block_time_by(voting.informal_voting_time() + 1);
+    repo_voter_contract.advance_block_time_by(voting.informal_voting_time().unwrap() + 1);
     repo_voter_contract.finish_voting(voting_id).unwrap();
 
     (repo_voter_contract, variable_repo_contract)
@@ -193,13 +243,13 @@ pub fn setup_voting_contract_with_formal_voting(
             .vote(
                 voting.voting_id(),
                 Choice::InFavor,
-                voting.minimum_governance_reputation(),
+                voting.create_minimum_reputation(),
             )
             .unwrap();
     }
 
     mock_voter_contract
-        .advance_block_time_by(voting.informal_voting_time() + 1)
+        .advance_block_time_by(voting.informal_voting_time().unwrap() + 1)
         .finish_voting(voting.voting_id())
         .unwrap();
 
@@ -286,7 +336,7 @@ pub fn mass_vote(
             .vote(
                 voting.voting_id(),
                 Choice::InFavor,
-                voting.minimum_governance_reputation(),
+                voting.create_minimum_reputation(),
             )
             .unwrap();
         account += 1;
@@ -298,7 +348,7 @@ pub fn mass_vote(
             .vote(
                 voting.voting_id(),
                 Choice::Against,
-                voting.minimum_governance_reputation(),
+                voting.create_minimum_reputation(),
             )
             .unwrap();
         account += 1;
@@ -325,7 +375,7 @@ pub fn assert_voting_completed(voter_contract: &mut MockVoterContractTest, votin
         voter_contract.as_nth_account(1).vote(
             voting.voting_id(),
             casper_dao_contracts::voting::Choice::InFavor,
-            voting.minimum_governance_reputation()
+            voting.create_minimum_reputation()
         ),
         Err(Error::VoteOnCompletedVotingNotAllowed)
     );

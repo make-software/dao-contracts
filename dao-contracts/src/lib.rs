@@ -3,6 +3,9 @@
 #[doc(hidden)]
 pub mod action;
 mod admin;
+pub mod bid;
+mod bid_escrow;
+mod builder;
 mod dao_nft;
 mod kyc_voter;
 #[doc(hidden)]
@@ -16,6 +19,8 @@ mod variable_repository;
 pub mod voting;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
+pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
+pub use builder::voting_configuration_builder::VotingConfigurationBuilder;
 pub use dao_nft::{DaoOwnedNftContract, DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 pub use kyc_voter::{KycVoterContract, KycVoterContractCaller, KycVoterContractInterface};
 #[doc(hidden)]
@@ -44,6 +49,9 @@ pub use repo_voter::RepoVoterContractTest;
 #[doc(hidden)]
 #[cfg(feature = "test-support")]
 pub use admin::AdminContractTest;
+
+#[cfg(feature = "test-support")]
+pub use bid_escrow::BidEscrowContractTest;
 
 #[cfg(feature = "test-support")]
 pub use mocks::mock_voter::MockVoterContractTest;

@@ -3,7 +3,7 @@ use casper_dao_erc20::{
     ERC20Test,
 };
 use casper_dao_utils::{Error, TestContract, TestEnv};
-use casper_types::U256;
+use casper_types::{U256, U512};
 
 static NAME: &str = "Plascoin";
 static SYMBOL: &str = "PLS";
@@ -149,5 +149,41 @@ fn test_erc20_transfer_from() {
             spender,
             value: U256::zero(),
         },
+    );
+}
+
+#[test]
+fn test_deposit() {
+    let (env, mut token) = setup();
+    let user1 = env.get_account(1);
+    let user2 = env.get_account(2);
+    let user3 = env.get_account(3);
+    let initial_amount = env.get_account_cspr_balance(user1);
+    let amount = U512::from(1_000_000_000);
+
+    // Sending CSPR to contract works.
+    token.as_account(user1).deposit_with_cspr(amount);
+    assert_eq!(token.get_cspr_balance(), amount);
+    assert_eq!(env.get_account_cspr_balance(user1), initial_amount - amount);
+
+    // It still works when the same user calls it second time.
+    token.as_account(user1).deposit_with_cspr(amount);
+    assert_eq!(token.get_cspr_balance(), amount * 2);
+    assert_eq!(
+        env.get_account_cspr_balance(user1),
+        initial_amount - amount * 2
+    );
+
+    // It even works when another user uses it.
+    token.as_account(user2).deposit_with_cspr(amount);
+    assert_eq!(token.get_cspr_balance(), amount * 3);
+    assert_eq!(env.get_account_cspr_balance(user2), initial_amount - amount);
+
+    // It's possible to withdraw
+    token.as_account(user3).withdraw_all().unwrap();
+    assert_eq!(token.get_cspr_balance(), U512::zero());
+    assert_eq!(
+        env.get_account_cspr_balance(user3),
+        initial_amount + amount * 3
     );
 }
