@@ -1,6 +1,6 @@
 # `dao-contracts-js-client`
 
-This JavaScript client gives you an easy way to install and interact with the DAO Reputation contract.
+This JavaScript client gives you an easy way to install and interact with all the DAO contracts.
 
 ## Installation
 
