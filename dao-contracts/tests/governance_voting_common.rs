@@ -1,65 +1,17 @@
 use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice},
-    AdminContractTest, BidEscrowContractTest, DaoOwnedNftContractTest, MockVoterContractTest,
-    RepoVoterContractTest, ReputationContractTest, VariableRepositoryContractTest,
+    AdminContractTest, DaoOwnedNftContractTest, MockVoterContractTest, RepoVoterContractTest,
+    ReputationContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_contracts::voting::types::VotingId;
+use casper_dao_erc721::TokenId;
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
-
-#[allow(dead_code)]
-pub fn setup_bid_escrow() -> (
-    BidEscrowContractTest,
-    ReputationContractTest,
-    DaoOwnedNftContractTest,
-    DaoOwnedNftContractTest,
-) {
-    let informal_quorum = 500.into();
-    let formal_quorum = 500.into();
-    let total_onboarded = 6;
-
-    let (variable_repo_contract, mut reputation_token_contract) =
-        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
-
-    let va_token = DaoOwnedNftContractTest::new(
-        variable_repo_contract.get_env(),
-        "user token".to_string(),
-        "usert".to_string(),
-        "".to_string(),
-    );
-
-    let kyc_token = DaoOwnedNftContractTest::new(
-        variable_repo_contract.get_env(),
-        "kyc token".to_string(),
-        "kyt".to_string(),
-        "".to_string(),
-    );
-
-    #[allow(unused_mut)]
-    let mut bid_escrow_contract = BidEscrowContractTest::new(
-        variable_repo_contract.get_env(),
-        variable_repo_contract.address(),
-        reputation_token_contract.address(),
-        kyc_token.address(),
-        va_token.address(),
-    );
-
-    reputation_token_contract
-        .add_to_whitelist(bid_escrow_contract.address())
-        .unwrap();
-
-    (
-        bid_escrow_contract,
-        reputation_token_contract,
-        va_token,
-        kyc_token,
-    )
-}
 
 #[allow(dead_code)]
 pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
@@ -68,7 +20,7 @@ pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
     let formal_quorum = 500.into();
     let total_onboarded = 3;
 
-    let (variable_repo_contract, mut reputation_token_contract) =
+    let (variable_repo_contract, mut reputation_token_contract, va_token) =
         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
     #[allow(unused_mut)]
@@ -76,6 +28,7 @@ pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
         variable_repo_contract.get_env(),
         variable_repo_contract.address(),
         reputation_token_contract.address(),
+        va_token.address(),
     );
 
     reputation_token_contract
@@ -114,7 +67,7 @@ pub fn setup_repo_voter(
     let formal_quorum = 500.into();
     let total_onboarded = 3;
 
-    let (mut variable_repo_contract, mut reputation_token_contract) =
+    let (mut variable_repo_contract, mut reputation_token_contract, va_token) =
         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
     #[allow(unused_mut)]
@@ -122,6 +75,7 @@ pub fn setup_repo_voter(
         variable_repo_contract.get_env(),
         variable_repo_contract.address(),
         reputation_token_contract.address(),
+        va_token.address(),
     );
 
     variable_repo_contract
@@ -164,7 +118,7 @@ pub fn setup_voting_contract(
     VariableRepositoryContractTest,
     ReputationContractTest,
 ) {
-    let (mut variable_repo_contract, mut reputation_token_contract) =
+    let (mut variable_repo_contract, mut reputation_token_contract, va_token) =
         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
     #[allow(unused_mut)]
@@ -172,6 +126,7 @@ pub fn setup_voting_contract(
         variable_repo_contract.get_env(),
         variable_repo_contract.address(),
         reputation_token_contract.address(),
+        va_token.address(),
     );
 
     variable_repo_contract
@@ -193,7 +148,11 @@ fn setup_repository_and_reputation_contracts(
     informal_quorum: U256,
     formal_quorum: U256,
     total_onboarded: usize,
-) -> (VariableRepositoryContractTest, ReputationContractTest) {
+) -> (
+    VariableRepositoryContractTest,
+    ReputationContractTest,
+    DaoOwnedNftContractTest,
+) {
     let minimum_reputation = 500.into();
     let reputation_to_mint = 10_000;
     let informal_voting_time: u64 = 3_600;
@@ -209,7 +168,8 @@ fn setup_repository_and_reputation_contracts(
     );
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
-    (variable_repo_contract, reputation_token_contract)
+    let va_token = setup_va_token(&env, total_onboarded);
+    (variable_repo_contract, reputation_token_contract, va_token)
 }
 
 pub fn setup_voting_contract_with_informal_voting(
@@ -308,10 +268,6 @@ pub fn setup_reputation_token_contract(
 ) -> ReputationContractTest {
     let mut reputation_token_contract = ReputationContractTest::new(env);
 
-    reputation_token_contract
-        .set_total_onboarded(U256::from(total_onboarded))
-        .unwrap();
-
     for i in 0..total_onboarded {
         reputation_token_contract
             .mint(env.get_account(i), tokens.into())
@@ -319,6 +275,19 @@ pub fn setup_reputation_token_contract(
     }
 
     reputation_token_contract
+}
+
+pub fn setup_va_token(env: &TestEnv, total_onboarded: usize) -> DaoOwnedNftContractTest {
+    let mut va_token = DaoOwnedNftContractTest::new(
+        env,
+        "va_token".to_string(),
+        "VAT".to_string(),
+        "".to_string(),
+    );
+    for i in 0..total_onboarded {
+        va_token.mint(env.get_account(i), TokenId::from(i)).unwrap();
+    }
+    va_token
 }
 
 #[allow(dead_code)]
@@ -374,7 +343,7 @@ pub fn assert_voting_completed(voter_contract: &mut MockVoterContractTest, votin
     assert_eq!(
         voter_contract.as_nth_account(1).vote(
             voting.voting_id(),
-            casper_dao_contracts::voting::Choice::InFavor,
+            Choice::InFavor,
             voting.create_minimum_reputation()
         ),
         Err(Error::VoteOnCompletedVotingNotAllowed)

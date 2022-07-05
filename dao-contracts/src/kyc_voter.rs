@@ -21,7 +21,13 @@ pub trait KycVoterContractInterface {
     /// Initializes modules.
     ///
     /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address);
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        va_token: Address,
+        kyc_token: Address,
+    );
     /// Creates new kyc voting. Once the voting passes a kyc token is minted to the `subject_address`.
     ///
     /// # Prerequisites
@@ -67,9 +73,15 @@ pub struct KycVoterContract {
 }
 
 impl KycVoterContractInterface for KycVoterContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address) {
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        va_token: Address,
+        kyc_token: Address,
+    ) {
         self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     delegate! {

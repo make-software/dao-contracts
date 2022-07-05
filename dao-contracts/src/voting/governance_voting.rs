@@ -46,6 +46,7 @@ pub trait GovernanceVotingTrait {
 pub struct GovernanceVoting {
     variable_repo: Variable<Address>,
     reputation_token: Variable<Address>,
+    va_token: Variable<Address>,
     votings: Mapping<VotingId, Option<Voting>>,
     ballots: Mapping<(VotingId, Address), Ballot>,
     voters: VecMapping<VotingId, Address>,
@@ -58,9 +59,10 @@ impl GovernanceVoting {
     ///
     /// # Events
     /// Emits [`VotingContractCreated`](VotingContractCreated)
-    pub fn init(&mut self, variable_repo: Address, reputation_token: Address) {
+    pub fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
         self.variable_repo.set(variable_repo);
         self.reputation_token.set(reputation_token);
+        self.va_token.set(va_token);
 
         VotingContractCreated {
             variable_repo,
@@ -342,6 +344,10 @@ impl GovernanceVoting {
     /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
     pub fn get_reputation_token_address(&self) -> Address {
         self.reputation_token.get().unwrap_or_revert()
+    }
+
+    pub fn get_va_token_address(&self) -> Address {
+        self.va_token.get().unwrap_or_revert()
     }
 
     /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`

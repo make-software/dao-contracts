@@ -97,7 +97,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
     ) {
         self.onboarding.init(va_token);
         self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     delegate! {

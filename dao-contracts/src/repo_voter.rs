@@ -16,7 +16,7 @@ use delegate::delegate;
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address);
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
     /// Creates new RepoVoter voting.
     ///
     /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
@@ -89,7 +89,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
 
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address);
+            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
