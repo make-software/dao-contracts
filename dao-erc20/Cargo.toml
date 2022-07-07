@@ -15,13 +15,6 @@ doctest = false
 test = false
 doc = false
 
-[[bin]]
-name = "send_cspr"
-path = "bin/send_cspr.rs"
-bench = false
-doctest = false
-test = false
-
 [[test]]
 name = "test-erc20"
 path = "tests/test_erc20.rs"

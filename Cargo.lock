@@ -117,6 +117,7 @@ dependencies = [
 name = "casper-dao-contracts"
 version = "0.1.0"
 dependencies = [
+ "casper-dao-erc20",
  "casper-dao-erc721",
  "casper-dao-modules",
  "casper-dao-utils",

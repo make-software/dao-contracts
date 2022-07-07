@@ -1,8 +1,9 @@
-use casper_dao_modules::{AccessControl, TokenWithStaking};
+use casper_dao_erc20::{ERC20, ERC20Interface};
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address, Variable,
+    Address,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -72,31 +73,6 @@ pub trait ReputationContractInterface {
     /// See [AccessControl](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
 
-    /// Stake `amount` of tokens for the `address`. It decrements `address`'s balance by `amount`.
-    ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
-    /// if `address`'s balance is less then `amount`.
-    ///
-    /// It emits [`TokensStaked`](casper_dao_modules::events::TokensStaked)
-    /// event.
-    fn stake(&mut self, address: Address, amount: U256);
-
-    /// Unstake `amount` of tokens for the `address`. It increments `address`'s balance by
-    /// `amount`.
-    ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
-    /// if `address`'s staked amount is less then `amount`.
-    ///
-    /// It emits [`TokensUnstaked`](casper_dao_modules::events::TokensUnstaked)
-    /// event.
-    fn unstake(&mut self, address: Address, amount: U256);
-
     /// Returns the address of the current owner.
     fn get_owner(&self) -> Option<Address>;
 
@@ -108,17 +84,13 @@ pub trait ReputationContractInterface {
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
-
-    /// Returns the amount of staked tokens of the given address.
-    fn get_staked_balance_of(&self, address: Address) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
 #[derive(Instance)]
 pub struct ReputationContract {
-    pub token: TokenWithStaking,
+    pub token: ERC20,
     pub access_control: AccessControl,
-    pub total_onboarded: Variable<U256>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -152,26 +124,12 @@ impl ReputationContractInterface for ReputationContract {
         self.token.raw_transfer(owner, recipient, amount);
     }
 
-    fn stake(&mut self, address: Address, amount: U256) {
-        self.access_control.ensure_whitelisted();
-        self.token.stake(address, amount);
-    }
-
-    fn unstake(&mut self, address: Address, amount: U256) {
-        self.access_control.ensure_whitelisted();
-        self.token.unstake(address, amount);
-    }
-
     fn total_supply(&self) -> U256 {
         self.token.total_supply()
     }
 
     fn balance_of(&self, address: Address) -> U256 {
-        self.token.balance_of(&address)
-    }
-
-    fn get_staked_balance_of(&self, address: Address) -> U256 {
-        self.token.get_stake_of(&address)
+        self.token.balance_of(address)
     }
 }
 
