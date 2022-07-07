@@ -1,4 +1,4 @@
-use casper_dao_erc20::{ERC20, ERC20Interface};
+use casper_dao_erc20::{ERC20Interface, ERC20};
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},

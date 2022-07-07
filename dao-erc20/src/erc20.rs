@@ -118,14 +118,13 @@ impl ERC20 {
     }
 
     pub fn mint(&mut self, address: Address, amount: U256) {
-        let (new_supply, is_overflowed) = self
-            .total_supply()
-            .overflowing_add(amount);
+        let (new_supply, is_overflowed) = self.total_supply().overflowing_add(amount);
         if is_overflowed {
             casper_env::revert(Error::TotalSupplyOverflow);
         }
         self.total_supply.set(new_supply);
-        self.balances.set(&address, self.balance_of(address) + amount);
+        self.balances
+            .set(&address, self.balance_of(address) + amount);
 
         emit(Transfer {
             from: None,

@@ -1,8 +1,6 @@
 use casper_dao_contracts::ReputationContractTest;
 use casper_dao_erc20::events::Transfer;
-use casper_dao_modules::events::{
-    AddedToWhitelist, OwnerChanged, RemovedFromWhitelist,
-};
+use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
 
@@ -45,7 +43,7 @@ fn test_mint_as_owner() {
             from: None,
             to: Some(recipient),
             value: total_supply,
-        }
+        },
     );
 }
 
