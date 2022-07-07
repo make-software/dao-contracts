@@ -1,7 +1,10 @@
 import {
   CasperClient,
   CasperServiceByJsonRPC,
+  CLKey,
+  CLKeyParameters,
   CLPublicKey,
+  CLValue,
 } from "casper-js-sdk";
 
 export const sleep = (ms: number) => {
@@ -89,7 +92,8 @@ export const createDictionaryGetter = async (
   path: string,
   account: CLPublicKey
 ) => {
-  const key = encodeAccountHashStrAsKey(account.toAccountHashStr());
+  const accountHashStr = account.toAccountHashStr();
+  const key = encodeAccountHashStrAsKey(accountHashStr);
   try {
     const result = await contractClient.queryContractDictionary(path, key);
     return result.value().toString();
