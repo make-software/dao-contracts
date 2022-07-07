@@ -1,20 +1,6 @@
 name: "variable_repository_contract"
 
 entry_points:
-  - name: "set_or_update"
-    arguments:
-      - name: "key"
-        cl_type: "String"
-      - name: "value"
-        cl_type: "Bytes"
-
-  - name: "get"
-    arguments:
-      - name: "key"
-        cl_type: "String"
-    returns:
-      - cl_type: "Bytes"
-
   - name: "change_ownership"
     arguments:
       - name: "owner"
@@ -30,26 +16,20 @@ entry_points:
       - name: "address"
         cl_type: "Address"
 
-events_config:
-  dictionary_named_key: "events"
-  length_named_key: "events_length"
-
-events:
-  - name: "ValueSet"
-    fields:
+  - name: "update_at"
+    arguments:
       - name: "key"
         cl_type: "String"
       - name: "value"
         cl_type: "Bytes"
-
-- name: "ValueRemoved"
-    fields:
-      - name: "key"
-        cl_type: "String"
+      - name: "activation_time"
+        cl_type:
+          - name: "Option"
+            inner: "U64"
 
 named_keys:
   - name: "owner"
-    named_key: "owner"
+    named_key: "accessowner"
     cl_type: "Option<Address>"
 
   - name: "whitelist"
@@ -67,3 +47,41 @@ named_keys:
   - name: "keys_length"
     named_key: "keys_length"
     cl_type: "Variable<u32>"
+
+named_keys:
+  - name: "owner"
+    named_key: "access_control_owner_owner"
+    cl_type: 
+      - name: "Option"
+        inner: "Address"
+
+  - name: "whitelist"
+    named_key: "access_control_whitelist_whitelist"
+    cl_type:
+      - name: "Mapping"
+        key: "Address"
+        value: "Bool"
+
+  - name: "data"
+    named_key: "repository_storage"
+    cl_type:
+      - name: "Mapping"
+        key: "String"
+        value:
+          - name: "Tuple"
+            first: "Bytes"
+            second:
+              - name: "Option"
+                inner:
+                  - name: "Tuple"
+                    first: "Bytes"
+                    second: "U64"
+
+  - name: "keys"
+    named_key: "repository_keys_values_mapping"
+    cl_type:
+      - name: "Mapping"
+        key: "U32"
+        value:
+          - name: "Option"
+            inner: "String"
