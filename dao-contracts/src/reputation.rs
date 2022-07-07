@@ -102,6 +102,11 @@ impl ReputationContractInterface for ReputationContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.token {
+            fn total_supply(&self) -> U256;
+            fn balance_of(&self, address: Address) -> U256;
+        }
     }
 
     fn init(&mut self) {
@@ -122,14 +127,6 @@ impl ReputationContractInterface for ReputationContract {
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.raw_transfer(owner, recipient, amount);
-    }
-
-    fn total_supply(&self) -> U256 {
-        self.token.total_supply()
-    }
-
-    fn balance_of(&self, address: Address) -> U256 {
-        self.token.balance_of(address)
     }
 }
 
