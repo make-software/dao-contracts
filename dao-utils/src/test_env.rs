@@ -156,7 +156,6 @@ impl TestEnvState {
         let mut builder = InMemoryWasmTestBuilder::default();
         builder.run_genesis(&run_genesis_request).commit();
 
-        
         let mut state = TestEnvState {
             active_account: accounts[0],
             context: builder,
@@ -166,11 +165,12 @@ impl TestEnvState {
             calls_counter: 0,
             gas_used: HashMap::new(),
         };
-        
+
         // Deploy getter_proxy and return it's package_hash.
         state.deploy_wasm_file("getter_proxy.wasm", RuntimeArgs::new());
-        let account = state.accounts[0].as_account_hash().unwrap().clone();
-        let getter_proxy_package_hash: ContractPackageHash = state.get_account_value(account, "getter_proxy_package_hash");
+        let account = *state.accounts[0].as_account_hash().unwrap();
+        let getter_proxy_package_hash: ContractPackageHash =
+            state.get_account_value(account, "getter_proxy_package_hash");
         state.getter_proxy = Some(getter_proxy_package_hash);
         dbg!(getter_proxy_package_hash);
         state
@@ -215,7 +215,12 @@ impl TestEnvState {
             .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
-            .with_stored_versioned_contract_by_hash(self.getter_proxy.unwrap().value(), None, "proxy", args)
+            .with_stored_versioned_contract_by_hash(
+                self.getter_proxy.unwrap().value(),
+                None,
+                "proxy",
+                args,
+            )
             .with_deploy_hash(self.next_hash())
             .build();
 

@@ -5,7 +5,7 @@ extern crate alloc;
 
 use core::mem::MaybeUninit;
 
-use alloc::{string::String, vec::Vec, vec};
+use alloc::{string::String, vec, vec::Vec};
 use casper_contract::{
     contract_api::{self, runtime, storage},
     ext_ffi,
@@ -15,9 +15,8 @@ use casper_types::{
     api_error,
     bytesrepr::{Bytes, FromBytes, ToBytes},
     contracts::NamedKeys,
-    ApiError, ContractPackageHash, ContractVersion, RuntimeArgs, 
-    EntryPoints, EntryPoint, CLType, CLTyped, EntryPointAccess, EntryPointType,
-    Parameter
+    ApiError, CLType, CLTyped, ContractPackageHash, ContractVersion, EntryPoint, EntryPointAccess,
+    EntryPointType, EntryPoints, Parameter, RuntimeArgs,
 };
 
 #[no_mangle]
@@ -36,7 +35,7 @@ fn call() {
         ],
         CLType::Unit,
         EntryPointAccess::Public,
-        EntryPointType::Session
+        EntryPointType::Session,
     ));
     storage::add_contract_version(contract_package_hash, entry_points, NamedKeys::new());
 }
