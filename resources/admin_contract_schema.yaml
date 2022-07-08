@@ -1,0 +1,77 @@
+---
+name: admin_contract
+entry_points:
+  - name: create_voting
+    arguments:
+      - name: contract_to_update
+        cl_type: Address
+      - name: action
+        cl_type: Bytes
+      - name: address
+        cl_type: Address
+      - name: stake
+        cl_type: U256
+  - name: init
+    arguments:
+      - name: variable_repo
+        cl_type: Address
+      - name: reputation_token
+        cl_type: Address
+      - name: va_token
+        cl_type: Address
+  - name: vote
+    arguments:
+      - name: voting_id
+        cl_type: U256
+      - name: choice
+        cl_type: Bytes
+      - name: stake
+        cl_type: U256
+  - name: finish_voting
+    arguments:
+      - name: voting_id
+        cl_type: U256
+events:
+  - name: VotingContractCreated
+    fields:
+      - name: voter_contract
+        cl_type: Address
+      - name: variable_repo
+        cl_type: Address
+      - name: reputation_token
+        cl_type: Address
+  - name: BallotCast
+    fields:
+      - name: voter
+        cl_type: Address
+      - name: voting_id
+        cl_type: U256
+      - name: choice
+        cl_type: Bytes
+      - name: stake
+        cl_type: U256
+  - name: VotingCreated
+    fields:
+      - name: creator
+        cl_type: Address
+      - name: voting_id
+        cl_type: U256
+      - name: stake
+        cl_type: U256
+  - name: VotingEnded
+    fields:
+      - name: voting_id
+        cl_type: U256
+      - name: result
+        cl_type: String
+      - name: votes_count
+        cl_type: U256
+      - name: stake_in_favor
+        cl_type: U256
+      - name: stake_against
+        cl_type: U256
+      - name: informal_voting_id
+        cl_type: U256
+      - name: formal_voting_id
+        cl_type: Option<U256>
+named_keys: []

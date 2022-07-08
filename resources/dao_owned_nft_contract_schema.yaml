@@ -1,0 +1,83 @@
+---
+name: dao_owned_nft_contract
+entry_points:
+  - name: init
+    arguments:
+      - name: name
+        cl_type: String
+      - name: symbol
+        cl_type: String
+      - name: base_uri
+        cl_type: String
+  - name: burn
+    arguments:
+      - name: token_id
+        cl_type: U256
+  - name: mint
+    arguments:
+      - name: to
+        cl_type: Address
+      - name: token_id
+        cl_type: U256
+  - name: approve
+    arguments:
+      - name: approved
+        cl_type: Option<Address>
+      - name: token_id
+        cl_type: U256
+  - name: set_approval_for_all
+    arguments:
+      - name: operator
+        cl_type: Address
+      - name: approved
+        cl_type: Bool
+  - name: change_ownership
+    arguments:
+      - name: owner
+        cl_type: Address
+  - name: add_to_whitelist
+    arguments:
+      - name: address
+        cl_type: Address
+  - name: remove_from_whitelist
+    arguments:
+      - name: address
+        cl_type: Address
+events:
+  - name: Transfer
+    fields:
+      - name: from
+        cl_type: Option<Address>
+      - name: to
+        cl_type: Option<Address>
+      - name: token_id
+        cl_type: U256
+  - name: Approval
+    fields:
+      - name: owner
+        cl_type: Option<Address>
+      - name: approved
+        cl_type: Option<Address>
+      - name: token_id
+        cl_type: U256
+  - name: ApprovalForAll
+    fields:
+      - name: owner
+        cl_type: Address
+      - name: operator
+        cl_type: Address
+      - name: approved
+        cl_type: Bool
+  - name: OwnerChanged
+    fields:
+      - name: new_owner
+        cl_type: Address
+  - name: AddedToWhitelist
+    fields:
+      - name: address
+        cl_type: Address
+  - name: RemovedFromWhitelist
+    fields:
+      - name: address
+        cl_type: Address
+named_keys: []

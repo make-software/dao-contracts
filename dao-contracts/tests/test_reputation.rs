@@ -1,8 +1,6 @@
 use casper_dao_contracts::ReputationContractTest;
-use casper_dao_modules::events::{
-    AddedToWhitelist, Burn, Mint, OwnerChanged, RemovedFromWhitelist, TokensStaked, TokensUnstaked,
-    Transfer,
-};
+use casper_dao_erc20::events::Transfer;
+use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
 
@@ -41,8 +39,9 @@ fn test_mint_as_owner() {
     assert_eq!(contract.balance_of(recipient), total_supply);
     contract.assert_event_at(
         2,
-        Mint {
-            recipient,
+        Transfer {
+            from: None,
+            to: Some(recipient),
             value: total_supply,
         },
     );
@@ -72,8 +71,9 @@ fn test_whitelisted_user_burn() {
     assert_eq!(contract.balance_of(owner), remaining_supply);
     contract.assert_event_at(
         3,
-        Burn {
-            owner,
+        Transfer {
+            from: Some(owner),
+            to: None,
             value: burn_amount,
         },
     );
@@ -198,8 +198,8 @@ fn test_transfer_from() {
     contract.assert_event_at(
         3,
         Transfer {
-            from: owner,
-            to: first_recipient,
+            from: Some(owner),
+            to: Some(first_recipient),
             value: transfer_amount,
         },
     );
@@ -244,118 +244,12 @@ fn test_ownership() {
 }
 
 #[test]
-fn test_stake() {
-    let total_supply = 100.into();
-    let (env, mut contract) = setup_with_initial_supply(total_supply);
-    let amount_to_stake = 10.into();
-    let account = env.get_account(0);
-
-    contract.stake(account, amount_to_stake).unwrap();
-    assert_eq!(contract.balance_of(account), total_supply);
-    assert_eq!(contract.get_staked_balance_of(account), amount_to_stake);
-    contract.assert_event_at(
-        3,
-        TokensStaked {
-            address: account,
-            amount: amount_to_stake,
-        },
-    );
-}
-
-#[test]
-fn test_stake_amount_exceeding_balance() {
-    let total_supply = 100.into();
-    let (env, mut contract) = setup_with_initial_supply(total_supply);
-    let amount_to_stake = 200.into();
-    let account = env.get_account(0);
-
-    let result = contract.stake(account, amount_to_stake);
-    assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
-}
-
-#[test]
-fn test_stake_not_whitelisted() {
-    let (env, mut contract) = setup();
-    let not_whitelisted_account = env.get_account(1);
-
-    let result = contract
-        .as_account(not_whitelisted_account)
-        .stake(not_whitelisted_account, 1.into());
-    assert_eq!(result.unwrap_err(), Error::NotWhitelisted);
-}
-
-#[test]
-fn test_burn_staked_tokens() {
-    let total_supply = 100.into();
-    let staked_amount = 10.into();
-    let burn_amount = 99.into();
-    let (env, mut contract) = setup_with_initial_supply(total_supply);
-    let owner = env.get_account(0);
-
-    contract.stake(owner, staked_amount).unwrap();
-
-    let result = contract.burn(owner, burn_amount);
-    assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
-}
-
-#[test]
-fn test_transfer_staked_tokens() {
-    let total_supply = 100.into();
-    let staked_amount = 10.into();
-    let transferred_amount = 99.into();
-    let (env, mut contract) = setup_with_initial_supply(total_supply);
-    let (owner, recipient) = (env.get_account(0), env.get_account(1));
-
-    contract.stake(owner, staked_amount).unwrap();
-
-    let result = contract.transfer_from(owner, recipient, transferred_amount);
-    assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
-}
-
-#[test]
-fn test_unstake() {
-    let total_supply = 100.into();
-    let (env, mut contract) = setup_with_initial_supply(total_supply);
-    let amount_to_stake = 10.into();
-    let amount_to_unstake = 4.into();
-    let account = env.get_account(0);
-
-    contract.stake(account, amount_to_stake).unwrap();
-    contract.unstake(account, amount_to_unstake).unwrap();
-    assert_eq!(
-        contract.get_staked_balance_of(account),
-        amount_to_stake - amount_to_unstake
-    );
-    contract.assert_event_at(
-        4,
-        TokensUnstaked {
-            address: account,
-            amount: amount_to_unstake,
-        },
-    );
-}
-
-#[test]
 fn test_that_contract_have_different_hashes() {
     let env = TestEnv::new();
     let contract1 = ReputationContractTest::new(&env);
     let contract2 = ReputationContractTest::new(&env);
 
     assert_ne!(contract1.get_package_hash(), contract2.get_package_hash());
-}
-
-#[test]
-fn test_unstake_amount_exceeding_staked_balance() {
-    let total_supply = 100.into();
-    let (env, mut contract) = setup_with_initial_supply(total_supply);
-    let amount_to_stake = 50.into();
-    let amount_to_unstake = 60.into();
-    let account = env.get_account(0);
-
-    contract.stake(account, amount_to_stake).unwrap();
-
-    let result = contract.unstake(account, amount_to_unstake);
-    assert_eq!(result.unwrap_err(), Error::InsufficientBalance);
 }
 
 fn setup() -> (TestEnv, ReputationContractTest) {

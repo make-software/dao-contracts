@@ -30,6 +30,7 @@ pub struct Ballot {
     pub stake: U256,
 }
 
+#[cfg(test)]
 #[test]
 fn test_vote_serialization() {
     use casper_types::account::AccountHash;
