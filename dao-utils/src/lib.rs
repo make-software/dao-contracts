@@ -16,10 +16,12 @@ pub use parts::collection::List;
 pub use parts::collection::OrderedCollection;
 pub use parts::collection::Set;
 pub use parts::consts;
+pub use parts::contract_call::ContractCall;
 pub use parts::error::Error;
 pub use parts::mapping::Mapping;
 pub use parts::mapping::VecMapping;
 pub use parts::sequence::SequenceGenerator;
+pub use parts::types::BlockTime;
 pub use parts::variable::Variable;
 
 #[cfg(feature = "test-support")]

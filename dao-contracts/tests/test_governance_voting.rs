@@ -1,8 +1,9 @@
 mod governance_voting_common;
 
+use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_contracts::voting::{
     consts as gv_consts, Ballot, BallotCast, Choice, VotingContractCreated, VotingCreated,
-    VotingEnded, VotingId,
+    VotingEnded,
 };
 use casper_dao_utils::Error;
 use casper_dao_utils::TestContract;
@@ -102,16 +103,16 @@ speculate! {
 
                 assert_eq!(informal_voting.voting_id(), VotingId::zero());
                 assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
-                assert_eq!(informal_voting.informal_voting_time(), informal_voting_time);
+                assert_eq!(informal_voting.informal_voting_time().unwrap(), informal_voting_time);
                 assert_eq!(informal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), formal_quorum).unwrap());
-                assert_eq!(informal_voting.informal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
+                assert_eq!(informal_voting.informal_voting_quorum().unwrap(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
                 assert_eq!(voting_created_event.voting_id, informal_voting.voting_id());
                 assert_eq!(voting_created_event.creator, creator);
                 assert_eq!(voting_created_event.stake, minimum_reputation);
 
                 // first vote is cast automatically
                 assert_eq!(first_ballot.voting_id, informal_voting.voting_id());
-                assert_eq!(first_ballot.voter, Some(creator));
+                assert_eq!(first_ballot.voter, creator);
                 assert_eq!(first_ballot.choice, Choice::InFavor);
                 assert_eq!(first_ballot.stake, minimum_reputation);
                 assert_eq!(ballot_cast_event, BallotCast { voter: creator, voting_id: informal_voting.voting_id(), choice: Choice::InFavor, stake: minimum_reputation });

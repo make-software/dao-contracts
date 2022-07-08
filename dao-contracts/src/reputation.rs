@@ -111,10 +111,6 @@ pub trait ReputationContractInterface {
 
     /// Returns the amount of staked tokens of the given address.
     fn get_staked_balance_of(&self, address: Address) -> U256;
-
-    fn total_onboarded(&self) -> U256;
-
-    fn set_total_onboarded(&mut self, total: U256);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -176,14 +172,6 @@ impl ReputationContractInterface for ReputationContract {
 
     fn get_staked_balance_of(&self, address: Address) -> U256 {
         self.token.get_stake_of(&address)
-    }
-
-    fn total_onboarded(&self) -> U256 {
-        self.total_onboarded.get().unwrap_or_default()
-    }
-
-    fn set_total_onboarded(&mut self, total: U256) {
-        self.total_onboarded.set(total);
     }
 }
 

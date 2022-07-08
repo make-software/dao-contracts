@@ -3,6 +3,7 @@
 #[doc(hidden)]
 pub mod action;
 mod admin;
+mod builder;
 mod dao_nft;
 mod kyc_voter;
 #[doc(hidden)]
@@ -16,6 +17,7 @@ mod variable_repository;
 pub mod voting;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
+pub use builder::voting_configuration_builder::VotingConfigurationBuilder;
 pub use dao_nft::{DaoOwnedNftContract, DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
 pub use kyc_voter::{KycVoterContract, KycVoterContractCaller, KycVoterContractInterface};
 #[doc(hidden)]

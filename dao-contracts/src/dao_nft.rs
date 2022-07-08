@@ -137,6 +137,10 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
         }
     }
 
+    fn token_id(&self, address: Address) -> Option<TokenId> {
+        self.tokens.get(&address).unwrap_or(None)
+    }
+
     fn token_uri(&self, token_id: TokenId) -> TokenUri {
         self.metadata.token_uri(&self.token, token_id)
     }
@@ -157,10 +161,6 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
             .unwrap_or_revert_with(Error::InvalidTokenOwner);
         BurnableERC721::burn(&mut self.token, token_id);
         self.tokens.set(&owner, None);
-    }
-
-    fn token_id(&self, address: Address) -> Option<TokenId> {
-        self.tokens.get(&address).unwrap_or(None)
     }
 }
 
