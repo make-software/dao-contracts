@@ -117,6 +117,7 @@ impl Default for TestEnv {
 pub struct TestEnvState {
     accounts: Vec<Address>,
     active_account: Address,
+    getter_proxy: Option<ContractPackageHash>,
     context: InMemoryWasmTestBuilder,
     block_time: u64,
     calls_counter: u32,
@@ -155,14 +156,24 @@ impl TestEnvState {
         let mut builder = InMemoryWasmTestBuilder::default();
         builder.run_genesis(&run_genesis_request).commit();
 
-        TestEnvState {
+        
+        let mut state = TestEnvState {
             active_account: accounts[0],
             context: builder,
+            getter_proxy: None,
             accounts,
             block_time: 0,
             calls_counter: 0,
             gas_used: HashMap::new(),
-        }
+        };
+        
+        // Deploy getter_proxy and return it's package_hash.
+        state.deploy_wasm_file("getter_proxy.wasm", RuntimeArgs::new());
+        let account = state.accounts[0].as_account_hash().unwrap().clone();
+        let getter_proxy_package_hash: ContractPackageHash = state.get_account_value(account, "getter_proxy_package_hash");
+        state.getter_proxy = Some(getter_proxy_package_hash);
+        dbg!(getter_proxy_package_hash);
+        state
     }
 
     pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) {
@@ -190,7 +201,7 @@ impl TestEnvState {
         args: RuntimeArgs,
         has_return: bool,
     ) -> Result<Option<T>, Error> {
-        let session_code = PathBuf::from("getter_proxy.wasm");
+        // let session_code = PathBuf::from("getter_proxy.wasm");
 
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();
         let args = runtime_args! {
@@ -204,7 +215,7 @@ impl TestEnvState {
             .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
-            .with_session_code(session_code, args)
+            .with_stored_versioned_contract_by_hash(self.getter_proxy.unwrap().value(), None, "proxy", args)
             .with_deploy_hash(self.next_hash())
             .build();
 

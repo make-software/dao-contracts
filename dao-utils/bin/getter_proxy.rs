@@ -5,20 +5,44 @@ extern crate alloc;
 
 use core::mem::MaybeUninit;
 
-use alloc::{string::String, vec::Vec};
+use alloc::{string::String, vec::Vec, vec};
 use casper_contract::{
-    contract_api::{self, runtime},
+    contract_api::{self, runtime, storage},
     ext_ffi,
     unwrap_or_revert::UnwrapOrRevert,
 };
 use casper_types::{
     api_error,
     bytesrepr::{Bytes, FromBytes, ToBytes},
-    ApiError, ContractPackageHash, ContractVersion, RuntimeArgs,
+    contracts::NamedKeys,
+    ApiError, ContractPackageHash, ContractVersion, RuntimeArgs, 
+    EntryPoints, EntryPoint, CLType, CLTyped, EntryPointAccess, EntryPointType,
+    Parameter
 };
 
 #[no_mangle]
 fn call() {
+    let (contract_package_hash, _) = storage::create_contract_package_at_hash();
+    casper_dao_utils::casper_env::set_key("getter_proxy_package_hash", contract_package_hash);
+
+    let mut entry_points = EntryPoints::new();
+    entry_points.add_entry_point(EntryPoint::new(
+        "proxy",
+        vec![
+            Parameter::new("contract_package_hash", ContractPackageHash::cl_type()),
+            Parameter::new("entry_point", String::cl_type()),
+            Parameter::new("args", Bytes::cl_type()),
+            Parameter::new("has_return", bool::cl_type()),
+        ],
+        CLType::Unit,
+        EntryPointAccess::Public,
+        EntryPointType::Session
+    ));
+    storage::add_contract_version(contract_package_hash, entry_points, NamedKeys::new());
+}
+
+#[no_mangle]
+fn proxy() {
     let contract_package_hash: ContractPackageHash =
         runtime::get_named_arg("contract_package_hash");
     let entry_point: String = runtime::get_named_arg("entry_point");
