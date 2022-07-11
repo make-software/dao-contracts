@@ -22,6 +22,7 @@ pub use parts::mapping::Mapping;
 pub use parts::mapping::VecMapping;
 pub use parts::sequence::SequenceGenerator;
 pub use parts::types::BlockTime;
+pub use parts::types::DocumentHash;
 pub use parts::variable::Variable;
 
 #[cfg(feature = "test-support")]

@@ -31,6 +31,13 @@ doctest = false
 test = false
 
 [[bin]]
+name = "simple_voter_contract"
+path = "bin/simple_voter_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
 name = "repo_voter_contract"
 path = "bin/repo_voter_contract.rs"
 bench = false
