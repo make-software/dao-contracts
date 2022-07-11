@@ -1,7 +1,7 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address, Error, Mapping,
+    Address, DocumentHash, Error, Mapping,
 };
 use casper_types::U256;
 
@@ -45,8 +45,6 @@ pub trait SimpleVoterContractInterface {
     /// Returns document hash being voted on for given voting id.
     fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash>;
 }
-
-pub type DocumentHash = U256;
 
 /// Event thrown after SimpleVoting is created
 #[derive(Debug, PartialEq, Event)]

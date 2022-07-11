@@ -2,11 +2,11 @@ mod governance_voting_common;
 
 use speculate::speculate;
 
-use casper_dao_contracts::{simple_voter, voting::Choice, voting::VotingId};
+use casper_dao_contracts::{voting::Choice, voting::VotingId};
 
+use casper_dao_utils::DocumentHash;
 use casper_dao_utils::TestContract;
 use casper_types::U256;
-use simple_voter::DocumentHash;
 
 speculate! {
     context "simple_voter" {

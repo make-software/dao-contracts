@@ -35,8 +35,6 @@ pub use variable_repository::{
     VariableRepositoryContractInterface,
 };
 
-pub use simple_voter::DocumentHash;
-
 pub use simple_voter::{
     SimpleVoterContract, SimpleVoterContractCaller, SimpleVoterContractInterface,
 };
