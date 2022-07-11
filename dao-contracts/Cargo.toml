@@ -24,6 +24,14 @@ test = false
 doc = false
 
 [[bin]]
+name = "reputation_voter_contract"
+path = "bin/reputation_voter_contract.rs"
+bench = false
+doctest = false
+test = false
+doc = false
+
+[[bin]]
 name = "variable_repository_contract"
 path = "bin/variable_repository_contract.rs"
 bench = false

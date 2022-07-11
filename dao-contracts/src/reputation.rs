@@ -1,12 +1,29 @@
 use casper_dao_erc20::{ERC20Interface, ERC20};
 use casper_dao_modules::AccessControl;
+use casper_dao_utils::casper_dao_macros::Event;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address,
+    Address, Mapping,
 };
 use casper_types::U256;
 use delegate::delegate;
+
+/// Event thrown when debt is lowered
+#[derive(Debug, PartialEq, Event)]
+pub struct DebtPaid {
+    pub owner: Address,
+    pub amount: U256,
+    pub debt: U256,
+}
+
+/// Event thrown when debt is made
+#[derive(Debug, PartialEq, Event)]
+pub struct DebtIncreased {
+    pub owner: Address,
+    pub amount: U256,
+    pub debt: U256,
+}
 
 // Interface of the Reputation Contract.
 //
@@ -84,6 +101,9 @@ pub trait ReputationContractInterface {
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
+
+    /// Returns the amount of the debt the owner has
+    fn debt(&self, owner: Address) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -91,6 +111,7 @@ pub trait ReputationContractInterface {
 pub struct ReputationContract {
     pub token: ERC20,
     pub access_control: AccessControl,
+    pub debt: Mapping<Address, U256>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -102,10 +123,12 @@ impl ReputationContractInterface for ReputationContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+    }
 
+    delegate! {
         to self.token {
-            fn total_supply(&self) -> U256;
             fn balance_of(&self, address: Address) -> U256;
+            fn total_supply(&self) -> U256;
         }
     }
 
@@ -116,17 +139,71 @@ impl ReputationContractInterface for ReputationContract {
 
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.mint(recipient, amount);
+        let mut debt = self.debt(recipient);
+        let debt_paid;
+        if debt > U256::zero() {
+            match debt.checked_sub(amount) {
+                // minting will cover whole debt
+                None => {
+                    self.debt.set(&recipient, U256::zero());
+                    debt_paid = debt;
+                    self.token.mint(recipient, amount - debt);
+                    debt = U256::zero();
+                }
+                // minting will not cover the debt
+                Some(left) => {
+                    self.debt.set(&recipient, left);
+                    debt_paid = left;
+                    debt = left;
+                }
+            }
+
+            DebtPaid {
+                owner: recipient,
+                amount: debt_paid,
+                debt,
+            }
+            .emit();
+        } else {
+            self.token.mint(recipient, amount);
+        }
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.burn(owner, amount);
+        let balance = self.token.balance_of(owner);
+        match balance.checked_sub(amount) {
+            // we need to burn more than the owner has
+            None => {
+                self.token.burn(owner, balance);
+                let debt = self.debt(owner);
+                let to_add = amount.saturating_sub(balance);
+                let new_debt = debt + to_add;
+                self.debt.set(&owner, new_debt);
+                DebtIncreased {
+                    owner,
+                    amount: to_add,
+                    debt: new_debt,
+                }
+                .emit();
+            }
+            // we simply burn
+            Some(_) => {
+                self.token.burn(owner, amount);
+            }
+        }
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.raw_transfer(owner, recipient, amount);
+    }
+
+    fn debt(&self, owner: Address) -> U256 {
+        match self.debt.get(&owner) {
+            None => U256::zero(),
+            Some(debt) => debt,
+        }
     }
 }
 

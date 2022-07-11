@@ -11,6 +11,7 @@ pub mod mocks;
 mod onboarding_voter;
 mod repo_voter;
 mod reputation;
+mod reputation_voter;
 pub mod simple_voter;
 /// Variable Repo
 mod variable_repository;
@@ -30,6 +31,9 @@ pub use onboarding_voter::{
 };
 pub use repo_voter::{RepoVoterContract, RepoVoterContractCaller, RepoVoterContractInterface};
 pub use reputation::{ReputationContract, ReputationContractCaller, ReputationContractInterface};
+pub use reputation_voter::{
+    ReputationVoterContract, ReputationVoterContractCaller, ReputationVoterContractInterface,
+};
 pub use variable_repository::{
     VariableRepositoryContract, VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
@@ -39,6 +43,10 @@ pub use simple_voter::{
     SimpleVoterContract, SimpleVoterContractCaller, SimpleVoterContractInterface,
 };
 
+#[cfg(feature = "test-support")]
+pub use reputation::DebtIncreased;
+#[cfg(feature = "test-support")]
+pub use reputation::DebtPaid;
 #[cfg(feature = "test-support")]
 pub use reputation::ReputationContractTest;
 
