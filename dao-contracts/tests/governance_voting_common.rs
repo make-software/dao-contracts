@@ -2,7 +2,7 @@ use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice},
     AdminContractTest, DaoOwnedNftContractTest, MockVoterContractTest, RepoVoterContractTest,
-    ReputationContractTest, VariableRepositoryContractTest,
+    ReputationContractTest, ReputationVoterContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_contracts::simple_voter::SimpleVoterContractTest;
@@ -13,6 +13,44 @@ use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
+
+#[allow(dead_code)]
+pub fn setup_reputation_voter() -> (ReputationVoterContractTest, ReputationContractTest) {
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 3;
+
+    #[allow(unused_mut)]
+    let (mut variable_repo_contract, mut reputation_token_contract, va_token) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+
+    #[allow(unused_mut)]
+    let mut reputation_voter_contract = ReputationVoterContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+        va_token.address(),
+    );
+
+    reputation_token_contract
+        .add_to_whitelist(reputation_voter_contract.address())
+        .unwrap();
+
+    reputation_token_contract
+        .mint(
+            reputation_token_contract.get_env().get_account(0),
+            1000.into(),
+        )
+        .unwrap();
+    reputation_token_contract
+        .mint(
+            reputation_token_contract.get_env().get_account(1),
+            1000.into(),
+        )
+        .unwrap();
+
+    (reputation_voter_contract, reputation_token_contract)
+}
 
 #[allow(dead_code)]
 pub fn setup_simple_voter() -> SimpleVoterContractTest {

@@ -59,8 +59,8 @@ pub struct ReputationVoting {
 /// An event thrown when new reputation voting starts
 #[derive(Debug, PartialEq, Event)]
 pub struct ReputationVotingCreated {
-    reputation_voting: ReputationVoting,
-    voting_id: VotingId,
+    pub reputation_voting: ReputationVoting,
+    pub voting_id: VotingId,
 }
 
 #[casper_contract_interface]
