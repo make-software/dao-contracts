@@ -1,4 +1,4 @@
-use casper_dao_contracts::ReputationContractTest;
+use casper_dao_contracts::{DebtIncreased, DebtPaid, ReputationContractTest};
 use casper_dao_erc20::events::Transfer;
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::{Error, TestContract, TestEnv};
@@ -80,15 +80,79 @@ fn test_whitelisted_user_burn() {
 }
 
 #[test]
-fn test_buring_amount_exceeding_balance() {
+fn test_transfer_with_debt() {
+    let total_supply = 100.into();
+    let burn_amount = 100.into();
+    let transfer_amount = burn_amount / 2;
+
+    let (env, mut contract) = setup_with_initial_supply(total_supply);
+    let owner = env.get_account(0);
+    let recipient = env.get_account(1);
+
+    contract.burn(recipient, burn_amount).unwrap();
+    contract
+        .transfer_from(owner, recipient, transfer_amount)
+        .unwrap();
+    assert_eq!(contract.balance_of(owner), 50.into());
+    assert_eq!(contract.balance_of(recipient), 0.into());
+    assert_eq!(contract.debt(owner), U256::zero());
+    assert_eq!(contract.debt(recipient), 50.into());
+
+    contract
+        .transfer_from(owner, recipient, transfer_amount)
+        .unwrap();
+    assert_eq!(contract.balance_of(owner), 0.into());
+    assert_eq!(contract.balance_of(recipient), 0.into());
+    assert_eq!(contract.debt(owner), U256::zero());
+    assert_eq!(contract.debt(recipient), 0.into());
+}
+
+#[test]
+fn test_burning_amount_exceeding_balance() {
     let total_supply = 100.into();
     let burn_amount = 101.into();
 
     let (env, mut contract) = setup_with_initial_supply(total_supply);
     let owner = env.get_account(0);
 
-    let result = contract.burn(owner, burn_amount);
-    assert_eq!(result.unwrap_err(), Error::InsufficientBalance)
+    contract.burn(owner, burn_amount).unwrap();
+    assert_eq!(contract.balance_of(owner), U256::zero());
+    assert_eq!(contract.debt(owner), U256::one());
+}
+
+#[test]
+fn test_burning_amount_exceeding_balance_and_minting_it_back() {
+    let total_supply = 100.into();
+    let burn_amount = 150.into();
+    let mint_amount = 200.into();
+
+    let (env, mut contract) = setup_with_initial_supply(total_supply);
+    let owner = env.get_account(0);
+
+    contract.burn(owner, burn_amount).unwrap();
+
+    assert_eq!(contract.balance_of(owner), 0.into());
+    contract.assert_event_at(
+        -1,
+        DebtIncreased {
+            owner,
+            amount: 50.into(),
+            debt: 50.into(),
+        },
+    );
+
+    contract.mint(owner, mint_amount).unwrap();
+
+    assert_eq!(contract.balance_of(owner), 150.into());
+    assert_eq!(contract.debt(owner), U256::zero());
+    contract.assert_event_at(
+        -2,
+        DebtPaid {
+            owner,
+            amount: 50.into(),
+            debt: 0.into(),
+        },
+    );
 }
 
 #[test]

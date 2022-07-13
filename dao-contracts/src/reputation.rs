@@ -1,12 +1,29 @@
 use casper_dao_erc20::{ERC20Interface, ERC20};
 use casper_dao_modules::AccessControl;
+use casper_dao_utils::casper_dao_macros::Event;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address,
+    Address, Mapping,
 };
 use casper_types::U256;
 use delegate::delegate;
+
+/// Event thrown when debt is lowered
+#[derive(Debug, PartialEq, Event)]
+pub struct DebtPaid {
+    pub owner: Address,
+    pub amount: U256,
+    pub debt: U256,
+}
+
+/// Event thrown when debt is made
+#[derive(Debug, PartialEq, Event)]
+pub struct DebtIncreased {
+    pub owner: Address,
+    pub amount: U256,
+    pub debt: U256,
+}
 
 // Interface of the Reputation Contract.
 //
@@ -84,6 +101,9 @@ pub trait ReputationContractInterface {
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
+
+    /// Returns the amount of the debt the owner has
+    fn debt(&self, owner: Address) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -91,6 +111,7 @@ pub trait ReputationContractInterface {
 pub struct ReputationContract {
     pub token: ERC20,
     pub access_control: AccessControl,
+    pub debt: Mapping<Address, U256>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -102,10 +123,12 @@ impl ReputationContractInterface for ReputationContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+    }
 
+    delegate! {
         to self.token {
-            fn total_supply(&self) -> U256;
             fn balance_of(&self, address: Address) -> U256;
+            fn total_supply(&self) -> U256;
         }
     }
 
@@ -116,17 +139,113 @@ impl ReputationContractInterface for ReputationContract {
 
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.mint(recipient, amount);
+        self.increase_balance(None, recipient, amount);
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.burn(owner, amount);
+        self.decrease_balance(owner, amount);
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.raw_transfer(owner, recipient, amount);
+        self.increase_balance(Some(owner), recipient, amount);
+    }
+
+    fn debt(&self, owner: Address) -> U256 {
+        match self.debt.get(&owner) {
+            None => U256::zero(),
+            Some(debt) => debt,
+        }
+    }
+}
+
+impl ReputationContract {
+    fn increase_balance(&mut self, source: Option<Address>, recipient: Address, amount: U256) {
+        let destination_debt = self.debt(recipient);
+        match source {
+            // mint
+            None => {
+                // there is a debt
+                if !destination_debt.is_zero() {
+                    // first lower the debt
+                    let leftover = self.decrease_debt(recipient, amount);
+                    // and mint the rest
+                    self.token.mint(recipient, leftover);
+                } else {
+                    self.token.mint(recipient, amount);
+                }
+            }
+            // transfer
+            Some(source) => {
+                if !destination_debt.is_zero() {
+                    // first lower the debt
+                    let leftover = self.decrease_debt(recipient, amount);
+                    // burn the tokens that decreased the debt
+                    self.token.burn(source, amount - leftover);
+                    // transfer the rest
+                    self.token.raw_transfer(source, recipient, leftover);
+                } else {
+                    self.token.raw_transfer(source, recipient, amount);
+                }
+            }
+        }
+    }
+
+    fn decrease_balance(&mut self, recipient: Address, amount: U256) {
+        let balance = self.token.balance_of(recipient);
+        match balance.checked_sub(amount) {
+            // we need to burn more than the owner has
+            None => {
+                self.token.burn(recipient, balance);
+                self.increase_debt(recipient, amount - balance);
+            }
+            // we simply burn
+            Some(_) => {
+                self.token.burn(recipient, amount);
+            }
+        }
+    }
+
+    fn increase_debt(&mut self, recipient: Address, amount: U256) {
+        let debt = self.debt(recipient);
+        self.debt.set(&recipient, debt + amount);
+        DebtIncreased {
+            owner: recipient,
+            amount,
+            debt: debt + amount,
+        }
+        .emit();
+    }
+
+    fn decrease_debt(&mut self, recipient: Address, amount: U256) -> U256 {
+        let debt = self.debt(recipient);
+        if debt.is_zero() {
+            amount
+        } else {
+            match debt.checked_sub(amount) {
+                None => {
+                    self.debt.set(&recipient, U256::zero());
+                    DebtPaid {
+                        owner: recipient,
+                        amount: debt,
+                        debt: U256::zero(),
+                    }
+                    .emit();
+                    amount - debt
+                }
+                Some(_) => {
+                    self.debt.set(&recipient, debt - amount);
+                    DebtPaid {
+                        owner: recipient,
+                        amount,
+                        debt: debt - amount,
+                    }
+                    .emit();
+                    U256::zero()
+                }
+            }
+        }
     }
 }
 
