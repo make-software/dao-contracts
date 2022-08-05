@@ -3,7 +3,6 @@ import { utils } from "casper-js-client-helper";
 import { createRecipientAddress } from "casper-js-client-helper/dist/helpers/lib";
 import {
   CLKey,
-  CLKeyParameters,
   CLU256,
   CLValue,
   CLValueBuilder,
@@ -11,6 +10,7 @@ import {
   EventStream,
   Keys,
 } from "casper-js-sdk";
+import { Deploy } from "casper-js-sdk/dist/lib/DeployUtil";
 import { Option, Result } from "ts-results";
 
 if (process.env.NODE_ENV !== "ci") {
@@ -104,10 +104,8 @@ const test = async () => {
   const contractHashWithHashPrefix = contractHash.replace("contract-", "hash-");
   console.log(` - Contract Hash: ${contractHashWithHashPrefix}`);
 
-  /** SCHEMA */
-
   // Initialize contract client
-  const reputationContract = new GenericContractJSClient(
+  const reputationContractClient = new GenericContractJSClient(
     NODE_ADDRESS,
     CHAIN_NAME,
     EVENT_STREAM_ADDRESS,
@@ -125,25 +123,32 @@ const test = async () => {
   console.log(" - Trying to create and send a mint deploy");
 
   const mintAmount = "200000000000";
-  const mintResult: Result<string, string> =
-    await reputationContract.callEntryPoint(
-      "mint",
-      ownerKeys,
-      DEPLOY_PAYMENT_AMOUNT,
-      createRecipientAddress(ownerKeys.publicKey),
-      CLValueBuilder.u256(mintAmount)
-    );
-  // console.log('mintDeployResult',JSON.stringify(mintResult, null, 2));
 
-  if (mintResult.ok) {
-    await waitForDeploy(NODE_ADDRESS, mintResult.val);
-    const total_supply_after_mint = (await reputationContract.getNamedKey(
+  const mintDeployResult = await reputationContractClient.createDeploy(
+    "mint",
+    ownerKeys.publicKey,
+    DEPLOY_PAYMENT_AMOUNT,
+    createRecipientAddress(ownerKeys.publicKey),
+    CLValueBuilder.u256(mintAmount)
+  );
+
+  if (mintDeployResult.ok) {
+    const deploy = mintDeployResult.val;
+
+    // 1) Signing with NodeJS
+    deploy.sign([ownerKeys]);
+
+    // 2) Signing with Signer Extension
+    // const deployJson = DeployUtil.deployToJson(deploy);
+    // Signer.sign(deployJson, senderPublicKey).then(signedDeployJson => /* send deploy */);
+
+    const deployHash = await deploy.send(NODE_ADDRESS);
+    await waitForDeploy(NODE_ADDRESS, deployHash);
+
+    const total_supply_after_mint = (await reputationContractClient.getNamedKey(
       "total_supply"
     )) as BigNumber; // should be CLU256 but sdk returns BigNumber, need to fix in casper-js-sdk
-    console.log(
-      ` - Requested Mint Amount: `,
-      mintAmount
-    );
+    console.log(` - Requested Mint Amount: `, mintAmount);
     console.log(
       ` - Total Supply After Mint: `,
       total_supply_after_mint.toString()
@@ -157,7 +162,7 @@ const test = async () => {
     );
     assert(totalSupplyEqMint);
   } else {
-    console.error(mintResult.val);
+    console.error(mintDeployResult.val);
     process.exit(1);
   }
 
@@ -166,24 +171,25 @@ const test = async () => {
   console.log(`\n`);
   console.log(" - Trying to create and send a add to whitelist deploy");
 
-  const isWhitelistedBefore = (await reputationContract.getNamedKey(
+  const isWhitelistedBefore = (await reputationContractClient.getNamedKey(
     "whitelist",
     recipientKeys.publicKey
   )) as Boolean;
   console.log(` - Whitelist Value Before Deploy: ${isWhitelistedBefore}`);
 
-  const whitelistResult: Result<string, string> =
-    await reputationContract.callEntryPoint(
-      "add_to_whitelist",
-      ownerKeys,
-      DEPLOY_PAYMENT_AMOUNT,
-      createRecipientAddress(recipientKeys.publicKey)
-    );
-  // console.log("whitelistResult", JSON.stringify(whitelistResult, null, 2));
+  const whitelistDeployResult = await reputationContractClient.createDeploy(
+    "add_to_whitelist",
+    ownerKeys.publicKey,
+    DEPLOY_PAYMENT_AMOUNT,
+    createRecipientAddress(recipientKeys.publicKey)
+  );
+  if (whitelistDeployResult.ok) {
+    const deploy = whitelistDeployResult.val;
+    deploy.sign([ownerKeys]);
+    const deployHash = await deploy.send(NODE_ADDRESS);
+    await waitForDeploy(NODE_ADDRESS, deployHash);
 
-  if (whitelistResult.ok) {
-    await waitForDeploy(NODE_ADDRESS, whitelistResult.val);
-    const isWhitelisted = await reputationContract.getNamedKey(
+    const isWhitelisted = await reputationContractClient.getNamedKey(
       "whitelist",
       recipientKeys.publicKey
     );
@@ -198,7 +204,7 @@ const test = async () => {
     );
     assert(recipientAddedToTheWhitelist);
   } else {
-    console.error(whitelistResult.val);
+    console.error(whitelistDeployResult.val);
     process.exit(1);
   }
 };

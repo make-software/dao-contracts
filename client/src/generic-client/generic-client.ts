@@ -10,11 +10,11 @@ import {
   CLU512,
   CLU64,
   CLU8,
-  CLValueBuilder,
   Contracts,
   Keys,
   RuntimeArgs,
 } from "casper-js-sdk";
+import { Deploy } from "casper-js-sdk/dist/lib/DeployUtil";
 import fs from "fs";
 import { Err, Ok, Result } from "ts-results";
 import YAML from "yaml";
@@ -110,7 +110,7 @@ export class GenericContractJSClient<
     // create entry_points deploy creator methods and attach to the class instance
     for (const key in entry_points) {
       const argsSchema = entry_points[key].arguments;
-      this[`${key}`] = this.createEntryPointMethod(argsSchema);
+      this[`${key}`] = this.createDeployCreator(argsSchema);
     }
 
     // create named_keys getters methods and attach to the class instance
@@ -120,16 +120,16 @@ export class GenericContractJSClient<
     }
   }
 
-  public callEntryPoint(
+  public createDeploy(
     name: string,
-    keys: Keys.AsymmetricKey = undefined,
+    senderPublicKey: CLPublicKey,
     paymentAmount: string,
     ...args
-  ): Promise<Result<any, string>> {
-    return this[name](name, keys, paymentAmount, ...args);
+  ): Result<Deploy, string> {
+    return this[name](name, senderPublicKey, paymentAmount, ...args);
   }
 
-  createEntryPointMethod(
+  private createDeployCreator(
     argsSchema: {
       name: string;
       cl_type: string;
@@ -137,7 +137,7 @@ export class GenericContractJSClient<
   ) {
     return async (
       name: string,
-      keys: Keys.AsymmetricKey = undefined,
+      senderPublicKey: CLPublicKey,
       paymentAmount: string,
       ...args
     ) => {
@@ -158,16 +158,15 @@ export class GenericContractJSClient<
       const deploy = this.contractClient.callEntrypoint(
         name,
         runtimeArgs,
-        keys.publicKey,
+        senderPublicKey,
         this.chainName,
         paymentAmount,
-        [keys]
+        []
       );
-      const deployHash = await deploy.send(this.nodeAddress);
 
-      return Ok(deployHash); // new is optional here
+      return Ok<Deploy>(deploy); // new is optional here
     };
-  }
+  } 
 
   public async getNamedKey(name: string, ...args: any[]): Promise<unknown> {
     return await this[name](...args);
