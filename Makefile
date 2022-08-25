@@ -1,6 +1,6 @@
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
 CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
-CARGO_TEST = cargo test --features=test-support --no-default-features
+CARGO_TEST = cargo test --features=test-support --no-default-features --release
 
 prepare:
 	rustup target add wasm32-unknown-unknown
@@ -64,3 +64,8 @@ clean:
 	
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
+
+test-rep: build-dao-contracts
+	mkdir -p dao-contracts/wasm
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	$(CARGO_TEST) -p casper-dao-contracts --test test_governance_voting

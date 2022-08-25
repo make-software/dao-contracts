@@ -81,8 +81,8 @@ impl VotingSummary {
 pub struct VotingConfiguration {
     pub formal_voting_quorum: U256,
     pub formal_voting_time: u64,
-    pub informal_voting_quorum: Option<U256>,
-    pub informal_voting_time: Option<u64>,
+    pub informal_voting_quorum: U256,
+    pub informal_voting_time: u64,
     pub cast_first_vote: bool,
     pub create_minimum_reputation: U256,
     pub cast_minimum_reputation: U256,
@@ -158,12 +158,11 @@ impl Voting {
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.get_voting_type() {
             VotingType::Informal => {
-                self.start_time
-                    + self
+                let start_time = self.start_time;
+                let voting_time = self
                         .voting_configuration
-                        .informal_voting_time
-                        .unwrap_or_default()
-                    <= block_time
+                        .informal_voting_time;
+                start_time + voting_time <= block_time
             }
             VotingType::Formal => {
                 self.start_time + self.voting_configuration.formal_voting_time <= block_time
@@ -187,8 +186,7 @@ impl Voting {
         match self.get_voting_type() {
             VotingType::Informal => self
                 .voting_configuration
-                .informal_voting_quorum
-                .unwrap_or_default(),
+                .informal_voting_quorum,
             VotingType::Formal => self.voting_configuration.formal_voting_quorum,
         }
     }
@@ -252,7 +250,7 @@ impl Voting {
     }
 
     /// Get the voting's informal voting quorum.
-    pub fn informal_voting_quorum(&self) -> Option<U256> {
+    pub fn informal_voting_quorum(&self) -> U256 {
         self.voting_configuration.informal_voting_quorum
     }
 
@@ -262,7 +260,7 @@ impl Voting {
     }
 
     /// Get the voting's informal voting time.
-    pub fn informal_voting_time(&self) -> Option<u64> {
+    pub fn informal_voting_time(&self) -> u64 {
         self.voting_configuration.informal_voting_time
     }
 
@@ -297,8 +295,8 @@ fn test_voting_serialization() {
         voting_configuration: VotingConfiguration {
             formal_voting_quorum: U256::from(2),
             formal_voting_time: 2,
-            informal_voting_quorum: Some(U256::from(2)),
-            informal_voting_time: Some(2),
+            informal_voting_quorum: U256::from(2),
+            informal_voting_time: 2,
             create_minimum_reputation: U256::from(2),
             contract_call: None,
             cast_first_vote: true,

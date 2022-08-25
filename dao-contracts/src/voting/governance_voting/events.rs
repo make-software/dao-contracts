@@ -1,9 +1,14 @@
+use std::collections::BTreeMap;
+use std::ops::Add;
+
 use crate::voting::Ballot;
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
 use crate::voting::ballot::Choice;
 use crate::voting::types::VotingId;
+
+use super::voting::VotingConfiguration;
 
 /// Event thrown after voting contract is created
 #[derive(Debug, PartialEq, Event)]
@@ -23,7 +28,7 @@ pub struct BallotCast {
 }
 
 impl BallotCast {
-    pub fn new(ballot: &Ballot) -> BallotCast {
+    pub fn new(ballot: &Ballot) -> Self {
         BallotCast {
             voter: ballot.voter,
             voting_id: ballot.voting_id,
@@ -38,17 +43,51 @@ impl BallotCast {
 pub struct VotingCreated {
     pub creator: Address,
     pub voting_id: VotingId,
+    pub informal_voting_id: VotingId,
+    pub formal_voting_id: Option<VotingId>,
     pub stake: U256,
+    pub config_formal_voting_quorum: U256,
+    pub config_formal_voting_time: u64,
+    pub config_informal_voting_quorum: U256,
+    pub config_informal_voting_time: u64,
+    pub config_create_minimum_reputation: U256,
+}
+
+impl VotingCreated {
+    pub fn new(
+        creator: &Address,
+        voting_id: VotingId, 
+        informal_voting_id: VotingId, 
+        formal_voting_id: Option<VotingId>, 
+        stake: U256,
+        config: &VotingConfiguration) -> Self {
+        VotingCreated { 
+            creator: creator.clone(), 
+            voting_id: voting_id.clone(),
+            informal_voting_id,
+            formal_voting_id,
+            stake: stake,
+            config_formal_voting_quorum: config.formal_voting_quorum,
+            config_formal_voting_time: config.formal_voting_time,
+            config_informal_voting_quorum: config.informal_voting_quorum,
+            config_informal_voting_time: config.informal_voting_time,
+            config_create_minimum_reputation: config.create_minimum_reputation,
+        }
+    }
 }
 
 /// Event thrown when voting ends
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingEnded {
     pub voting_id: U256,
+    pub informal_voting_id: VotingId,
+    pub formal_voting_id: Option<VotingId>,
     pub result: String,
     pub votes_count: U256,
     pub stake_in_favor: U256,
     pub stake_against: U256,
-    pub informal_voting_id: VotingId,
-    pub formal_voting_id: Option<VotingId>,
+    // pub transfers: BTreeMap<Address, U256>,
+    // pub burns: BTreeMap<Address, U256>,
+    // pub mints: BTreeMap<Address, U256>,
 }
+

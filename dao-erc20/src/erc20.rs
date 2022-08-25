@@ -1,10 +1,10 @@
 use self::events::{Approval, Transfer};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{self, emit},
+    casper_env,
     Address, Error, Mapping, Variable,
 };
-use casper_types::U256;
+use casper_types::{U256, bytesrepr::ToBytes};
 
 #[casper_contract_interface]
 pub trait ERC20Interface {
@@ -147,6 +147,12 @@ impl ERC20 {
             value: amount,
         });
     }
+}
+
+// Emits event unless `skip-events` feature is on.
+fn emit<T: ToBytes>(_event: T) {
+    #[cfg(not(feature = "skip-events"))]
+    casper_env::emit(_event);
 }
 
 pub mod events {

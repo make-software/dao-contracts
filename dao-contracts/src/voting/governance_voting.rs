@@ -7,7 +7,7 @@ use casper_dao_utils::conversions::{u256_to_512, u512_to_u256};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{emit, get_block_time, revert, self_address},
+    casper_env::{get_block_time, revert, self_address},
     Address, Error, Mapping, Variable,
 };
 
@@ -94,19 +94,21 @@ impl GovernanceVoting {
         if stake < voting_configuration.create_minimum_reputation {
             revert(Error::NotEnoughReputation)
         }
+        let voting_id = self.next_voting_id();
+
+        VotingCreated::new(
+            &creator,
+            voting_id,
+            voting_id,
+            None,
+            stake,
+            &voting_configuration
+        )
+        .emit();
 
         let cast_first_vote = voting_configuration.cast_first_vote;
-        let voting_id = self.next_voting_id();
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
-
         self.set_voting(voting);
-
-        VotingCreated {
-            creator,
-            voting_id,
-            stake,
-        }
-        .emit();
 
         // Cast first vote in favor
         if cast_first_vote {
@@ -160,24 +162,29 @@ impl GovernanceVoting {
         let voting_result = voting.get_result(voters_len);
         let result = match voting_result {
             VotingResult::InFavor => {
-                self.return_reputation(voting.voting_id());
+                let informal_voting_id = voting.voting_id();
+                self.return_reputation(informal_voting_id);
 
                 let formal_voting_id = self.next_voting_id();
-                let creator_address = self.voters.get(voting.voting_id(), 0).unwrap_or_revert();
+                let creator_address = self.voters.get(informal_voting_id, 0).unwrap_or_revert();
                 let creator_stake = self
                     .ballots
-                    .get(&(voting.voting_id(), creator_address))
+                    .get(&(informal_voting_id, creator_address))
                     .unwrap_or_revert_with(Error::BallotDoesNotExist)
                     .stake;
 
                 // Formal voting is created and first vote cast
                 self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
 
-                emit(VotingCreated {
-                    creator: creator_address,
-                    voting_id: formal_voting_id,
-                    stake: creator_stake,
-                });
+                VotingCreated::new(
+                    &creator_address,
+                    formal_voting_id,
+                    informal_voting_id,
+                    Some(formal_voting_id),
+                    creator_stake,
+                    voting.voting_configuration()
+                ).emit();
+
                 if voting.voting_configuration().cast_first_vote {
                     self.vote(
                         creator_address,

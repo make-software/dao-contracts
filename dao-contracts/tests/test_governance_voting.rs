@@ -92,7 +92,14 @@ speculate! {
                 mock_voter_contract.assert_event_at(-2, VotingCreated {
                     creator,
                     voting_id: VotingId::zero(),
+                    informal_voting_id: VotingId::zero(),
+                    formal_voting_id: None,
                     stake: minimum_reputation,
+                    config_formal_voting_quorum: U256::from(3),
+                    config_formal_voting_time: formal_voting_time,
+                    config_informal_voting_quorum: U256::from(2),
+                    config_informal_voting_time: informal_voting_time,
+                    config_create_minimum_reputation: minimum_reputation,
                 });
             }
 
@@ -103,9 +110,9 @@ speculate! {
 
                 assert_eq!(informal_voting.voting_id(), VotingId::zero());
                 assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
-                assert_eq!(informal_voting.informal_voting_time().unwrap(), informal_voting_time);
+                assert_eq!(informal_voting.informal_voting_time(), informal_voting_time);
                 assert_eq!(informal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), formal_quorum).unwrap());
-                assert_eq!(informal_voting.informal_voting_quorum().unwrap(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
+                assert_eq!(informal_voting.informal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
                 assert_eq!(voting_created_event.voting_id, informal_voting.voting_id());
                 assert_eq!(voting_created_event.creator, creator);
                 assert_eq!(voting_created_event.stake, minimum_reputation);
@@ -241,10 +248,29 @@ speculate! {
             }
 
             it "emits proper event" {
+                mock_voter_contract.assert_event_at(-8, VotingCreated {
+                    creator,
+                    voting_id: VotingId::zero(),
+                    informal_voting_id: VotingId::zero(),
+                    formal_voting_id: None,
+                    stake: minimum_reputation,
+                    config_formal_voting_quorum: U256::from(3),
+                    config_formal_voting_time: formal_voting_time,
+                    config_informal_voting_quorum: U256::from(2),
+                    config_informal_voting_time: informal_voting_time,
+                    config_create_minimum_reputation: minimum_reputation,
+                });
                 mock_voter_contract.assert_event_at(-3, VotingCreated {
                     creator,
                     voting_id: VotingId::one(),
+                    informal_voting_id: VotingId::zero(),
+                    formal_voting_id: Some(VotingId::one()),
                     stake: minimum_reputation,
+                    config_formal_voting_quorum: U256::from(3),
+                    config_formal_voting_time: formal_voting_time,
+                    config_informal_voting_quorum: U256::from(2),
+                    config_informal_voting_time: informal_voting_time,
+                    config_create_minimum_reputation: minimum_reputation,
                 });
             }
 
