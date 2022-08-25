@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::ops::Add;
 
 use crate::voting::Ballot;
 use casper_dao_utils::{casper_dao_macros::Event, Address};
@@ -45,7 +44,6 @@ pub struct VotingCreated {
     pub voting_id: VotingId,
     pub informal_voting_id: VotingId,
     pub formal_voting_id: Option<VotingId>,
-    pub stake: U256,
     pub config_formal_voting_quorum: U256,
     pub config_formal_voting_time: u64,
     pub config_informal_voting_quorum: U256,
@@ -56,17 +54,16 @@ pub struct VotingCreated {
 impl VotingCreated {
     pub fn new(
         creator: &Address,
-        voting_id: VotingId, 
-        informal_voting_id: VotingId, 
-        formal_voting_id: Option<VotingId>, 
-        stake: U256,
-        config: &VotingConfiguration) -> Self {
-        VotingCreated { 
-            creator: creator.clone(), 
-            voting_id: voting_id.clone(),
+        voting_id: VotingId,
+        informal_voting_id: VotingId,
+        formal_voting_id: Option<VotingId>,
+        config: &VotingConfiguration,
+    ) -> Self {
+        VotingCreated {
+            creator: *creator,
+            voting_id,
             informal_voting_id,
             formal_voting_id,
-            stake: stake,
             config_formal_voting_quorum: config.formal_voting_quorum,
             config_formal_voting_time: config.formal_voting_time,
             config_informal_voting_quorum: config.informal_voting_quorum,
@@ -86,8 +83,7 @@ pub struct VotingEnded {
     pub votes_count: U256,
     pub stake_in_favor: U256,
     pub stake_against: U256,
-    // pub transfers: BTreeMap<Address, U256>,
-    // pub burns: BTreeMap<Address, U256>,
-    // pub mints: BTreeMap<Address, U256>,
+    pub transfers: BTreeMap<Address, U256>,
+    pub burns: BTreeMap<Address, U256>,
+    pub mints: BTreeMap<Address, U256>,
 }
-

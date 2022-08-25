@@ -119,7 +119,7 @@ impl ReputationContractInterface for ReputationContract {
         self.token.mint(recipient, amount);
         emit(Mint {
             address: recipient,
-            amount
+            amount,
         });
     }
 
@@ -128,7 +128,7 @@ impl ReputationContractInterface for ReputationContract {
         self.token.burn(owner, amount);
         emit(Burn {
             address: owner,
-            amount
+            amount,
         });
     }
 

@@ -159,9 +159,7 @@ impl Voting {
         match self.get_voting_type() {
             VotingType::Informal => {
                 let start_time = self.start_time;
-                let voting_time = self
-                        .voting_configuration
-                        .informal_voting_time;
+                let voting_time = self.voting_configuration.informal_voting_time;
                 start_time + voting_time <= block_time
             }
             VotingType::Formal => {
@@ -184,9 +182,7 @@ impl Voting {
 
     pub fn get_quorum(&self) -> U256 {
         match self.get_voting_type() {
-            VotingType::Informal => self
-                .voting_configuration
-                .informal_voting_quorum,
+            VotingType::Informal => self.voting_configuration.informal_voting_quorum,
             VotingType::Formal => self.voting_configuration.formal_voting_quorum,
         }
     }

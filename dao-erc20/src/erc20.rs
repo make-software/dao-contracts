@@ -1,10 +1,9 @@
 use self::events::{Approval, Transfer};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env,
-    Address, Error, Mapping, Variable,
+    casper_env, Address, Error, Mapping, Variable,
 };
-use casper_types::{U256, bytesrepr::ToBytes};
+use casper_types::{bytesrepr::ToBytes, U256};
 
 #[casper_contract_interface]
 pub trait ERC20Interface {

@@ -1,4 +1,7 @@
-use casper_dao_contracts::{reputation::events::{Burn, Mint}, ReputationContractTest};
+use casper_dao_contracts::{
+    reputation::events::{Burn, Mint},
+    ReputationContractTest,
+};
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
@@ -40,7 +43,7 @@ fn test_mint_as_owner() {
         2,
         Mint {
             address: recipient,
-            amount: total_supply
+            amount: total_supply,
         },
     );
 }
