@@ -1,6 +1,6 @@
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
 CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
-CARGO_TEST = cargo test --features=test-support --no-default-features
+CARGO_TEST = cargo test --features=test-support --no-default-features --release
 
 prepare:
 	rustup target add wasm32-unknown-unknown
@@ -9,7 +9,7 @@ prepare:
 build-proxy-getter:
 	$(CARGO_BUILD) -p casper-dao-utils --bin getter_proxy
 	@wasm-strip $(OUTPUT_DIR)/getter_proxy.wasm 2>/dev/null | true
-	
+
 build-dao-contracts:
 	$(CARGO_BUILD) -p casper-dao-contracts
 	@wasm-strip $(OUTPUT_DIR)/reputation_contract.wasm 2>/dev/null | true

@@ -24,3 +24,4 @@ harness = true
 default = [ "test-support" ]
 test-support = [ "casper-dao-utils/test-support" ]
 wasm = [ "casper-dao-utils/wasm" ]
+skip-events = [ ]
