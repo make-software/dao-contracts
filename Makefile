@@ -9,7 +9,7 @@ prepare:
 build-proxy-getter:
 	$(CARGO_BUILD) -p casper-dao-utils --bin getter_proxy
 	@wasm-strip $(OUTPUT_DIR)/getter_proxy.wasm 2>/dev/null | true
-	
+
 build-dao-contracts:
 	$(CARGO_BUILD) -p casper-dao-contracts
 	@wasm-strip $(OUTPUT_DIR)/reputation_contract.wasm 2>/dev/null | true
@@ -64,8 +64,3 @@ clean:
 	
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
-
-test-rep: build-dao-contracts
-	mkdir -p dao-contracts/wasm
-	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
-	$(CARGO_TEST) -p casper-dao-contracts --test test_governance_voting
