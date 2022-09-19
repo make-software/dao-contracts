@@ -40,7 +40,7 @@ speculate! {
                         .unwrap();
 
                     simple_voter_contract
-                        .advance_block_time_by(voting.informal_voting_time().unwrap() + 1);
+                        .advance_block_time_by(voting.informal_voting_time() + 1);
 
                     simple_voter_contract
                         .as_nth_account(2)
@@ -68,7 +68,7 @@ speculate! {
                         .unwrap();
 
                     simple_voter_contract
-                        .advance_block_time_by(voting.informal_voting_time().unwrap() + 1);
+                        .advance_block_time_by(voting.informal_voting_time() + 1);
 
                     simple_voter_contract
                         .as_nth_account(2)
