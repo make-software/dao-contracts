@@ -2,11 +2,13 @@ use casper_dao_erc20::{ERC20Interface, ERC20};
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::caller,
+    casper_env::{caller, emit},
     Address,
 };
 use casper_types::U256;
 use delegate::delegate;
+
+use self::events::{Burn, Mint};
 
 // Interface of the Reputation Contract.
 //
@@ -32,7 +34,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Mint`](casper_dao_modules::events::Mint) event.
+    /// It emits [`Mint`](casper_dao_contracts::reputation::events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U256);
 
     /// Burn existing tokens. Remove `amount` of existing tokens from the balance of the `owner`
@@ -42,7 +44,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Burn`](casper_dao_modules::events::Burn) event.
+    /// It emits [`Burn`](casper_dao_contracts::reputation::events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U256);
 
     /// Transfer `amount` of tokens from `owner` to `recipient`. Only whitelisted addresses are
@@ -53,8 +55,6 @@ pub trait ReputationContractInterface {
     ///
     /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
     /// if `recipient`'s balance is less then `amount`.
-    ///
-    /// It emits [`Transfer`](casper_dao_modules::events::Transfer) event.
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
 
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
@@ -117,11 +117,19 @@ impl ReputationContractInterface for ReputationContract {
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.mint(recipient, amount);
+        emit(Mint {
+            address: recipient,
+            amount,
+        });
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.burn(owner, amount);
+        emit(Burn {
+            address: owner,
+            amount,
+        });
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
@@ -134,5 +142,22 @@ impl ReputationContractCaller {
     /// Indicates whether balance of the `address` is greater than 0.
     pub fn has_reputation(&self, address: &Address) -> bool {
         !self.balance_of(*address).is_zero()
+    }
+}
+
+pub mod events {
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
+    use casper_types::U256;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Burn {
+        pub address: Address,
+        pub amount: U256,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Mint {
+        pub address: Address,
+        pub amount: U256,
     }
 }

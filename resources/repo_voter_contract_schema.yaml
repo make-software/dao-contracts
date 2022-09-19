@@ -58,12 +58,28 @@ events:
         cl_type: Address
       - name: voting_id
         cl_type: U256
-      - name: stake
+      - name: informal_voting_id
+        cl_type: U256
+      - name: formal_voting_id
+        cl_type: Option<U256>
+      - name: config_formal_voting_quorum
+        cl_type: U256
+      - name: config_formal_voting_time
+        cl_type: U64
+      - name: config_informal_voting_quorum
+        cl_type: U256
+      - name: config_informal_voting_time
+        cl_type: U64
+      - name: config_create_minimum_reputation
         cl_type: U256
   - name: VotingEnded
     fields:
       - name: voting_id
         cl_type: U256
+      - name: informal_voting_id
+        cl_type: U256
+      - name: formal_voting_id
+        cl_type: Option<U256>
       - name: result
         cl_type: String
       - name: votes_count
@@ -72,8 +88,10 @@ events:
         cl_type: U256
       - name: stake_against
         cl_type: U256
-      - name: informal_voting_id
-        cl_type: U256
-      - name: formal_voting_id
-        cl_type: Option<U256>
+      - name: transfers
+        cl_type: "Map<Address, U256>"
+      - name: burns
+        cl_type: "Map<Address, U256>"
+      - name: mints
+        cl_type: "Map<Address, U256>"
 named_keys: []

@@ -36,22 +36,18 @@ entry_points:
       - name: address
         cl_type: Address
 events:
-  - name: Transfer
+  - name: Mint
     fields:
-      - name: from
-        cl_type: Option<Address>
-      - name: to
-        cl_type: Option<Address>
-      - name: value
+      - name: address
+        cl_type: Address
+      - name: amount
         cl_type: U256
-  - name: ApprovalForAll
+  - name: Burn
     fields:
-      - name: owner
+      - name: address
         cl_type: Address
-      - name: operator
-        cl_type: Address
-      - name: approved
-        cl_type: Bool
+      - name: amount
+        cl_type: U256
   - name: OwnerChanged
     fields:
       - name: new_owner

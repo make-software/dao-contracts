@@ -10,7 +10,7 @@ mod kyc_voter;
 pub mod mocks;
 mod onboarding_voter;
 mod repo_voter;
-mod reputation;
+pub mod reputation;
 pub mod simple_voter;
 /// Variable Repo
 mod variable_repository;

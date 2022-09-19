@@ -34,7 +34,7 @@ fn test_informal_voting_result(
         &voting,
     );
     voting_contract
-        .advance_block_time_by(voting.informal_voting_time().unwrap() + 1)
+        .advance_block_time_by(voting.informal_voting_time() + 1)
         .finish_voting(voting.voting_id())
         .unwrap();
 

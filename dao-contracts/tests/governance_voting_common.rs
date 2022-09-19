@@ -80,7 +80,7 @@ pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
         .as_nth_account(1)
         .vote(voting_id, Choice::InFavor, minimum_reputation)
         .unwrap();
-    admin_contract.advance_block_time_by(voting.informal_voting_time().unwrap() + 1);
+    admin_contract.advance_block_time_by(voting.informal_voting_time() + 1);
     admin_contract.finish_voting(voting_id).unwrap();
 
     (admin_contract, reputation_token_contract)
@@ -132,7 +132,7 @@ pub fn setup_repo_voter(
         .as_nth_account(1)
         .vote(voting_id, Choice::InFavor, minimum_reputation)
         .unwrap();
-    repo_voter_contract.advance_block_time_by(voting.informal_voting_time().unwrap() + 1);
+    repo_voter_contract.advance_block_time_by(voting.informal_voting_time() + 1);
     repo_voter_contract.finish_voting(voting_id).unwrap();
 
     (repo_voter_contract, variable_repo_contract)
@@ -238,7 +238,7 @@ pub fn setup_voting_contract_with_formal_voting(
     }
 
     mock_voter_contract
-        .advance_block_time_by(voting.informal_voting_time().unwrap() + 1)
+        .advance_block_time_by(voting.informal_voting_time() + 1)
         .finish_voting(voting.voting_id())
         .unwrap();
 
