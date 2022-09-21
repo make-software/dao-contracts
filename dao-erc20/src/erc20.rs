@@ -1,11 +1,9 @@
+use self::events::{Approval, Transfer};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{self, emit},
-    Address, Error, Mapping, Variable,
+    casper_env, Address, Error, Mapping, Variable,
 };
-use casper_types::U256;
-
-use self::events::{Approval, Transfer};
+use casper_types::{bytesrepr::ToBytes, U256};
 
 #[casper_contract_interface]
 pub trait ERC20Interface {
@@ -37,14 +35,7 @@ impl ERC20Interface for ERC20 {
         self.name.set(name);
         self.symbol.set(symbol);
         self.decimals.set(decimals);
-        self.total_supply.set(initial_supply);
-        self.balances.set(&sender, initial_supply);
-
-        emit(Transfer {
-            from: None,
-            to: Some(sender),
-            value: initial_supply,
-        });
+        self.mint(sender, initial_supply);
     }
 
     fn name(&self) -> String {
@@ -124,6 +115,43 @@ impl ERC20 {
             value: allowance - amount,
         });
     }
+
+    pub fn mint(&mut self, address: Address, amount: U256) {
+        let (new_supply, is_overflowed) = self.total_supply().overflowing_add(amount);
+        if is_overflowed {
+            casper_env::revert(Error::TotalSupplyOverflow);
+        }
+        self.total_supply.set(new_supply);
+        self.balances
+            .set(&address, self.balance_of(address) + amount);
+
+        emit(Transfer {
+            from: None,
+            to: Some(address),
+            value: amount,
+        });
+    }
+
+    pub fn burn(&mut self, address: Address, amount: U256) {
+        let balance = self.balance_of(address);
+        if balance < amount {
+            casper_env::revert(Error::InsufficientBalance);
+        }
+        self.balances.set(&address, balance - amount);
+        self.total_supply.set(self.total_supply() - amount);
+
+        emit(Transfer {
+            from: Some(address),
+            to: None,
+            value: amount,
+        });
+    }
+}
+
+// Emits event unless `skip-events` feature is on.
+fn emit<T: ToBytes>(_event: T) {
+    #[cfg(not(feature = "skip-events"))]
+    casper_env::emit(_event);
 }
 
 pub mod events {

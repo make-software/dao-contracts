@@ -1,3 +1,4 @@
+mod governance_voting_common;
 use casper_dao_contracts::{
     DaoOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
@@ -164,11 +165,12 @@ fn setup() -> (
     );
     let mut reputation_token = ReputationContractTest::new(&env);
     let mut variable_repo = VariableRepositoryContractTest::new(&env);
-
+    let va_token = governance_voting_common::setup_va_token(&env, 2);
     let onboarding_voter = KycVoterContractTest::new(
         &env,
         variable_repo.address(),
         reputation_token.address(),
+        va_token.address(),
         kyc_token.address(),
     );
 
@@ -184,11 +186,11 @@ fn setup() -> (
     kyc_token
         .change_ownership(onboarding_voter.address())
         .unwrap();
-    let applicant = env.get_account(1);
-    let another_applicant = env.get_account(2);
-    let voter = env.get_account(3);
-    let second_voter = env.get_account(4);
-    // The voter has to have some tokens
+    let applicant = env.get_account(3);
+    let another_applicant = env.get_account(4);
+    let voter = env.get_account(1);
+    let second_voter = env.get_account(2);
+    // The voter has to have some tokens, they are already va'd
     let mint_amount = 10_000.into();
     let vote_amount = 1_000.into();
     reputation_token.mint(voter, mint_amount).unwrap();

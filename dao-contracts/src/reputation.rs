@@ -1,11 +1,14 @@
-use casper_dao_modules::{AccessControl, TokenWithStaking};
+use casper_dao_erc20::{ERC20Interface, ERC20};
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::caller,
-    Address, Variable,
+    casper_env::{caller, emit},
+    Address,
 };
 use casper_types::U256;
 use delegate::delegate;
+
+use self::events::{Burn, Mint};
 
 // Interface of the Reputation Contract.
 //
@@ -31,7 +34,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Mint`](casper_dao_modules::events::Mint) event.
+    /// It emits [`Mint`](casper_dao_contracts::reputation::events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U256);
 
     /// Burn existing tokens. Remove `amount` of existing tokens from the balance of the `owner`
@@ -41,7 +44,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Burn`](casper_dao_modules::events::Burn) event.
+    /// It emits [`Burn`](casper_dao_contracts::reputation::events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U256);
 
     /// Transfer `amount` of tokens from `owner` to `recipient`. Only whitelisted addresses are
@@ -52,8 +55,6 @@ pub trait ReputationContractInterface {
     ///
     /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
     /// if `recipient`'s balance is less then `amount`.
-    ///
-    /// It emits [`Transfer`](casper_dao_modules::events::Transfer) event.
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
 
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
@@ -72,31 +73,6 @@ pub trait ReputationContractInterface {
     /// See [AccessControl](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
 
-    /// Stake `amount` of tokens for the `address`. It decrements `address`'s balance by `amount`.
-    ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
-    /// if `address`'s balance is less then `amount`.
-    ///
-    /// It emits [`TokensStaked`](casper_dao_modules::events::TokensStaked)
-    /// event.
-    fn stake(&mut self, address: Address, amount: U256);
-
-    /// Unstake `amount` of tokens for the `address`. It increments `address`'s balance by
-    /// `amount`.
-    ///
-    /// It throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    ///
-    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
-    /// if `address`'s staked amount is less then `amount`.
-    ///
-    /// It emits [`TokensUnstaked`](casper_dao_modules::events::TokensUnstaked)
-    /// event.
-    fn unstake(&mut self, address: Address, amount: U256);
-
     /// Returns the address of the current owner.
     fn get_owner(&self) -> Option<Address>;
 
@@ -108,21 +84,13 @@ pub trait ReputationContractInterface {
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
-
-    /// Returns the amount of staked tokens of the given address.
-    fn get_staked_balance_of(&self, address: Address) -> U256;
-
-    fn total_onboarded(&self) -> U256;
-
-    fn set_total_onboarded(&mut self, total: U256);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
 #[derive(Instance)]
 pub struct ReputationContract {
-    pub token: TokenWithStaking,
+    pub token: ERC20,
     pub access_control: AccessControl,
-    pub total_onboarded: Variable<U256>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -134,6 +102,11 @@ impl ReputationContractInterface for ReputationContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.token {
+            fn total_supply(&self) -> U256;
+            fn balance_of(&self, address: Address) -> U256;
+        }
     }
 
     fn init(&mut self) {
@@ -144,46 +117,24 @@ impl ReputationContractInterface for ReputationContract {
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.mint(recipient, amount);
+        emit(Mint {
+            address: recipient,
+            amount,
+        });
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.burn(owner, amount);
+        emit(Burn {
+            address: owner,
+            amount,
+        });
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
         self.token.raw_transfer(owner, recipient, amount);
-    }
-
-    fn stake(&mut self, address: Address, amount: U256) {
-        self.access_control.ensure_whitelisted();
-        self.token.stake(address, amount);
-    }
-
-    fn unstake(&mut self, address: Address, amount: U256) {
-        self.access_control.ensure_whitelisted();
-        self.token.unstake(address, amount);
-    }
-
-    fn total_supply(&self) -> U256 {
-        self.token.total_supply()
-    }
-
-    fn balance_of(&self, address: Address) -> U256 {
-        self.token.balance_of(&address)
-    }
-
-    fn get_staked_balance_of(&self, address: Address) -> U256 {
-        self.token.get_stake_of(&address)
-    }
-
-    fn total_onboarded(&self) -> U256 {
-        self.total_onboarded.get().unwrap_or_default()
-    }
-
-    fn set_total_onboarded(&mut self, total: U256) {
-        self.total_onboarded.set(total);
     }
 }
 
@@ -191,5 +142,22 @@ impl ReputationContractCaller {
     /// Indicates whether balance of the `address` is greater than 0.
     pub fn has_reputation(&self, address: &Address) -> bool {
         !self.balance_of(*address).is_zero()
+    }
+}
+
+pub mod events {
+    use casper_dao_utils::{casper_dao_macros::Event, Address};
+    use casper_types::U256;
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Burn {
+        pub address: Address,
+        pub amount: U256,
+    }
+
+    #[derive(Debug, PartialEq, Event)]
+    pub struct Mint {
+        pub address: Address,
+        pub amount: U256,
     }
 }

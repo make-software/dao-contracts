@@ -2,7 +2,8 @@ mod governance_voting_common;
 
 use speculate::speculate;
 
-use casper_dao_contracts::voting::{Choice, VotingId};
+use casper_dao_contracts::voting::types::VotingId;
+use casper_dao_contracts::voting::Choice;
 use casper_dao_utils::{Error, TestContract};
 use casper_types::U256;
 
@@ -51,7 +52,7 @@ speculate! {
                 admin_contract.finish_voting(voting.voting_id()).unwrap();
             }
 
-            test "address cann perform action" {
+            test "address can perform action" {
                 reputation_token_contract.as_nth_account(1).mint(admin_contract.get_env().get_account(1), U256::from(500)).unwrap();
                 assert_eq!(
                     reputation_token_contract.balance_of(admin_contract.get_env().get_account(1)),

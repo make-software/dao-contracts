@@ -2,12 +2,15 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, Error,
+    consts, Address, ContractCall, Error,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
-use crate::voting::{
-    kyc_info::KycInfo, voting::Voting, Ballot, Choice, GovernanceVoting, VotingId,
+use crate::{
+    voting::{
+        kyc_info::KycInfo, types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting,
+    },
+    VotingConfigurationBuilder,
 };
 use delegate::delegate;
 
@@ -18,7 +21,13 @@ pub trait KycVoterContractInterface {
     /// Initializes modules.
     ///
     /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address);
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        va_token: Address,
+        kyc_token: Address,
+    );
     /// Creates new kyc voting. Once the voting passes a kyc token is minted to the `subject_address`.
     ///
     /// # Prerequisites
@@ -64,9 +73,15 @@ pub struct KycVoterContract {
 }
 
 impl KycVoterContractInterface for KycVoterContract {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, kyc_token: Address) {
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        va_token: Address,
+        kyc_token: Address,
+    ) {
         self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     delegate! {
@@ -89,15 +104,20 @@ impl KycVoterContractInterface for KycVoterContract {
         self.assert_not_kyced(&subject_address);
 
         let creator = caller();
-        let contract_to_call = self.get_kyc_token_address();
-        let runtime_args = runtime_args! {
-            consts::ARG_TO => subject_address,
-            consts::ARG_TOKEN_ID => document_hash,
-        };
-        let entry_point = consts::EP_MINT.to_string();
+
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .contract_call(ContractCall {
+                address: self.get_kyc_token_address(),
+                entry_point: consts::EP_MINT.to_string(),
+                runtime_args: runtime_args! {
+                    consts::ARG_TO => subject_address,
+                    consts::ARG_TOKEN_ID => document_hash,
+                },
+            })
+            .build();
 
         self.voting
-            .create_voting(creator, stake, contract_to_call, entry_point, runtime_args);
+            .create_voting(creator, stake, voting_configuration);
 
         self.kyc.set_voting(&subject_address);
     }
@@ -126,8 +146,12 @@ impl KycVoterContractInterface for KycVoterContract {
 // non-contract implementation
 impl KycVoterContract {
     fn extract_address_from_args(&self, voting: &Voting) -> Address {
-        let arg = voting
-            .runtime_args()
+        let runtime_args = voting
+            .contract_call()
+            .clone()
+            .unwrap_or_revert()
+            .runtime_args();
+        let arg = runtime_args
             .named_args()
             .find(|arg| arg.name() == consts::ARG_TO)
             .unwrap_or_revert_with(Error::UnexpectedOnboardingError);

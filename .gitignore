@@ -1,3 +1,5 @@
+.idea
+.vscode
 /target
 dao-contracts/wasm
 dao-erc20/wasm

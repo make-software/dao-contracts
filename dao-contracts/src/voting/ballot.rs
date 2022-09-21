@@ -1,23 +1,15 @@
+use crate::voting::types::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
 };
 use casper_types::U256;
 
-/// Id of a Voting
-pub type VotingId = U256;
-
 /// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]
 pub enum Choice {
     Against,
     InFavor,
-}
-
-impl Default for Choice {
-    fn default() -> Self {
-        Self::InFavor
-    }
 }
 
 impl Choice {
@@ -30,14 +22,15 @@ impl Choice {
 }
 
 /// Ballot struct
-#[derive(Debug, Default, FromBytes, ToBytes, CLTyped)]
+#[derive(Debug, FromBytes, ToBytes, CLTyped)]
 pub struct Ballot {
-    pub voter: Option<Address>,
+    pub voter: Address,
     pub voting_id: VotingId,
     pub choice: Choice,
     pub stake: U256,
 }
 
+#[cfg(test)]
 #[test]
 fn test_vote_serialization() {
     use casper_types::account::AccountHash;
@@ -46,7 +39,7 @@ fn test_vote_serialization() {
     let address = Address::Account(AccountHash::default());
 
     let vote = Ballot {
-        voter: Some(address),
+        voter: address,
         voting_id: U256::from(123),
         choice: Choice::InFavor,
         stake: U256::from(456),

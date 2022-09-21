@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
@@ -8,13 +9,12 @@ use crate::{Address, Error};
 use casper_engine_test_support::{
     DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
-    DEFAULT_PAYMENT,
 };
 use casper_execution_engine::core::engine_state::{
     self, run_genesis_request::RunGenesisRequest, GenesisAccount,
 };
 use casper_types::{
-    account::AccountHash,
+    account::{Account, AccountHash},
     bytesrepr::{self, Bytes, FromBytes, ToBytes},
     runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
     SecretKey, URef, U512,
@@ -25,6 +25,7 @@ use blake2::{
     VarBlake2b,
 };
 
+use casper_engine_test_support::DEFAULT_PAYMENT;
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
 
 /// CasperVM based testing environment.
@@ -101,6 +102,10 @@ impl TestEnv {
     pub fn get_block_time(&self) -> u64 {
         self.state.lock().unwrap().block_time
     }
+
+    pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
+        self.state.lock().unwrap().get_account_cspr_balance(account)
+    }
 }
 
 impl Default for TestEnv {
@@ -115,6 +120,7 @@ pub struct TestEnvState {
     context: InMemoryWasmTestBuilder,
     block_time: u64,
     calls_counter: u32,
+    gas_used: HashMap<Address, U512>,
 }
 
 impl TestEnvState {
@@ -155,6 +161,7 @@ impl TestEnvState {
             accounts,
             block_time: 0,
             calls_counter: 0,
+            gas_used: HashMap::new(),
         }
     }
 
@@ -172,6 +179,8 @@ impl TestEnvState {
             .with_block_time(self.block_time)
             .build();
         self.context.exec(execute_request).commit().expect_success();
+        self.collect_gas();
+        self.active_account = self.get_account(0);
     }
 
     pub fn call<T: FromBytes>(
@@ -214,8 +223,16 @@ impl TestEnvState {
         } else {
             Ok(None)
         };
+        self.collect_gas();
         self.active_account = self.get_account(0);
         result
+    }
+
+    fn collect_gas(&mut self) {
+        *self
+            .gas_used
+            .entry(self.active_account)
+            .or_insert_with(U512::zero) += *DEFAULT_PAYMENT;
     }
 
     pub fn get_contract_package_hash(&self, name: &str) -> ContractPackageHash {
@@ -311,6 +328,19 @@ impl TestEnvState {
         hash[0] = seed as u8;
         hash[1] = (seed >> 8) as u8;
         hash
+    }
+
+    pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
+        let gas_used = match self.gas_used.get(&account) {
+            Some(value) => *value,
+            None => U512::zero(),
+        };
+        let account: Account = self
+            .context
+            .get_account(*account.as_account_hash().unwrap())
+            .unwrap();
+        let purse = account.main_purse();
+        self.context.get_purse_balance(purse) + gas_used
     }
 }
 

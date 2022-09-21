@@ -12,7 +12,7 @@ Repository contains following modules:
 Build `WASM` files.
 
 ```bash
-$ make build-contracts
+$ make build-all
 ```
 
 ## Test
