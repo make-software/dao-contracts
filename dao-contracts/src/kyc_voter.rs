@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, ContractCall, DocumentHash, Error,
+    consts, Address, ContractCall, DocumentHash, Error, SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -70,6 +70,7 @@ pub trait KycVoterContractInterface {
 pub struct KycVoterContract {
     kyc: KycInfo,
     voting: GovernanceVoting,
+    sequence: SequenceGenerator,
 }
 
 impl KycVoterContractInterface for KycVoterContract {
@@ -102,13 +103,14 @@ impl KycVoterContractInterface for KycVoterContract {
     fn create_voting(
         &mut self,
         subject_address: Address,
-        document_hash: DocumentHash,
+        _document_hash: DocumentHash,
         stake: U256,
     ) {
         self.assert_no_ongoing_voting(&subject_address);
         self.assert_not_kyced(&subject_address);
 
         let creator = caller();
+        let token_id = self.sequence.next_value();
 
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
             .contract_call(ContractCall {
@@ -116,7 +118,7 @@ impl KycVoterContractInterface for KycVoterContract {
                 entry_point: consts::EP_MINT.to_string(),
                 runtime_args: runtime_args! {
                     consts::ARG_TO => subject_address,
-                    consts::ARG_TOKEN_ID => document_hash,
+                    consts::ARG_TOKEN_ID => token_id,
                 },
             })
             .build();

@@ -90,7 +90,7 @@ speculate! {
 
                     context "passed" {
                         before {
-                            contract.as_account(second_voter).vote(voting_id, Choice::InFavor,  vote_amount).unwrap();
+                            contract.as_account(second_voter).vote(voting_id, Choice::InFavor, vote_amount).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(voter).finish_voting(voting_id).unwrap();
                         }
