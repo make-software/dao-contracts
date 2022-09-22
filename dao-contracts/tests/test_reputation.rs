@@ -1,5 +1,8 @@
 use casper_dao_contracts::{DebtIncreased, DebtPaid, ReputationContractTest};
 use casper_dao_erc20::events::Transfer;
+use casper_dao_contracts::{
+    reputation::events::{Burn, Mint},
+};
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
@@ -39,10 +42,9 @@ fn test_mint_as_owner() {
     assert_eq!(contract.balance_of(recipient), total_supply);
     contract.assert_event_at(
         2,
-        Transfer {
-            from: None,
-            to: Some(recipient),
-            value: total_supply,
+        Mint {
+            address: recipient,
+            amount: total_supply,
         },
     );
 }
@@ -71,10 +73,9 @@ fn test_whitelisted_user_burn() {
     assert_eq!(contract.balance_of(owner), remaining_supply);
     contract.assert_event_at(
         3,
-        Transfer {
-            from: Some(owner),
-            to: None,
-            value: burn_amount,
+        Burn {
+            address: owner,
+            amount: burn_amount,
         },
     );
 }
@@ -259,14 +260,6 @@ fn test_transfer_from() {
 
     assert_eq!(contract.balance_of(owner), total_supply - transfer_amount);
     assert_eq!(contract.balance_of(first_recipient), transfer_amount);
-    contract.assert_event_at(
-        3,
-        Transfer {
-            from: Some(owner),
-            to: Some(first_recipient),
-            value: transfer_amount,
-        },
-    );
 }
 
 #[test]

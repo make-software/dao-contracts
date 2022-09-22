@@ -124,7 +124,7 @@ fn vote_action(
         .as_nth_account(1)
         .vote(voting.voting_id(), Choice::InFavor, 500.into())
         .unwrap();
-    reputation_voter_contract.advance_block_time_by(voting.informal_voting_time().unwrap());
+    reputation_voter_contract.advance_block_time_by(voting.informal_voting_time());
     reputation_voter_contract
         .finish_voting(voting.voting_id())
         .unwrap();

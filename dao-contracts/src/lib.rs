@@ -2,20 +2,19 @@
 
 #[doc(hidden)]
 pub mod action;
-mod admin;
-mod builder;
-mod dao_nft;
-mod kyc_voter;
+pub mod admin;
+pub mod builder;
+pub mod dao_nft;
+pub mod kyc_voter;
+
 #[doc(hidden)]
 pub mod mocks;
-mod onboarding_voter;
-mod repo_voter;
-mod reputation;
+pub mod onboarding_voter;
+pub mod repo_voter;
+pub mod reputation;
 pub mod reputation_voter;
 pub mod simple_voter;
-/// Variable Repo
-mod variable_repository;
-/// Utilities to manage the voting process
+pub mod variable_repository;
 pub mod voting;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
