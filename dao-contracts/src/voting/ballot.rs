@@ -40,7 +40,7 @@ fn test_vote_serialization() {
 
     let vote = Ballot {
         voter: address,
-        voting_id: U256::from(123),
+        voting_id: 123,
         choice: Choice::InFavor,
         stake: U256::from(456),
     };

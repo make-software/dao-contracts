@@ -3,8 +3,8 @@ use casper_dao_contracts::{
     DaoOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{Address, TestContract, TestEnv};
-use casper_types::U256;
+use casper_dao_utils::{Address, DocumentHash, TestContract, TestEnv};
+use casper_types::{bytesrepr::Bytes, U256};
 use speculate::speculate;
 
 speculate! {
@@ -54,7 +54,8 @@ speculate! {
 
             context "voting_is_created" {
                 before {
-                    contract.as_account(voter).create_voting(applicant, document_hash, vote_amount).unwrap();
+                    #[allow(clippy::redundant_clone)]
+                    contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount).unwrap();
                 }
 
                 test "cannot_create_next_voting_for_the_same_applicant" {
@@ -73,12 +74,12 @@ speculate! {
 
                 context "informal_voting_passed" {
                     before {
-                        let voting_id = 0.into();
+                        let voting_id = 0;
                         let voting = contract.get_voting(voting_id).unwrap();
                         env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(voter).finish_voting(voting_id).unwrap();
                         #[allow(unused_variables)]
-                        let voting_id: VotingId = 1.into();
+                        let voting_id: VotingId = 1;
                     }
                     test "cannot_create_next_voting_for_the_same_applicant" {
                         assert_eq!(
@@ -148,7 +149,7 @@ fn setup() -> (
     Address,
     U256,
     U256,
-    U256,
+    DocumentHash,
     DaoOwnedNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
@@ -195,7 +196,7 @@ fn setup() -> (
     let vote_amount = 1_000.into();
     reputation_token.mint(voter, mint_amount).unwrap();
     reputation_token.mint(second_voter, mint_amount).unwrap();
-    let document_hash = 1234.into();
+    let document_hash = Bytes::from(vec![1, 2, 3, 4]);
 
     (
         applicant,

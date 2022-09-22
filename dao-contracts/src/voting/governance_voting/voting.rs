@@ -105,7 +105,7 @@ pub struct Voting {
 impl Voting {
     /// Creates new Voting with immutable VotingConfiguration
     pub fn new(
-        voting_id: U256,
+        voting_id: VotingId,
         start_time: u64,
         voting_configuration: VotingConfiguration,
     ) -> Self {
@@ -131,7 +131,7 @@ impl Voting {
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
-    pub fn create_formal_voting(&self, new_voting_id: U256, start_time: u64) -> Self {
+    pub fn create_formal_voting(&self, new_voting_id: VotingId, start_time: u64) -> Self {
         let mut voting = self.clone();
         voting.formal_voting_id = Some(new_voting_id);
         voting.voting_id = new_voting_id;
@@ -147,7 +147,7 @@ impl Voting {
     }
 
     /// Sets voting as completed, optionally saves id of newly created formal voting
-    pub fn complete(&mut self, formal_voting_id: Option<U256>) {
+    pub fn complete(&mut self, formal_voting_id: Option<VotingId>) {
         if formal_voting_id.is_some() {
             self.formal_voting_id = formal_voting_id
         }
@@ -211,7 +211,7 @@ impl Voting {
     }
 
     /// Get the voting's voting id.
-    pub fn voting_id(&self) -> U256 {
+    pub fn voting_id(&self) -> VotingId {
         self.voting_id
     }
 
@@ -231,12 +231,12 @@ impl Voting {
     }
 
     /// Get the voting's informal voting id.
-    pub fn informal_voting_id(&self) -> U256 {
+    pub fn informal_voting_id(&self) -> VotingId {
         self.informal_voting_id
     }
 
     /// Get the voting's formal voting id.
-    pub fn formal_voting_id(&self) -> Option<U256> {
+    pub fn formal_voting_id(&self) -> Option<VotingId> {
         self.formal_voting_id
     }
 
@@ -281,12 +281,12 @@ fn test_voting_serialization() {
     use casper_types::bytesrepr::ToBytes;
 
     let voting = Voting {
-        voting_id: VotingId::from(1),
+        voting_id: 1,
         completed: false,
         stake_in_favor: U256::zero(),
         stake_against: U256::zero(),
         start_time: 123,
-        informal_voting_id: VotingId::from(1),
+        informal_voting_id: 1,
         formal_voting_id: None,
         voting_configuration: VotingConfiguration {
             formal_voting_quorum: U256::from(2),

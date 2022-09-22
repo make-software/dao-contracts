@@ -1,29 +1,14 @@
-use casper_dao_erc20::{ERC20Interface, ERC20};
 use casper_dao_modules::AccessControl;
-use casper_dao_utils::casper_dao_macros::Event;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::caller,
-    Address, Mapping,
+    casper_env::{self, caller, emit},
+    math::{add_to_balance, rem_from_balance},
+    Address, Error, Mapping, Variable,
 };
 use casper_types::U256;
 use delegate::delegate;
 
-/// Event thrown when debt is lowered
-#[derive(Debug, PartialEq, Event)]
-pub struct DebtPaid {
-    pub owner: Address,
-    pub amount: U256,
-    pub debt: U256,
-}
-
-/// Event thrown when debt is made
-#[derive(Debug, PartialEq, Event)]
-pub struct DebtIncreased {
-    pub owner: Address,
-    pub amount: U256,
-    pub debt: U256,
-}
+use self::events::{Burn, Mint};
 
 // Interface of the Reputation Contract.
 //
@@ -100,16 +85,16 @@ pub trait ReputationContractInterface {
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
 
-    /// Returns the amount of the debt the owner has
+    /// Returns the amount of the debt the owner has.
     fn debt(&self, owner: Address) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
 #[derive(Instance)]
 pub struct ReputationContract {
-    pub token: ERC20,
+    total_supply: Variable<U256>,
+    balances: Mapping<Address, (bool, U256)>,
     pub access_control: AccessControl,
-    pub debt: Mapping<Address, U256>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -123,127 +108,117 @@ impl ReputationContractInterface for ReputationContract {
         }
     }
 
-    delegate! {
-        to self.token {
-            fn balance_of(&self, address: Address) -> U256;
-            fn total_supply(&self) -> U256;
-        }
-    }
-
     fn init(&mut self) {
         let deployer = caller();
         self.access_control.init(deployer);
     }
 
+    fn total_supply(&self) -> U256 {
+        self.total_supply.get().unwrap_or_default()
+    }
+
+    fn balance_of(&self, address: Address) -> U256 {
+        match self.get_full_balance(address) {
+            (true, value) => value,
+            (false, _) => U256::zero(),
+        }
+    }
+
+    fn debt(&self, address: Address) -> U256 {
+        match self.get_full_balance(address) {
+            (true, _) => U256::zero(),
+            (false, value) => value,
+        }
+    }
+
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.increase_balance(None, recipient, amount);
+
+        // Load a balance of the account.
+        let full_balance = self.get_full_balance(recipient);
+        let (is_positive, balance) = full_balance;
+
+        // Increase total_supply by the amount above the debt.
+        // This prevents total_supply from overflowing.
+        let real_increase_amount = if is_positive {
+            amount
+        } else if amount > balance {
+            amount - balance
+        } else {
+            U256::zero()
+        };
+
+        let (new_supply, is_overflowed) = self.total_supply().overflowing_add(real_increase_amount);
+        if is_overflowed {
+            casper_env::revert(Error::TotalSupplyOverflow);
+        }
+        self.total_supply.set(new_supply);
+
+        // Increase the balance of the account.
+        let new_balance = add_to_balance(full_balance, amount);
+        self.balances.set(&recipient, new_balance);
+
+        emit(Mint {
+            address: recipient,
+            amount,
+        });
     }
 
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.decrease_balance(owner, amount);
+
+        // Load a balance of the account.
+        let full_balance = self.get_full_balance(owner);
+        let (is_positive, balance) = full_balance;
+
+        // Reduce the balance of the account.
+        let new_balance = rem_from_balance(full_balance, amount);
+        self.balances.set(&owner, new_balance);
+
+        // Decrese total_supply by only decreased positive balance of owner.
+        // This prevents total_supply of getting negative.
+        if is_positive {
+            let total_supply = self.total_supply();
+            if amount > balance {
+                self.total_supply.set(total_supply - balance);
+            } else {
+                self.total_supply.set(total_supply - amount);
+            }
+        }
+
+        // Emit Burn event.
+        emit(Burn {
+            address: owner,
+            amount,
+        });
     }
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.increase_balance(Some(owner), recipient, amount);
-    }
 
-    fn debt(&self, owner: Address) -> U256 {
-        match self.debt.get(&owner) {
-            None => U256::zero(),
-            Some(debt) => debt,
+        // Load the balance of the owner.
+        let owner_full_balance = self.get_full_balance(owner);
+        let (is_positive_owner, owner_balance) = owner_full_balance;
+
+        // Check if the owner has sufficient balance.
+        if !is_positive_owner || owner_balance < amount {
+            casper_env::revert(Error::InsufficientBalance)
         }
+
+        // Load the balance of the recipient.
+        let recipient_full_balance = self.get_full_balance(recipient);
+
+        // Settle the transfer.
+        self.balances
+            .set(&owner, rem_from_balance(owner_full_balance, amount));
+        self.balances
+            .set(&recipient, add_to_balance(recipient_full_balance, amount));
     }
 }
 
 impl ReputationContract {
-    fn increase_balance(&mut self, source: Option<Address>, recipient: Address, amount: U256) {
-        let destination_debt = self.debt(recipient);
-        match source {
-            // mint
-            None => {
-                // there is a debt
-                if !destination_debt.is_zero() {
-                    // first lower the debt
-                    let leftover = self.decrease_debt(recipient, amount);
-                    // and mint the rest
-                    self.token.mint(recipient, leftover);
-                } else {
-                    self.token.mint(recipient, amount);
-                }
-            }
-            // transfer
-            Some(source) => {
-                if !destination_debt.is_zero() {
-                    // first lower the debt
-                    let leftover = self.decrease_debt(recipient, amount);
-                    // burn the tokens that decreased the debt
-                    self.token.burn(source, amount - leftover);
-                    // transfer the rest
-                    self.token.raw_transfer(source, recipient, leftover);
-                } else {
-                    self.token.raw_transfer(source, recipient, amount);
-                }
-            }
-        }
-    }
-
-    fn decrease_balance(&mut self, recipient: Address, amount: U256) {
-        let balance = self.token.balance_of(recipient);
-        match balance.checked_sub(amount) {
-            // we need to burn more than the owner has
-            None => {
-                self.token.burn(recipient, balance);
-                self.increase_debt(recipient, amount - balance);
-            }
-            // we simply burn
-            Some(_) => {
-                self.token.burn(recipient, amount);
-            }
-        }
-    }
-
-    fn increase_debt(&mut self, recipient: Address, amount: U256) {
-        let debt = self.debt(recipient);
-        self.debt.set(&recipient, debt + amount);
-        DebtIncreased {
-            owner: recipient,
-            amount,
-            debt: debt + amount,
-        }
-        .emit();
-    }
-
-    fn decrease_debt(&mut self, recipient: Address, amount: U256) -> U256 {
-        let debt = self.debt(recipient);
-        if debt.is_zero() {
-            amount
-        } else {
-            match debt.checked_sub(amount) {
-                None => {
-                    self.debt.set(&recipient, U256::zero());
-                    DebtPaid {
-                        owner: recipient,
-                        amount: debt,
-                        debt: U256::zero(),
-                    }
-                    .emit();
-                    amount - debt
-                }
-                Some(_) => {
-                    self.debt.set(&recipient, debt - amount);
-                    DebtPaid {
-                        owner: recipient,
-                        amount,
-                        debt: debt - amount,
-                    }
-                    .emit();
-                    U256::zero()
-                }
-            }
-        }
+    fn get_full_balance(&self, address: Address) -> (bool, U256) {
+        self.balances.get(&address).unwrap_or((true, U256::zero()))
     }
 }
 

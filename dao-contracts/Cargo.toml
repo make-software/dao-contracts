@@ -1,13 +1,12 @@
 [package]
 name = "casper-dao-contracts"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 
 [dependencies]
 casper-types = "1.4.6"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 casper-dao-modules = { path = "../dao-modules", default-features = false }
-casper-dao-erc20 = { path = "../dao-erc20", default-features = false, features = [ "skip-events" ]}
 casper-dao-erc721 = { path = "../dao-erc721", default-features = false }
 delegate = "0.6.2"
 

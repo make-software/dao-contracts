@@ -1,4 +1,4 @@
-use casper_types::U256;
+use casper_types::bytesrepr::Bytes;
 
 pub type BlockTime = u64;
-pub type DocumentHash = U256;
+pub type DocumentHash = Bytes;

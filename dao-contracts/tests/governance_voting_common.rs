@@ -111,7 +111,7 @@ pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
         )
         .unwrap();
 
-    let voting_id = VotingId::zero();
+    let voting_id = 0;
     let voting: Voting = admin_contract.get_voting(voting_id).unwrap();
 
     admin_contract
@@ -163,7 +163,7 @@ pub fn setup_repo_voter(
         )
         .unwrap();
 
-    let voting_id = VotingId::zero();
+    let voting_id = 0;
     let voting: Voting = repo_voter_contract.get_voting(voting_id).unwrap();
 
     repo_voter_contract
@@ -251,7 +251,8 @@ pub fn setup_voting_contract_with_informal_voting(
         .create_voting("value".to_string(), U256::from(500))
         .unwrap();
 
-    let voting = mock_voter_contract.get_voting(U256::zero()).unwrap();
+    let voting_id = 0;
+    let voting = mock_voter_contract.get_voting(voting_id).unwrap();
     (mock_voter_contract, reputation_token_contract, voting)
 }
 
@@ -280,7 +281,8 @@ pub fn setup_voting_contract_with_formal_voting(
         .finish_voting(voting.voting_id())
         .unwrap();
 
-    let formal_voting = mock_voter_contract.get_voting(VotingId::from(1)).unwrap();
+    let voting_id = 1;
+    let formal_voting = mock_voter_contract.get_voting(voting_id).unwrap();
 
     (
         mock_voter_contract,

@@ -43,10 +43,6 @@ pub use simple_voter::{
 };
 
 #[cfg(feature = "test-support")]
-pub use reputation::DebtIncreased;
-#[cfg(feature = "test-support")]
-pub use reputation::DebtPaid;
-#[cfg(feature = "test-support")]
 pub use reputation::ReputationContractTest;
 #[cfg(feature = "test-support")]
 pub use reputation_voter::ReputationVoterContractTest;

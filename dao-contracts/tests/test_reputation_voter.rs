@@ -2,6 +2,7 @@ use casper_dao_contracts::reputation_voter::{Action, ReputationVotingCreated};
 use casper_dao_contracts::voting::{Choice, VotingCreated};
 use casper_dao_contracts::ReputationVoterContractTest;
 use casper_dao_utils::{Address, TestContract};
+use casper_types::bytesrepr::Bytes;
 use casper_types::U256;
 
 mod governance_voting_common;
@@ -93,9 +94,15 @@ fn test_document_hash() {
     let (mut reputation_voter_contract, _reputation_token_contract) =
         governance_voting_common::setup_reputation_voter();
     let address = reputation_voter_contract.get_env().get_account(5);
-    let document_hash = 123.into();
+    let document_hash = Bytes::from(vec![123]);
     reputation_voter_contract
-        .create_voting(address, Action::Mint, amount, document_hash, 500.into())
+        .create_voting(
+            address,
+            Action::Mint,
+            amount,
+            document_hash.clone(),
+            500.into(),
+        )
         .unwrap();
 
     let reputation_voting_created: ReputationVotingCreated = reputation_voter_contract.event(-1);
@@ -112,7 +119,7 @@ fn vote_action(
     amount: U256,
 ) {
     reputation_voter_contract
-        .create_voting(address, action, amount, 123.into(), 500.into())
+        .create_voting(address, action, amount, Bytes::from(vec![123]), 500.into())
         .unwrap();
 
     let voting_created_event: VotingCreated = reputation_voter_contract.event(-3);

@@ -64,3 +64,8 @@ clean:
 	
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
+
+test-r: build-proxy-getter build-dao-contracts
+	mkdir -p dao-contracts/wasm
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	$(CARGO_TEST) -p casper-dao-contracts --test test_reputation

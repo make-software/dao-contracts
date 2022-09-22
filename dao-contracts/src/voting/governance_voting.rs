@@ -51,7 +51,7 @@ pub struct GovernanceVoting {
     votings: Mapping<VotingId, Option<Voting>>,
     ballots: Mapping<(VotingId, Address), Ballot>,
     voters: VecMapping<VotingId, Address>,
-    votings_count: Variable<U256>,
+    votings_count: Variable<VotingId>,
     dust_amount: Variable<U256>,
 }
 
@@ -295,7 +295,7 @@ impl GovernanceVoting {
     /// Throws [`VoteOnCompletedVotingNotAllowed`](casper_dao_utils::Error::VoteOnCompletedVotingNotAllowed) if voting is completed
     ///
     /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
-    pub fn vote(&mut self, voter: Address, voting_id: U256, choice: Choice, stake: U256) {
+    pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256) {
         let mut voting = self.get_voting(voting_id).unwrap_or_revert();
 
         // We cannot vote on a completed voting
@@ -360,12 +360,12 @@ impl GovernanceVoting {
     }
 
     /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
-    pub fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot> {
+    pub fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot> {
         self.ballots.get_or_none(&(voting_id, address))
     }
 
     /// Returns the nth [Ballot](Ballot) of cast on `voting_id`
-    pub fn get_ballot_at(&mut self, voting_id: U256, i: u32) -> Ballot {
+    pub fn get_ballot_at(&mut self, voting_id: VotingId, i: u32) -> Ballot {
         let address = self
             .get_voter(voting_id, i)
             .unwrap_or_revert_with(Error::VoterDoesNotExist);
@@ -389,7 +389,7 @@ impl GovernanceVoting {
         self.votings.set(&voting.voting_id(), Some(voting))
     }
 
-    fn next_voting_id(&mut self) -> U256 {
+    fn next_voting_id(&mut self) -> VotingId {
         let voting_id = self.votings_count.get().unwrap_or_default();
         self.votings_count.set(voting_id + 1);
         voting_id
