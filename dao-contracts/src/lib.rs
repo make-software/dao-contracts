@@ -2,10 +2,10 @@
 
 #[doc(hidden)]
 pub mod action;
-pub mod admin;
-pub mod builder;
-pub mod dao_nft;
-pub mod kyc_voter;
+mod admin;
+mod builder;
+mod dao_nft;
+mod kyc_voter;
 
 #[doc(hidden)]
 pub mod mocks;

@@ -118,14 +118,14 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn balance_of(&self, address: Address) -> U256 {
-        match self.get_full_balance(address) {
+        match self.get_signed_balance(address) {
             (true, value) => value,
             (false, _) => U256::zero(),
         }
     }
 
     fn debt(&self, address: Address) -> U256 {
-        match self.get_full_balance(address) {
+        match self.get_signed_balance(address) {
             (true, _) => U256::zero(),
             (false, value) => value,
         }
@@ -135,8 +135,8 @@ impl ReputationContractInterface for ReputationContract {
         self.access_control.ensure_whitelisted();
 
         // Load a balance of the account.
-        let full_balance = self.get_full_balance(recipient);
-        let (is_positive, balance) = full_balance;
+        let signed_balance = self.get_signed_balance(recipient);
+        let (is_positive, balance) = signed_balance;
 
         // Increase total_supply by the amount above the debt.
         // This prevents total_supply from overflowing.
@@ -155,7 +155,7 @@ impl ReputationContractInterface for ReputationContract {
         self.total_supply.set(new_supply);
 
         // Increase the balance of the account.
-        let new_balance = add_to_balance(full_balance, amount);
+        let new_balance = add_to_balance(signed_balance, amount);
         self.balances.set(&recipient, new_balance);
 
         emit(Mint {
@@ -168,11 +168,11 @@ impl ReputationContractInterface for ReputationContract {
         self.access_control.ensure_whitelisted();
 
         // Load a balance of the account.
-        let full_balance = self.get_full_balance(owner);
-        let (is_positive, balance) = full_balance;
+        let signed_balance = self.get_signed_balance(owner);
+        let (is_positive, balance) = signed_balance;
 
         // Reduce the balance of the account.
-        let new_balance = rem_from_balance(full_balance, amount);
+        let new_balance = rem_from_balance(signed_balance, amount);
         self.balances.set(&owner, new_balance);
 
         // Decrese total_supply by only decreased positive balance of owner.
@@ -197,27 +197,27 @@ impl ReputationContractInterface for ReputationContract {
         self.access_control.ensure_whitelisted();
 
         // Load the balance of the owner.
-        let owner_full_balance = self.get_full_balance(owner);
-        let (is_positive_owner, owner_balance) = owner_full_balance;
+        let owner_signed_balance = self.get_signed_balance(owner);
+        let (is_positive_owner_balance, owner_balance) = owner_signed_balance;
 
         // Check if the owner has sufficient balance.
-        if !is_positive_owner || owner_balance < amount {
+        if !is_positive_owner_balance || owner_balance < amount {
             casper_env::revert(Error::InsufficientBalance)
         }
 
         // Load the balance of the recipient.
-        let recipient_full_balance = self.get_full_balance(recipient);
+        let recipient_signed_balance = self.get_signed_balance(recipient);
 
         // Settle the transfer.
         self.balances
-            .set(&owner, rem_from_balance(owner_full_balance, amount));
+            .set(&owner, rem_from_balance(owner_signed_balance, amount));
         self.balances
-            .set(&recipient, add_to_balance(recipient_full_balance, amount));
+            .set(&recipient, add_to_balance(recipient_signed_balance, amount));
     }
 }
 
 impl ReputationContract {
-    fn get_full_balance(&self, address: Address) -> (bool, U256) {
+    fn get_signed_balance(&self, address: Address) -> (bool, U256) {
         self.balances.get(&address).unwrap_or((true, U256::zero()))
     }
 }
