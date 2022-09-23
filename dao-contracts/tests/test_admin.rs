@@ -2,7 +2,6 @@ mod governance_voting_common;
 
 use speculate::speculate;
 
-use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_contracts::voting::Choice;
 use casper_dao_utils::{Error, TestContract};
 use casper_types::U256;
@@ -13,7 +12,7 @@ speculate! {
             #[allow(unused_mut)]
             let (mut admin_contract, mut reputation_token_contract) = governance_voting_common::setup_admin();
             #[allow(unused_variables)]
-            let voting = admin_contract.get_voting(VotingId::from(1)).unwrap();
+            let voting = admin_contract.get_voting(1).unwrap();
         }
 
         test "address cannot perform action before voting finishes" {

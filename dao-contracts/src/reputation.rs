@@ -1,9 +1,9 @@
-use casper_dao_erc20::{ERC20Interface, ERC20};
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{caller, emit},
-    Address,
+    casper_env::{self, caller, emit},
+    math::{add_to_balance, rem_from_balance},
+    Address, Error, Mapping, Variable,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -84,12 +84,16 @@ pub trait ReputationContractInterface {
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
+
+    /// Returns the amount of the debt the owner has.
+    fn debt(&self, owner: Address) -> U256;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
 #[derive(Instance)]
 pub struct ReputationContract {
-    pub token: ERC20,
+    total_supply: Variable<U256>,
+    balances: Mapping<Address, (bool, U256)>,
     pub access_control: AccessControl,
 }
 
@@ -102,11 +106,6 @@ impl ReputationContractInterface for ReputationContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
-
-        to self.token {
-            fn total_supply(&self) -> U256;
-            fn balance_of(&self, address: Address) -> U256;
-        }
     }
 
     fn init(&mut self) {
@@ -114,9 +113,51 @@ impl ReputationContractInterface for ReputationContract {
         self.access_control.init(deployer);
     }
 
+    fn total_supply(&self) -> U256 {
+        self.total_supply.get().unwrap_or_default()
+    }
+
+    fn balance_of(&self, address: Address) -> U256 {
+        match self.get_signed_balance(address) {
+            (true, value) => value,
+            (false, _) => U256::zero(),
+        }
+    }
+
+    fn debt(&self, address: Address) -> U256 {
+        match self.get_signed_balance(address) {
+            (true, _) => U256::zero(),
+            (false, value) => value,
+        }
+    }
+
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.mint(recipient, amount);
+
+        // Load a balance of the account.
+        let signed_balance = self.get_signed_balance(recipient);
+        let (is_positive, balance) = signed_balance;
+
+        // Increase total_supply by the amount above the debt.
+        // This prevents total_supply from overflowing.
+        let real_increase_amount = if is_positive {
+            amount
+        } else if amount > balance {
+            amount - balance
+        } else {
+            U256::zero()
+        };
+
+        let (new_supply, is_overflowed) = self.total_supply().overflowing_add(real_increase_amount);
+        if is_overflowed {
+            casper_env::revert(Error::TotalSupplyOverflow);
+        }
+        self.total_supply.set(new_supply);
+
+        // Increase the balance of the account.
+        let new_balance = add_to_balance(signed_balance, amount);
+        self.balances.set(&recipient, new_balance);
+
         emit(Mint {
             address: recipient,
             amount,
@@ -125,7 +166,27 @@ impl ReputationContractInterface for ReputationContract {
 
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.burn(owner, amount);
+
+        // Load a balance of the account.
+        let signed_balance = self.get_signed_balance(owner);
+        let (is_positive, balance) = signed_balance;
+
+        // Reduce the balance of the account.
+        let new_balance = rem_from_balance(signed_balance, amount);
+        self.balances.set(&owner, new_balance);
+
+        // Decrese total_supply by only decreased positive balance of owner.
+        // This prevents total_supply of getting negative.
+        if is_positive {
+            let total_supply = self.total_supply();
+            if amount > balance {
+                self.total_supply.set(total_supply - balance);
+            } else {
+                self.total_supply.set(total_supply - amount);
+            }
+        }
+
+        // Emit Burn event.
         emit(Burn {
             address: owner,
             amount,
@@ -134,7 +195,30 @@ impl ReputationContractInterface for ReputationContract {
 
     fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
-        self.token.raw_transfer(owner, recipient, amount);
+
+        // Load the balance of the owner.
+        let owner_signed_balance = self.get_signed_balance(owner);
+        let (is_positive_owner_balance, owner_balance) = owner_signed_balance;
+
+        // Check if the owner has sufficient balance.
+        if !is_positive_owner_balance || owner_balance < amount {
+            casper_env::revert(Error::InsufficientBalance)
+        }
+
+        // Load the balance of the recipient.
+        let recipient_signed_balance = self.get_signed_balance(recipient);
+
+        // Settle the transfer.
+        self.balances
+            .set(&owner, rem_from_balance(owner_signed_balance, amount));
+        self.balances
+            .set(&recipient, add_to_balance(recipient_signed_balance, amount));
+    }
+}
+
+impl ReputationContract {
+    fn get_signed_balance(&self, address: Address) -> (bool, U256) {
+        self.balances.get(&address).unwrap_or((true, U256::zero()))
     }
 }
 

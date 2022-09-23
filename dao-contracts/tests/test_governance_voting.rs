@@ -1,6 +1,5 @@
 mod governance_voting_common;
 
-use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_contracts::voting::{
     consts as gv_consts, Ballot, BallotCast, Choice, VotingContractCreated, VotingCreated,
     VotingEnded,
@@ -77,7 +76,8 @@ speculate! {
 
                 let voting_created_event: VotingCreated = mock_voter_contract.event(-2);
 
-                assert_eq!(voting_created_event.voting_id, VotingId::from(2));
+                let voting_id = 2;
+                assert_eq!(voting_created_event.voting_id, voting_id);
             }
         }
 
@@ -90,10 +90,11 @@ speculate! {
             }
 
             it "emits an event" {
+                let voting_id = 0;
                 mock_voter_contract.assert_event_at(-2, VotingCreated {
                     creator,
-                    voting_id: VotingId::zero(),
-                    informal_voting_id: VotingId::zero(),
+                    voting_id,
+                    informal_voting_id: voting_id,
                     formal_voting_id: None,
                     config_formal_voting_quorum: U256::from(3),
                     config_formal_voting_time: formal_voting_time,
@@ -107,8 +108,9 @@ speculate! {
                 let voting_created_event : VotingCreated = mock_voter_contract.event(-2);
                 let ballot_cast_event: BallotCast = mock_voter_contract.event(-1);
                 let first_ballot: Ballot = mock_voter_contract.get_ballot(informal_voting.voting_id(), creator).unwrap();
+                let voting_id = 0;
 
-                assert_eq!(informal_voting.voting_id(), VotingId::zero());
+                assert_eq!(informal_voting.voting_id(), voting_id);
                 assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
                 assert_eq!(informal_voting.informal_voting_time(), informal_voting_time);
                 assert_eq!(informal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), formal_quorum).unwrap());
@@ -159,7 +161,7 @@ speculate! {
                         votes_count: U256::from(1),
                         stake_in_favor: minimum_reputation,
                         stake_against: U256::zero(),
-                        informal_voting_id: VotingId::zero(),
+                        informal_voting_id: 0,
                         formal_voting_id: None,
                         transfers: Default::default(),
                         burns,
@@ -200,7 +202,7 @@ speculate! {
                         votes_count: U256::from(4),
                         stake_in_favor: minimum_reputation,
                         stake_against: minimum_reputation * 3,
-                        informal_voting_id: VotingId::zero(),
+                        informal_voting_id: 0,
                         formal_voting_id: None,
                         transfers,
                         burns,
@@ -272,10 +274,12 @@ speculate! {
             }
 
             it "emits proper event" {
+                let informal_voting_id = 0;
+                let formal_voting_id = 1;
                 mock_voter_contract.assert_event_at(-8, VotingCreated {
                     creator,
-                    voting_id: VotingId::zero(),
-                    informal_voting_id: VotingId::zero(),
+                    voting_id: informal_voting_id,
+                    informal_voting_id,
                     formal_voting_id: None,
                     config_formal_voting_quorum: U256::from(3),
                     config_formal_voting_time: formal_voting_time,
@@ -285,9 +289,9 @@ speculate! {
                 });
                 mock_voter_contract.assert_event_at(-3, VotingCreated {
                     creator,
-                    voting_id: VotingId::one(),
-                    informal_voting_id: VotingId::zero(),
-                    formal_voting_id: Some(VotingId::one()),
+                    voting_id: formal_voting_id,
+                    informal_voting_id,
+                    formal_voting_id: Some(formal_voting_id),
                     config_formal_voting_quorum: U256::from(3),
                     config_formal_voting_time: formal_voting_time,
                     config_informal_voting_quorum: U256::from(2),
@@ -312,8 +316,8 @@ speculate! {
                         votes_count: U256::from(1),
                         stake_in_favor: minimum_reputation,
                         stake_against: U256::zero(),
-                        informal_voting_id: VotingId::zero(),
-                        formal_voting_id: Some(VotingId::one()),
+                        informal_voting_id: 0,
+                        formal_voting_id: Some(1),
                         transfers: Default::default(),
                         burns,
                         mints: Default::default(),
@@ -349,8 +353,8 @@ speculate! {
                         votes_count: U256::from(4),
                         stake_in_favor: minimum_reputation,
                         stake_against: minimum_reputation * 3,
-                        informal_voting_id: VotingId::zero(),
-                        formal_voting_id: Some(VotingId::one()),
+                        informal_voting_id: 0,
+                        formal_voting_id: Some(1),
                         transfers,
                         burns: Default::default(),
                         mints: Default::default(),
@@ -386,8 +390,8 @@ speculate! {
                         votes_count: U256::from(4),
                         stake_in_favor: minimum_reputation * 3,
                         stake_against: minimum_reputation,
-                        informal_voting_id: VotingId::zero(),
-                        formal_voting_id: Some(VotingId::one()),
+                        informal_voting_id: 0,
+                        formal_voting_id: Some(1),
                         transfers,
                         burns: Default::default(),
                         mints: Default::default(),

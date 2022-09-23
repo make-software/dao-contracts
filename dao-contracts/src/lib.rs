@@ -6,15 +6,15 @@ mod admin;
 mod builder;
 mod dao_nft;
 mod kyc_voter;
+
 #[doc(hidden)]
 pub mod mocks;
-mod onboarding_voter;
-mod repo_voter;
+pub mod onboarding_voter;
+pub mod repo_voter;
 pub mod reputation;
+pub mod reputation_voter;
 pub mod simple_voter;
-/// Variable Repo
-mod variable_repository;
-/// Utilities to manage the voting process
+pub mod variable_repository;
 pub mod voting;
 
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
@@ -30,6 +30,9 @@ pub use onboarding_voter::{
 };
 pub use repo_voter::{RepoVoterContract, RepoVoterContractCaller, RepoVoterContractInterface};
 pub use reputation::{ReputationContract, ReputationContractCaller, ReputationContractInterface};
+pub use reputation_voter::{
+    ReputationVoterContract, ReputationVoterContractCaller, ReputationVoterContractInterface,
+};
 pub use variable_repository::{
     VariableRepositoryContract, VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
@@ -41,6 +44,8 @@ pub use simple_voter::{
 
 #[cfg(feature = "test-support")]
 pub use reputation::ReputationContractTest;
+#[cfg(feature = "test-support")]
+pub use reputation_voter::ReputationVoterContractTest;
 
 #[cfg(feature = "test-support")]
 pub use variable_repository::VariableRepositoryContractTest;

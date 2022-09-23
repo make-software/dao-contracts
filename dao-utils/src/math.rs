@@ -19,11 +19,97 @@ pub fn promils_of(number: U256, promils: U256) -> Result<U256, Error> {
     }
 }
 
-#[test]
-fn test_promils_of() {
-    assert_eq!(promils_of(1000.into(), 1.into()).unwrap(), 1.into());
-    assert_eq!(promils_of(1000.into(), 999.into()).unwrap(), 999.into());
-    assert_eq!(promils_of(6.into(), 334.into()).unwrap(), 2.into());
-    assert_eq!(promils_of(6.into(), 333.into()).unwrap(), 1.into());
-    assert_eq!(promils_of(10.into(), 750.into()).unwrap(), 7.into());
+pub fn add_to_balance(current: (bool, U256), amount: U256) -> (bool, U256) {
+    let (is_positive, balance) = current;
+    if is_positive {
+        (true, balance + amount)
+    } else if amount < balance {
+        (false, balance - amount)
+    } else {
+        (true, amount - balance)
+    }
+}
+
+pub fn rem_from_balance(current: (bool, U256), amount: U256) -> (bool, U256) {
+    let (is_positive, balance) = current;
+    if is_positive || amount.is_zero() && balance.is_zero() {
+        if amount <= balance {
+            (true, balance - amount)
+        } else {
+            (false, amount - balance)
+        }
+    } else {
+        (false, balance + amount)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::math::rem_from_balance;
+
+    use super::{add_to_balance, promils_of};
+
+    use super::U256;
+    #[test]
+    fn test_promils_of() {
+        assert_eq!(promils_of(1000.into(), 1.into()).unwrap(), 1.into());
+        assert_eq!(promils_of(1000.into(), 999.into()).unwrap(), 999.into());
+        assert_eq!(promils_of(6.into(), 334.into()).unwrap(), 2.into());
+        assert_eq!(promils_of(6.into(), 333.into()).unwrap(), 1.into());
+        assert_eq!(promils_of(10.into(), 750.into()).unwrap(), 7.into());
+    }
+
+    #[allow(non_snake_case)]
+    #[test]
+    fn test_balance_math() {
+        let ZERO = U256::zero();
+        let ONE = U256::one();
+        let TWO = ONE + ONE;
+
+        let P_ZERO = (true, ZERO);
+        let P_ONE = (true, ONE);
+        let P_TWO = (true, TWO);
+
+        let N_ZERO = (false, ZERO);
+        let N_ONE = (false, ONE);
+        let N_TWO = (false, TWO);
+
+        // 0 + 0 == 0
+        assert_eq!(add_to_balance(P_ZERO, ZERO), P_ZERO);
+        assert_eq!(add_to_balance(N_ZERO, ZERO), P_ZERO);
+
+        // 0 + 1 == 1
+        assert_eq!(add_to_balance(P_ONE, ZERO), P_ONE);
+
+        // 1 + 1 == 1
+        assert_eq!(add_to_balance(P_ONE, ONE), P_TWO);
+
+        // -2 + 1 == -1
+        assert_eq!(add_to_balance(N_TWO, ONE), N_ONE);
+
+        // -1 + 1 == 0
+        assert_eq!(add_to_balance(N_ONE, ONE), P_ZERO);
+
+        // -1 + 2 == 1
+        assert_eq!(add_to_balance(N_ONE, TWO), P_ONE);
+
+        // 0 + 0 == 0
+        assert_eq!(rem_from_balance(P_ZERO, ZERO), P_ZERO);
+        assert_eq!(rem_from_balance(N_ZERO, ZERO), P_ZERO);
+
+        // 0 - 1 == -1
+        assert_eq!(rem_from_balance(N_ZERO, ONE), N_ONE);
+
+        // -1 - 1 == -2
+        assert_eq!(rem_from_balance(N_ONE, ONE), N_TWO);
+
+        // 2 - 1 == 1
+        assert_eq!(rem_from_balance(P_TWO, ONE), P_ONE);
+
+        // 1 - 2 == -1
+        assert_eq!(rem_from_balance(P_ONE, TWO), N_ONE);
+
+        // 2 - 2 == 0
+        assert_eq!(rem_from_balance(P_TWO, TWO), P_ZERO);
+    }
 }

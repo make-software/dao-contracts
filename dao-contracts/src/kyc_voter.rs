@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, ContractCall, Error,
+    consts, Address, ContractCall, DocumentHash, Error, SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 
@@ -40,7 +40,7 @@ pub trait KycVoterContractInterface {
     /// `subject_address` - [address](Address) of a user to be verified.
     /// `document_hash` - a hash of a document that vefify the user. The hash is used as an id of a freshly minted  kyc token.
     /// `subject_address` - an [Address](Address) to be on/offboarded.
-    fn create_voting(&mut self, subject_address: Address, document_hash: U256, stake: U256);
+    fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::vote())
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
@@ -52,11 +52,11 @@ pub trait KycVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
-    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
-    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
 }
@@ -70,6 +70,7 @@ pub trait KycVoterContractInterface {
 pub struct KycVoterContract {
     kyc: KycInfo,
     voting: GovernanceVoting,
+    sequence: SequenceGenerator,
 }
 
 impl KycVoterContractInterface for KycVoterContract {
@@ -93,17 +94,23 @@ impl KycVoterContractInterface for KycVoterContract {
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
-            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 
-    fn create_voting(&mut self, subject_address: Address, document_hash: U256, stake: U256) {
+    fn create_voting(
+        &mut self,
+        subject_address: Address,
+        _document_hash: DocumentHash,
+        stake: U256,
+    ) {
         self.assert_no_ongoing_voting(&subject_address);
         self.assert_not_kyced(&subject_address);
 
         let creator = caller();
+        let token_id = self.sequence.next_value();
 
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
             .contract_call(ContractCall {
@@ -111,7 +118,7 @@ impl KycVoterContractInterface for KycVoterContract {
                 entry_point: consts::EP_MINT.to_string(),
                 runtime_args: runtime_args! {
                     consts::ARG_TO => subject_address,
-                    consts::ARG_TOKEN_ID => document_hash,
+                    consts::ARG_TOKEN_ID => token_id,
                 },
             })
             .build();

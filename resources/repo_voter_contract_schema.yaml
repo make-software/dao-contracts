@@ -24,7 +24,7 @@ entry_points:
   - name: vote
     arguments:
       - name: voting_id
-        cl_type: U256
+        cl_type: U32
       - name: choice
         cl_type: Bytes
       - name: stake
@@ -32,7 +32,7 @@ entry_points:
   - name: finish_voting
     arguments:
       - name: voting_id
-        cl_type: U256
+        cl_type: U32
 events:
   - name: VotingContractCreated
     fields:
@@ -47,7 +47,7 @@ events:
       - name: voter
         cl_type: Address
       - name: voting_id
-        cl_type: U256
+        cl_type: U32
       - name: choice
         cl_type: Bytes
       - name: stake
@@ -57,11 +57,11 @@ events:
       - name: creator
         cl_type: Address
       - name: voting_id
-        cl_type: U256
+        cl_type: U32
       - name: informal_voting_id
-        cl_type: U256
+        cl_type: U32
       - name: formal_voting_id
-        cl_type: Option<U256>
+        cl_type: Option<U32>
       - name: config_formal_voting_quorum
         cl_type: U256
       - name: config_formal_voting_time
@@ -75,11 +75,11 @@ events:
   - name: VotingEnded
     fields:
       - name: voting_id
-        cl_type: U256
+        cl_type: U32
       - name: informal_voting_id
-        cl_type: U256
+        cl_type: U32
       - name: formal_voting_id
-        cl_type: Option<U256>
+        cl_type: Option<U32>
       - name: result
         cl_type: String
       - name: votes_count

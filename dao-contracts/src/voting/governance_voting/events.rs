@@ -76,7 +76,7 @@ impl VotingCreated {
 /// Event thrown when voting ends
 #[derive(Debug, PartialEq, Event)]
 pub struct VotingEnded {
-    pub voting_id: U256,
+    pub voting_id: VotingId,
     pub informal_voting_id: VotingId,
     pub formal_voting_id: Option<VotingId>,
     pub result: String,
