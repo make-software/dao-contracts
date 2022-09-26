@@ -81,8 +81,8 @@ impl VotingSummary {
 pub struct VotingConfiguration {
     pub formal_voting_quorum: U256,
     pub formal_voting_time: u64,
-    pub informal_voting_quorum: Option<U256>,
-    pub informal_voting_time: Option<u64>,
+    pub informal_voting_quorum: U256,
+    pub informal_voting_time: u64,
     pub cast_first_vote: bool,
     pub create_minimum_reputation: U256,
     pub cast_minimum_reputation: U256,
@@ -105,7 +105,7 @@ pub struct Voting {
 impl Voting {
     /// Creates new Voting with immutable VotingConfiguration
     pub fn new(
-        voting_id: U256,
+        voting_id: VotingId,
         start_time: u64,
         voting_configuration: VotingConfiguration,
     ) -> Self {
@@ -131,7 +131,7 @@ impl Voting {
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
-    pub fn create_formal_voting(&self, new_voting_id: U256, start_time: u64) -> Self {
+    pub fn create_formal_voting(&self, new_voting_id: VotingId, start_time: u64) -> Self {
         let mut voting = self.clone();
         voting.formal_voting_id = Some(new_voting_id);
         voting.voting_id = new_voting_id;
@@ -147,7 +147,7 @@ impl Voting {
     }
 
     /// Sets voting as completed, optionally saves id of newly created formal voting
-    pub fn complete(&mut self, formal_voting_id: Option<U256>) {
+    pub fn complete(&mut self, formal_voting_id: Option<VotingId>) {
         if formal_voting_id.is_some() {
             self.formal_voting_id = formal_voting_id
         }
@@ -158,12 +158,9 @@ impl Voting {
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.get_voting_type() {
             VotingType::Informal => {
-                self.start_time
-                    + self
-                        .voting_configuration
-                        .informal_voting_time
-                        .unwrap_or_default()
-                    <= block_time
+                let start_time = self.start_time;
+                let voting_time = self.voting_configuration.informal_voting_time;
+                start_time + voting_time <= block_time
             }
             VotingType::Formal => {
                 self.start_time + self.voting_configuration.formal_voting_time <= block_time
@@ -185,10 +182,7 @@ impl Voting {
 
     pub fn get_quorum(&self) -> U256 {
         match self.get_voting_type() {
-            VotingType::Informal => self
-                .voting_configuration
-                .informal_voting_quorum
-                .unwrap_or_default(),
+            VotingType::Informal => self.voting_configuration.informal_voting_quorum,
             VotingType::Formal => self.voting_configuration.formal_voting_quorum,
         }
     }
@@ -217,7 +211,7 @@ impl Voting {
     }
 
     /// Get the voting's voting id.
-    pub fn voting_id(&self) -> U256 {
+    pub fn voting_id(&self) -> VotingId {
         self.voting_id
     }
 
@@ -237,12 +231,12 @@ impl Voting {
     }
 
     /// Get the voting's informal voting id.
-    pub fn informal_voting_id(&self) -> U256 {
+    pub fn informal_voting_id(&self) -> VotingId {
         self.informal_voting_id
     }
 
     /// Get the voting's formal voting id.
-    pub fn formal_voting_id(&self) -> Option<U256> {
+    pub fn formal_voting_id(&self) -> Option<VotingId> {
         self.formal_voting_id
     }
 
@@ -252,7 +246,7 @@ impl Voting {
     }
 
     /// Get the voting's informal voting quorum.
-    pub fn informal_voting_quorum(&self) -> Option<U256> {
+    pub fn informal_voting_quorum(&self) -> U256 {
         self.voting_configuration.informal_voting_quorum
     }
 
@@ -262,7 +256,7 @@ impl Voting {
     }
 
     /// Get the voting's informal voting time.
-    pub fn informal_voting_time(&self) -> Option<u64> {
+    pub fn informal_voting_time(&self) -> u64 {
         self.voting_configuration.informal_voting_time
     }
 
@@ -287,18 +281,18 @@ fn test_voting_serialization() {
     use casper_types::bytesrepr::ToBytes;
 
     let voting = Voting {
-        voting_id: VotingId::from(1),
+        voting_id: 1,
         completed: false,
         stake_in_favor: U256::zero(),
         stake_against: U256::zero(),
         start_time: 123,
-        informal_voting_id: VotingId::from(1),
+        informal_voting_id: 1,
         formal_voting_id: None,
         voting_configuration: VotingConfiguration {
             formal_voting_quorum: U256::from(2),
             formal_voting_time: 2,
-            informal_voting_quorum: Some(U256::from(2)),
-            informal_voting_time: Some(2),
+            informal_voting_quorum: U256::from(2),
+            informal_voting_time: 2,
             create_minimum_reputation: U256::from(2),
             contract_call: None,
             cast_first_vote: true,

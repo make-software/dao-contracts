@@ -1,6 +1,5 @@
 mod governance_voting_common;
 
-use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_contracts::voting::{
     consts as gv_consts, Ballot, BallotCast, Choice, VotingContractCreated, VotingCreated,
     VotingEnded,
@@ -9,6 +8,7 @@ use casper_dao_utils::Error;
 use casper_dao_utils::TestContract;
 use casper_types::U256;
 use speculate::speculate;
+use std::collections::BTreeMap;
 
 speculate! {
     context "governance voting" {
@@ -76,7 +76,8 @@ speculate! {
 
                 let voting_created_event: VotingCreated = mock_voter_contract.event(-2);
 
-                assert_eq!(voting_created_event.voting_id, VotingId::from(2));
+                let voting_id = 2;
+                assert_eq!(voting_created_event.voting_id, voting_id);
             }
         }
 
@@ -89,10 +90,17 @@ speculate! {
             }
 
             it "emits an event" {
+                let voting_id = 0;
                 mock_voter_contract.assert_event_at(-2, VotingCreated {
                     creator,
-                    voting_id: VotingId::zero(),
-                    stake: minimum_reputation,
+                    voting_id,
+                    informal_voting_id: voting_id,
+                    formal_voting_id: None,
+                    config_formal_voting_quorum: U256::from(3),
+                    config_formal_voting_time: formal_voting_time,
+                    config_informal_voting_quorum: U256::from(2),
+                    config_informal_voting_time: informal_voting_time,
+                    config_create_minimum_reputation: minimum_reputation,
                 });
             }
 
@@ -100,15 +108,15 @@ speculate! {
                 let voting_created_event : VotingCreated = mock_voter_contract.event(-2);
                 let ballot_cast_event: BallotCast = mock_voter_contract.event(-1);
                 let first_ballot: Ballot = mock_voter_contract.get_ballot(informal_voting.voting_id(), creator).unwrap();
+                let voting_id = 0;
 
-                assert_eq!(informal_voting.voting_id(), VotingId::zero());
+                assert_eq!(informal_voting.voting_id(), voting_id);
                 assert_eq!(informal_voting.formal_voting_time(), formal_voting_time);
-                assert_eq!(informal_voting.informal_voting_time().unwrap(), informal_voting_time);
+                assert_eq!(informal_voting.informal_voting_time(), informal_voting_time);
                 assert_eq!(informal_voting.formal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), formal_quorum).unwrap());
-                assert_eq!(informal_voting.informal_voting_quorum().unwrap(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
+                assert_eq!(informal_voting.informal_voting_quorum(), casper_dao_utils::math::promils_of(U256::from(total_onboarded), informal_quorum).unwrap());
                 assert_eq!(voting_created_event.voting_id, informal_voting.voting_id());
                 assert_eq!(voting_created_event.creator, creator);
-                assert_eq!(voting_created_event.stake, minimum_reputation);
 
                 // first vote is cast automatically
                 assert_eq!(first_ballot.voting_id, informal_voting.voting_id());
@@ -144,14 +152,20 @@ speculate! {
                 }
 
                 it "emits proper event" {
+                    // Creators stake is burned
+                    let mut burns = BTreeMap::new();
+                    burns.insert(creator, minimum_reputation);
                     mock_voter_contract.assert_last_event(VotingEnded {
                         voting_id: informal_voting.voting_id(),
                         result: gv_consts::INFORMAL_VOTING_QUORUM_NOT_REACHED.into(),
                         votes_count: U256::from(1),
                         stake_in_favor: minimum_reputation,
                         stake_against: U256::zero(),
-                        informal_voting_id: VotingId::zero(),
+                        informal_voting_id: 0,
                         formal_voting_id: None,
+                        transfers: Default::default(),
+                        burns,
+                        mints: Default::default(),
                     });
                 }
 
@@ -175,14 +189,24 @@ speculate! {
                 }
 
                 it "emits proper event" {
+                    // Creator's stake is burned, voters stake is returned
+                    let mut burns = BTreeMap::new();
+                    burns.insert(creator, minimum_reputation);
+                    let mut transfers = BTreeMap::new();
+                    for i in 1..4 {
+                        transfers.insert(mock_voter_contract.get_env().get_account(i), minimum_reputation);
+                    }
                     mock_voter_contract.assert_last_event(VotingEnded {
                         voting_id: informal_voting.voting_id(),
                         result: gv_consts::INFORMAL_VOTING_REJECTED.into(),
                         votes_count: U256::from(4),
                         stake_in_favor: minimum_reputation,
                         stake_against: minimum_reputation * 3,
-                        informal_voting_id: VotingId::zero(),
+                        informal_voting_id: 0,
                         formal_voting_id: None,
+                        transfers,
+                        burns,
+                        mints: Default::default(),
                     });
                 }
 
@@ -206,6 +230,12 @@ speculate! {
                 }
 
                 it "emits proper event" {
+                    // Voters stake is returned
+                    let mut transfers = BTreeMap::new();
+                    for i in 0..4 {
+                        dbg!(mock_voter_contract.get_env().get_account(i));
+                        transfers.insert(mock_voter_contract.get_env().get_account(i), minimum_reputation);
+                    }
                     mock_voter_contract.assert_last_event(VotingEnded {
                         voting_id: informal_voting.voting_id(),
                         result: gv_consts::INFORMAL_VOTING_PASSED.into(),
@@ -214,6 +244,9 @@ speculate! {
                         stake_against: minimum_reputation,
                         informal_voting_id: informal_voting.voting_id(),
                         formal_voting_id: Some(informal_voting.voting_id() + 1),
+                        transfers,
+                        burns: Default::default(),
+                        mints: Default::default(),
                     });
                 }
 
@@ -241,10 +274,29 @@ speculate! {
             }
 
             it "emits proper event" {
+                let informal_voting_id = 0;
+                let formal_voting_id = 1;
+                mock_voter_contract.assert_event_at(-8, VotingCreated {
+                    creator,
+                    voting_id: informal_voting_id,
+                    informal_voting_id,
+                    formal_voting_id: None,
+                    config_formal_voting_quorum: U256::from(3),
+                    config_formal_voting_time: formal_voting_time,
+                    config_informal_voting_quorum: U256::from(2),
+                    config_informal_voting_time: informal_voting_time,
+                    config_create_minimum_reputation: minimum_reputation,
+                });
                 mock_voter_contract.assert_event_at(-3, VotingCreated {
                     creator,
-                    voting_id: VotingId::one(),
-                    stake: minimum_reputation,
+                    voting_id: formal_voting_id,
+                    informal_voting_id,
+                    formal_voting_id: Some(formal_voting_id),
+                    config_formal_voting_quorum: U256::from(3),
+                    config_formal_voting_time: formal_voting_time,
+                    config_informal_voting_quorum: U256::from(2),
+                    config_informal_voting_time: informal_voting_time,
+                    config_create_minimum_reputation: minimum_reputation,
                 });
             }
 
@@ -255,14 +307,20 @@ speculate! {
                 }
 
                 it "emits proper event" {
+                    // Creator's stake is burned, voters is returned
+                    let mut burns = BTreeMap::new();
+                    burns.insert(creator, minimum_reputation);
                     mock_voter_contract.assert_last_event(VotingEnded {
                         voting_id: formal_voting.voting_id(),
                         result: gv_consts::FORMAL_VOTING_QUORUM_NOT_REACHED.into(),
                         votes_count: U256::from(1),
                         stake_in_favor: minimum_reputation,
                         stake_against: U256::zero(),
-                        informal_voting_id: VotingId::zero(),
-                        formal_voting_id: Some(VotingId::one()),
+                        informal_voting_id: 0,
+                        formal_voting_id: Some(1),
+                        transfers: Default::default(),
+                        burns,
+                        mints: Default::default(),
                     });
                 }
 
@@ -284,14 +342,22 @@ speculate! {
                 }
 
                 it "emits proper event" {
+                    // Reputation is redistributed - creator's stake is given to voters
+                    let mut transfers = BTreeMap::new();
+                    for i in 1..4 {
+                        transfers.insert(mock_voter_contract.get_env().get_account(i), (minimum_reputation * 4) / 3);
+                    }
                     mock_voter_contract.assert_last_event(VotingEnded {
                         voting_id: formal_voting.voting_id(),
                         result: gv_consts::FORMAL_VOTING_REJECTED.into(),
                         votes_count: U256::from(4),
                         stake_in_favor: minimum_reputation,
                         stake_against: minimum_reputation * 3,
-                        informal_voting_id: VotingId::zero(),
-                        formal_voting_id: Some(VotingId::one()),
+                        informal_voting_id: 0,
+                        formal_voting_id: Some(1),
+                        transfers,
+                        burns: Default::default(),
+                        mints: Default::default(),
                     });
                 }
 
@@ -313,14 +379,22 @@ speculate! {
                 }
 
                 it "emits proper event" {
+                    // Reputation is redistributed - 4th account stake is divided
+                    let mut transfers = BTreeMap::new();
+                    for i in 0..3 {
+                        transfers.insert(mock_voter_contract.get_env().get_account(i), (minimum_reputation * 4) / 3);
+                    }
                     mock_voter_contract.assert_last_event(VotingEnded {
                         voting_id: formal_voting.voting_id(),
                         result: gv_consts::FORMAL_VOTING_PASSED.into(),
                         votes_count: U256::from(4),
                         stake_in_favor: minimum_reputation * 3,
                         stake_against: minimum_reputation,
-                        informal_voting_id: VotingId::zero(),
-                        formal_voting_id: Some(VotingId::one()),
+                        informal_voting_id: 0,
+                        formal_voting_id: Some(1),
+                        transfers,
+                        burns: Default::default(),
+                        mints: Default::default(),
                     });
                 }
 

@@ -32,6 +32,7 @@ use delegate::delegate;
 
 use crate::bid::events::{JobCancelled, JobDone, JobRejected};
 use crate::voting::types::ReputationAmount;
+use crate::voting::VotingId;
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
 
@@ -127,11 +128,11 @@ pub trait BidEscrowContractInterface {
     /// see [GovernanceVoting](GovernanceVoting)
     fn get_reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
 }
@@ -153,7 +154,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         kyc_token: Address,
         va_token: Address,
     ) {
-        self.voting.init(variable_repo, reputation_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
         self.kyc.init(kyc_token);
         self.onboarding.init(va_token);
     }
@@ -314,9 +315,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 }

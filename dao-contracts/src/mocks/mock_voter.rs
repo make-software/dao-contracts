@@ -14,16 +14,16 @@ use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait MockVoterContractInterface {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address);
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
     fn create_voting(&mut self, value: String, stake: U256);
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
     fn get_variable_repo_address(&self) -> Address;
     fn get_reputation_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
     fn set_variable(&mut self, variable: String);
     fn get_variable(&self) -> String;
 }
@@ -65,14 +65,14 @@ impl MockVoterContractInterface for MockVoterContract {
 
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address);
+            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 }

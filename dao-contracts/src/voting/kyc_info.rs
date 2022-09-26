@@ -3,7 +3,7 @@ use casper_dao_utils::{
     Mapping, Variable,
 };
 
-use crate::{DaoOwnedNftContractCaller, DaoOwnedNftContractInterface};
+use crate::{KycOwnedNftContractCaller, KycOwnedNftContractInterface};
 
 /// A utility module that provides information about the current status of the KYC process.
 #[derive(Instance)]
@@ -29,7 +29,7 @@ impl KycInfo {
 
     /// Returns true if the `address` has a non-zero balance of kyc token, false otherwise.
     pub fn is_kycd(&self, &address: &Address) -> bool {
-        !DaoOwnedNftContractCaller::at(self.get_kyc_token_address())
+        !KycOwnedNftContractCaller::at(self.get_kyc_token_address())
             .balance_of(address)
             .is_zero()
     }

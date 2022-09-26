@@ -5,7 +5,7 @@ use casper_dao_contracts::bid::{
     job::JobStatus,
     types::BidId,
 };
-use casper_dao_contracts::voting::{Choice, VotingCreated};
+use casper_dao_contracts::voting::{voting::VotingConfiguration, Choice, VotingCreated};
 use casper_dao_utils::{Error, TestContract};
 use casper_types::{U256, U512};
 use speculate::speculate;
@@ -239,9 +239,9 @@ speculate! {
             before {
                 let bid_id: BidId = 0;
                 #[allow(unused_variables)]
-                let informal_voting_id = U256::zero();
+                let informal_voting_id = 0;
                 #[allow(unused_variables)]
-                let formal_voting_id = U256::one();
+                let formal_voting_id = 1;
 
                 kyc_token.mint(job_poster, U256::from(1)).unwrap();
                 kyc_token.mint(worker, U256::from(2)).unwrap();
@@ -260,10 +260,27 @@ speculate! {
             }
 
             it "emits proper events" {
-                let voting_created_event: VotingCreated = bid_escrow_contract.event(-1);
                 let job_submitted_event: JobSubmitted = bid_escrow_contract.event(-2);
                 assert_eq!(job_submitted_event, JobSubmitted { bid_id, job_poster, worker, result: job_result });
-                assert_eq!(voting_created_event, VotingCreated { creator: job_poster, voting_id: casper_dao_contracts::voting::VotingId::zero(), stake: U256::from(0) });
+                // TODO: Check event below
+                let voting_created_event: VotingCreated = bid_escrow_contract.event(-1);
+                assert_eq!(voting_created_event, VotingCreated::new(
+                    &job_poster,
+                    informal_voting_id,
+                    informal_voting_id,
+                    None,
+                    &VotingConfiguration {
+                        // TODO: Why is this 0?
+                        formal_voting_quorum: 0.into(),
+                        formal_voting_time: 2 * 3_600,
+                        // TODO: Why is this 0?
+                        informal_voting_quorum: 0.into(),
+                        informal_voting_time: 3_600,
+                        cast_first_vote: false,
+                        create_minimum_reputation: 0.into(),
+                        cast_minimum_reputation: 0.into(),
+                        contract_call: None,
+                    }));
             }
 
             it "prevents job poster and worker from voting" {

@@ -210,8 +210,8 @@ impl VariableRepositoryContractCaller {
         VotingConfiguration {
             formal_voting_quorum: self.formal_voting_quorum(total_onboarded),
             formal_voting_time: self.formal_voting_time(),
-            informal_voting_quorum: Some(self.informal_voting_quorum(total_onboarded)),
-            informal_voting_time: Some(self.informal_voting_time()),
+            informal_voting_quorum: self.informal_voting_quorum(total_onboarded),
+            informal_voting_time: self.informal_voting_time(),
             cast_first_vote: true,
             create_minimum_reputation: self.minimum_governance_reputation(),
             cast_minimum_reputation: U256::zero(),

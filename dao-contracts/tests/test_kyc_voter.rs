@@ -1,9 +1,10 @@
+mod governance_voting_common;
 use casper_dao_contracts::{
-    DaoOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
+    KycOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{Address, TestContract, TestEnv};
-use casper_types::U256;
+use casper_dao_utils::{Address, DocumentHash, TestContract, TestEnv};
+use casper_types::{bytesrepr::Bytes, U256};
 use speculate::speculate;
 
 speculate! {
@@ -53,7 +54,8 @@ speculate! {
 
             context "voting_is_created" {
                 before {
-                    contract.as_account(voter).create_voting(applicant, document_hash, vote_amount).unwrap();
+                    #[allow(clippy::redundant_clone)]
+                    contract.as_account(voter).create_voting(applicant, document_hash.clone(), vote_amount).unwrap();
                 }
 
                 test "cannot_create_next_voting_for_the_same_applicant" {
@@ -72,12 +74,12 @@ speculate! {
 
                 context "informal_voting_passed" {
                     before {
-                        let voting_id = 0.into();
+                        let voting_id = 0;
                         let voting = contract.get_voting(voting_id).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time().unwrap() + 1));
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(voter).finish_voting(voting_id).unwrap();
                         #[allow(unused_variables)]
-                        let voting_id: VotingId = 1.into();
+                        let voting_id: VotingId = 1;
                     }
                     test "cannot_create_next_voting_for_the_same_applicant" {
                         assert_eq!(
@@ -88,7 +90,7 @@ speculate! {
 
                     context "passed" {
                         before {
-                            contract.as_account(second_voter).vote(voting_id, Choice::InFavor,  vote_amount).unwrap();
+                            contract.as_account(second_voter).vote(voting_id, Choice::InFavor, vote_amount).unwrap();
                             env.advance_block_time_by(Duration::from_secs(voting.formal_voting_time() + 1));
                             contract.as_account(voter).finish_voting(voting_id).unwrap();
                         }
@@ -147,8 +149,8 @@ fn setup() -> (
     Address,
     U256,
     U256,
-    U256,
-    DaoOwnedNftContractTest,
+    DocumentHash,
+    KycOwnedNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
     KycVoterContractTest,
@@ -156,7 +158,7 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let mut kyc_token = DaoOwnedNftContractTest::new(
+    let mut kyc_token = KycOwnedNftContractTest::new(
         &env,
         "kyc token".to_string(),
         "kyt".to_string(),
@@ -164,11 +166,12 @@ fn setup() -> (
     );
     let mut reputation_token = ReputationContractTest::new(&env);
     let mut variable_repo = VariableRepositoryContractTest::new(&env);
-
+    let va_token = governance_voting_common::setup_va_token(&env, 2);
     let onboarding_voter = KycVoterContractTest::new(
         &env,
         variable_repo.address(),
         reputation_token.address(),
+        va_token.address(),
         kyc_token.address(),
     );
 
@@ -184,16 +187,16 @@ fn setup() -> (
     kyc_token
         .change_ownership(onboarding_voter.address())
         .unwrap();
-    let applicant = env.get_account(1);
-    let another_applicant = env.get_account(2);
-    let voter = env.get_account(3);
-    let second_voter = env.get_account(4);
-    // The voter has to have some tokens
+    let applicant = env.get_account(3);
+    let another_applicant = env.get_account(4);
+    let voter = env.get_account(1);
+    let second_voter = env.get_account(2);
+    // The voter has to have some tokens, they are already va'd
     let mint_amount = 10_000.into();
     let vote_amount = 1_000.into();
     reputation_token.mint(voter, mint_amount).unwrap();
     reputation_token.mint(second_voter, mint_amount).unwrap();
-    let document_hash = 1234.into();
+    let document_hash = Bytes::from(vec![1, 2, 3, 4]);
 
     (
         applicant,

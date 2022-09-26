@@ -1,6 +1,6 @@
 [package]
 name = "casper-dao-contracts"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 
 [dependencies]
@@ -23,8 +23,23 @@ test = false
 doc = false
 
 [[bin]]
+name = "reputation_voter_contract"
+path = "bin/reputation_voter_contract.rs"
+bench = false
+doctest = false
+test = false
+doc = false
+
+[[bin]]
 name = "variable_repository_contract"
 path = "bin/variable_repository_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "simple_voter_contract"
+path = "bin/simple_voter_contract.rs"
 bench = false
 doctest = false
 test = false
@@ -37,8 +52,15 @@ doctest = false
 test = false
 
 [[bin]]
-name = "dao_owned_nft_contract"
-path = "bin/dao_owned_nft_contract.rs"
+name = "va_owned_nft_contract"
+path = "bin/va_owned_nft_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "kyc_owned_nft_contract"
+path = "bin/kyc_owned_nft_contract.rs"
 bench = false
 doctest = false
 test = false

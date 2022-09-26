@@ -63,11 +63,11 @@ pub trait OnboardingVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
-    fn get_voting(&self, voting_id: U256) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
+    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
-    fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
     /// see [OnboardingInfo](OnboardingInfo::get_va_token_address())
@@ -97,7 +97,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
     ) {
         self.onboarding.init(va_token);
         self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     delegate! {
@@ -113,9 +113,9 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
-            fn get_voting(&self, voting_id: U256) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: U256, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: U256, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 

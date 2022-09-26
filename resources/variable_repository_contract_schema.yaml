@@ -1,69 +1,47 @@
-name: "variable_repository_contract"
-
+---
+name: variable_repository_contract
 entry_points:
-  - name: "set_or_update"
+  - name: init
+    arguments: []
+  - name: update_at
     arguments:
-      - name: "key"
-        cl_type: "String"
-      - name: "value"
-        cl_type: "Bytes"
-
-  - name: "get"
+      - name: key
+        cl_type: String
+      - name: value
+        cl_type: Bytes
+      - name: activation_time
+        cl_type: Option<U64>
+  - name: change_ownership
     arguments:
-      - name: "key"
-        cl_type: "String"
-    returns:
-      - cl_type: "Bytes"
-
-  - name: "change_ownership"
+      - name: owner
+        cl_type: Address
+  - name: add_to_whitelist
     arguments:
-      - name: "owner"
-        cl_type: "Address"
-
-  - name: "add_to_whitelist"
+      - name: address
+        cl_type: Address
+  - name: remove_from_whitelist
     arguments:
-      - name: "address"
-        cl_type: "Address"
-
-  - name: "remove_from_whitelist"
-    arguments:
-      - name: "address"
-        cl_type: "Address"
-
-events_config:
-  dictionary_named_key: "events"
-  length_named_key: "events_length"
-
+      - name: address
+        cl_type: Address
 events:
-  - name: "ValueSet"
+  - name: ValueUpdated
     fields:
-      - name: "key"
-        cl_type: "String"
-      - name: "value"
-        cl_type: "Bytes"
-
-- name: "ValueRemoved"
+      - name: key
+        cl_type: String
+      - name: value
+        cl_type: Bytes
+      - name: activation_time
+        cl_type: Option<U64>
+  - name: OwnerChanged
     fields:
-      - name: "key"
-        cl_type: "String"
-
-named_keys:
-  - name: "owner"
-    named_key: "owner"
-    cl_type: "Option<Address>"
-
-  - name: "whitelist"
-    named_key: "whitelist"
-    cl_type: "Mapping<Address, bool>"
-
-  - name: "storage"
-    named_key: "storage"
-    cl_type: "Mapping<String, Option<Bytes>>"
-
-  - name: "keys"
-    named_key: "keys"
-    cl_type: "Mapping<u32, Option<String>>"
-
-  - name: "keys_length"
-    named_key: "keys_length"
-    cl_type: "Variable<u32>"
+      - name: new_owner
+        cl_type: Address
+  - name: AddedToWhitelist
+    fields:
+      - name: address
+        cl_type: Address
+  - name: RemovedFromWhitelist
+    fields:
+      - name: address
+        cl_type: Address
+named_keys: []

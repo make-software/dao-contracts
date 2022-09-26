@@ -4,58 +4,54 @@ entry_points:
   - name: "mint"
     arguments:
       - name: "recipient"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
       - name: "amount"
-        cl_type: "casper_types::U256"
+        cl_type: "U256"
 
   - name: "burn"
     arguments:
       - name: "owner"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
       - name: "amount"
-        cl_type: "casper_types::U256"
+        cl_type: "U256"
 
   - name: "transfer_from"
     arguments:
       - name: "owner"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
       - name: "recipient"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
       - name: "amount"
-        cl_type: "casper_types::U256"
+        cl_type: "U256"
 
   - name: "change_ownership"
     arguments:
       - name: "owner"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
 
   - name: "add_to_whitelist"
     arguments:
       - name: "address"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
 
   - name: "remove_from_whitelist"
     arguments:
       - name: "address"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
 
   - name: "stake"
     arguments:
       - name: "address"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
       - name: "amount"
-        cl_type: "casper_types::U256"
+        cl_type: "U256"
 
   - name: "unstake"
     arguments:
       - name: "address"
-        cl_type: "casper_dao_utils::Address"
+        cl_type: "Address"
       - name: "amount"
-        cl_type: "casper_types::U256"
-
-events_config:
-  dictionary_named_key: "events"
-  length_named_key: "events_length"
+        cl_type: "U256"
 
 events:
   - name: "Transfer"
@@ -113,20 +109,32 @@ events:
 named_keys:
   - name: "owner"
     named_key: "owner"
-    cl_type: "Option<Address>"
+    cl_type: 
+      - name: "Option"
+        inner: "Address"
 
   - name: "total_supply"
     named_key: "total_supply"
     cl_type: "U256"
 
-  - name: "balances"
+  - name: "balance"
     named_key: "balances"
-    cl_type: "Mapping<Address, U256>"
+    cl_type:
+      - name: "Mapping"
+        key: "Address"
+        value: "U256"
 
   - name: "whitelist"
     named_key: "whitelist"
-    cl_type: "Mapping<Address, bool>"
+    cl_type:
+      - name: "Mapping"
+        key: "Address"
+        value: "Bool"
 
   - name: "stakes"
-    named_key: "stakes"
-    cl_type: "Mapping<Address, U256>"
+    named_key: "token_stakes"
+    cl_type:
+      - name: "Mapping"
+        key: "Address"
+        value: "U256"
+

@@ -1,4 +1,4 @@
-use crate::voting::types::VotingId;
+use crate::voting::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
@@ -30,6 +30,7 @@ pub struct Ballot {
     pub stake: U256,
 }
 
+#[cfg(test)]
 #[test]
 fn test_vote_serialization() {
     use casper_types::account::AccountHash;
@@ -39,7 +40,7 @@ fn test_vote_serialization() {
 
     let vote = Ballot {
         voter: address,
-        voting_id: U256::from(123),
+        voting_id: 123,
         choice: Choice::InFavor,
         stake: U256::from(456),
     };

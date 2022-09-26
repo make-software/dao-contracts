@@ -1,6 +1,6 @@
 use casper_dao_contracts::{
-    DaoOwnedNftContractTest, OnboardingVoterContractTest, ReputationContractTest,
-    VariableRepositoryContractTest,
+    KycOwnedNftContractTest, OnboardingVoterContractTest, ReputationContractTest,
+    VaOwnedNftContractTest, VariableRepositoryContractTest,
 };
 use casper_dao_utils::{Address, TestContract, TestEnv};
 use casper_types::U256;
@@ -109,12 +109,12 @@ speculate! {
 
                 context "informal_voting_passed" {
                     before {
-                        let voting_id = 0.into();
+                        let voting_id = 0;
                         let voting = contract.get_voting(voting_id).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time().unwrap() + 1));
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
                         #[allow(unused_variables)]
-                        let voting_id: VotingId = 1.into();
+                        let voting_id: VotingId = 1;
                     }
 
                     test "that_add_voting_cannot_be_created" {
@@ -221,11 +221,11 @@ speculate! {
 
                 context "informal_voting_passed" {
                     before {
-                        let voting_id = 0.into();
+                        let voting_id = 0;
                         let voting = contract.get_voting(voting_id).unwrap();
-                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time().unwrap() + 1));
+                        env.advance_block_time_by(Duration::from_secs(voting.informal_voting_time() + 1));
                         contract.as_account(va).finish_voting(voting_id).unwrap();
-                        let voting_id = 1.into();
+                        let voting_id = 1;
                     }
 
                     context "voting_passed" {
@@ -279,8 +279,8 @@ fn setup() -> (
     Address,
     U256,
     U256,
-    DaoOwnedNftContractTest,
-    DaoOwnedNftContractTest,
+    VaOwnedNftContractTest,
+    KycOwnedNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
     OnboardingVoterContractTest,
@@ -288,13 +288,13 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let mut va_token = DaoOwnedNftContractTest::new(
+    let mut va_token = VaOwnedNftContractTest::new(
         &env,
         "user token".to_string(),
         "usert".to_string(),
         "".to_string(),
     );
-    let kyc_token = DaoOwnedNftContractTest::new(
+    let kyc_token = KycOwnedNftContractTest::new(
         &env,
         "kyc token".to_string(),
         "kyt".to_string(),
