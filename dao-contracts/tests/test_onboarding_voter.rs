@@ -1,6 +1,6 @@
 use casper_dao_contracts::{
-    DaoOwnedNftContractTest, OnboardingVoterContractTest, ReputationContractTest,
-    VariableRepositoryContractTest,
+    KycOwnedNftContractTest, OnboardingVoterContractTest, ReputationContractTest,
+    VaOwnedNftContractTest, VariableRepositoryContractTest,
 };
 use casper_dao_utils::{Address, TestContract, TestEnv};
 use casper_types::U256;
@@ -279,8 +279,8 @@ fn setup() -> (
     Address,
     U256,
     U256,
-    DaoOwnedNftContractTest,
-    DaoOwnedNftContractTest,
+    VaOwnedNftContractTest,
+    KycOwnedNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
     OnboardingVoterContractTest,
@@ -288,13 +288,13 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let mut va_token = DaoOwnedNftContractTest::new(
+    let mut va_token = VaOwnedNftContractTest::new(
         &env,
         "user token".to_string(),
         "usert".to_string(),
         "".to_string(),
     );
-    let kyc_token = DaoOwnedNftContractTest::new(
+    let kyc_token = KycOwnedNftContractTest::new(
         &env,
         "kyc token".to_string(),
         "kyt".to_string(),

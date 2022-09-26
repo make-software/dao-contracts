@@ -12,7 +12,7 @@ use casper_types::U256;
 use delegate::delegate;
 
 #[casper_contract_interface]
-pub trait DaoOwnedNftContractInterface {
+pub trait KycOwnedNftContractInterface {
     /// Contract constructor.
     ///
     /// Initializes modules. Sets the deployer as the owner.
@@ -92,21 +92,21 @@ pub trait DaoOwnedNftContractInterface {
     fn set_approval_for_all(&mut self, operator: Address, approved: bool);
 }
 
-/// Dao Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
+/// Kyc Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
 /// [ERC721Token](ERC721Token) module.
 ///
-/// Dao Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
+/// Kyc Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
 ///
-/// For details see [DaoOwnedNftContractInterface](DaoOwnedNftContractInterface)
+/// For details see [KycOwnedNftContractInterface](KycOwnedNftContractInterface)
 #[derive(Instance)]
-pub struct DaoOwnedNftContract {
+pub struct KycOwnedNftContract {
     token: ERC721Token,
     metadata: MetadataERC721,
     access_control: AccessControl,
     tokens: Mapping<Address, Option<TokenId>>,
 }
 
-impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
+impl KycOwnedNftContractInterface for KycOwnedNftContract {
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
         let deployer = caller();
         self.metadata.init(name, symbol, base_uri);
@@ -164,7 +164,7 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
     }
 }
 
-impl DaoOwnedNftContract {
+impl KycOwnedNftContract {
     fn assert_does_not_own_token(&self, address: &Address) {
         if self.tokens.get(address).is_some() {
             casper_env::revert(Error::UserAlreadyOwnsToken)

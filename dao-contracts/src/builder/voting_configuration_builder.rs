@@ -3,7 +3,7 @@ use casper_types::U256;
 
 use crate::{
     voting::{voting::VotingConfiguration, GovernanceVoting},
-    DaoOwnedNftContractCaller, DaoOwnedNftContractInterface, VariableRepositoryContractCaller,
+    KycOwnedNftContractCaller, KycOwnedNftContractInterface, VariableRepositoryContractCaller,
 };
 
 pub struct VotingConfigurationBuilder {
@@ -13,7 +13,7 @@ pub struct VotingConfigurationBuilder {
 impl VotingConfigurationBuilder {
     pub fn defaults(voting: &GovernanceVoting) -> VotingConfigurationBuilder {
         let total_onboarded =
-            DaoOwnedNftContractCaller::at(voting.get_va_token_address()).total_supply();
+            KycOwnedNftContractCaller::at(voting.get_va_token_address()).total_supply();
         VotingConfigurationBuilder {
             voting_configuration: VariableRepositoryContractCaller::at(
                 voting.get_variable_repo_address(),

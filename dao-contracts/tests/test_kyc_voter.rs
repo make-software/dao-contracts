@@ -1,6 +1,6 @@
 mod governance_voting_common;
 use casper_dao_contracts::{
-    DaoOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
+    KycOwnedNftContractTest, KycVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
 };
 use casper_dao_utils::{Address, DocumentHash, TestContract, TestEnv};
@@ -150,7 +150,7 @@ fn setup() -> (
     U256,
     U256,
     DocumentHash,
-    DaoOwnedNftContractTest,
+    KycOwnedNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
     KycVoterContractTest,
@@ -158,7 +158,7 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let mut kyc_token = DaoOwnedNftContractTest::new(
+    let mut kyc_token = KycOwnedNftContractTest::new(
         &env,
         "kyc token".to_string(),
         "kyt".to_string(),
