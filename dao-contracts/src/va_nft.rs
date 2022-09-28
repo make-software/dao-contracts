@@ -12,7 +12,7 @@ use casper_types::U256;
 use delegate::delegate;
 
 #[casper_contract_interface]
-pub trait DaoOwnedNftContractInterface {
+pub trait VaNftContractInterface {
     /// Contract constructor.
     ///
     /// Initializes modules. Sets the deployer as the owner.
@@ -85,28 +85,23 @@ pub trait DaoOwnedNftContractInterface {
     /// # Events
     /// Emits [`Burn`](casper_dao_modules::events::Burn) event.
     fn burn(&mut self, token_id: TokenId);
-    /// Change or confirm the approved address for a token with the given id.
-    fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
-    /// Enables or disables approval for a third party (`operator`) to manage
-    /// all of the caller assets.
-    fn set_approval_for_all(&mut self, operator: Address, approved: bool);
 }
 
-/// Dao Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
+/// Va Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
 /// [ERC721Token](ERC721Token) module.
 ///
-/// Dao Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
+/// Va Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
 ///
-/// For details see [DaoOwnedNftContractInterface](DaoOwnedNftContractInterface)
+/// For details see [VaNftContractInterface](VaNftContractInterface)
 #[derive(Instance)]
-pub struct DaoOwnedNftContract {
+pub struct VaNftContract {
     token: ERC721Token,
     metadata: MetadataERC721,
     access_control: AccessControl,
     tokens: Mapping<Address, Option<TokenId>>,
 }
 
-impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
+impl VaNftContractInterface for VaNftContract {
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
         let deployer = caller();
         self.metadata.init(name, symbol, base_uri);
@@ -132,8 +127,6 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
             fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
-            fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
-            fn set_approval_for_all(&mut self, operator: Address, approved: bool);
         }
     }
 
@@ -159,12 +152,13 @@ impl DaoOwnedNftContractInterface for DaoOwnedNftContract {
             .token
             .owner_of(token_id)
             .unwrap_or_revert_with(Error::InvalidTokenOwner);
-        BurnableERC721::burn(&mut self.token, token_id);
+
+        BurnableERC721::burn_unchecked(&mut self.token, token_id);
         self.tokens.set(&owner, None);
     }
 }
 
-impl DaoOwnedNftContract {
+impl VaNftContract {
     fn assert_does_not_own_token(&self, address: &Address) {
         if self.tokens.get(address).is_some() {
             casper_env::revert(Error::UserAlreadyOwnsToken)
