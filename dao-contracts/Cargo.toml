@@ -52,15 +52,15 @@ doctest = false
 test = false
 
 [[bin]]
-name = "va_owned_nft_contract"
-path = "bin/va_owned_nft_contract.rs"
+name = "va_nft_contract"
+path = "bin/va_nft_contract.rs"
 bench = false
 doctest = false
 test = false
 
 [[bin]]
-name = "kyc_owned_nft_contract"
-path = "bin/kyc_owned_nft_contract.rs"
+name = "kyc_nft_contract"
+path = "bin/kyc_nft_contract.rs"
 bench = false
 doctest = false
 test = false
@@ -87,22 +87,8 @@ doctest = false
 test = false
 
 [[bin]]
-name = "bid_escrow_contract"
-path = "bin/bid_escrow_contract.rs"
-bench = false
-doctest = false
-test = false
-
-[[bin]]
 name = "mock_voter_contract"
 path = "bin/mocks/mock_voter_contract.rs"
-bench = false
-doctest = false
-test = false
-
-[[bin]]
-name = "pick_bid"
-path = "bin/pick_bid.rs"
 bench = false
 doctest = false
 test = false

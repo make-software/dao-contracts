@@ -23,7 +23,7 @@ pub mod voting;
 pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
 pub use builder::voting_configuration_builder::VotingConfigurationBuilder;
-pub use kyc_nft::{KycOwnedNftContract, KycOwnedNftContractCaller, KycOwnedNftContractInterface};
+pub use kyc_nft::{KycNftContract, KycNftContractCaller, KycNftContractInterface};
 pub use kyc_voter::{KycVoterContract, KycVoterContractCaller, KycVoterContractInterface};
 #[doc(hidden)]
 pub use mocks::mock_voter::{
@@ -37,7 +37,7 @@ pub use reputation::{ReputationContract, ReputationContractCaller, ReputationCon
 pub use reputation_voter::{
     ReputationVoterContract, ReputationVoterContractCaller, ReputationVoterContractInterface,
 };
-pub use va_nft::{VaOwnedNftContract, VaOwnedNftContractCaller, VaOwnedNftContractInterface};
+pub use va_nft::{VaNftContract, VaNftContractCaller, VaNftContractInterface};
 pub use variable_repository::{
     VariableRepositoryContract, VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
@@ -72,10 +72,10 @@ pub use mocks::mock_voter::MockVoterContractTest;
 pub use onboarding_voter::OnboardingVoterContractTest;
 
 #[cfg(feature = "test-support")]
-pub use va_nft::VaOwnedNftContractTest;
+pub use va_nft::VaNftContractTest;
 
 #[cfg(feature = "test-support")]
-pub use kyc_nft::KycOwnedNftContractTest;
+pub use kyc_nft::KycNftContractTest;
 
 #[cfg(feature = "test-support")]
 pub use kyc_voter::KycVoterContractTest;

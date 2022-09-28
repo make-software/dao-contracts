@@ -1,9 +1,9 @@
 use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice},
-    AdminContractTest, BidEscrowContractTest, KycOwnedNftContractTest, MockVoterContractTest,
-    RepoVoterContractTest, ReputationContractTest, ReputationVoterContractTest,
-    VaOwnedNftContractTest, VariableRepositoryContractTest,
+    AdminContractTest, BidEscrowContractTest, KycNftContractTest, MockVoterContractTest,
+    RepoVoterContractTest, ReputationContractTest, ReputationVoterContractTest, VaNftContractTest,
+    VariableRepositoryContractTest,
 };
 
 use casper_dao_contracts::simple_voter::SimpleVoterContractTest;
@@ -19,8 +19,8 @@ use casper_types::{
 pub fn setup_bid_escrow() -> (
     BidEscrowContractTest,
     ReputationContractTest,
-    VaOwnedNftContractTest,
-    KycOwnedNftContractTest,
+    VaNftContractTest,
+    KycNftContractTest,
 ) {
     let informal_quorum = 500.into();
     let formal_quorum = 500.into();
@@ -29,14 +29,14 @@ pub fn setup_bid_escrow() -> (
     let (variable_repo_contract, mut reputation_token_contract, _va_owned_nft_contract) =
         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
-    let va_token = VaOwnedNftContractTest::new(
+    let va_token = VaNftContractTest::new(
         variable_repo_contract.get_env(),
         "user token".to_string(),
         "usert".to_string(),
         "".to_string(),
     );
 
-    let kyc_token = KycOwnedNftContractTest::new(
+    let kyc_token = KycNftContractTest::new(
         variable_repo_contract.get_env(),
         "kyc token".to_string(),
         "kyt".to_string(),
@@ -268,7 +268,7 @@ fn setup_repository_and_reputation_contracts(
 ) -> (
     VariableRepositoryContractTest,
     ReputationContractTest,
-    VaOwnedNftContractTest,
+    VaNftContractTest,
 ) {
     let minimum_reputation = 500.into();
     let reputation_to_mint = 10_000;
@@ -396,8 +396,8 @@ pub fn setup_reputation_token_contract(
     reputation_token_contract
 }
 
-pub fn setup_va_token(env: &TestEnv, total_onboarded: usize) -> VaOwnedNftContractTest {
-    let mut va_token = VaOwnedNftContractTest::new(
+pub fn setup_va_token(env: &TestEnv, total_onboarded: usize) -> VaNftContractTest {
+    let mut va_token = VaNftContractTest::new(
         env,
         "va_token".to_string(),
         "VAT".to_string(),

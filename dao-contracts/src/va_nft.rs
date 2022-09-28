@@ -12,7 +12,7 @@ use casper_types::U256;
 use delegate::delegate;
 
 #[casper_contract_interface]
-pub trait VaOwnedNftContractInterface {
+pub trait VaNftContractInterface {
     /// Contract constructor.
     ///
     /// Initializes modules. Sets the deployer as the owner.
@@ -85,11 +85,6 @@ pub trait VaOwnedNftContractInterface {
     /// # Events
     /// Emits [`Burn`](casper_dao_modules::events::Burn) event.
     fn burn(&mut self, token_id: TokenId);
-    /// Change or confirm the approved address for a token with the given id.
-    fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
-    /// Enables or disables approval for a third party (`operator`) to manage
-    /// all of the caller assets.
-    fn set_approval_for_all(&mut self, operator: Address, approved: bool);
 }
 
 /// Va Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
@@ -97,16 +92,16 @@ pub trait VaOwnedNftContractInterface {
 ///
 /// Va Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
 ///
-/// For details see [VaOwnedNftContractInterface](VaOwnedNftContractInterface)
+/// For details see [VaNftContractInterface](VaNftContractInterface)
 #[derive(Instance)]
-pub struct VaOwnedNftContract {
+pub struct VaNftContract {
     token: ERC721Token,
     metadata: MetadataERC721,
     access_control: AccessControl,
     tokens: Mapping<Address, Option<TokenId>>,
 }
 
-impl VaOwnedNftContractInterface for VaOwnedNftContract {
+impl VaNftContractInterface for VaNftContract {
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
         let deployer = caller();
         self.metadata.init(name, symbol, base_uri);
@@ -132,8 +127,6 @@ impl VaOwnedNftContractInterface for VaOwnedNftContract {
             fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
-            fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
-            fn set_approval_for_all(&mut self, operator: Address, approved: bool);
         }
     }
 
@@ -159,12 +152,13 @@ impl VaOwnedNftContractInterface for VaOwnedNftContract {
             .token
             .owner_of(token_id)
             .unwrap_or_revert_with(Error::InvalidTokenOwner);
-        BurnableERC721::burn(&mut self.token, token_id);
+
+        BurnableERC721::burn_unchecked(&mut self.token, token_id);
         self.tokens.set(&owner, None);
     }
 }
 
-impl VaOwnedNftContract {
+impl VaNftContract {
     fn assert_does_not_own_token(&self, address: &Address) {
         if self.tokens.get(address).is_some() {
             casper_env::revert(Error::UserAlreadyOwnsToken)

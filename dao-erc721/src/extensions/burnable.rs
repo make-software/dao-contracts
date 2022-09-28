@@ -13,9 +13,13 @@ impl BurnableERC721 {
             casper_env::revert(Error::CallerIsNotOwnerNorApproved);
         }
 
+        Self::burn_unchecked(erc721, token_id);
+    }
+
+    pub fn burn_unchecked(erc721: &mut ERC721Token, token_id: TokenId) {
         let owner = erc721.owner_of_or_revert(token_id);
 
-        erc721.approve(None, token_id);
+        erc721.approve_owner(None, None, token_id);
         erc721.decrement_balance(owner);
         erc721.set_owner_of(token_id, None);
 

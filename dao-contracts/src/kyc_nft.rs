@@ -12,7 +12,7 @@ use casper_types::U256;
 use delegate::delegate;
 
 #[casper_contract_interface]
-pub trait KycOwnedNftContractInterface {
+pub trait KycNftContractInterface {
     /// Contract constructor.
     ///
     /// Initializes modules. Sets the deployer as the owner.
@@ -85,11 +85,6 @@ pub trait KycOwnedNftContractInterface {
     /// # Events
     /// Emits [`Burn`](casper_dao_modules::events::Burn) event.
     fn burn(&mut self, token_id: TokenId);
-    /// Change or confirm the approved address for a token with the given id.
-    fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
-    /// Enables or disables approval for a third party (`operator`) to manage
-    /// all of the caller assets.
-    fn set_approval_for_all(&mut self, operator: Address, approved: bool);
 }
 
 /// Kyc Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
@@ -97,16 +92,16 @@ pub trait KycOwnedNftContractInterface {
 ///
 /// Kyc Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
 ///
-/// For details see [KycOwnedNftContractInterface](KycOwnedNftContractInterface)
+/// For details see [KycNftContractInterface](KycNftContractInterface)
 #[derive(Instance)]
-pub struct KycOwnedNftContract {
+pub struct KycNftContract {
     token: ERC721Token,
     metadata: MetadataERC721,
     access_control: AccessControl,
     tokens: Mapping<Address, Option<TokenId>>,
 }
 
-impl KycOwnedNftContractInterface for KycOwnedNftContract {
+impl KycNftContractInterface for KycNftContract {
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
         let deployer = caller();
         self.metadata.init(name, symbol, base_uri);
@@ -132,8 +127,6 @@ impl KycOwnedNftContractInterface for KycOwnedNftContract {
             fn owner_of(&self, token_id: TokenId) -> Option<Address>;
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
-            fn approve(&mut self, approved: Option<Address>, token_id: TokenId);
-            fn set_approval_for_all(&mut self, operator: Address, approved: bool);
         }
     }
 
@@ -164,7 +157,7 @@ impl KycOwnedNftContractInterface for KycOwnedNftContract {
     }
 }
 
-impl KycOwnedNftContract {
+impl KycNftContract {
     fn assert_does_not_own_token(&self, address: &Address) {
         if self.tokens.get(address).is_some() {
             casper_env::revert(Error::UserAlreadyOwnsToken)
