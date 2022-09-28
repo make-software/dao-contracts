@@ -1,4 +1,4 @@
-use crate::{VaOwnedNftContractCaller, VaOwnedNftContractInterface};
+use crate::{VaNftContractCaller, VaNftContractInterface};
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
@@ -45,14 +45,14 @@ impl OnboardingInfo {
 
     /// Returns true if the `address` has a non-zero balance of va token, false otherwise.
     pub fn is_onboarded(&self, &address: &Address) -> bool {
-        !self.va_nft_caller().balance_of(address).is_zero()
+        !self.va_nft_contract().balance_of(address).is_zero()
     }
 
     /// Returns the `token id` of the `address`.
     ///
     /// If the `address` does not own any token, reverts with [`InvalidTokenOwner`](Error:InvalidTokenOwner) error.
     pub fn token_id_of(&self, address: &Address) -> TokenId {
-        self.va_nft_caller()
+        self.va_nft_contract()
             .token_id(*address)
             .unwrap_or_revert_with(Error::InvalidTokenOwner)
     }
@@ -61,11 +61,11 @@ impl OnboardingInfo {
     ///
     /// If the `token_id` does not have an owner, None value is return.
     pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
-        self.va_nft_caller().owner_of(token_id)
+        self.va_nft_contract().owner_of(token_id)
     }
 
-    fn va_nft_caller(&self) -> VaOwnedNftContractCaller {
-        VaOwnedNftContractCaller::at(self.get_va_token_address())
+    fn va_nft_contract(&self) -> VaNftContractCaller {
+        VaNftContractCaller::at(self.get_va_token_address())
     }
 }
 

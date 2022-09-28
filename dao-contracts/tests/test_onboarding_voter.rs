@@ -1,6 +1,6 @@
 use casper_dao_contracts::{
-    KycOwnedNftContractTest, OnboardingVoterContractTest, ReputationContractTest,
-    VaOwnedNftContractTest, VariableRepositoryContractTest,
+    KycNftContractTest, OnboardingVoterContractTest, ReputationContractTest, VaNftContractTest,
+    VariableRepositoryContractTest,
 };
 use casper_dao_utils::{Address, TestContract, TestEnv};
 use casper_types::U256;
@@ -169,7 +169,6 @@ speculate! {
             before {
                 let token_id = 1.into();
                 va_token.mint(user, token_id).unwrap();
-                va_token.as_account(user).set_approval_for_all(contract.address(), true).unwrap();
             }
 
             test "that_add_user_voting_cannot_be_created" {
@@ -279,8 +278,8 @@ fn setup() -> (
     Address,
     U256,
     U256,
-    VaOwnedNftContractTest,
-    KycOwnedNftContractTest,
+    VaNftContractTest,
+    KycNftContractTest,
     ReputationContractTest,
     VariableRepositoryContractTest,
     OnboardingVoterContractTest,
@@ -288,13 +287,13 @@ fn setup() -> (
 ) {
     let env = TestEnv::new();
 
-    let mut va_token = VaOwnedNftContractTest::new(
+    let mut va_token = VaNftContractTest::new(
         &env,
         "user token".to_string(),
         "usert".to_string(),
         "".to_string(),
     );
-    let kyc_token = KycOwnedNftContractTest::new(
+    let kyc_token = KycNftContractTest::new(
         &env,
         "kyc token".to_string(),
         "kyt".to_string(),

@@ -138,7 +138,7 @@ impl ERC721Token {
         self.owners.set(&token_id, owner);
     }
 
-    fn approve_owner(
+    pub fn approve_owner(
         &mut self,
         owner: Option<Address>,
         approved: Option<Address>,

@@ -2,7 +2,7 @@ use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice},
     AdminContractTest, MockVoterContractTest, RepoVoterContractTest, ReputationContractTest,
-    ReputationVoterContractTest, VaOwnedNftContractTest, VariableRepositoryContractTest,
+    ReputationVoterContractTest, VaNftContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_contracts::simple_voter::SimpleVoterContractTest;
@@ -218,7 +218,7 @@ fn setup_repository_and_reputation_contracts(
 ) -> (
     VariableRepositoryContractTest,
     ReputationContractTest,
-    VaOwnedNftContractTest,
+    VaNftContractTest,
 ) {
     let minimum_reputation = 500.into();
     let reputation_to_mint = 10_000;
@@ -346,8 +346,8 @@ pub fn setup_reputation_token_contract(
     reputation_token_contract
 }
 
-pub fn setup_va_token(env: &TestEnv, total_onboarded: usize) -> VaOwnedNftContractTest {
-    let mut va_token = VaOwnedNftContractTest::new(
+pub fn setup_va_token(env: &TestEnv, total_onboarded: usize) -> VaNftContractTest {
+    let mut va_token = VaNftContractTest::new(
         env,
         "va_token".to_string(),
         "VAT".to_string(),
