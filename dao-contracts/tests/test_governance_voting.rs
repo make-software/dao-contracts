@@ -126,7 +126,7 @@ speculate! {
                 assert_eq!(ballot_cast_event, BallotCast { voter: creator, voting_id: informal_voting.voting_id(), choice: Choice::InFavor, stake: minimum_reputation });
                 assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 0).unwrap(), creator);
 
-                // only one vote is cast TODO: Check harder
+                // only one vote is cast
                 assert_eq!(mock_voter_contract.get_voter(informal_voting.voting_id(), 1), None);
             }
 
