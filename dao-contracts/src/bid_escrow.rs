@@ -7,7 +7,7 @@ use casper_dao_utils::{
     },
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
-    Address, BlockTime, Error, Mapping, Variable,
+    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator,
 };
 use casper_types::{URef, U256, U512};
 
@@ -15,7 +15,7 @@ use crate::{
     bid::{
         events::{JobAccepted, JobCreated, JobSubmitted},
         job::Job,
-        types::{BidId, Description},
+        types::BidId,
     },
     voting::{
         kyc_info::KycInfo,
@@ -31,10 +31,7 @@ use casper_dao_utils::casper_env::self_address;
 use delegate::delegate;
 
 use crate::bid::events::{JobCancelled, JobDone, JobRejected};
-use crate::voting::types::ReputationAmount;
 use crate::voting::VotingId;
-#[cfg(feature = "test-support")]
-use casper_dao_utils::TestContract;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -68,9 +65,9 @@ pub trait BidEscrowContractInterface {
     fn pick_bid(
         &mut self,
         worker: Address,
-        description: Description,
+        document_hash: DocumentHash,
         time: BlockTime,
-        required_stake: Option<ReputationAmount>,
+        required_stake: Option<U256>,
         purse: URef,
     );
     /// Worker accepts job. It can be done only for jobs with [`Created`](JobStatus::Created) status
@@ -90,7 +87,7 @@ pub trait BidEscrowContractInterface {
     /// # Errors
     /// Throws [`CannotCancelJob`](Error::CannotCancelJob) if one of the constraints for
     /// job cancellation is not met.
-    fn cancel_job(&mut self, bid_id: BidId, reason: Description);
+    fn cancel_job(&mut self, bid_id: BidId, reason: DocumentHash);
     /// Worker submits the result of the job. Job can also be submitted by a job poster after the
     /// time for work has passed.
     /// This starts a new voting over the result.
@@ -103,7 +100,7 @@ pub trait BidEscrowContractInterface {
     /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted
     /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
     /// job submission is not met.
-    fn submit_result(&mut self, bid_id: BidId, result: Description);
+    fn submit_result(&mut self, bid_id: BidId, result: DocumentHash);
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::governance_voting::events::BallotCast)
@@ -143,7 +140,7 @@ pub struct BidEscrowContract {
     kyc: KycInfo,
     onboarding: OnboardingInfo,
     jobs: Mapping<BidId, Job>,
-    jobs_count: Variable<BidId>,
+    jobs_count: SequenceGenerator<BidId>,
 }
 
 impl BidEscrowContractInterface for BidEscrowContract {
@@ -162,18 +159,19 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn pick_bid(
         &mut self,
         worker: Address,
-        description: Description,
+        document_hash: DocumentHash,
         time: BlockTime,
-        required_stake: Option<ReputationAmount>,
+        required_stake: Option<U256>,
         purse: URef,
     ) {
         let cspr_amount = self.deposit(purse);
+        let caller = caller();
 
-        if worker == caller() {
+        if worker == caller {
             revert(Error::CannotPostJobForSelf);
         }
 
-        if !self.kyc.is_kycd(&caller()) {
+        if !self.kyc.is_kycd(&caller) {
             revert(Error::JobPosterNotKycd);
         }
 
@@ -190,8 +188,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let mut job = Job::new(
             bid_id,
-            description,
-            caller(),
+            document_hash,
+            caller,
             worker,
             finish_time,
             required_stake,
@@ -226,20 +224,22 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.jobs.set(&bid_id, job);
     }
 
-    fn cancel_job(&mut self, bid_id: BidId, reason: Description) {
+    fn cancel_job(&mut self, bid_id: BidId, reason: DocumentHash) {
         let mut job = self.jobs.get_or_revert(&bid_id);
-        job.cancel(caller()).unwrap_or_revert();
+        let caller = caller();
+
+        job.cancel(caller).unwrap_or_revert();
         self.refund(&job);
 
-        JobCancelled::new(&job, caller(), reason).emit();
+        JobCancelled::new(&job, caller, reason).emit();
 
         self.jobs.set(&bid_id, job);
     }
 
-    fn submit_result(&mut self, bid_id: BidId, result: Description) {
+    fn submit_result(&mut self, bid_id: BidId, result: DocumentHash) {
         let mut job = self.jobs.get_or_revert(&bid_id);
 
-        job.submit(caller(), get_block_time(), &result)
+        job.submit(caller(), get_block_time(), result)
             .unwrap_or_revert();
 
         JobSubmitted::new(&job).emit();
@@ -262,10 +262,13 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
-        if caller() == job.poster() || caller() == job.worker() {
+
+        let caller = caller();
+
+        if caller == job.poster() || caller == job.worker() {
             revert(Error::CannotVoteOnOwnJob);
         }
-        self.voting.vote(caller(), voting_id, choice, stake);
+        self.voting.vote(caller, voting_id, choice, stake);
     }
 
     fn get_job(&self, bid_id: BidId) -> Option<Job> {
@@ -324,8 +327,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
 impl BidEscrowContract {
     fn next_bid_id(&mut self) -> BidId {
-        let bid_id = self.jobs_count.get().unwrap_or_default();
-        self.jobs_count.set(bid_id + 1);
+        let bid_id = self.jobs_count.get_current_value();
+        self.jobs_count.next_value();
         bid_id
     }
 
@@ -417,13 +420,16 @@ impl BidEscrowContract {
 }
 
 #[cfg(feature = "test-support")]
+use casper_dao_utils::TestContract;
+
+#[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
     pub fn pick_bid_with_cspr_amount(
         &mut self,
         worker: Address,
-        description: Description,
+        document_hash: DocumentHash,
         time: BlockTime,
-        required_stake: Option<ReputationAmount>,
+        required_stake: Option<U256>,
         cspr_amount: U512,
     ) {
         use casper_types::{runtime_args, RuntimeArgs};
@@ -433,7 +439,7 @@ impl BidEscrowContractTest {
                 "token_address" => self.address(),
                 "cspr_amount" => cspr_amount,
                 "worker" => worker,
-                "description" => description,
+                "document_hash" => document_hash,
                 "time" => time,
                 "required_stake" => required_stake,
             },

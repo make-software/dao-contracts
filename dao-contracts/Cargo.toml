@@ -93,6 +93,20 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "bid_escrow_contract"
+path = "bin/bid_escrow_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "pick_bid"
+path = "bin/pick_bid.rs"
+bench = false
+doctest = false
+test = false
+
 [features]
 default = [ "test-support" ]
 test-support = [ "casper-dao-utils/test-support", "casper-dao-modules/test-support" ]

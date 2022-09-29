@@ -1,19 +1,17 @@
 use crate::bid::job::Job;
-use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime};
-use casper_types::U512;
+use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
+use casper_types::{U256, U512};
 
-use crate::voting::types::ReputationAmount;
-
-use super::types::{BidId, Description};
+use super::types::BidId;
 
 #[derive(Debug, PartialEq, Event)]
 pub struct JobCreated {
     pub bid_id: BidId,
     pub job_poster: Address,
     pub worker: Address,
-    pub description: Description,
+    pub document_hash: DocumentHash,
     pub finish_time: BlockTime,
-    pub required_stake: Option<ReputationAmount>,
+    pub required_stake: Option<U256>,
     pub cspr_amount: U512,
 }
 
@@ -23,7 +21,7 @@ impl JobCreated {
             bid_id: job.bid_id(),
             job_poster: job.poster(),
             worker: job.worker(),
-            description: job.description().clone(),
+            document_hash: job.document_hash().clone(),
             finish_time: job.finish_time(),
             required_stake: job.required_stake(),
             cspr_amount: job.cspr_amount(),
@@ -53,13 +51,13 @@ pub struct JobSubmitted {
     pub bid_id: BidId,
     pub job_poster: Address,
     pub worker: Address,
-    pub result: Description,
+    pub result: DocumentHash,
 }
 
 impl JobSubmitted {
     pub fn new(job: &Job) -> JobSubmitted {
         let result = match job.result() {
-            None => Description::default(),
+            None => DocumentHash::default(),
             Some(res) => res.clone(),
         };
 
@@ -78,12 +76,12 @@ pub struct JobCancelled {
     pub caller: Address,
     pub job_poster: Address,
     pub worker: Address,
-    pub reason: Description,
+    pub reason: DocumentHash,
     pub cspr_amount: U512,
 }
 
 impl JobCancelled {
-    pub fn new(job: &Job, caller: Address, reason: Description) -> JobCancelled {
+    pub fn new(job: &Job, caller: Address, reason: DocumentHash) -> JobCancelled {
         JobCancelled {
             bid_id: job.bid_id(),
             caller,

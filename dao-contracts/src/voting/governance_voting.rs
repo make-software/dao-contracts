@@ -79,7 +79,6 @@ impl GovernanceVoting {
     ///
     /// It collects configuration from [Variable Repo](crate::VariableRepositoryContract) and persists it, so they won't change during the voting process.
     ///
-    /// It automatically casts first vote in favor in name of the creator.
     ///
     /// # Events
     /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)

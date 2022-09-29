@@ -1,12 +1,12 @@
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address, BlockTime, Error,
+    Address, BlockTime, DocumentHash, Error,
 };
-use casper_types::U512;
+use casper_types::{U256, U512};
 
-use crate::voting::types::{ReputationAmount, VotingId};
+use crate::voting::types::VotingId;
 
-use super::types::{BidId, Description};
+use super::types::BidId;
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -30,10 +30,10 @@ pub struct Job {
     bid_id: BidId,
     informal_voting_id: Option<VotingId>,
     formal_voting_id: Option<VotingId>,
-    description: Description,
-    result: Option<Description>,
+    document_hash: DocumentHash,
+    result: Option<DocumentHash>,
     finish_time: BlockTime,
-    required_stake: Option<ReputationAmount>,
+    required_stake: Option<U256>,
     cspr_amount: U512,
     poster: Address,
     worker: Address,
@@ -44,16 +44,16 @@ impl Job {
     /// Job constructor
     pub fn new(
         bid_id: BidId,
-        description: Description,
+        document_hash: DocumentHash,
         poster: Address,
         worker: Address,
         finish_time: BlockTime,
-        required_stake: Option<ReputationAmount>,
+        required_stake: Option<U256>,
         cspr_amount: U512,
     ) -> Self {
         Job {
             bid_id,
-            description,
+            document_hash,
             result: None,
             finish_time,
             required_stake,
@@ -128,7 +128,7 @@ impl Job {
         &mut self,
         caller: Address,
         block_time: BlockTime,
-        result: &str,
+        result: DocumentHash,
     ) -> Result<(), Error> {
         if !self.can_submit(caller, block_time) {
             return Err(Error::NotAuthorizedToSubmitResult);
@@ -138,7 +138,7 @@ impl Job {
             return Err(Error::JobAlreadySubmitted);
         }
 
-        self.result = Some(result.to_string());
+        self.result = Some(result);
         self.status = JobStatus::Submitted;
         Ok(())
     }
@@ -159,23 +159,23 @@ impl Job {
     }
 
     /// Get the job's result.
-    pub fn result(&self) -> Option<&Description> {
+    pub fn result(&self) -> Option<&DocumentHash> {
         self.result.as_ref()
     }
 
     /// Get the job's bid id.
-    pub fn bid_id(&self) -> u32 {
+    pub fn bid_id(&self) -> BidId {
         self.bid_id
     }
 
     /// Get the job's required stake for va.
-    pub fn required_stake(&self) -> Option<ReputationAmount> {
+    pub fn required_stake(&self) -> Option<U256> {
         self.required_stake
     }
 
     /// Get a reference to the job's description.
-    pub fn description(&self) -> &String {
-        &self.description
+    pub fn document_hash(&self) -> &DocumentHash {
+        &self.document_hash
     }
 
     /// Get the job's cspr amount.

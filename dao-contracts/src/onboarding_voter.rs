@@ -84,7 +84,7 @@ pub struct OnboardingVoterContract {
     onboarding: OnboardingInfo,
     kyc: KycInfo,
     voting: GovernanceVoting,
-    sequence: SequenceGenerator,
+    sequence: SequenceGenerator<U256>,
 }
 
 impl OnboardingVoterContractInterface for OnboardingVoterContract {

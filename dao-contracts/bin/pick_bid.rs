@@ -1,7 +1,4 @@
-use casper_dao_contracts::{
-    bid::types::Description, voting::ReputationAmount, BidEscrowContractCaller,
-    BidEscrowContractInterface,
-};
+use casper_dao_contracts::{BidEscrowContractCaller, BidEscrowContractInterface};
 use casper_dao_utils::{
     casper_contract::{
         contract_api::{
@@ -11,18 +8,18 @@ use casper_dao_utils::{
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
-    Address, BlockTime,
+    Address, BlockTime, DocumentHash,
 };
-use casper_types::{URef, U512};
+use casper_types::{URef, U256, U512};
 
 #[no_mangle]
 fn call() {
     let token_address: Address = get_named_arg("token_address");
     let token_amount: U512 = get_named_arg("cspr_amount");
     let worker: Address = get_named_arg("worker");
-    let description: Description = get_named_arg("description");
+    let document_hash: DocumentHash = get_named_arg("document_hash");
     let time: BlockTime = get_named_arg("time");
-    let required_stake: Option<ReputationAmount> = get_named_arg("required_stake");
+    let required_stake: Option<U256> = get_named_arg("required_stake");
 
     let main_purse: URef = get_main_purse();
     let cargo_purse: URef = create_purse();
@@ -30,7 +27,7 @@ fn call() {
 
     BidEscrowContractCaller::at(token_address).pick_bid(
         worker,
-        description,
+        document_hash,
         time,
         required_stake,
         cargo_purse,

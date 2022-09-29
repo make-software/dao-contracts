@@ -1,5 +1,5 @@
 mod governance_voting_common;
-extern crate speculate;
+
 use casper_dao_contracts::bid::{
     events::{JobAccepted, JobCreated, JobSubmitted},
     job::JobStatus,
@@ -7,7 +7,7 @@ use casper_dao_contracts::bid::{
 };
 use casper_dao_contracts::voting::{voting::VotingConfiguration, Choice, VotingCreated};
 use casper_dao_utils::{Error, TestContract};
-use casper_types::{U256, U512};
+use casper_types::{bytesrepr::Bytes, U256, U512};
 use speculate::speculate;
 
 speculate! {
@@ -21,11 +21,11 @@ speculate! {
             #[allow(unused_variables)]
             let anyone = bid_escrow_contract.get_env().get_account(3);
             let job_time : casper_dao_utils::BlockTime = 60;
-            let job_description = "Job Description".to_string();
+            let job_description = Bytes::from(b"Job Description".to_vec());
             #[allow(unused_variables)]
-            let job_result = "Job result".to_string();
+            let job_result = Bytes::from(b"Job result".to_vec());
             #[allow(unused_variables)]
-            let cancel_reason = "Not finished".to_string();
+            let cancel_reason = Bytes::from(b"Not finished".to_vec());
             let cspr_amount = U512::from(1_000_000);
             #[allow(unused_variables)]
             let informal_voting_time: u64 = 3_600;
@@ -78,7 +78,7 @@ speculate! {
             }
 
             it "emits correct events" {
-                assert_eq!(job_created_event, JobCreated { bid_id, job_poster, worker, description: job_description, finish_time: block_time + job_time, required_stake: None, cspr_amount });
+                assert_eq!(job_created_event, JobCreated { bid_id, job_poster, worker, document_hash: job_description, finish_time: block_time + job_time, required_stake: None, cspr_amount });
                 assert_eq!(job_accepted_event, JobAccepted { bid_id, job_poster, worker});
             }
 
@@ -86,7 +86,7 @@ speculate! {
                 assert_eq!(job.poster(), job_poster);
                 assert_eq!(job.worker(), worker);
                 assert_eq!(job.bid_id(), bid_id);
-                assert_eq!(job.description(), "Job Description");
+                assert_eq!(job.document_hash(), &Bytes::from(b"Job Description".to_vec()));
                 assert_eq!(job.result(), None);
                 assert_eq!(job.required_stake(), None);
                 assert_eq!(job.status(), JobStatus::Accepted);

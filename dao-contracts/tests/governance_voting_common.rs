@@ -43,8 +43,7 @@ pub fn setup_bid_escrow() -> (
         "".to_string(),
     );
 
-    #[allow(unused_mut)]
-    let mut bid_escrow_contract = BidEscrowContractTest::new(
+    let bid_escrow_contract = BidEscrowContractTest::new(
         variable_repo_contract.get_env(),
         variable_repo_contract.address(),
         reputation_token_contract.address(),
