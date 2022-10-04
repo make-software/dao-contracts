@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
-    reputation_voter::Action,
+    reputation_voter,
     voting::{onboarding_info::OnboardingAction, Choice, VotingId},
     AdminContractTest, KycNftContractTest, KycVoterContractTest, OnboardingVoterContractTest,
     RepoVoterContractTest, ReputationContractTest, ReputationVoterContractTest,
-    SimpleVoterContractTest, VaNftContractTest, VariableRepositoryContractTest,
+    SimpleVoterContractTest, VaNftContractTest, VariableRepositoryContractTest, action::Action,
 };
 use casper_dao_erc721::{TokenId, TokenUri};
 use casper_dao_utils::{consts, Address, DocumentHash, TestContract, TestEnv};
@@ -96,7 +96,6 @@ fn test_crdao_deployment() {
     );
 
     // 5. Deploy Reputation Voter.
-    // fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
     let mut reputation_voter_contract = ReputationVoterContractTest::new(
         &env,
         variable_repository_contract.address(),
@@ -173,7 +172,7 @@ fn test_crdao_deployment() {
         .unwrap();
 
     // 10. Deploy Admin Contract.
-    let admin_contract = AdminContractTest::new(
+    let mut admin_contract = AdminContractTest::new(
         &env,
         variable_repository_contract.address(),
         reputation_token_contract.address(),
@@ -231,9 +230,7 @@ fn test_crdao_deployment() {
         U256::one()
     );
 
-    // 12. The New VA
-    // 12.1 Call create_voting on Admin Contract to whitelist itself in Reputation Token.
-    // 12.2 All votes against.
+    perform_whitelisting_voting(&mut admin_contract, &config, &reputation_token_contract);
 }
 
 fn perform_kyc_voting(
@@ -291,7 +288,7 @@ fn perform_mint_voting(
         .as_account(config.first_va())
         .create_voting(
             config.va_candidate(),
-            Action::Mint,
+            reputation_voter::Action::Mint,
             amount_to_mint,
             config.default_document_hash(),
             config.default_stake,
@@ -369,6 +366,32 @@ fn perform_onboarding_voting(
     onboarding_voter_contract.finish_voting(voting_id).unwrap();
 }
 
+fn perform_whitelisting_voting(
+    admin_contract: &mut AdminContractTest,
+    config: &TestConfig,
+    reputation_token_contract: &ReputationContractTest
+) {
+    // 12. The New VA
+    // 12.1 Call create_voting on Admin Contract to whitelist itself in Reputation Token.
+    let voting_id: VotingId = 0;
+    let admin_contract_address = admin_contract.address();
+    admin_contract
+        .as_account(config.va_candidate())
+        .create_voting(reputation_token_contract.address(), Action::AddToWhitelist, admin_contract_address, config.default_stake)
+        .unwrap();
+
+    // 12.2 All votes against.
+    for n in 0..config.va_count {
+        let va = config.get_va(n);
+        admin_contract
+            .as_account(va)
+            .vote(voting_id, Choice::Against, config.default_stake)
+            .unwrap();
+    }
+
+    config.wait_until_voting_expires();
+    admin_contract.finish_voting(voting_id).unwrap();
+}
 struct TestConfig<'a> {
     test_env: &'a TestEnv,
     pub default_balance: U256,
