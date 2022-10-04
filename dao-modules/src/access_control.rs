@@ -70,7 +70,7 @@ impl AccessControl {
         self.whitelist.is_whitelisted(&address)
     }
 
-    /// Verifys whether the current caller address is added to the whitelist.
+    /// Verifies whether the current caller address is added to the whitelist.
     pub fn ensure_whitelisted(&self) {
         self.whitelist.ensure_whitelisted();
     }

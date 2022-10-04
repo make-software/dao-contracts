@@ -5,7 +5,7 @@ use casper_dao_utils::{
 
 use crate::{core::ERC721Token, events::Transfer, TokenId};
 
-pub struct MintableERC721 {}
+pub struct MintableERC721;
 
 impl MintableERC721 {
     pub fn mint(erc721: &mut ERC721Token, to: Address, token_id: TokenId) {
