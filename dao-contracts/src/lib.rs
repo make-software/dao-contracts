@@ -46,6 +46,7 @@ pub use simple_voter::{
 
 #[cfg(feature = "test-support")]
 pub use reputation::ReputationContractTest;
+
 #[cfg(feature = "test-support")]
 pub use reputation_voter::ReputationVoterContractTest;
 
@@ -73,3 +74,6 @@ pub use kyc_nft::KycNftContractTest;
 
 #[cfg(feature = "test-support")]
 pub use kyc_voter::KycVoterContractTest;
+
+#[cfg(feature = "test-support")]
+pub use simple_voter::SimpleVoterContractTest;

@@ -175,7 +175,7 @@ impl ReputationContractInterface for ReputationContract {
         let new_balance = rem_from_balance(signed_balance, amount);
         self.balances.set(&owner, new_balance);
 
-        // Decrese total_supply by only decreased positive balance of owner.
+        // Decrease total_supply by only decreased positive balance of owner.
         // This prevents total_supply of getting negative.
         if is_positive {
             let total_supply = self.total_supply();

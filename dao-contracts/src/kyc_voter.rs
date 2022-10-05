@@ -38,7 +38,7 @@ pub trait KycVoterContractInterface {
     /// # Note
     ///
     /// `subject_address` - [address](Address) of a user to be verified.
-    /// `document_hash` - a hash of a document that vefify the user. The hash is used as an id of a freshly minted  kyc token.
+    /// `document_hash` - a hash of a document that verify the user. The hash is used as an id of a freshly minted  kyc token.
     /// `subject_address` - an [Address](Address) to be on/offboarded.
     fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::vote())
