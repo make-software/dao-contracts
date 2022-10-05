@@ -144,6 +144,9 @@ fn test_crdao_deployment() {
     // 3.1 Mint a VA token for each VA.
     for n in 0..config.va_count {
         let address = config.get_va(n);
+        // Later, a new token will be minted through a voter, to avoid TokenId conflicts.
+        // Generally tokens will not be minted directly as the below.
+        // It is just to setup the test scenario.
         va_token_contract.mint(address, TokenId::MAX - n).unwrap();
     }
 
