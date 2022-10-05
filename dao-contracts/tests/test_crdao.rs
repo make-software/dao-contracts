@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use casper_dao_contracts::{
+    action::Action,
     reputation_voter,
     voting::{onboarding_info::OnboardingAction, Choice, VotingId},
     AdminContractTest, KycNftContractTest, KycVoterContractTest, OnboardingVoterContractTest,
     RepoVoterContractTest, ReputationContractTest, ReputationVoterContractTest,
-    SimpleVoterContractTest, VaNftContractTest, VariableRepositoryContractTest, action::Action,
+    SimpleVoterContractTest, VaNftContractTest, VariableRepositoryContractTest,
 };
 use casper_dao_erc721::{TokenId, TokenUri};
 use casper_dao_utils::{consts, Address, DocumentHash, TestContract, TestEnv};
@@ -20,12 +21,12 @@ const DEFAULT_STAKE: u32 = 100;
 const VA_COUNT: usize = 20;
 
 /// CRDAO deployment scenario:
-/// 
+///
 /// ### INITIAL SETUP ###
 /// 0. There are 20 VAs. Every contract is deployed by the same non-VA account.
 /// 1. Deploy Reputation Token contract.
 ///     1.1 Mint Reputation Token for each VA.
-/// 
+///
 /// ### VARIABLE REPO SETUP ###
 /// 2. Deploy Variable Repository Contract.
 ///     2.1 Change (in)formal voting quorum to 30%.
@@ -35,7 +36,7 @@ const VA_COUNT: usize = 20;
 /// 3. Deploy VA Token contract.
 ///     3.1 Mint a VA token for each VA.
 /// 4. Deploy KYC Token contract.
-/// 
+///
 /// ### VOTERS CONTRACTS SETUP ###
 /// 5. Deploy Reputation Voter contract.
 ///     5.1 Whitelist the contract in Reputation Token contract.
@@ -50,7 +51,7 @@ const VA_COUNT: usize = 20;
 ///     8.2 Whitelist the contract in KYC Token contract.
 /// 9. Deploy Simple Voter contract.
 ///     9.1 Whitelist the contract in Reputation Token contract.
-/// 
+///
 /// ### OWNERSHIP MANAGEMENT ###
 /// 10. Deploy Admin contract.
 ///     10.1.1 Remove the deployer from the whitelist in Reputation Token contract.
@@ -61,7 +62,7 @@ const VA_COUNT: usize = 20;
 ///     10.3.2 Change VA Token contract owner to Admin contract.
 ///     10.4.1 Remove the deployer from the whitelist in KYC Token contract.
 ///     10.4.2 Change KYC Token contract owner to Admin contract.
-/// 
+///
 /// ### ONBOARDING ###
 /// 11. Onboard a new VA.
 ///     11.1. VA creates voting in KYC Voter contract to mint a KYC Token to a VA candidate user.
@@ -70,7 +71,7 @@ const VA_COUNT: usize = 20;
 ///     11.4. Every VA votes in favor.
 ///     11.5. VA creates voting in Onboarding Voter contract to mint a new VA Token to the VA candidate user.
 ///     11.6. Every VA votes in favor.
-/// 
+///
 /// ### ONBOARDING VERIFICATION ###
 /// 12. The New VA creates voting.
 ///     12.1 The newly accepted VA creates voting in Admin contract to whitelist the contract in Reputation Token contract.
@@ -288,15 +289,12 @@ fn test_crdao_deployment() {
         va_token_contract.balance_of(config.va_candidate()),
         U256::one()
     );
-    
+
     // 12. The New VA creates voting.
     perform_whitelisting_voting(&mut admin_contract, &config, &reputation_token_contract);
 }
 
-fn perform_kyc_voting(
-    kyc_voter_contract: &mut KycVoterContractTest,
-    config: &TestConfig,
-) {
+fn perform_kyc_voting(kyc_voter_contract: &mut KycVoterContractTest, config: &TestConfig) {
     // 11.1. VA creates voting in KYC Voter contract to mint a KYC Token to a VA candidate user.
     let voting_id: VotingId = 0;
     kyc_voter_contract
@@ -431,14 +429,19 @@ fn perform_onboarding_voting(
 fn perform_whitelisting_voting(
     admin_contract: &mut AdminContractTest,
     config: &TestConfig,
-    reputation_token_contract: &ReputationContractTest
+    reputation_token_contract: &ReputationContractTest,
 ) {
     // 12.1 The newly accepted VA creates voting in Admin contract to whitelist the contract in Reputation Token contract.
     let voting_id: VotingId = 0;
     let admin_contract_address = admin_contract.address();
     admin_contract
         .as_account(config.va_candidate())
-        .create_voting(reputation_token_contract.address(), Action::AddToWhitelist, admin_contract_address, config.default_stake)
+        .create_voting(
+            reputation_token_contract.address(),
+            Action::AddToWhitelist,
+            admin_contract_address,
+            config.default_stake,
+        )
         .unwrap();
 
     // 12.2 Every VA votes against.
