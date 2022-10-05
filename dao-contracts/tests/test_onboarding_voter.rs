@@ -329,6 +329,7 @@ fn setup() -> (
     let mint_amount = 10_000.into();
     let vote_amount = 1_000.into();
     reputation_token.mint(va, mint_amount).unwrap();
+    va_token.mint(va, 123.into()).unwrap();
     reputation_token.mint(second_va, mint_amount).unwrap();
 
     (

@@ -247,6 +247,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
             .cast_first_vote(false)
             .create_minimum_reputation(U256::zero())
+            .only_va_can_create(false)
             .build();
 
         let voting_id = self

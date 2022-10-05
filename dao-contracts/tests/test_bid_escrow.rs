@@ -280,6 +280,7 @@ speculate! {
                         create_minimum_reputation: 0.into(),
                         cast_minimum_reputation: 0.into(),
                         contract_call: None,
+                        only_va_can_create: false,
                     }));
             }
 

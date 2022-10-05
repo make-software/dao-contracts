@@ -20,7 +20,10 @@ use self::{
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
-use crate::{ReputationContractCaller, ReputationContractInterface};
+use crate::{
+    ReputationContractCaller, ReputationContractInterface, VaNftContractCaller,
+    VaNftContractInterface,
+};
 use casper_dao_utils::VecMapping;
 
 use super::ballot::Choice;
@@ -91,9 +94,16 @@ impl GovernanceVoting {
         stake: U256,
         voting_configuration: VotingConfiguration,
     ) -> VotingId {
-        if stake < voting_configuration.create_minimum_reputation {
+        if voting_configuration.cast_first_vote
+            && stake < voting_configuration.create_minimum_reputation
+        {
             revert(Error::NotEnoughReputation)
         }
+
+        if voting_configuration.only_va_can_create && !self.is_va(creator) {
+            revert(Error::VaNotOnboarded)
+        }
+
         let voting_id = self.next_voting_id();
 
         VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
@@ -492,6 +502,12 @@ impl GovernanceVoting {
         }
 
         transfers
+    }
+
+    fn is_va(&self, address: Address) -> bool {
+        !VaNftContractCaller::at(self.get_va_token_address())
+            .balance_of(address)
+            .is_zero()
     }
 
     /// Get a reference to the governance voting's voters.
