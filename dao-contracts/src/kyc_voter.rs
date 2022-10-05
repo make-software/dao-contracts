@@ -70,7 +70,7 @@ pub trait KycVoterContractInterface {
 pub struct KycVoterContract {
     kyc: KycInfo,
     voting: GovernanceVoting,
-    sequence: SequenceGenerator,
+    sequence: SequenceGenerator<U256>,
 }
 
 impl KycVoterContractInterface for KycVoterContract {

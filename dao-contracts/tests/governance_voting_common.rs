@@ -1,8 +1,9 @@
 use casper_dao_contracts::{
     action::Action,
     voting::{voting::Voting, Choice},
-    AdminContractTest, MockVoterContractTest, RepoVoterContractTest, ReputationContractTest,
-    ReputationVoterContractTest, VaNftContractTest, VariableRepositoryContractTest,
+    AdminContractTest, BidEscrowContractTest, KycNftContractTest, MockVoterContractTest,
+    RepoVoterContractTest, ReputationContractTest, ReputationVoterContractTest, VaNftContractTest,
+    VariableRepositoryContractTest,
 };
 
 use casper_dao_contracts::simple_voter::SimpleVoterContractTest;
@@ -13,6 +14,54 @@ use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
 };
+
+#[allow(dead_code)]
+pub fn setup_bid_escrow() -> (
+    BidEscrowContractTest,
+    ReputationContractTest,
+    VaNftContractTest,
+    KycNftContractTest,
+) {
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 6;
+
+    let (variable_repo_contract, mut reputation_token_contract, _va_owned_nft_contract) =
+        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+
+    let va_token = VaNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "user token".to_string(),
+        "usert".to_string(),
+        "".to_string(),
+    );
+
+    let kyc_token = KycNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "kyc token".to_string(),
+        "kyt".to_string(),
+        "".to_string(),
+    );
+
+    let bid_escrow_contract = BidEscrowContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+        kyc_token.address(),
+        va_token.address(),
+    );
+
+    reputation_token_contract
+        .add_to_whitelist(bid_escrow_contract.address())
+        .unwrap();
+
+    (
+        bid_escrow_contract,
+        reputation_token_contract,
+        va_token,
+        kyc_token,
+    )
+}
 
 #[allow(dead_code)]
 pub fn setup_reputation_voter() -> (ReputationVoterContractTest, ReputationContractTest) {

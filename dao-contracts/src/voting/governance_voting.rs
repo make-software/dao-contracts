@@ -79,7 +79,6 @@ impl GovernanceVoting {
     ///
     /// It collects configuration from [Variable Repo](crate::VariableRepositoryContract) and persists it, so they won't change during the voting process.
     ///
-    /// It automatically casts first vote in favor in name of the creator.
     ///
     /// # Events
     /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
@@ -409,11 +408,11 @@ impl GovernanceVoting {
         voting_id: VotingId,
     ) -> (BTreeMap<Address, U256>, BTreeMap<Address, U256>) {
         let (mut transfers, mut burns) = (BTreeMap::new(), BTreeMap::new());
+        let voting = self.get_voting(voting_id).unwrap_or_revert();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
-            if i == 0 {
-                // TODO: in bid escrow 0 will not be always a creator
-                // the creator
+            if voting.voting_configuration().cast_first_vote && i == 0 {
+                // the creator (if any) - burn
                 burns.insert(ballot.voter, ballot.stake);
                 ReputationContractCaller::at(self.get_reputation_token_address())
                     .burn(self_address(), ballot.stake);

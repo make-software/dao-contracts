@@ -1,4 +1,4 @@
-use crate::voting::types::VotingId;
+use crate::voting::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
