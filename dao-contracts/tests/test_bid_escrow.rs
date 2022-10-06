@@ -270,10 +270,8 @@ speculate! {
                     informal_voting_id,
                     None,
                     &VotingConfiguration {
-                        // TODO: Why is this 0?
                         formal_voting_quorum: 0.into(),
                         formal_voting_time: 2 * 3_600,
-                        // TODO: Why is this 0?
                         informal_voting_quorum: 0.into(),
                         informal_voting_time: 3_600,
                         cast_first_vote: false,
