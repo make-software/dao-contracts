@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 use casper_dao_contracts::voting::{consts, VotingEnded};
 use casper_dao_utils::TestContract;
 use casper_types::U256;
@@ -22,17 +22,12 @@ fn test_informal_voting_result(
     let contract_balance = reputation[reputation.len() - 2];
     let dust = reputation[reputation.len() - 1];
     let (mut voting_contract, reputation_token_contract, voting) =
-        governance_voting_common::setup_voting_contract_with_informal_voting(
+        common::setup::setup_voting_contract_with_informal_voting(
             quorum,
             U256::zero(),
             total_onboarded,
         );
-    governance_voting_common::mass_vote(
-        votes_in_favor,
-        votes_against,
-        &mut voting_contract,
-        &voting,
-    );
+    common::setup::mass_vote(votes_in_favor, votes_against, &mut voting_contract, &voting);
     voting_contract
         .advance_block_time_by(voting.informal_voting_time() + 1)
         .finish_voting(voting.voting_id())
@@ -41,7 +36,7 @@ fn test_informal_voting_result(
     let event: VotingEnded = voting_contract.event(-1);
     assert_eq!(event.result, result);
 
-    governance_voting_common::assert_reputation(
+    common::setup::assert_reputation(
         &reputation_token_contract,
         &reputation[0..reputation.len() - 2],
     );
@@ -71,17 +66,12 @@ fn test_formal_voting_result(
     let contract_balance = reputation[reputation.len() - 2];
     let dust = reputation[reputation.len() - 1];
     let (mut voting_contract, reputation_token_contract, voting) =
-        governance_voting_common::setup_voting_contract_with_formal_voting(
+        common::setup::setup_voting_contract_with_formal_voting(
             U256::zero(),
             quorum,
             total_onboarded,
         );
-    governance_voting_common::mass_vote(
-        votes_in_favor,
-        votes_against,
-        &mut voting_contract,
-        &voting,
-    );
+    common::setup::mass_vote(votes_in_favor, votes_against, &mut voting_contract, &voting);
     voting_contract
         .advance_block_time_by(voting.formal_voting_time() + 1)
         .finish_voting(voting.voting_id())
@@ -90,7 +80,7 @@ fn test_formal_voting_result(
     let event: VotingEnded = voting_contract.event(-1);
     assert_eq!(event.result, result);
 
-    governance_voting_common::assert_reputation(
+    common::setup::assert_reputation(
         &reputation_token_contract,
         &reputation[0..reputation.len() - 2],
     );

@@ -5,13 +5,13 @@ use casper_dao_utils::{Address, TestContract};
 use casper_types::bytesrepr::Bytes;
 use casper_types::U256;
 
-mod governance_voting_common;
+mod common;
 
 #[test]
 fn test_minting_and_burning() {
     let amount = 500.into();
     let (mut reputation_voter_contract, reputation_token_contract) =
-        governance_voting_common::setup_reputation_voter();
+        common::setup::setup_reputation_voter();
     let address = reputation_voter_contract.get_env().get_account(5);
 
     assert_eq!(reputation_token_contract.balance_of(address), U256::zero());
@@ -92,7 +92,7 @@ fn test_minting_and_burning() {
 fn test_document_hash() {
     let amount = 500.into();
     let (mut reputation_voter_contract, _reputation_token_contract) =
-        governance_voting_common::setup_reputation_voter();
+        common::setup::setup_reputation_voter();
     let address = reputation_voter_contract.get_env().get_account(5);
     let document_hash = Bytes::from(vec![123]);
     reputation_voter_contract

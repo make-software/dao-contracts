@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 use casper_dao_contracts::{
     KycNftContractTest, KycVoterContractTest, ReputationContractTest,
     VariableRepositoryContractTest,
@@ -166,7 +166,7 @@ fn setup() -> (
     );
     let mut reputation_token = ReputationContractTest::new(&env);
     let mut variable_repo = VariableRepositoryContractTest::new(&env);
-    let va_token = governance_voting_common::setup_va_token(&env, 2);
+    let va_token = common::setup::setup_va_token(&env, 2);
     let onboarding_voter = KycVoterContractTest::new(
         &env,
         variable_repo.address(),

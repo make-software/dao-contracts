@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 
 use speculate::speculate;
 
@@ -10,7 +10,7 @@ use casper_types::{bytesrepr::FromBytes, U256};
 speculate! {
     context "repo_voter" {
         before {
-            let (mut repo_voter_contract, variable_repo_contract) = governance_voting_common::setup_repo_voter("variable_name".into(), U256::from(123).convert_to_bytes().unwrap());
+            let (mut repo_voter_contract, variable_repo_contract) = common::setup::setup_repo_voter("variable_name".into(), U256::from(123).convert_to_bytes().unwrap());
             let voting_id = 1;
             let voting = repo_voter_contract.get_voting(voting_id).unwrap();
             repo_voter_contract

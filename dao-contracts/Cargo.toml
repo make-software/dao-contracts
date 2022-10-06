@@ -11,8 +11,15 @@ casper-dao-erc721 = { path = "../dao-erc721", default-features = false }
 delegate = "0.6.2"
 
 [dev-dependencies]
+cucumber = "0.15.0"
+tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread", "time"] }
 speculate = "0.1.2"
 test-case = "2.0.2"
+
+[[test]]
+name = "test_gherkin_bid_escrow"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
 
 [[bin]]
 name = "reputation_contract"

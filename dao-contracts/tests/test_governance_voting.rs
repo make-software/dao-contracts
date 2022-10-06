@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 
 use casper_dao_contracts::voting::{
     consts as gv_consts, Ballot, BallotCast, Choice, VotingContractCreated, VotingCreated,
@@ -31,7 +31,7 @@ speculate! {
         describe "voting contact" {
             before {
                 #[allow(unused_mut, unused_variables)]
-                let (mut mock_voter_contract, variable_repo_contract, reputation_token_contract) = governance_voting_common::setup_voting_contract(informal_quorum, formal_quorum, total_onboarded);
+                let (mut mock_voter_contract, variable_repo_contract, reputation_token_contract) = common::setup::setup_voting_contract(informal_quorum, formal_quorum, total_onboarded);
             }
 
             it "emits event with correct values" {
@@ -84,7 +84,7 @@ speculate! {
         describe "creating informal voting" {
             before {
                 #[allow(unused_mut, unused_variables)]
-                let (mut mock_voter_contract, reputation_token_contract, informal_voting) = governance_voting_common::setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
+                let (mut mock_voter_contract, reputation_token_contract, informal_voting) = common::setup::setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
                 #[allow(unused_variables)]
                 let creator = mock_voter_contract.get_env().get_account(0);
             }
@@ -170,7 +170,7 @@ speculate! {
                 }
 
                 it "is completed" {
-                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
+                    common::setup::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
                 }
 
                 it "doesn't create new voting" {
@@ -183,7 +183,7 @@ speculate! {
 
             describe "when informal voting is rejected" {
                 before {
-                    governance_voting_common::mass_vote(0, 3, &mut mock_voter_contract, &informal_voting);
+                    common::setup::mass_vote(0, 3, &mut mock_voter_contract, &informal_voting);
                     mock_voter_contract.advance_block_time_by(after_informal_voting_time);
                     mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
                 }
@@ -211,7 +211,7 @@ speculate! {
                 }
 
                 it "is completed" {
-                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
+                    common::setup::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
                 }
 
                 it "doesn't create new voting" {
@@ -224,7 +224,7 @@ speculate! {
 
             describe "when informal voting is completed" {
                 before {
-                    governance_voting_common::mass_vote(3, 1, &mut mock_voter_contract, &informal_voting);
+                    common::setup::mass_vote(3, 1, &mut mock_voter_contract, &informal_voting);
                     mock_voter_contract.advance_block_time_by(after_informal_voting_time);
                     mock_voter_contract.finish_voting(informal_voting.voting_id()).unwrap();
                 }
@@ -251,7 +251,7 @@ speculate! {
                 }
 
                 it "is completed" {
-                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
+                    common::setup::assert_voting_completed(&mut mock_voter_contract, informal_voting.voting_id());
                 }
 
                 it "created new formal voting" {
@@ -268,7 +268,7 @@ speculate! {
         describe "creating formal voting" {
             before {
                 #[allow(unused_mut, unused_variables)]
-                let (mut mock_voter_contract, reputation_token_contract, formal_voting) = governance_voting_common::setup_voting_contract_with_formal_voting(informal_quorum, formal_quorum, total_onboarded);
+                let (mut mock_voter_contract, reputation_token_contract, formal_voting) = common::setup::setup_voting_contract_with_formal_voting(informal_quorum, formal_quorum, total_onboarded);
                 #[allow(unused_variables)]
                 let creator = mock_voter_contract.get_env().get_account(0);
             }
@@ -325,7 +325,7 @@ speculate! {
                 }
 
                 it "is completed" {
-                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
+                    common::setup::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
                 }
 
                 it "does not perform its action" {
@@ -336,7 +336,7 @@ speculate! {
 
             describe "when formal voting is rejected" {
                 before {
-                    governance_voting_common::mass_vote(1, 3, &mut mock_voter_contract, &formal_voting);
+                    common::setup::mass_vote(1, 3, &mut mock_voter_contract, &formal_voting);
                     mock_voter_contract.advance_block_time_by(after_formal_voting_time);
                     mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
                 }
@@ -362,7 +362,7 @@ speculate! {
                 }
 
                 it "is completed" {
-                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
+                    common::setup::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
                 }
 
                 it "does not perform its action" {
@@ -373,7 +373,7 @@ speculate! {
 
             describe "when formal voting is completed" {
                 before {
-                    governance_voting_common::mass_vote(3, 1, &mut mock_voter_contract, &formal_voting);
+                    common::setup::mass_vote(3, 1, &mut mock_voter_contract, &formal_voting);
                     mock_voter_contract.advance_block_time_by(after_formal_voting_time);
                     mock_voter_contract.finish_voting(formal_voting.voting_id()).unwrap();
                 }
@@ -399,7 +399,7 @@ speculate! {
                 }
 
                 it "is completed" {
-                    governance_voting_common::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
+                    common::setup::assert_voting_completed(&mut mock_voter_contract, formal_voting.voting_id());
                 }
 
                 it "does perform its action" {

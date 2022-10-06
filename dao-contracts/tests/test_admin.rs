@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 
 use speculate::speculate;
 
@@ -10,7 +10,7 @@ speculate! {
     describe "admin with voting set up for adding an address to a whitelist" {
         before {
             #[allow(unused_mut)]
-            let (mut admin_contract, mut reputation_token_contract) = governance_voting_common::setup_admin();
+            let (mut admin_contract, mut reputation_token_contract) = common::setup::setup_admin();
             #[allow(unused_variables)]
             let voting = admin_contract.get_voting(1).unwrap();
         }

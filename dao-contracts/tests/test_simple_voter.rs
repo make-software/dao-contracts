@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 
 use speculate::speculate;
 
@@ -11,7 +11,7 @@ use casper_types::U256;
 speculate! {
     context "simple_voter" {
         before {
-            let mut simple_voter_contract = governance_voting_common::setup_simple_voter();
+            let mut simple_voter_contract = common::setup::setup_simple_voter();
         }
 
         context "with informal voting in progress" {

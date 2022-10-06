@@ -1,4 +1,4 @@
-mod governance_voting_common;
+mod common;
 
 use casper_dao_contracts::bid::{
     events::{JobAccepted, JobCreated, JobSubmitted},
@@ -14,7 +14,7 @@ speculate! {
     describe "bid escrow contract" {
         before {
             #[allow(unused_mut, unused_variables)]
-            let (mut bid_escrow_contract, reputation_token_contract, mut va_token, mut kyc_token) = governance_voting_common::setup_bid_escrow();
+            let (mut bid_escrow_contract, reputation_token_contract, mut va_token, mut kyc_token) = common::setup::setup_bid_escrow();
             let job_poster = bid_escrow_contract.get_env().get_account(1);
             #[allow(unused_variables)]
             let worker = bid_escrow_contract.get_env().get_account(2);
