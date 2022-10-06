@@ -270,16 +270,15 @@ speculate! {
                     informal_voting_id,
                     None,
                     &VotingConfiguration {
-                        // TODO: Why is this 0?
                         formal_voting_quorum: 0.into(),
                         formal_voting_time: 2 * 3_600,
-                        // TODO: Why is this 0?
                         informal_voting_quorum: 0.into(),
                         informal_voting_time: 3_600,
                         cast_first_vote: false,
                         create_minimum_reputation: 0.into(),
                         cast_minimum_reputation: 0.into(),
                         contract_call: None,
+                        only_va_can_create: false,
                     }));
             }
 

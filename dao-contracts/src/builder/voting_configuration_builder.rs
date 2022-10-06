@@ -40,6 +40,11 @@ impl VotingConfigurationBuilder {
         self
     }
 
+    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> VotingConfigurationBuilder {
+        self.voting_configuration.only_va_can_create = only_va_can_create;
+        self
+    }
+
     pub fn build(self) -> VotingConfiguration {
         self.voting_configuration
     }

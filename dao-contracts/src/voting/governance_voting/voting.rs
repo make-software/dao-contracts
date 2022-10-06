@@ -87,6 +87,7 @@ pub struct VotingConfiguration {
     pub create_minimum_reputation: U256,
     pub cast_minimum_reputation: U256,
     pub contract_call: Option<ContractCall>,
+    pub only_va_can_create: bool,
 }
 
 /// Voting struct
@@ -297,6 +298,7 @@ fn test_voting_serialization() {
             contract_call: None,
             cast_first_vote: true,
             cast_minimum_reputation: U256::from(2),
+            only_va_can_create: true,
         },
     };
 
@@ -324,6 +326,10 @@ fn test_voting_serialization() {
     assert_eq!(
         voting.voting_configuration.informal_voting_time,
         voting2.voting_configuration.informal_voting_time
+    );
+    assert_eq!(
+        voting.voting_configuration().only_va_can_create,
+        voting2.voting_configuration().only_va_can_create
     );
     assert_eq!(voting.start_time, voting2.start_time);
 }

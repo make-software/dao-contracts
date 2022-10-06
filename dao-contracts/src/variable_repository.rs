@@ -216,6 +216,7 @@ impl VariableRepositoryContractCaller {
             create_minimum_reputation: self.minimum_governance_reputation(),
             cast_minimum_reputation: U256::zero(),
             contract_call: None,
+            only_va_can_create: true,
         }
     }
 
