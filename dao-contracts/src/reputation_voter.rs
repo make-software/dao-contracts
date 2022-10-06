@@ -15,7 +15,7 @@ use casper_dao_utils::casper_dao_macros::{CLTyped, Event, FromBytes, ToBytes};
 use delegate::delegate;
 
 /// Action to perform against reputation
-#[derive(CLTyped, PartialEq, Debug, FromBytes, ToBytes, Clone)]
+#[derive(CLTyped, PartialEq, Eq, Debug, FromBytes, ToBytes, Clone)]
 pub enum Action {
     Burn,
     Mint,
@@ -48,7 +48,7 @@ impl Action {
 }
 
 /// Struct storing all information about reputation voting
-#[derive(CLTyped, PartialEq, Debug, FromBytes, ToBytes, Clone)]
+#[derive(CLTyped, PartialEq, Eq, Debug, FromBytes, ToBytes, Clone)]
 pub struct ReputationVoting {
     pub action: Action,
     pub account: Address,
@@ -57,7 +57,7 @@ pub struct ReputationVoting {
 }
 
 /// An event thrown when new reputation voting starts
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct ReputationVotingCreated {
     pub reputation_voting: ReputationVoting,
     pub voting_id: VotingId,

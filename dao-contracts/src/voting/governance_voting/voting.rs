@@ -8,7 +8,7 @@ use casper_dao_utils::{
 use casper_types::U256;
 
 /// Result of a Voting
-#[derive(PartialEq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
+#[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
 pub enum VotingResult {
     InFavor,
     Against,
@@ -77,7 +77,7 @@ impl VotingSummary {
 }
 
 /// Voting configuration, created and persisted since voting start
-#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]
+#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq, Eq)]
 pub struct VotingConfiguration {
     pub formal_voting_quorum: U256,
     pub formal_voting_time: u64,
@@ -91,7 +91,7 @@ pub struct VotingConfiguration {
 }
 
 /// Voting struct
-#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq)]
+#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq, Eq)]
 pub struct Voting {
     voting_id: VotingId,
     completed: bool,

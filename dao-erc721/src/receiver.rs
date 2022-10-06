@@ -101,7 +101,7 @@ pub mod tests {
         fn init(&self) {}
     }
 
-    #[derive(Debug, PartialEq, Event)]
+    #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Received {
         pub operator: Address,
         pub from: Address,

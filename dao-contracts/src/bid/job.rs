@@ -8,7 +8,7 @@ use crate::voting::types::VotingId;
 
 use super::types::BidId;
 
-#[derive(CLTyped, ToBytes, FromBytes, PartialEq, Clone, Copy, Debug)]
+#[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
     Created,
     Accepted,

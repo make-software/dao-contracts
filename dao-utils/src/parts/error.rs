@@ -1,7 +1,7 @@
 macro_rules! dao_errors {
     ( $($name:ident $( ($optional_arg:ident) )? => $value:expr,)* ) => {
         #[doc = "All possible errors that can be raised by the utils crate."]
-        #[derive(Debug, PartialEq)]
+        #[derive(Debug, PartialEq, Eq)]
         pub enum Error {
             $($name$(($optional_arg))*),*
         }

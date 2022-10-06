@@ -6,7 +6,7 @@ use casper_dao_utils::{
 use casper_types::U256;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`
-#[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Clone, Copy)]
+#[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Eq, Clone, Copy)]
 pub enum Choice {
     Against,
     InFavor,

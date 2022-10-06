@@ -1,12 +1,12 @@
 [package]
 name = "casper-dao-erc721"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-casper-types = "1.4.6"
+casper-types = "1.5.0"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
 delegate = "0.6.2"
 [dev-dependencies]

@@ -10,7 +10,7 @@ use crate::voting::types::VotingId;
 use super::voting::VotingConfiguration;
 
 /// Event thrown after voting contract is created
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct VotingContractCreated {
     pub voter_contract: Address,
     pub variable_repo: Address,
@@ -18,7 +18,7 @@ pub struct VotingContractCreated {
 }
 
 /// Event thrown after ballot is cast
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct BallotCast {
     pub voter: Address,
     pub voting_id: VotingId,
@@ -38,7 +38,7 @@ impl BallotCast {
 }
 
 /// Event thrown after voting is created
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct VotingCreated {
     pub creator: Address,
     pub voting_id: VotingId,
@@ -74,7 +74,7 @@ impl VotingCreated {
 }
 
 /// Event thrown when voting ends
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct VotingEnded {
     pub voting_id: VotingId,
     pub informal_voting_id: VotingId,
