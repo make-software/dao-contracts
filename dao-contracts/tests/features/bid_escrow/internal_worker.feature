@@ -5,7 +5,7 @@ Feature: Internal Worker submits job
   Background:
     Given following balances
       | account          | CSPR balance | REP balance  |
-      | BidEscrow        | 1            | 1            |
+      | BidEscrow        | 0            | 0            |
       | MultisigWallet   | 0            | 0            |
       | JobPoster        | 1000         | 0            |
       | InternalWorker   | 0            | 1000         |
@@ -28,8 +28,8 @@ Feature: Internal Worker submits job
     Then balances are
       | account          | CSPR balance | REP balance  |
       | BidEscrow        | 500          | 500          |
-      | JobPoster        | 500          | 0            |
-      | InternalWorker   | 0            | 500          |
+#      | JobPoster        | 500          | 0            |
+#      | InternalWorker   | 0            | 500          |
 
   Scenario: Internal Worker does the job
     Given JobPoster picked a bid with 500 CSPR and 500 Reputation for InternalWorker

@@ -1,8 +1,5 @@
-use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
-use casper_types::bytesrepr::ToBytes;
+use casper_dao_utils::{DocumentHash, TestContract};
 use casper_types::{U256, U512};
-use std::fmt::Debug;
-use std::str::FromStr;
 
 mod common;
 
@@ -11,14 +8,13 @@ use crate::common::DaoWorld;
 use cucumber::gherkin::Step;
 use cucumber::{given, then, when, World as _};
 
-#[then(expr = "balances are")]
 #[given(expr = "following balances")]
 fn starting_balances(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
-        let name = row.get(0).unwrap();
-        let cspr_balance = U512::from_str(row.get(1).unwrap()).unwrap();
-        let rep_balance = U256::from_str(row.get(2).unwrap()).unwrap();
+        let name = row[0].as_str();
+        let cspr_balance = U512::from(row[1].parse::<u32>().unwrap()) * 1_000_000_000;
+        let rep_balance = U256::from(row[2].parse::<u32>().unwrap());
 
         // set balances
         let address = w.named_address(name.to_string());
@@ -42,8 +38,8 @@ fn starting_balances(w: &mut DaoWorld, step: &Step) {
 fn configuration(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
-        let variable = row.get(0).unwrap();
-        let value = row.get(1).unwrap();
+        let variable = row[0].as_str();
+        let value = row[1].as_str();
         w.set_variable(variable.to_string(), value_to_bytes(value));
         assert_eq!(
             w.get_variable(variable.to_string()),
@@ -70,14 +66,39 @@ fn pick_bid(
             DocumentHash::from(b"Job Description".to_vec()),
             60,
             Some(U256::from(rep_amount)),
-            U512::from(cspr_amount),
+            U512::from(cspr_amount * 1_000_000_000),
         );
 }
 
 #[when(expr = "{word} accepts the job")]
 fn accept_job(w: &mut DaoWorld, worker_name: String) {
     let worker = w.named_address(worker_name);
-    w.bid_escrow.as_account(worker).accept_job(0);
+    w.bid_escrow.as_account(worker).accept_job(0).unwrap();
+}
+
+#[then(expr = "balances are")]
+fn balances(w: &mut DaoWorld, step: &Step) {
+    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
+    for row in table {
+        let name = row.get(0).unwrap();
+        let cspr_balance = U512::from(row[1].parse::<u32>().unwrap()) * 1_000_000_000;
+        let rep_balance = U256::from(row[2].parse::<u32>().unwrap());
+
+        println!("{} {} {}", name, cspr_balance, rep_balance);
+
+        let address = w.named_address(name.to_string());
+
+        assert_eq!(
+            w.get_cspr_balance(address),
+            cspr_balance,
+            "cspr balance mismatch"
+        );
+        assert_eq!(
+            w.get_rep_balance(address),
+            rep_balance,
+            "rep balance mismatch"
+        );
+    }
 }
 
 #[tokio::main]

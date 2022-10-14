@@ -17,6 +17,7 @@ pub struct DaoWorld {
     variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
     addresses: HashMap<String, Address>,
     balances: HashMap<Address, U512>,
+    starting_balances: HashMap<Address, U512>,
     accounts_count: usize,
     kyc_count: U256,
     va_count: U256,
@@ -25,20 +26,29 @@ pub struct DaoWorld {
 impl DaoWorld {
     // sets relative amount of motes to the account
     pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
-        self.balances.insert(
-            account,
-            self.test_env().get_address_cspr_balance(account) + amount,
-        );
+        if self.balances.contains_key(&account) {
+            assert!(false, "Cannot set cspr balance twice");
+        }
+
+        self.balances.insert(account, amount);
+
+        self.starting_balances
+            .insert(account, self.test_env().get_address_cspr_balance(account));
     }
 
     // gets relative amount of motes to the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
-        self.balances.get(&account).unwrap() - self.test_env().get_address_cspr_balance(account)
+        self.balances.get(&account).unwrap() + self.test_env().get_address_cspr_balance(account)
+            - self.starting_balances.get(&account).unwrap()
     }
 
     // sets amount of reputation on the account
     pub fn set_rep_balance(&mut self, account: Address, amount: U256) {
-        assert_eq!(self.reputation_token.balance_of(account), U256::zero());
+        assert_eq!(
+            self.reputation_token.balance_of(account),
+            U256::zero(),
+            "Starting reputation balance is not zero"
+        );
         self.reputation_token.mint(account, amount).unwrap();
     }
 
@@ -131,6 +141,7 @@ impl Default for DaoWorld {
             variable_repo,
             addresses: Default::default(),
             balances: Default::default(),
+            starting_balances: Default::default(),
             accounts_count: 0,
             kyc_count: 0.into(),
             va_count: 0.into(),
