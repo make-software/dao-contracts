@@ -1,15 +1,20 @@
+pub mod dao;
+pub mod helpers;
 pub mod setup;
+
 use casper_dao_utils::{Address, TestContract, TestEnv};
+use casper_types::bytesrepr::Bytes;
 use casper_types::{U256, U512};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 
 #[derive(cucumber::World)]
 pub struct DaoWorld {
-    bid_escrow: casper_dao_contracts::BidEscrowContractTest,
-    va_token: casper_dao_contracts::VaNftContractTest,
-    reputation_token: casper_dao_contracts::ReputationContractTest,
-    kyc_token: casper_dao_contracts::KycNftContractTest,
+    pub bid_escrow: casper_dao_contracts::BidEscrowContractTest,
+    pub va_token: casper_dao_contracts::VaNftContractTest,
+    pub reputation_token: casper_dao_contracts::ReputationContractTest,
+    pub kyc_token: casper_dao_contracts::KycNftContractTest,
+    variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
     addresses: HashMap<String, Address>,
     balances: HashMap<Address, U512>,
     accounts_count: usize,
@@ -22,30 +27,45 @@ impl DaoWorld {
     pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
         self.balances.insert(
             account,
-            self.test_env().get_account_cspr_balance(account) + amount,
+            self.test_env().get_address_cspr_balance(account) + amount,
         );
     }
 
     // gets relative amount of motes to the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
-        self.balances.get(&account).unwrap() - self.test_env().get_account_cspr_balance(account)
+        self.balances.get(&account).unwrap() - self.test_env().get_address_cspr_balance(account)
     }
 
     // sets amount of reputation on the account
     pub fn set_rep_balance(&mut self, account: Address, amount: U256) {
         assert_eq!(self.reputation_token.balance_of(account), U256::zero());
-        self.reputation_token.mint(account, amount);
+        self.reputation_token.mint(account, amount).unwrap();
+    }
+
+    // gets amount of reputation on the account
+    pub fn get_rep_balance(&self, account: Address) -> U256 {
+        self.reputation_token.balance_of(account)
+    }
+
+    // sets variable value
+    pub fn set_variable(&mut self, name: String, value: Bytes) {
+        self.variable_repo.update_at(name, value, None).unwrap();
+    }
+
+    // gets variable value
+    pub fn get_variable(&self, name: String) -> Bytes {
+        self.variable_repo.get(name).unwrap()
     }
 
     // performs kyc for an address
     pub fn kyc(&mut self, account: Address) {
-        self.kyc_token.mint(account, self.kyc_count);
+        self.kyc_token.mint(account, self.kyc_count).unwrap();
         self.kyc_count += U256::one();
     }
 
     // makes an address a va
     pub fn make_va(&mut self, account: Address) {
-        self.va_token.mint(account, self.va_count);
+        self.va_token.mint(account, self.va_count).unwrap();
         self.va_count += U256::one();
     }
 
@@ -69,7 +89,7 @@ impl DaoWorld {
                         self.addresses.insert(name.clone(), address.clone());
                         self.accounts_count += 1;
 
-                        if name.contains("Job Poster") {
+                        if name.contains("JobPoster") {
                             self.kyc(address.clone());
                         }
 
@@ -102,13 +122,13 @@ impl Debug for DaoWorld {
 
 impl Default for DaoWorld {
     fn default() -> Self {
-        let (mut bid_escrow, mut reputation_token, mut va_token, mut kyc_token) =
-            setup::setup_bid_escrow();
+        let (bid_escrow, reputation_token, va_token, kyc_token, variable_repo) = dao::setup_dao();
         Self {
             bid_escrow,
             va_token,
             reputation_token,
             kyc_token,
+            variable_repo,
             addresses: Default::default(),
             balances: Default::default(),
             accounts_count: 0,

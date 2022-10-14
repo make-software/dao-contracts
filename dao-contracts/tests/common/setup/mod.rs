@@ -16,6 +16,86 @@ use casper_types::{
 };
 
 #[allow(dead_code)]
+pub fn setup_bid_escrow_gherkin() -> (
+    BidEscrowContractTest,
+    ReputationContractTest,
+    VaNftContractTest,
+    KycNftContractTest,
+) {
+    let informal_quorum = 500.into();
+    let formal_quorum = 500.into();
+    let total_onboarded = 6;
+
+    let (variable_repo_contract, mut reputation_token_contract, _va_owned_nft_contract) =
+        setup_repository_and_reputation_contracts_gherkin(
+            informal_quorum,
+            formal_quorum,
+            total_onboarded,
+        );
+
+    let va_token = VaNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "user token".to_string(),
+        "usert".to_string(),
+        "".to_string(),
+    );
+
+    let kyc_token = KycNftContractTest::new(
+        variable_repo_contract.get_env(),
+        "kyc token".to_string(),
+        "kyt".to_string(),
+        "".to_string(),
+    );
+
+    let bid_escrow_contract = BidEscrowContractTest::new(
+        variable_repo_contract.get_env(),
+        variable_repo_contract.address(),
+        reputation_token_contract.address(),
+        kyc_token.address(),
+        va_token.address(),
+    );
+
+    reputation_token_contract
+        .add_to_whitelist(bid_escrow_contract.address())
+        .unwrap();
+
+    (
+        bid_escrow_contract,
+        reputation_token_contract,
+        va_token,
+        kyc_token,
+    )
+}
+
+fn setup_repository_and_reputation_contracts_gherkin(
+    informal_quorum: U256,
+    formal_quorum: U256,
+    total_onboarded: usize,
+) -> (
+    VariableRepositoryContractTest,
+    ReputationContractTest,
+    VaNftContractTest,
+) {
+    let minimum_reputation = 500.into();
+    let reputation_to_mint = 0;
+    let informal_voting_time: u64 = 3_600;
+    let formal_voting_time: u64 = 2 * informal_voting_time;
+    let env = TestEnv::new();
+    let variable_repo_contract = setup_variable_repo_contract(
+        &env,
+        informal_quorum,
+        formal_quorum,
+        informal_voting_time,
+        formal_voting_time,
+        minimum_reputation,
+    );
+    let reputation_token_contract =
+        setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
+    let va_token = setup_va_token(&env, total_onboarded);
+    (variable_repo_contract, reputation_token_contract, va_token)
+}
+
+#[allow(dead_code)]
 pub fn setup_bid_escrow() -> (
     BidEscrowContractTest,
     ReputationContractTest,

@@ -16,15 +16,15 @@ use casper_execution_engine::core::engine_state::{
 use casper_types::{
     account::{Account, AccountHash},
     bytesrepr::{self, Bytes, FromBytes, ToBytes},
-    runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
-    SecretKey, URef, U512,
+    runtime_args, ApiError, CLTyped, Contract, ContractHash, ContractPackageHash, Key, Motes,
+    PublicKey, RuntimeArgs, SecretKey, URef, U512,
 };
 
+use crate::consts::CONTRACT_MAIN_PURSE;
 use blake2::{
     digest::{Update, VariableOutput},
     VarBlake2b,
 };
-
 use casper_engine_test_support::DEFAULT_PAYMENT;
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
 
@@ -103,8 +103,19 @@ impl TestEnv {
         self.state.lock().unwrap().block_time
     }
 
-    pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
-        self.state.lock().unwrap().get_account_cspr_balance(account)
+    pub fn get_address_cspr_balance(&self, address: Address) -> U512 {
+        match address.is_contract() {
+            true => self
+                .state
+                .lock()
+                .unwrap()
+                .get_contract_cspr_balance(address.as_contract_package_hash().unwrap()),
+            false => self
+                .state
+                .lock()
+                .unwrap()
+                .get_account_cspr_balance(&address),
+        }
     }
 }
 
@@ -244,6 +255,14 @@ impl TestEnvState {
         ContractPackageHash::from(key.into_hash().unwrap())
     }
 
+    pub fn get_contract_hash(&self, contract_hash: ContractPackageHash) -> ContractHash {
+        self.context
+            .get_contract_package(contract_hash)
+            .unwrap()
+            .current_contract_hash()
+            .unwrap()
+    }
+
     pub fn get_value<T: FromBytes + CLTyped>(&self, hash: ContractPackageHash, name: &str) -> T {
         let contract_hash = self
             .context
@@ -330,15 +349,31 @@ impl TestEnvState {
         hash
     }
 
-    pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
-        let gas_used = match self.gas_used.get(&account) {
+    pub fn get_contract_cspr_balance(&self, contract_hash: &ContractPackageHash) -> U512 {
+        let contract_hash: ContractHash = self.get_contract_hash(*contract_hash);
+
+        let contract: Contract = self.context.get_contract(contract_hash).unwrap();
+
+        let main_purse_uref = contract
+            .named_keys()
+            .get(CONTRACT_MAIN_PURSE)
+            .and_then(|key| key.as_uref());
+
+        match main_purse_uref {
+            Some(purse) => self.context.get_purse_balance(*purse),
+            None => U512::zero(),
+        }
+    }
+
+    pub fn get_account_cspr_balance(&self, address: &Address) -> U512 {
+        let gas_used = match self.gas_used.get(&address) {
             Some(value) => *value,
             None => U512::zero(),
         };
-        let account: Account = self
-            .context
-            .get_account(*account.as_account_hash().unwrap())
-            .unwrap();
+
+        let account_hash = address.as_account_hash().unwrap();
+
+        let account: Account = self.context.get_account(*account_hash).unwrap();
         let purse = account.main_purse();
         self.context.get_purse_balance(purse) + gas_used
     }
