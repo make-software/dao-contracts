@@ -70,7 +70,8 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
 
     fn get_uref(&self) -> URef {
         let mut seeds = SEEDS.lock().unwrap();
-        match seeds.get(&self.name) {
+        let seed = seeds.get(&self.name);
+        match seed {
             Some(seed) => *seed,
             None => {
                 let key: Key = match runtime::get_key(&self.name) {

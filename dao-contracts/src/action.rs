@@ -5,7 +5,7 @@ use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
 /// - `AddToWhitelists` - calls `add_to_whitelist` method
 /// - `RemoveFromWhitelist` - calls `remove_from_whitelist` method
 /// - `ChangeOwner` - calls `change_ownership` method
-#[derive(CLTyped, PartialEq, Debug, FromBytes, ToBytes)]
+#[derive(CLTyped, PartialEq, Eq, Debug, FromBytes, ToBytes)]
 pub enum Action {
     AddToWhitelist,
     RemoveFromWhitelist,

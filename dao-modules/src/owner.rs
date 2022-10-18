@@ -49,7 +49,7 @@ pub mod events {
     use casper_dao_utils::{casper_dao_macros::Event, Address};
 
     /// Informs the owner change.
-    #[derive(Debug, PartialEq, Event)]
+    #[derive(Debug, PartialEq, Eq, Event)]
     pub struct OwnerChanged {
         pub new_owner: Address,
     }

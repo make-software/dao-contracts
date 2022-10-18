@@ -443,6 +443,7 @@ impl BidEscrowContractTest {
                 "document_hash" => document_hash,
                 "time" => time,
                 "required_stake" => required_stake,
+                "amount" => cspr_amount,
             },
         );
     }

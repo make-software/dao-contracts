@@ -233,13 +233,13 @@ pub mod events {
     use casper_dao_utils::{casper_dao_macros::Event, Address};
     use casper_types::U256;
 
-    #[derive(Debug, PartialEq, Event)]
+    #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Burn {
         pub address: Address,
         pub amount: U256,
     }
 
-    #[derive(Debug, PartialEq, Event)]
+    #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Mint {
         pub address: Address,
         pub amount: U256,

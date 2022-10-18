@@ -4,7 +4,7 @@ use casper_types::{U256, U512};
 
 use super::types::BidId;
 
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
     pub bid_id: BidId,
     pub job_poster: Address,
@@ -29,7 +29,7 @@ impl JobCreated {
     }
 }
 
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobAccepted {
     pub bid_id: BidId,
     pub job_poster: Address,
@@ -46,7 +46,7 @@ impl JobAccepted {
     }
 }
 
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobSubmitted {
     pub bid_id: BidId,
     pub job_poster: Address,
@@ -70,7 +70,7 @@ impl JobSubmitted {
     }
 }
 
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCancelled {
     pub bid_id: BidId,
     pub caller: Address,
@@ -93,7 +93,7 @@ impl JobCancelled {
     }
 }
 
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobDone {
     pub bid_id: BidId,
     pub caller: Address,
@@ -114,7 +114,7 @@ impl JobDone {
     }
 }
 
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobRejected {
     pub bid_id: BidId,
     pub caller: Address,

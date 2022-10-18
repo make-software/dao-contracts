@@ -47,7 +47,7 @@ pub trait SimpleVoterContractInterface {
 }
 
 /// Event thrown after SimpleVoting is created
-#[derive(Debug, PartialEq, Event)]
+#[derive(Debug, PartialEq, Eq, Event)]
 pub struct SimpleVotingCreated {
     pub document_hash: DocumentHash,
     pub voting_id: VotingId,

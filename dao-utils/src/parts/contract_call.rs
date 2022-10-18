@@ -3,7 +3,7 @@ use casper_types::RuntimeArgs;
 
 use crate::{casper_env::call_contract, Address};
 
-#[derive(Debug, ToBytes, FromBytes, Clone, PartialEq)]
+#[derive(Debug, ToBytes, FromBytes, Clone, PartialEq, Eq)]
 pub struct ContractCall {
     pub address: Address,
     pub entry_point: String,

@@ -12,7 +12,7 @@ test = false
 
 [dependencies]
 casper-contract = "1.4.3"
-casper-types = "1.4.6"
+casper-types = "1.5.0"
 casper-dao-utils = { path = "../../dao-utils" }
 
 [features]
