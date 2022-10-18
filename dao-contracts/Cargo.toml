@@ -21,6 +21,10 @@ name = "test_gherkin_bid_escrow"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
 
+#[[test]]
+#name = "test_balance"
+#required-features = ["test-support"]
+
 [[bin]]
 name = "reputation_contract"
 path = "bin/reputation_contract.rs"

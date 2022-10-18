@@ -26,9 +26,7 @@ pub struct DaoWorld {
 impl DaoWorld {
     // sets relative amount of motes to the account
     pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
-        if self.balances.contains_key(&account) {
-            assert!(false, "Cannot set cspr balance twice");
-        }
+        assert!(!self.balances.contains_key(&account), "Cannot set cspr balance twice");
 
         self.balances.insert(account, amount);
 
@@ -36,10 +34,14 @@ impl DaoWorld {
             .insert(account, self.test_env().get_address_cspr_balance(account));
     }
 
-    // gets relative amount of motes to the account
+    // gets relative amount of motes of the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
-        self.balances.get(&account).unwrap() + self.test_env().get_address_cspr_balance(account)
-            - self.starting_balances.get(&account).unwrap()
+        dbg!(account);
+        dbg!(self.test_env().get_address_cspr_balance(account));
+        let balance = (self.balances.get(&account).unwrap() + self.test_env().get_address_cspr_balance(account));
+        let result = balance.checked_sub(*self.starting_balances.get(&account).unwrap()).unwrap();
+        dbg!(result);
+        result
     }
 
     // sets amount of reputation on the account
@@ -89,7 +91,7 @@ impl DaoWorld {
             None => {
                 // add new address, but match the name
                 match name.as_str() {
-                    "Bid Escrow" => {
+                    "BidEscrow" => {
                         let address = self.bid_escrow.address();
                         self.addresses.insert(name, address);
                         return address.clone();

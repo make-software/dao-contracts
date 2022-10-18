@@ -24,12 +24,12 @@ fn starting_balances(w: &mut DaoWorld, step: &Step) {
         assert_eq!(
             w.get_cspr_balance(address),
             cspr_balance,
-            "cspr balance mismatch"
+            "cspr set balance mismatch"
         );
         assert_eq!(
             w.get_rep_balance(address),
             rep_balance,
-            "rep balance mismatch"
+            "rep set balance mismatch"
         );
     }
 }
@@ -83,8 +83,6 @@ fn balances(w: &mut DaoWorld, step: &Step) {
         let name = row.get(0).unwrap();
         let cspr_balance = U512::from(row[1].parse::<u32>().unwrap()) * 1_000_000_000;
         let rep_balance = U256::from(row[2].parse::<u32>().unwrap());
-
-        println!("{} {} {}", name, cspr_balance, rep_balance);
 
         let address = w.named_address(name.to_string());
 
