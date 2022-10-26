@@ -1,12 +1,9 @@
 use casper_dao_modules::AccessControl;
-use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{self, caller, emit},
-    math::{add_to_balance, rem_from_balance},
-    Address, Error, Mapping, Variable,
-};
-use casper_types::U256;
+use casper_dao_utils::{casper_dao_macros::{casper_contract_interface, Instance}, casper_env::{self, caller, emit}, math::{add_to_balance, rem_from_balance}, Address, Error, Mapping, Variable, VecMapping};
+use casper_types::{U256, URef};
 use delegate::delegate;
+use crate::voting::{Choice, VotingId};
+use crate::voting::voting::{VotingResult, VotingSummary};
 
 use self::events::{Burn, Mint};
 
@@ -87,6 +84,12 @@ pub trait ReputationContractInterface {
 
     /// Returns the amount of the debt the owner has.
     fn debt(&self, owner: Address) -> U256;
+
+    /// Stakes the reputation for a given voting and choice.
+    fn stake(&mut self, voter_address: Address, voting_id: VotingId, choice: Choice, amount: U256);
+
+    /// Redistributes the reputation based on the voting summary
+    fn redistribute(&mut self, voting_id, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -94,6 +97,8 @@ pub trait ReputationContractInterface {
 pub struct ReputationContract {
     total_supply: Variable<U256>,
     balances: Mapping<Address, (bool, U256)>,
+    stakes: VecMapping<(Address, VotingId), Vec<(Address, U256, Choice)>>,
+    total_stake: Mapping<Address, U256>,
     pub access_control: AccessControl,
 }
 
@@ -214,6 +219,37 @@ impl ReputationContractInterface for ReputationContract {
         self.balances
             .set(&recipient, add_to_balance(recipient_signed_balance, amount));
     }
+
+    fn stake(&mut self, voter_address: Address, voting_id: VotingId, choice: Choice, amount: U256) {
+        self.access_control.ensure_whitelisted();
+
+        // Load a balance of the account.
+        let signed_balance = self.get_signed_balance(voter_address);
+        let (is_positive, balance) = signed_balance;
+        let current_stake = self.total_stake.get(&voter_address).unwrap_or_default();
+
+        // Check if the voter has sufficient balance.
+        if !is_positive || balance - current_stake < amount {
+            casper_env::revert(Error::InsufficientBalance)
+        }
+
+        // Set the stake
+        let stake_key = (caller(), voting_id);
+        let stake = (voter_address, amount, choice);
+        self.stakes.set(&stake_key, stake);
+
+        // // Emit Stake event.
+        // emit(Stake {
+        //     voter_address,
+        //     voting_id,
+        //     choice,
+        //     amount,
+        // });
+    }
+
+    fn redistribute(&mut self, voting_id: VotingId, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>) {
+
+    }
 }
 
 impl ReputationContract {
@@ -227,6 +263,16 @@ impl ReputationContractCaller {
     pub fn has_reputation(&self, address: &Address) -> bool {
         !self.balance_of(*address).is_zero()
     }
+}
+
+pub enum CSPRRedistributionMode {
+    OnlyVoters,
+    AllVAs,
+}
+
+pub struct CSPRRedistribution {
+    pub mode: CSPRRedistributionMode,
+    pub purse: URef,
 }
 
 pub mod events {
