@@ -1,8 +1,67 @@
 use crate::bid::job::Job;
 use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
 use casper_types::{U256, U512};
+use crate::bid::job_offer::JobOffer;
+use crate::bid::types::JobOfferId;
 
 use super::types::BidId;
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct JobOfferCreated {
+    pub job_offer_id: JobOfferId,
+    pub job_poster: Address,
+    pub max_budget: U512,
+    pub expected_timeframe: BlockTime,
+}
+
+impl JobOfferCreated {
+    pub fn new(
+        job_offer: &JobOffer
+    ) -> Self {
+        JobOfferCreated {
+            job_offer_id: job_offer.job_offer_id,
+            job_poster: job_offer.job_poster,
+            max_budget: job_offer.max_budget,
+            expected_timeframe: job_offer.expected_timeframe,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct BidSubmitted {
+    pub bid_id: BidId,
+    pub job_offer_id: JobOfferId,
+    pub worker: Address,
+    pub onboard: bool,
+    pub proposed_timeframe: BlockTime,
+    pub proposed_payment: U512,
+    pub reputation_stake: Option<U512>,
+    pub cspr_stake: Option<U512>,
+}
+
+impl BidSubmitted {
+    pub fn new(
+        bid_id: BidId,
+        job_offer_id: JobOfferId,
+        worker: Address,
+        onboard: bool,
+        proposed_timeframe: BlockTime,
+        proposed_payment: U512,
+        reputation_stake: Option<U512>,
+        cspr_stake: Option<U512>,
+    ) -> Self {
+        BidSubmitted {
+            bid_id,
+            job_offer_id,
+            worker,
+            onboard,
+            proposed_timeframe,
+            proposed_payment,
+            reputation_stake,
+            cspr_stake,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {

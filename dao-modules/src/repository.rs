@@ -124,8 +124,11 @@ impl RepositoryDefaults {
 impl Default for RepositoryDefaults {
     fn default() -> Self {
         let mut items = RepositoryDefaults { items: vec![] };
+        items.push(consts::POST_JOB_DOS_FEE, U256::from(10000));
+        items.push(consts::INTERNAL_AUCTION_TIME, U256::from(604800));
+        items.push(consts::PUBLIC_AUCTION_TIME, U256::from(864000));
         items.push(consts::DEFAULT_POLICING_RATE, U256::from(300));
-        items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(10));
+        items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(100));
         items.push(consts::FORUM_KYC_REQUIRED, true);
         items.push(consts::FORMAL_VOTING_QUORUM, U256::from(500));
         items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(50));
@@ -133,8 +136,17 @@ impl Default for RepositoryDefaults {
         items.push(consts::FORMAL_VOTING_TIME, 432000000u64);
         items.push(consts::INFORMAL_VOTING_TIME, 86400000u64);
         items.push(consts::VOTING_TIME, 172800000u64);
+        // TODO: Remove
         items.push(consts::MINIMUM_GOVERNANCE_REPUTATION, U256::from(100));
+        // TODO: Remove
         items.push(consts::MINIMUM_VOTING_REPUTATION, U256::from(10));
+        // TODO: Add TimeBetweenInformalAndFormalVoting
+        items.push(consts::VA_BID_ACCEPTANCE_TIMEOUT, U256::from(172800));
+        items.push(consts::VA_CAN_BID_ON_PUBLIC_AUCTION, false);
+        // TODO: Confirm value
+        items.push(consts::JOB_SUBMIT_GRACE_PERIOD, U256::from(86400));
+        // TODO: Confirm value
+        items.push(consts::DEFAULT_REPUTATION_SLASH, U256::from(100));
         items
     }
 }

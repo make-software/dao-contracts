@@ -87,6 +87,9 @@ dao_errors!(
     VotingNotStarted => 4008,
     JobAlreadySubmitted => 4009,
     NotOnboardedWorkerCannotStakeReputation => 4010,
+    DosFeeTooLow => 4011,
+    CannotBidOnOwnJob => 4012,
+    PaymentExceedsMaxBudget => 4013,
     InvalidAddress => 5000,
     TransferError => 6000,
 );
