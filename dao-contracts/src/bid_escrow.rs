@@ -30,7 +30,7 @@ use crate::{
 use casper_dao_utils::casper_env::self_address;
 use delegate::delegate;
 
-use crate::bid::events::{JobCancelled, JobDone, JobRejected};
+use crate::bid::events::{JobCancelled, JobDone, JobOfferCreated, JobRejected};
 use crate::voting::VotingId;
 
 #[casper_contract_interface]
@@ -47,6 +47,30 @@ pub trait BidEscrowContractInterface {
         kyc_token: Address,
         va_token: Address,
     );
+
+    /// Job Poster post a new Job Offer
+    /// Parameters:
+    /// expected_timeframe - Expected timeframe for completing a Job
+    /// budget - Maximum budget for a Job
+    /// Alongside Job Offer, Job Poster also sends DOS Fee in CSPR
+    ///
+    /// # Events
+    /// Emits [`JobOfferCreated`](crate::bid::events::JobOfferCreated)
+    fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
+
+    /// Worker submits a Bid for a Job
+    /// Parameters:
+    /// time - proposed timeframe for completing a Job
+    /// payment - proposed payment for a Job
+    /// reputation_stake - reputation stake for a Job if Worker is an Internal Worker
+    /// onboard - if Worker is an External Worker, then Worker can request to be onboarded after
+    /// completing a Job
+    /// purse: purse containing stake from External Worker
+    ///
+    /// # Events
+    /// Emits [`BidSubmitted`](crate::bid::events::BidSubmitted)
+    fn submit_bid(&mut self, job_id: BidId, time: BlockTime, payment: U512, reputation_stake: U256, onboard: bool, purse: Option<URef>);
+
     /// Job poster picks a bid. This creates a new Job object and saves it in a storage.
     /// If worker is not onboarded, the job is accepted automatically.
     /// Otherwise, worker needs to accept job (see [accept_job](accept_job))
@@ -79,7 +103,8 @@ pub trait BidEscrowContractInterface {
     /// Throws [`CannotAcceptJob`](Error::CannotAcceptJob) if one of the constraints for
     /// job acceptance is not met.
     fn accept_job(&mut self, bid_id: BidId);
-    /// Cancel job. This can be done only by job creator if the job wasn't yet accepted.
+    /// Cancel job. This can be done by anyone when Worker did not submit Job Result and after Grace
+    /// Period has passed.
     /// It refunds cspr to job creator.
     /// # Events
     /// Emits [`JobCancelled`](JobCancelled)
@@ -108,9 +133,13 @@ pub trait BidEscrowContractInterface {
     /// # Errors
     /// Throws [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn vote(&mut self, bid_id: BidId, choice: Choice, stake: U256);
-    /// Returns a job with given BidId
-    fn get_job(&self, bid_id: BidId) -> Option<Job>;
+    fn vote(&mut self, job_id: JobId, choice: Choice, stake: U256);
+    /// Returns a job with given JobId
+    fn get_job(&self, job_id: JobId) -> Option<Job>;
+    /// Returns a JobOffer with given JobOfferId
+    fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer>;
+    /// Returns a Bid with given BidId
+    fn get_bid(&self, bid_id: BidId) -> Option<Bid>;
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
     /// with a refund or pay the worker.
     /// # Events
@@ -139,8 +168,12 @@ pub struct BidEscrowContract {
     voting: GovernanceVoting,
     kyc: KycInfo,
     onboarding: OnboardingInfo,
-    jobs: Mapping<BidId, Job>,
-    jobs_count: SequenceGenerator<BidId>,
+    jobs: Mapping<JobId, Job>,
+    jobs_count: SequenceGenerator<JobId>,
+    job_offers: Mapping<JobOfferId, JobOffer>,
+    job_offers_count: SequenceGenerator<JobOfferId>,
+    bids: Mapping<BidId, Bid>,
+    bids_count: SequenceGenerator<BidId>,
 }
 
 impl BidEscrowContractInterface for BidEscrowContract {
@@ -154,6 +187,46 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.voting.init(variable_repo, reputation_token, va_token);
         self.kyc.init(kyc_token);
         self.onboarding.init(va_token);
+    }
+
+    fn post_job_offer(&mut self, expected_timeframe: BlockTime, max_budget: U512, purse: URef) {
+        if !self.kyc.is_kycd(&caller()) {
+            revert(Error::JobPosterNotKycd);
+        }
+
+        self.deposit_dos_fee(purse);
+
+        let job_offer_id = self.next_job_offer_id();
+        let job_offer = JobOffer::new(job_offer_id, caller(), expected_timeframe, max_budget);
+
+        self.job_offers.set(&job_offer_id, job_offer);
+
+        // JobOfferCreated::new(&job_offer).emit();
+    }
+
+    fn submit_bid(&mut self, job_id: BidId, time: BlockTime, payment: U512, reputation_stake: U256, onboard: bool, purse: Option<URef>) {
+        if !self.kyc.is_kycd(&caller()) {
+            revert(Error::WorkerNotKycd);
+        }
+
+        // let job_offer = self.get_job_offer(job_id).unwrap_or_else(|| revert(Error::JobOfferNotFound));
+
+        // if job_offer.job_poster == caller() {
+        //     revert(Error::CannotBidOnOwnJob);
+        // }
+
+        // if payment > job_offer.max_budget {
+        //     revert(Error::PaymentExceedsMaxBudget);
+        // }
+
+        // // TODO: Implement rest of constraints
+
+        // let bid_id = self.next_bid_id();
+        // let bid = Bid::new(bid_id, job_id, caller(), time, payment, reputation_stake);
+
+        // self.bids.set(&bid_id, bid);
+
+        // BidCreated::new(&bid).emit();
     }
 
     fn pick_bid(
@@ -276,6 +349,25 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.jobs.get_or_none(&bid_id)
     }
 
+    delegate! {
+        to self.voting {
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+        }
+    }
+
+    fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer> {
+        self.job_offers.get_or_none(&job_offer_id)
+    }
+
+    fn get_bid(&self, bid_id: BidId) -> Option<Bid> {
+        self.bids.get_or_none(&bid_id)
+    }
+
     fn finish_voting(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
         let voting_id = job
@@ -313,17 +405,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn get_cspr_balance(&self) -> U512 {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
     }
-
-    delegate! {
-        to self.voting {
-            fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
-        }
-    }
 }
 
 impl BidEscrowContract {
@@ -333,11 +414,39 @@ impl BidEscrowContract {
         bid_id
     }
 
+    fn next_job_offer_id(&mut self) -> JobOfferId {
+        let job_offer_id = self.job_offers_count.get_current_value();
+        self.job_offers_count.next_value();
+        job_offer_id
+    }
+
+    fn next_job_id(&mut self) -> JobId {
+        let job_id = self.jobs_count.get_current_value();
+        self.jobs_count.next_value();
+        job_id
+    }
+
     fn deposit(&mut self, cargo_purse: URef) -> U512 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
         amount
+    }
+
+    /// Deposits a dos fee into the contract, checking the constraints
+    fn deposit_dos_fee(&mut self, cargo_purse: URef) -> U512 {
+        let main_purse = casper_env::contract_main_purse();
+        let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
+        if amount < self.minimum_dos_fee() {
+            revert(Error::DosFeeTooLow);
+        }
+        transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
+        amount
+    }
+
+    fn minimum_dos_fee(&mut self) -> U512 {
+        // TODO: Implement using external contract and Governance Variable
+        U512::from(100_000_000_000u64)
     }
 
     fn withdraw(&mut self, address: Address, amount: U512) {
@@ -422,6 +531,9 @@ impl BidEscrowContract {
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
+use crate::bid::bid::Bid;
+use crate::bid::job_offer::{JobOffer, JobOfferStatus};
+use crate::bid::types::{JobId, JobOfferId};
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
