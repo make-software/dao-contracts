@@ -7,6 +7,7 @@ use casper_dao_utils::{TestContract, TestEnv};
 
 #[allow(dead_code)]
 pub fn setup_dao() -> (
+    TestEnv,
     BidEscrowContractTest,
     ReputationContractTest,
     VaNftContractTest,
@@ -44,6 +45,7 @@ pub fn setup_dao() -> (
         .unwrap();
 
     (
+        env,
         bid_escrow,
         reputation_token,
         va_token,

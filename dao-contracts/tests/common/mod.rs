@@ -10,6 +10,7 @@ use std::fmt::{Debug, Formatter};
 
 #[derive(cucumber::World)]
 pub struct DaoWorld {
+    env: TestEnv,
     pub bid_escrow: casper_dao_contracts::BidEscrowContractTest,
     pub va_token: casper_dao_contracts::VaNftContractTest,
     pub reputation_token: casper_dao_contracts::ReputationContractTest,
@@ -124,6 +125,13 @@ impl DaoWorld {
             Some(address) => address.clone(),
         }
     }
+
+    pub fn named_address2(&self, name: String) -> Address {
+        match name.as_ref() {
+            "Owner" => self.env.get_account(0),
+            _ => panic!("Unknown address {:?}", name)
+        }
+    }
 }
 
 impl Debug for DaoWorld {
@@ -134,8 +142,9 @@ impl Debug for DaoWorld {
 
 impl Default for DaoWorld {
     fn default() -> Self {
-        let (bid_escrow, reputation_token, va_token, kyc_token, variable_repo) = dao::setup_dao();
+        let (env, bid_escrow, reputation_token, va_token, kyc_token, variable_repo) = dao::setup_dao();
         Self {
+            env,
             bid_escrow,
             va_token,
             reputation_token,

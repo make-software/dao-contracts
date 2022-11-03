@@ -88,8 +88,8 @@ pub trait ReputationContractInterface {
     /// Stakes the reputation for a given voting and choice.
     fn stake(&mut self, voter_address: Address, voting_id: VotingId, choice: Choice, amount: U256);
 
-    /// Redistributes the reputation based on the voting summary
-    fn redistribute(&mut self, voting_id, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>);
+    // /// Redistributes the reputation based on the voting summary
+    // fn redistribute(&mut self, voting_id, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -236,7 +236,7 @@ impl ReputationContractInterface for ReputationContract {
         // Set the stake
         let stake_key = (caller(), voting_id);
         let stake = (voter_address, amount, choice);
-        self.stakes.set(&stake_key, stake);
+        // self.stakes.set(&stake_key, stake);
 
         // // Emit Stake event.
         // emit(Stake {
@@ -247,9 +247,9 @@ impl ReputationContractInterface for ReputationContract {
         // });
     }
 
-    fn redistribute(&mut self, voting_id: VotingId, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>) {
+    // fn redistribute(&mut self, voting_id: VotingId, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>) {
 
-    }
+    // }
 }
 
 impl ReputationContract {
