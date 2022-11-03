@@ -56,7 +56,7 @@ pub trait BidEscrowContractInterface {
     ///
     /// # Events
     /// Emits [`JobOfferCreated`](crate::bid::events::JobOfferCreated)
-    fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U256, purse: URef);
+    fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
 
     /// Worker submits a Bid for a Job
     /// Parameters:
@@ -201,7 +201,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         self.job_offers.set(&job_offer_id, job_offer);
 
-        JobOfferCreated::new(&job_offer).emit();
+        // JobOfferCreated::new(&job_offer).emit();
     }
 
     fn submit_bid(&mut self, job_id: BidId, time: BlockTime, payment: U512, reputation_stake: U256, onboard: bool, purse: Option<URef>) {
@@ -209,24 +209,24 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::WorkerNotKycd);
         }
 
-        let job_offer = self.get_job_offer(job_id).unwrap_or_else(|| revert(Error::JobOfferNotFound));
+        // let job_offer = self.get_job_offer(job_id).unwrap_or_else(|| revert(Error::JobOfferNotFound));
 
-        if job_offer.job_poster == caller() {
-            revert(Error::CannotBidOnOwnJob);
-        }
+        // if job_offer.job_poster == caller() {
+        //     revert(Error::CannotBidOnOwnJob);
+        // }
 
-        if payment > job_offer.max_budget {
-            revert(Error::PaymentExceedsMaxBudget);
-        }
+        // if payment > job_offer.max_budget {
+        //     revert(Error::PaymentExceedsMaxBudget);
+        // }
 
-        // TODO: Implement rest of constraints
+        // // TODO: Implement rest of constraints
 
-        let bid_id = self.next_bid_id();
-        let bid = Bid::new(bid_id, job_id, caller(), time, payment, reputation_stake);
+        // let bid_id = self.next_bid_id();
+        // let bid = Bid::new(bid_id, job_id, caller(), time, payment, reputation_stake);
 
-        self.bids.set(&bid_id, bid);
+        // self.bids.set(&bid_id, bid);
 
-        BidCreated::new(&bid).emit();
+        // BidCreated::new(&bid).emit();
     }
 
     fn pick_bid(
@@ -446,7 +446,7 @@ impl BidEscrowContract {
 
     fn minimum_dos_fee(&mut self) -> U512 {
         // TODO: Implement using external contract and Governance Variable
-        U512::from(100_000_000_000)
+        U512::from(100_000_000_000u64)
     }
 
     fn withdraw(&mut self, address: Address, amount: U512) {

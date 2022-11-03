@@ -67,3 +67,7 @@ clean:
 	
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
+
+test-bid-escrow: build-proxy-getter build-dao-contracts
+	cargo test -p casper-dao-contracts --test test_bid_escrow
+	
