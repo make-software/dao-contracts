@@ -1,6 +1,6 @@
 OUTPUT_DIR = target/wasm32-unknown-unknown/release
 CARGO_BUILD = cargo build --release --target wasm32-unknown-unknown --quiet --features=wasm --no-default-features
-CARGO_TEST = cargo test --features=test-support --no-default-features --release
+CARGO_TEST = cargo test --features=test-support --no-default-features
 
 prepare:
 	rustup target add wasm32-unknown-unknown
@@ -69,5 +69,5 @@ docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
 
 test-bid-escrow: build-proxy-getter build-dao-contracts
-	cargo test -p casper-dao-contracts --test test_bid_escrow
+	cargo test -p casper-dao-contracts --test test_gherkin_bid_escrow
 	

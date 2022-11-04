@@ -37,11 +37,11 @@ impl DaoWorld {
 
     // gets relative amount of motes of the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
-        dbg!(account);
-        dbg!(self.test_env().get_address_cspr_balance(account));
+        // dbg!(account);
+        // dbg!(self.test_env().get_address_cspr_balance(account));
         let balance = (self.balances.get(&account).unwrap() + self.test_env().get_address_cspr_balance(account));
         let result = balance.checked_sub(*self.starting_balances.get(&account).unwrap()).unwrap();
-        dbg!(result);
+        // dbg!(result);
         result
     }
 

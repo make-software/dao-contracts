@@ -20,7 +20,7 @@ mod common;
 
 #[test]
 fn test_balance() {
-    let (mut bid_escrow, reputation_token, mut va_token, mut kyc_token, variable_repo) = common::dao::setup_dao();
+    let (env, mut bid_escrow, reputation_token, mut va_token, mut kyc_token, variable_repo) = common::dao::setup_dao();
     let bid_escrow_address = bid_escrow.address();
     assert_eq!(bid_escrow.get_env().get_address_cspr_balance(bid_escrow_address), U512::zero());
     let job_poster = bid_escrow.get_env().get_account(0);

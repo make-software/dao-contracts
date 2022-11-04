@@ -1,4 +1,4 @@
-use casper_dao_utils::{DocumentHash, TestContract};
+use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::{U256, U512};
 
 mod common;
@@ -70,6 +70,22 @@ fn pick_bid(
         );
 }
 
+#[given(expr = "{word} posted a JobOffer with expected timeframe of {int} days and maximum budget of {int} CSPR")]
+fn post_job_offer(
+    w: &mut DaoWorld,
+    job_poster_name: String,
+    timeframe: u32,
+    maximum_budget: u32
+) {
+    let job_poster = w.named_address(job_poster_name);
+    w.bid_escrow
+        .as_account(job_poster)
+        .post_job_offer(
+            BlockTime::from(timeframe * 24 * 60 * 60),
+
+        );
+}
+
 #[when(expr = "{word} accepts the job")]
 fn accept_job(w: &mut DaoWorld, worker_name: String) {
     let worker = w.named_address(worker_name);
@@ -94,7 +110,7 @@ fn balances(w: &mut DaoWorld, step: &Step) {
         assert_eq!(
             w.get_rep_balance(address),
             rep_balance,
-            "rep balance mismatch"
+            "rep balance mismatches"
         );
     }
 }
