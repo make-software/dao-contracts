@@ -6,7 +6,7 @@ use casper_types::{U256, U512};
 
 use crate::voting::types::VotingId;
 
-use super::types::BidId;
+use super::types::{BidId, JobOfferId, JobId};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -27,42 +27,33 @@ impl Default for JobStatus {
 /// Struct holding Job
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct Job {
+    job_id: JobId,
     bid_id: BidId,
+    job_offer_id: JobOfferId,
     informal_voting_id: Option<VotingId>,
     formal_voting_id: Option<VotingId>,
-    document_hash: DocumentHash,
     result: Option<DocumentHash>,
     finish_time: BlockTime,
-    required_stake: Option<U256>,
-    cspr_amount: U512,
-    poster: Address,
-    worker: Address,
     status: JobStatus,
 }
 
 impl Job {
     /// Job constructor
     pub fn new(
+        job_id: JobId,
         bid_id: BidId,
-        document_hash: DocumentHash,
-        poster: Address,
-        worker: Address,
-        finish_time: BlockTime,
-        required_stake: Option<U256>,
-        cspr_amount: U512,
+        job_offer_id: JobOfferId,
+        finish_time: BlockTime
     ) -> Self {
         Job {
+            job_id,
             bid_id,
-            document_hash,
-            result: None,
-            finish_time,
-            required_stake,
-            cspr_amount,
-            poster,
-            worker,
-            status: JobStatus::default(),
+            job_offer_id,
             informal_voting_id: None,
             formal_voting_id: None,
+            result: None,
+            finish_time,
+            status: JobStatus::Created
         }
     }
 

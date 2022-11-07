@@ -27,7 +27,10 @@ pub struct DaoWorld {
 impl DaoWorld {
     // sets relative amount of motes to the account
     pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
-        assert!(!self.balances.contains_key(&account), "Cannot set cspr balance twice");
+        assert!(
+            !self.balances.contains_key(&account),
+            "Cannot set cspr balance twice"
+        );
 
         self.balances.insert(account, amount);
 
@@ -39,8 +42,11 @@ impl DaoWorld {
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
         // dbg!(account);
         // dbg!(self.test_env().get_address_cspr_balance(account));
-        let balance = (self.balances.get(&account).unwrap() + self.test_env().get_address_cspr_balance(account));
-        let result = balance.checked_sub(*self.starting_balances.get(&account).unwrap()).unwrap();
+        let balance = (self.balances.get(&account).unwrap()
+            + self.test_env().get_address_cspr_balance(account));
+        let result = balance
+            .checked_sub(*self.starting_balances.get(&account).unwrap())
+            .unwrap();
         // dbg!(result);
         result
     }
@@ -129,7 +135,7 @@ impl DaoWorld {
     pub fn named_address2(&self, name: String) -> Address {
         match name.as_ref() {
             "Owner" => self.env.get_account(0),
-            _ => panic!("Unknown address {:?}", name)
+            _ => panic!("Unknown address {:?}", name),
         }
     }
 }
@@ -142,7 +148,8 @@ impl Debug for DaoWorld {
 
 impl Default for DaoWorld {
     fn default() -> Self {
-        let (env, bid_escrow, reputation_token, va_token, kyc_token, variable_repo) = dao::setup_dao();
+        let (env, bid_escrow, reputation_token, va_token, kyc_token, variable_repo) =
+            dao::setup_dao();
         Self {
             env,
             bid_escrow,

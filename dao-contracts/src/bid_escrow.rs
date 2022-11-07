@@ -15,6 +15,7 @@ use crate::{
     bid::{
         events::{JobAccepted, JobCreated, JobSubmitted},
         job::Job,
+        job_offer,
         types::BidId,
     },
     voting::{
@@ -69,7 +70,15 @@ pub trait BidEscrowContractInterface {
     ///
     /// # Events
     /// Emits [`BidSubmitted`](crate::bid::events::BidSubmitted)
-    fn submit_bid(&mut self, job_id: BidId, time: BlockTime, payment: U512, reputation_stake: U256, onboard: bool, purse: Option<URef>);
+    fn submit_bid(
+        &mut self,
+        job_id: BidId,
+        time: BlockTime,
+        payment: U512,
+        reputation_stake: U256,
+        onboard: bool,
+        purse: Option<URef>,
+    );
 
     /// Job poster picks a bid. This creates a new Job object and saves it in a storage.
     /// If worker is not onboarded, the job is accepted automatically.
@@ -86,14 +95,7 @@ pub trait BidEscrowContractInterface {
     ///
     /// Throws [`JobPosterNotKycd`](Error::JobPosterNotKycd) or [`Error::WorkerNotKycd`](Error::WorkerNotKycd)
     /// When either Job Poster or Worker has not completed the KYC process
-    fn pick_bid(
-        &mut self,
-        worker: Address,
-        document_hash: DocumentHash,
-        time: BlockTime,
-        required_stake: Option<U256>,
-        purse: URef,
-    );
+    fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef);
     /// Worker accepts job. It can be done only for jobs with [`Created`](JobStatus::Created) status
     /// and if time for job acceptance has not yet passed.
     /// # Events
@@ -204,81 +206,120 @@ impl BidEscrowContractInterface for BidEscrowContract {
         // JobOfferCreated::new(&job_offer).emit();
     }
 
-    fn submit_bid(&mut self, job_id: BidId, time: BlockTime, payment: U512, reputation_stake: U256, onboard: bool, purse: Option<URef>) {
-        if !self.kyc.is_kycd(&caller()) {
-            revert(Error::WorkerNotKycd);
-        }
-
-        // let job_offer = self.get_job_offer(job_id).unwrap_or_else(|| revert(Error::JobOfferNotFound));
-
-        // if job_offer.job_poster == caller() {
-        //     revert(Error::CannotBidOnOwnJob);
-        // }
-
-        // if payment > job_offer.max_budget {
-        //     revert(Error::PaymentExceedsMaxBudget);
-        // }
-
-        // // TODO: Implement rest of constraints
-
-        // let bid_id = self.next_bid_id();
-        // let bid = Bid::new(bid_id, job_id, caller(), time, payment, reputation_stake);
-
-        // self.bids.set(&bid_id, bid);
-
-        // BidCreated::new(&bid).emit();
-    }
-
-    fn pick_bid(
+    fn submit_bid(
         &mut self,
-        worker: Address,
-        document_hash: DocumentHash,
+        job_offer_id: JobOfferId,
         time: BlockTime,
-        required_stake: Option<U256>,
-        purse: URef,
+        payment: U512,
+        reputation_stake: U256,
+        onboard: bool,
+        purse: Option<URef>,
     ) {
-        let cspr_amount = self.deposit(purse);
-        let caller = caller();
-
-        if worker == caller {
-            revert(Error::CannotPostJobForSelf);
-        }
-
-        if !self.kyc.is_kycd(&caller) {
-            revert(Error::JobPosterNotKycd);
-        }
+        let worker = caller();
 
         if !self.kyc.is_kycd(&worker) {
             revert(Error::WorkerNotKycd);
         }
 
-        if !self.onboarding.is_onboarded(&worker) && required_stake.is_some() {
-            revert(Error::NotOnboardedWorkerCannotStakeReputation);
+        let job_offer = self
+            .get_job_offer(job_offer_id)
+            .unwrap_or_revert_with(Error::JobOfferNotFound);
+
+        if job_offer.job_poster == worker {
+            revert(Error::CannotBidOnOwnJob);
         }
+
+        if payment > job_offer.max_budget {
+            revert(Error::PaymentExceedsMaxBudget);
+        }
+
+        // TODO: Implement rest of constraints
 
         let bid_id = self.next_bid_id();
-        let finish_time = get_block_time() + time;
 
-        let mut job = Job::new(
+        // TODO: Implement deposit for external worker.
+        let bid = Bid::new(
             bid_id,
-            document_hash,
-            caller,
+            job_offer_id,
+            time,
+            payment,
+            reputation_stake,
+            None,
+            onboard,
             worker,
-            finish_time,
-            required_stake,
-            cspr_amount,
         );
 
-        JobCreated::new(&job).emit();
+        self.bids.set(&bid_id, bid);
 
-        if !self.onboarding.is_onboarded(&worker) {
-            job.accept(job.worker(), get_block_time())
-                .unwrap_or_revert();
-            JobAccepted::new(&job).emit();
+        // TODO: Implement Event
+        // BidCreated::new(&bid).emit();
+    }
+
+    fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef) {
+        let job_offer = self.get_job_offer(job_offer_id).unwrap_or_revert_with(Error::JobOfferNotFound);
+        let job_poster = caller();
+        
+        if job_offer.job_poster != job_poster {
+            revert(Error::OnlyJobPosterCanPickABid);
         }
 
-        self.jobs.set(&bid_id, job);
+        let bid = self.get_bid(bid_id).unwrap_or_revert_with(Error::BidNotFound);
+
+        let cspr_amount = self.deposit(purse);
+
+        if cspr_amount != bid.proposed_payment {
+            revert(Error::PurseBalanceMismatch)
+        }
+
+        let finish_time = get_block_time() + bid.proposed_timeframe;
+        let job_id = self.next_job_id();
+
+        let mut job = Job::new(
+            job_id,
+            bid_id,
+            job_offer_id,
+            finish_time
+        );
+
+        self.jobs.set(&job_id, job);
+
+        // TODO: Emit event.
     }
+
+    // fn pick_bid(
+    //     &mut self,
+    //     worker: Address,
+    //     document_hash: DocumentHash,
+    //     time: BlockTime,
+    //     required_stake: Option<U256>,
+    //     purse: URef,
+    // ) {
+
+
+
+    //     if !self.kyc.is_kycd(&caller) {
+    //         revert(Error::JobPosterNotKycd);
+    //     }
+
+    //     if !self.kyc.is_kycd(&worker) {
+    //         revert(Error::WorkerNotKycd);
+    //     }
+
+    //     if !self.onboarding.is_onboarded(&worker) && required_stake.is_some() {
+    //         revert(Error::NotOnboardedWorkerCannotStakeReputation);
+    //     }
+
+
+    //     JobCreated::new(&job).emit();
+
+    //     if !self.onboarding.is_onboarded(&worker) {
+    //         job.accept(job.worker(), get_block_time())
+    //             .unwrap_or_revert();
+    //         JobAccepted::new(&job).emit();
+    //     }
+
+    //     self.jobs.set(&bid_id, job);
+    // }
 
     fn accept_job(&mut self, bid_id: BidId) {
         let mut job = self.jobs.get_or_revert(&bid_id);
@@ -409,26 +450,21 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
 impl BidEscrowContract {
     fn next_bid_id(&mut self) -> BidId {
-        let bid_id = self.jobs_count.get_current_value();
-        self.jobs_count.next_value();
-        bid_id
+        self.bids_count.next_value()
     }
 
     fn next_job_offer_id(&mut self) -> JobOfferId {
-        let job_offer_id = self.job_offers_count.get_current_value();
-        self.job_offers_count.next_value();
-        job_offer_id
+        self.job_offers_count.next_value()
     }
 
     fn next_job_id(&mut self) -> JobId {
-        let job_id = self.jobs_count.get_current_value();
-        self.jobs_count.next_value();
-        job_id
+        self.jobs_count.next_value()
     }
 
     fn deposit(&mut self, cargo_purse: URef) -> U512 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
+
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
         amount
     }
@@ -529,39 +565,33 @@ impl BidEscrowContract {
     }
 }
 
-#[cfg(feature = "test-support")]
-use casper_dao_utils::TestContract;
 use crate::bid::bid::Bid;
 use crate::bid::job_offer::{JobOffer, JobOfferStatus};
 use crate::bid::types::{JobId, JobOfferId};
+#[cfg(feature = "test-support")]
+use casper_dao_utils::TestContract;
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
-    pub fn pick_bid_with_cspr_amount(
-        &mut self,
-        worker: Address,
-        document_hash: DocumentHash,
-        time: BlockTime,
-        required_stake: Option<U256>,
-        cspr_amount: U512,
-    ) {
+    pub fn pick_bid_with_cspr_amount(&mut self, job_offer_id: u32, bid_id: u32, cspr_amount: U512) {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "pick_bid.wasm",
             runtime_args! {
                 "bid_escrow_address" => self.address(),
+                "job_offer_id" => job_offer_id,
+                "bid_id" => bid_id,
                 "cspr_amount" => cspr_amount,
-                "worker" => worker,
-                "document_hash" => document_hash,
-                "time" => time,
-                "required_stake" => required_stake,
                 "amount" => cspr_amount,
             },
         );
     }
 
     pub fn post_job_offer_with_cspr_amount(
-        &mut self, expected_timeframe: BlockTime, budget: U512, cspr_amount: U512
+        &mut self,
+        expected_timeframe: BlockTime,
+        budget: U512,
+        cspr_amount: U512,
     ) {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(

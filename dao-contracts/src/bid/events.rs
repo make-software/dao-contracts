@@ -1,8 +1,8 @@
 use crate::bid::job::Job;
-use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
-use casper_types::{U256, U512};
 use crate::bid::job_offer::JobOffer;
 use crate::bid::types::JobOfferId;
+use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
+use casper_types::{U256, U512};
 
 use super::types::BidId;
 
@@ -15,9 +15,7 @@ pub struct JobOfferCreated {
 }
 
 impl JobOfferCreated {
-    pub fn new(
-        job_offer: &JobOffer
-    ) -> Self {
+    pub fn new(job_offer: &JobOffer) -> Self {
         JobOfferCreated {
             job_offer_id: job_offer.job_offer_id,
             job_poster: job_offer.job_poster,

@@ -68,6 +68,7 @@ clean:
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
 
-test-bid-escrow: build-proxy-getter build-dao-contracts
+test-bid-escrow: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_gherkin_bid_escrow
 	

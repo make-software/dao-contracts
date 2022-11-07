@@ -1,8 +1,8 @@
+use crate::bid::types::JobOfferId;
+use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
+use casper_dao_utils::{Address, BlockTime};
 use casper_types::bytesrepr::ToBytes;
 use casper_types::U512;
-use casper_dao_utils::{Address, BlockTime};
-use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
-use crate::bid::types::JobOfferId;
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub enum JobOfferStatus {
@@ -21,7 +21,12 @@ pub struct JobOffer {
 }
 
 impl JobOffer {
-    pub fn new(offer_id: JobOfferId, job_poster: Address, expected_timeframe: BlockTime, max_budget: U512) -> Self {
+    pub fn new(
+        offer_id: JobOfferId,
+        job_poster: Address,
+        expected_timeframe: BlockTime,
+        max_budget: U512,
+    ) -> Self {
         JobOffer {
             job_offer_id: offer_id,
             job_poster,

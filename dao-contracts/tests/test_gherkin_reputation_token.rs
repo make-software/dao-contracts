@@ -100,7 +100,7 @@ use cucumber::{given, then, when, World as _};
 // }
 
 #[given(expr = "deployed Reputation Token Contract")]
-fn reputation_is_deployed(w: &mut DaoWorld) { }
+fn reputation_is_deployed(w: &mut DaoWorld) {}
 
 #[then(expr = "total supply is {int}")]
 fn total_supply_is(w: &mut DaoWorld, total_supply: u128) {
@@ -116,7 +116,7 @@ fn is_owner(w: &mut DaoWorld, account: String) {
     let account = w.named_address2(account);
     assert_eq!(
         w.reputation_token.get_owner().unwrap(),
-        account, 
+        account,
         "not an owner"
     );
 }
@@ -124,7 +124,10 @@ fn is_owner(w: &mut DaoWorld, account: String) {
 #[then(expr = "{word} is whitelisted")]
 fn is_whitelisted(w: &mut DaoWorld, account: String) {
     let account = w.named_address2(account);
-    assert!(w.reputation_token.is_whitelisted(account), "Not whitelisted");
+    assert!(
+        w.reputation_token.is_whitelisted(account),
+        "Not whitelisted"
+    );
 }
 
 #[tokio::main]

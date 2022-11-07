@@ -1,9 +1,14 @@
-use casper_dao_modules::AccessControl;
-use casper_dao_utils::{casper_dao_macros::{casper_contract_interface, Instance}, casper_env::{self, caller, emit}, math::{add_to_balance, rem_from_balance}, Address, Error, Mapping, Variable, VecMapping};
-use casper_types::{U256, URef};
-use delegate::delegate;
-use crate::voting::{Choice, VotingId};
 use crate::voting::voting::{VotingResult, VotingSummary};
+use crate::voting::{Choice, VotingId};
+use casper_dao_modules::AccessControl;
+use casper_dao_utils::{
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{self, caller, emit},
+    math::{add_to_balance, rem_from_balance},
+    Address, Error, Mapping, Variable, VecMapping,
+};
+use casper_types::{URef, U256};
+use delegate::delegate;
 
 use self::events::{Burn, Mint};
 

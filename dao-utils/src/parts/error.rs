@@ -33,6 +33,7 @@ macro_rules! wildcard {
 }
 
 dao_errors!(
+    PurseBalanceMismatch => 403,
     InsufficientBalance => 404,
     InsufficientAllowance => 401,
     NotAnOwner => 1000,
@@ -76,6 +77,7 @@ dao_errors!(
     BallotDoesNotExist => 3405,
     VoterDoesNotExist => 3406,
     VotingDoesNotExist => 3407,
+    // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,
     JobPosterNotKycd => 4001,
     WorkerNotKycd => 4002,
@@ -90,6 +92,9 @@ dao_errors!(
     DosFeeTooLow => 4011,
     CannotBidOnOwnJob => 4012,
     PaymentExceedsMaxBudget => 4013,
+    JobOfferNotFound => 4014,
+    BidNotFound => 4015,
+    OnlyJobPosterCanPickABid => 4016,
     InvalidAddress => 5000,
     TransferError => 6000,
 );
