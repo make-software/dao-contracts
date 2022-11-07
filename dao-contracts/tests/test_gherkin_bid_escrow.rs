@@ -70,20 +70,50 @@ fn pick_bid(
         );
 }
 
-#[given(expr = "{word} posted a JobOffer with expected timeframe of {int} days and maximum budget of {int} CSPR")]
+#[given(expr = "{word} posted a JobOffer with expected timeframe of {int} days, maximum budget of {int} CSPR and {int} CSPR DOS Fee")]
 fn post_job_offer(
     w: &mut DaoWorld,
     job_poster_name: String,
-    timeframe: u32,
-    maximum_budget: u32
+    timeframe: BlockTime,
+    maximum_budget: u32,
+    dos_fee: u32,
 ) {
     let job_poster = w.named_address(job_poster_name);
     w.bid_escrow
         .as_account(job_poster)
-        .post_job_offer(
-            BlockTime::from(timeframe * 24 * 60 * 60),
-
+        .post_job_offer_with_cspr_amount(
+            timeframe,
+            U512::from(maximum_budget) * U512::from(1_000_000_000),
+            U512::from(dos_fee) * U512::from(1_000_000_000),
         );
+}
+
+#[given(expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} {word} stake")]
+fn post_bid(
+    w: &mut DaoWorld,
+    worker_name: String,
+    timeframe: BlockTime,
+    budget: u32,
+    stake: u32,
+    stake_type: String,
+) {
+    let worker = w.named_address(worker_name);
+    match stake_type.as_str() {
+        "CSPR" => {
+            todo!();
+        },
+        "REP" => {
+            w.bid_escrow.as_account(worker).submit_bid(
+                0,
+                timeframe,
+                U512::from(budget) * U512::from(1_000_000_000),
+                U256::from(stake),
+                false,
+                None
+            ).unwrap();
+        },
+        _ => panic!("Unknown stake type"),
+    }
 }
 
 #[when(expr = "{word} accepts the job")]

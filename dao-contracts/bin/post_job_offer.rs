@@ -16,20 +16,16 @@ use casper_types::{URef, U256, U512};
 fn call() {
     let bid_escrow_address: Address = get_named_arg("bid_escrow_address");
     let token_amount: U512 = get_named_arg("cspr_amount");
-    let worker: Address = get_named_arg("worker");
-    let document_hash: DocumentHash = get_named_arg("document_hash");
-    let time: BlockTime = get_named_arg("time");
-    let required_stake: Option<U256> = get_named_arg("required_stake");
+    let expected_timeframe: BlockTime = get_named_arg("expected_timeframe");
+    let budget: U512 = get_named_arg("budget");
 
     let main_purse: URef = get_main_purse();
     let cargo_purse: URef = create_purse();
     transfer_from_purse_to_purse(main_purse, cargo_purse, token_amount, None).unwrap_or_revert();
 
-    BidEscrowContractCaller::at(bid_escrow_address).pick_bid(
-        worker,
-        document_hash,
-        time,
-        required_stake,
+    BidEscrowContractCaller::at(bid_escrow_address).post_job_offer(
+        expected_timeframe,
+        budget,
         cargo_purse,
     );
 }

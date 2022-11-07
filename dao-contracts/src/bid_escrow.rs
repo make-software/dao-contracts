@@ -549,7 +549,7 @@ impl BidEscrowContractTest {
         self.env.deploy_wasm_file(
             "pick_bid.wasm",
             runtime_args! {
-                "token_address" => self.address(),
+                "bid_escrow_address" => self.address(),
                 "cspr_amount" => cspr_amount,
                 "worker" => worker,
                 "document_hash" => document_hash,
@@ -561,25 +561,18 @@ impl BidEscrowContractTest {
     }
 
     pub fn post_job_offer_with_cspr_amount(
-        &mut self,
-    //     worker: Address,
-    //     document_hash: DocumentHash,
-    //     time: BlockTime,
-    //     required_stake: Option<U256>,
-    //     cspr_amount: U512,
-    // ) {
-    //     use casper_types::{runtime_args, RuntimeArgs};
-    //     self.env.deploy_wasm_file(
-    //         "pick_bid.wasm",
-    //         runtime_args! {
-    //             "token_address" => self.address(),
-    //             "cspr_amount" => cspr_amount,
-    //             "worker" => worker,
-    //             "document_hash" => document_hash,
-    //             "time" => time,
-    //             "required_stake" => required_stake,
-    //             "amount" => cspr_amount,
-    //         },
-    //     );
-    // }
+        &mut self, expected_timeframe: BlockTime, budget: U512, cspr_amount: U512
+    ) {
+        use casper_types::{runtime_args, RuntimeArgs};
+        self.env.deploy_wasm_file(
+            "post_job_offer.wasm",
+            runtime_args! {
+                "bid_escrow_address" => self.address(),
+                "expected_timeframe" => expected_timeframe,
+                "budget" => budget,
+                "cspr_amount" => cspr_amount,
+                "amount" => cspr_amount,
+            },
+        );
+    }
 }

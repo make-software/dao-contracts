@@ -10,7 +10,7 @@ use std::fmt::{Debug, Formatter};
 
 #[derive(cucumber::World)]
 pub struct DaoWorld {
-    env: TestEnv,
+    pub env: TestEnv,
     pub bid_escrow: casper_dao_contracts::BidEscrowContractTest,
     pub va_token: casper_dao_contracts::VaNftContractTest,
     pub reputation_token: casper_dao_contracts::ReputationContractTest,
