@@ -1,7 +1,6 @@
 use crate::bid::types::JobOfferId;
 use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
 use casper_dao_utils::{Address, BlockTime};
-use casper_types::bytesrepr::ToBytes;
 use casper_types::U512;
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]

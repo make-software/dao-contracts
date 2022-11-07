@@ -1,3 +1,4 @@
+use casper_dao_utils::casper_env::revert;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address, BlockTime, DocumentHash, Error,
@@ -6,7 +7,7 @@ use casper_types::{U256, U512};
 
 use crate::voting::types::VotingId;
 
-use super::types::{BidId, JobOfferId, JobId};
+use super::types::{BidId, JobId, JobOfferId};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -32,9 +33,13 @@ pub struct Job {
     job_offer_id: JobOfferId,
     informal_voting_id: Option<VotingId>,
     formal_voting_id: Option<VotingId>,
-    result: Option<DocumentHash>,
+    job_proof: Option<DocumentHash>,
     finish_time: BlockTime,
     status: JobStatus,
+    worker: Address,
+    poster: Address,
+    payment: U512,
+    stake: U256,
 }
 
 impl Job {
@@ -43,7 +48,11 @@ impl Job {
         job_id: JobId,
         bid_id: BidId,
         job_offer_id: JobOfferId,
-        finish_time: BlockTime
+        finish_time: BlockTime,
+        worker: Address,
+        poster: Address,
+        payment: U512,
+        stake: U256,
     ) -> Self {
         Job {
             job_id,
@@ -51,9 +60,13 @@ impl Job {
             job_offer_id,
             informal_voting_id: None,
             formal_voting_id: None,
-            result: None,
+            job_proof: None,
             finish_time,
-            status: JobStatus::Created
+            status: JobStatus::Created,
+            worker,
+            poster,
+            payment,
+            stake,
         }
     }
 
@@ -103,35 +116,18 @@ impl Job {
         self.finish_time <= block_time
     }
 
-    fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
-        if self.has_time_ended(block_time) {
-            if caller == self.worker() || caller == self.poster() {
-                return true;
-            }
-        } else if caller == self.worker() && self.status() == JobStatus::Accepted {
-            return true;
-        }
-
+    pub fn is_grace_period(&self, _block_time: BlockTime) -> bool {
+        // TODO: Implement
         false
     }
 
-    pub fn submit(
-        &mut self,
-        caller: Address,
-        block_time: BlockTime,
-        result: DocumentHash,
-    ) -> Result<(), Error> {
-        if !self.can_submit(caller, block_time) {
-            return Err(Error::NotAuthorizedToSubmitResult);
+    pub fn submit_proof(&mut self, job_proof: DocumentHash) {
+        if self.job_proof().is_some() {
+            revert(Error::JobAlreadySubmitted);
         }
 
-        if self.result().is_some() {
-            return Err(Error::JobAlreadySubmitted);
-        }
-
-        self.result = Some(result);
+        self.job_proof = Some(job_proof);
         self.status = JobStatus::Submitted;
-        Ok(())
     }
 
     /// Get the job's status.
@@ -151,7 +147,7 @@ impl Job {
 
     /// Get the job's result.
     pub fn result(&self) -> Option<&DocumentHash> {
-        self.result.as_ref()
+        self.job_proof.as_ref()
     }
 
     /// Get the job's bid id.
@@ -159,19 +155,9 @@ impl Job {
         self.bid_id
     }
 
-    /// Get the job's required stake for va.
-    pub fn required_stake(&self) -> Option<U256> {
-        self.required_stake
-    }
-
-    /// Get a reference to the job's description.
-    pub fn document_hash(&self) -> &DocumentHash {
-        &self.document_hash
-    }
-
-    /// Get the job's cspr amount.
-    pub fn cspr_amount(&self) -> U512 {
-        self.cspr_amount
+    /// Get the job's payment amount
+    pub fn payment(&self) -> U512 {
+        self.payment
     }
 
     /// Get the job's informal voting id.
@@ -205,8 +191,16 @@ impl Job {
         None
     }
 
+    pub fn job_proof(&self) -> Option<&DocumentHash> {
+        self.job_proof.as_ref()
+    }
+
     /// Get the job's finish time
     pub fn finish_time(&self) -> BlockTime {
         self.finish_time
+    }
+
+    pub fn stake(&self) -> U256 {
+        self.stake
     }
 }

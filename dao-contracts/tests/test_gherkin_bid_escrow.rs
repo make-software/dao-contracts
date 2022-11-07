@@ -5,6 +5,7 @@ mod common;
 
 use crate::common::helpers::value_to_bytes;
 use crate::common::DaoWorld;
+use casper_dao_contracts::voting::Choice;
 use cucumber::gherkin::Step;
 use cucumber::{given, then, when, World as _};
 
@@ -134,10 +135,38 @@ fn bid_picked(w: &mut DaoWorld, job_poster_name: String, worker_name: String) {
         .pick_bid_with_cspr_amount(0, 0, required_budget);
 }
 
-#[when(expr = "{word} accepts the job")]
-fn accept_job(w: &mut DaoWorld, worker_name: String) {
+#[when(expr = "{word} submits the JobProof")]
+fn submit_job_proof(w: &mut DaoWorld, worker_name: String) {
+    // TODO: Use bid_ids from the storage.
     let worker = w.named_address(worker_name);
-    w.bid_escrow.as_account(worker).accept_job(0).unwrap();
+    w.bid_escrow
+        .as_account(worker)
+        .submit_job_proof(0, DocumentHash::from(b"Job Proof".to_vec()))
+        .unwrap();
+}
+
+#[when(expr = "Informal voting ends with votes")]
+fn informal_voting(w: &mut DaoWorld, step: &Step) {
+    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
+    for row in table {
+        let name = row.get(0).unwrap();
+        let choice = match row.get(1).unwrap().as_str() {
+            "Yes" => Choice::InFavor,
+            "No" => Choice::Against,
+            _ => panic!("Unknown choice"),
+        };
+        let stake = U256::from(row[2].parse::<u32>().unwrap());
+
+        let voter = w.named_address(name.clone());
+
+        w.bid_escrow
+            .as_account(voter)
+            .vote(0, choice, stake)
+            .unwrap();
+    }
+
+    w.bid_escrow.advance_block_time_by(86400000u64);
+    w.bid_escrow.finish_voting(0);
 }
 
 #[then(expr = "balances are")]
@@ -145,20 +174,22 @@ fn balances(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
         let name = row.get(0).unwrap();
-        let cspr_balance = U512::from(row[1].parse::<u32>().unwrap()) * 1_000_000_000;
-        let rep_balance = U256::from(row[2].parse::<u32>().unwrap());
+        let expected_cspr_balance = U512::from(row[1].parse::<u32>().unwrap()) * 1_000_000_000;
+        let expected_rep_balance = U256::from(row[2].parse::<u32>().unwrap());
 
         let address = w.named_address(name.to_string());
 
+        let real_cspr_balance = w.get_cspr_balance(address);
+        let real_rep_balance = w.get_rep_balance(address);
         assert_eq!(
-            w.get_cspr_balance(address),
-            cspr_balance,
-            "cspr balance mismatch"
+            expected_cspr_balance, real_cspr_balance,
+            "For account {} CSPR balance should be {:?} but is {:?}",
+            name, expected_cspr_balance, real_cspr_balance
         );
         assert_eq!(
-            w.get_rep_balance(address),
-            rep_balance,
-            "rep balance mismatches"
+            expected_rep_balance, real_rep_balance,
+            "For account {} REP balance should be {:?} but is {:?}",
+            name, expected_rep_balance, real_rep_balance
         );
     }
 }

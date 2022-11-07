@@ -1,4 +1,3 @@
-use crate::voting::voting::{VotingResult, VotingSummary};
 use crate::voting::{Choice, VotingId};
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
@@ -239,9 +238,9 @@ impl ReputationContractInterface for ReputationContract {
         }
 
         // Set the stake
-        let stake_key = (caller(), voting_id);
-        let stake = (voter_address, amount, choice);
-        // self.stakes.set(&stake_key, stake);
+        // let stake_key = (caller(), voting_id);
+        // let stake = (voter_address, amount, choice);
+        // self.stakes.add(stake_key, stake);
 
         // // Emit Stake event.
         // emit(Stake {

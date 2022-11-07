@@ -1,7 +1,7 @@
 use crate::bid::types::{BidId, JobOfferId};
 use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
 use casper_dao_utils::{Address, BlockTime};
-use casper_types::{U512, U256};
+use casper_types::{U256, U512};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct Bid {

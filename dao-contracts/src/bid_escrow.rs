@@ -13,9 +13,8 @@ use casper_types::{URef, U256, U512};
 
 use crate::{
     bid::{
-        events::{JobAccepted, JobCreated, JobSubmitted},
+        events::{JobCancelled, JobDone, JobRejected},
         job::Job,
-        job_offer,
         types::BidId,
     },
     voting::{
@@ -27,11 +26,8 @@ use crate::{
     ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
     VotingConfigurationBuilder,
 };
-
-use casper_dao_utils::casper_env::self_address;
 use delegate::delegate;
 
-use crate::bid::events::{JobCancelled, JobDone, JobOfferCreated, JobRejected};
 use crate::voting::VotingId;
 
 #[casper_contract_interface]
@@ -79,7 +75,6 @@ pub trait BidEscrowContractInterface {
         onboard: bool,
         purse: Option<URef>,
     );
-
     /// Job poster picks a bid. This creates a new Job object and saves it in a storage.
     /// If worker is not onboarded, the job is accepted automatically.
     /// Otherwise, worker needs to accept job (see [accept_job](accept_job))
@@ -96,15 +91,18 @@ pub trait BidEscrowContractInterface {
     /// Throws [`JobPosterNotKycd`](Error::JobPosterNotKycd) or [`Error::WorkerNotKycd`](Error::WorkerNotKycd)
     /// When either Job Poster or Worker has not completed the KYC process
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef);
-    /// Worker accepts job. It can be done only for jobs with [`Created`](JobStatus::Created) status
-    /// and if time for job acceptance has not yet passed.
+    /// Submits a job proof. This is called by a Worker or any KYC'd user during Grace Period.
+    /// This starts a new voting over the result.
     /// # Events
-    /// Emits [`JobAccepted`](JobAccepted)
+    /// Emits [`JobProofSubmitted`](JobProofSubmitted)
+    ///
+    /// Emits [`VotingCreated`](crate::voting::governance_voting::events::VotingCreated)
     ///
     /// # Errors
-    /// Throws [`CannotAcceptJob`](Error::CannotAcceptJob) if one of the constraints for
-    /// job acceptance is not met.
-    fn accept_job(&mut self, bid_id: BidId);
+    /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted
+    /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
+    /// job submission is not met.
+    fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash);
     /// Cancel job. This can be done by anyone when Worker did not submit Job Result and after Grace
     /// Period has passed.
     /// It refunds cspr to job creator.
@@ -115,19 +113,6 @@ pub trait BidEscrowContractInterface {
     /// Throws [`CannotCancelJob`](Error::CannotCancelJob) if one of the constraints for
     /// job cancellation is not met.
     fn cancel_job(&mut self, bid_id: BidId, reason: DocumentHash);
-    /// Worker submits the result of the job. Job can also be submitted by a job poster after the
-    /// time for work has passed.
-    /// This starts a new voting over the result.
-    /// # Events
-    /// Emits [`JobSubmitted`](JobSubmitted)
-    ///
-    /// Emits [`VotingCreated`](crate::voting::governance_voting::events::VotingCreated)
-    ///
-    /// # Errors
-    /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted
-    /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
-    /// job submission is not met.
-    fn submit_result(&mut self, bid_id: BidId, result: DocumentHash);
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::governance_voting::events::BallotCast)
@@ -148,7 +133,7 @@ pub trait BidEscrowContractInterface {
     /// Emits [`VotingEnded`](crate::voting::governance_voting::events::VotingEnded), [`VotingCreated`](crate::voting::governance_voting::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn finish_voting(&mut self, bid_id: BidId);
+    fn finish_voting(&mut self, job_id: JobId);
     /// see [GovernanceVoting](GovernanceVoting)
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting)
@@ -222,7 +207,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         let job_offer = self
-            .get_job_offer(job_offer_id)
+            .get_job_offer(job_offer_id.clone())
             .unwrap_or_revert_with(Error::JobOfferNotFound);
 
         if job_offer.job_poster == worker {
@@ -237,14 +222,20 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let bid_id = self.next_bid_id();
 
-        // TODO: Implement deposit for external worker.
+        let cspr_stake = match purse {
+            None => None,
+            Some(purse) => {
+                let cspr_stake = self.deposit(purse);
+                Some(cspr_stake)
+            }
+        };
         let bid = Bid::new(
             bid_id,
             job_offer_id,
             time,
             payment,
             reputation_stake,
-            None,
+            cspr_stake,
             onboard,
             worker,
         );
@@ -256,14 +247,18 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef) {
-        let job_offer = self.get_job_offer(job_offer_id).unwrap_or_revert_with(Error::JobOfferNotFound);
+        let job_offer = self
+            .get_job_offer(job_offer_id.clone())
+            .unwrap_or_revert_with(Error::JobOfferNotFound);
         let job_poster = caller();
-        
+
         if job_offer.job_poster != job_poster {
             revert(Error::OnlyJobPosterCanPickABid);
         }
 
-        let bid = self.get_bid(bid_id).unwrap_or_revert_with(Error::BidNotFound);
+        let bid = self
+            .get_bid(bid_id.clone())
+            .unwrap_or_revert_with(Error::BidNotFound);
 
         let cspr_amount = self.deposit(purse);
 
@@ -274,16 +269,56 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let finish_time = get_block_time() + bid.proposed_timeframe;
         let job_id = self.next_job_id();
 
-        let mut job = Job::new(
+        let job = Job::new(
             job_id,
             bid_id,
             job_offer_id,
-            finish_time
+            finish_time,
+            bid.worker,
+            job_poster,
+            bid.proposed_payment,
+            bid.reputation_stake,
         );
 
         self.jobs.set(&job_id, job);
 
         // TODO: Emit event.
+    }
+
+    fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
+        let mut job = self
+            .get_job(job_id.clone())
+            .unwrap_or_revert_with(Error::JobNotFound);
+        let worker = caller();
+
+        // if job.worker() != worker {
+        //     if !job.is_grace_period(get_block_time()) {
+        //         revert(Error::OnlyWorkerCanSubmitProof);
+        //     } else {
+        //         if self.kyc.is_kycd(&worker) {
+        //             revert(Error::WorkerNotKycd);
+        //         }
+        //     }
+        //
+        //     // TODO: Implement Worker switching during Grace Period
+        // }
+
+        job.submit_proof(proof);
+        // TODO: Emit event.
+
+        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+            .cast_first_vote(true)
+            .create_minimum_reputation(U256::zero())
+            .only_va_can_create(false)
+            .build();
+
+        let voting_id = self
+            .voting
+            .create_voting(worker, job.stake(), voting_configuration);
+
+        job.set_informal_voting_id(Some(voting_id));
+
+        self.jobs.set(&job_id, job);
     }
 
     // fn pick_bid(
@@ -294,8 +329,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
     //     required_stake: Option<U256>,
     //     purse: URef,
     // ) {
-
-
 
     //     if !self.kyc.is_kycd(&caller) {
     //         revert(Error::JobPosterNotKycd);
@@ -309,7 +342,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
     //         revert(Error::NotOnboardedWorkerCannotStakeReputation);
     //     }
 
-
     //     JobCreated::new(&job).emit();
 
     //     if !self.onboarding.is_onboarded(&worker) {
@@ -321,23 +353,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
     //     self.jobs.set(&bid_id, job);
     // }
 
-    fn accept_job(&mut self, bid_id: BidId) {
-        let mut job = self.jobs.get_or_revert(&bid_id);
-        if job.required_stake().is_some() {
-            ReputationContractCaller::at(self.voting.get_reputation_token_address()).transfer_from(
-                job.worker(),
-                self_address(),
-                job.required_stake().unwrap_or_default(),
-            );
-        }
-
-        job.accept(caller(), get_block_time()).unwrap_or_revert();
-
-        JobAccepted::new(&job).emit();
-
-        self.jobs.set(&bid_id, job);
-    }
-
     fn cancel_job(&mut self, bid_id: BidId, reason: DocumentHash) {
         let mut job = self.jobs.get_or_revert(&bid_id);
         let caller = caller();
@@ -347,28 +362,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         JobCancelled::new(&job, caller, reason).emit();
 
-        self.jobs.set(&bid_id, job);
-    }
-
-    fn submit_result(&mut self, bid_id: BidId, result: DocumentHash) {
-        let mut job = self.jobs.get_or_revert(&bid_id);
-
-        job.submit(caller(), get_block_time(), result)
-            .unwrap_or_revert();
-
-        JobSubmitted::new(&job).emit();
-
-        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
-            .cast_first_vote(false)
-            .create_minimum_reputation(U256::zero())
-            .only_va_can_create(false)
-            .build();
-
-        let voting_id = self
-            .voting
-            .create_voting(job.poster(), U256::zero(), voting_configuration);
-
-        job.set_informal_voting_id(Some(voting_id));
         self.jobs.set(&bid_id, job);
     }
 
@@ -409,8 +402,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.bids.get_or_none(&bid_id)
     }
 
-    fn finish_voting(&mut self, bid_id: BidId) {
-        let mut job = self.jobs.get_or_revert(&bid_id);
+    fn finish_voting(&mut self, job_id: JobId) {
+        let mut job = self.jobs.get_or_revert(&job_id);
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
@@ -440,7 +433,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             },
         }
 
-        self.jobs.set(&bid_id, job);
+        self.jobs.set(&job_id, job);
     }
 
     fn get_cspr_balance(&self) -> U512 {
@@ -499,41 +492,30 @@ impl BidEscrowContract {
     }
 
     fn pay_for_job(&mut self, job: &Job) {
-        self.withdraw(job.worker(), job.cspr_amount());
+        self.withdraw(job.worker(), job.payment());
         self.mint_and_redistribute_reputation(job);
     }
 
     fn job_done(&mut self, job: &mut Job) {
         self.pay_for_job(job);
-        if job.required_stake().is_some() {
-            ReputationContractCaller::at(self.voting.get_reputation_token_address()).transfer_from(
-                self_address(),
-                job.worker(),
-                job.required_stake().unwrap_or_default(),
-            );
-        }
         job.complete();
         JobDone::new(job, caller()).emit();
     }
 
     fn job_rejected(&mut self, job: &mut Job) {
-        if job.required_stake().is_some() {
-            ReputationContractCaller::at(self.voting.get_reputation_token_address())
-                .burn(self_address(), job.required_stake().unwrap_or_default());
-        }
         self.refund(job);
         job.not_completed();
         JobRejected::new(job, caller()).emit();
     }
 
     fn refund(&mut self, job: &Job) {
-        self.withdraw(job.poster(), job.cspr_amount());
+        self.withdraw(job.poster(), job.payment());
     }
 
     fn mint_and_redistribute_reputation(&mut self, job: &Job) {
         let reputation_to_mint =
             VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
-                .reputation_to_mint(job.cspr_amount());
+                .reputation_to_mint(job.payment());
         let reputation_to_redistribute =
             VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
                 .reputation_to_redistribute(reputation_to_mint);
@@ -566,7 +548,7 @@ impl BidEscrowContract {
 }
 
 use crate::bid::bid::Bid;
-use crate::bid::job_offer::{JobOffer, JobOfferStatus};
+use crate::bid::job_offer::JobOffer;
 use crate::bid::types::{JobId, JobOfferId};
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;

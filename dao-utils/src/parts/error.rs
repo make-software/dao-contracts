@@ -94,7 +94,9 @@ dao_errors!(
     PaymentExceedsMaxBudget => 4013,
     JobOfferNotFound => 4014,
     BidNotFound => 4015,
-    OnlyJobPosterCanPickABid => 4016,
+    JobNotFound => 4016,
+    OnlyJobPosterCanPickABid => 4017,
+    OnlyWorkerCanSubmitProof => 4018,
     InvalidAddress => 5000,
     TransferError => 6000,
 );

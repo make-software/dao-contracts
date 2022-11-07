@@ -1,4 +1,4 @@
-use casper_dao_contracts::{bid::job, BidEscrowContractCaller, BidEscrowContractInterface};
+use casper_dao_contracts::{BidEscrowContractCaller, BidEscrowContractInterface};
 use casper_dao_utils::{
     casper_contract::{
         contract_api::{
@@ -8,9 +8,9 @@ use casper_dao_utils::{
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
-    Address, BlockTime, DocumentHash,
+    Address,
 };
-use casper_types::{URef, U256, U512};
+use casper_types::{URef, U512};
 
 #[no_mangle]
 fn call() {

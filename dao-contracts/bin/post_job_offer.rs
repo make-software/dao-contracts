@@ -8,9 +8,9 @@ use casper_dao_utils::{
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
-    Address, BlockTime, DocumentHash,
+    Address, BlockTime,
 };
-use casper_types::{URef, U256, U512};
+use casper_types::{URef, U512};
 
 #[no_mangle]
 fn call() {

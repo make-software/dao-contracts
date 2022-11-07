@@ -18,25 +18,25 @@ Feature: Internal Flow
   Scenario: JobPoster picked the Bid of Internal Worker
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 500          | 0            | 0          |
-      | JobPoster        | 500          | 0            | 0          |
+      | BidEscrow        | 600          | 0            | 0          |
+      | JobPoster        | 400          | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-#    When InternalWorker submits the JobProof
-#    And Informal voting ends with votes
-#      | account          | vote | stake |
-#      | InternalWorker   | Yes  | 100   |
-#      | VA1              | Yes  | 500   |
-#      | VA2              | Yes  | 500   |
-#    Then balances are:
-#      | account          | CSPR balance | REP balance  | REP stake  |
-#      | BidEscrow        | 500          | 0            | 0          |
-#      | MultisigWallet   | 0            | 0            | 0          |
-#      | JobPoster        | 500          | 0            | 0          |
-#      | InternalWorker   | 0            | 1000         | 100        |
-#      | VA1              | 0            | 1000         | 0          |
-#      | VA2              | 0            | 1000         | 0          |
+    When InternalWorker submits the JobProof
+    And Informal voting ends with votes
+      | account          | vote | stake |
+     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
+      | VA1              | Yes  | 500   |
+      | VA2              | Yes  | 500   |
+    Then balances are
+      | account          | CSPR balance | REP balance  | REP stake  |
+      | BidEscrow        | 600          | 0            | 0          |
+      | MultisigWallet   | 0            | 0            | 0          |
+      | JobPoster        | 400          | 0            | 0          |
+      | InternalWorker   | 0            | 1000         | 100        |
+      | VA1              | 0            | 1000         | 0          |
+      | VA2              | 0            | 1000         | 0          |
 #    When FormalVoting ends with votes
 #      | account          | vote | stake |
 #      | InternalWorker   | Yes  | 100   |
