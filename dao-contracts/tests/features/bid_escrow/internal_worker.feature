@@ -46,7 +46,7 @@ Feature: Internal Flow
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 50           | 0            | 0          |
       | JobPoster        | 500          | 0            | 0          |
-      | InternalWorker   | 183.83       | 1121         | 0          |
-      | VA1              | 233.19       | 1422         | 0          |
-      | VA2              | 82.97        | 506          | 0          |
+      | InternalWorker   | 165.20       | 1119.69      | 0          |
+      | VA1              | 210.02       | 1423.48      | 0          |
+      | VA2              | 74.77        | 506.82       | 0          |
       | BidEscrow        | 0            | 0            | 0          |

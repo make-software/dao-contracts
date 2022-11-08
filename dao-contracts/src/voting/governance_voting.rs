@@ -251,22 +251,26 @@ impl GovernanceVoting {
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
 
-        let (result, transfers, burns) = match voting_result {
+        let (result, mints, burns) = match voting_result {
             VotingResult::InFavor => {
-                let transfers = self.redistribute_reputation(&voting);
+                let (mints, burns) = self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
-                (consts::FORMAL_VOTING_PASSED, transfers, BTreeMap::new())
+                (consts::FORMAL_VOTING_PASSED, mints, burns)
             }
             VotingResult::Against => {
-                let transfers = self.redistribute_reputation(&voting);
-                (consts::FORMAL_VOTING_REJECTED, transfers, BTreeMap::new())
+                let (mints, burns) = self.redistribute_reputation(&voting);
+                (consts::FORMAL_VOTING_REJECTED, mints, burns)
             }
             VotingResult::QuorumNotReached => {
-                let (transfers, burns) =
+                let (mints, burns) =
                     self.burn_creators_and_return_others_reputation(voting.voting_id());
-                (consts::FORMAL_VOTING_QUORUM_NOT_REACHED, transfers, burns)
+                (consts::FORMAL_VOTING_QUORUM_NOT_REACHED, mints, burns)
             }
         };
+
+        ReputationContractCaller::at(self.get_reputation_token_address()).redistribute(
+            mints.clone(), burns.clone(), voting.voting_id()
+        );
 
         let formal_voting_id = voting.voting_id();
         let informal_voting_id = voting.informal_voting_id();
@@ -278,7 +282,7 @@ impl GovernanceVoting {
             votes_count: voters_len.into(),
             stake_in_favor: voting.stake_in_favor(),
             stake_against: voting.stake_against(),
-            transfers,
+            transfers: mints,
             burns,
             mints: BTreeMap::new(),
         }
@@ -449,9 +453,10 @@ impl GovernanceVoting {
         transfers
     }
 
-    fn redistribute_reputation(&mut self, voting: &Voting) -> BTreeMap<Address, U256> {
+    fn redistribute_reputation(&mut self, voting: &Voting) -> (BTreeMap<Address, U256>, BTreeMap<Address, U256>) {
         // TODO: update conversion after support for U256<>U512 conversion will be added to Casper
         let mut transfers = BTreeMap::new();
+        let mut burns = BTreeMap::new();
         let total_stake = u256_to_512(voting.total_stake()).unwrap_or_revert();
         let mut transferred = U512::zero();
         let result = voting.is_in_favor();
@@ -473,25 +478,12 @@ impl GovernanceVoting {
                 let to_transfer =
                     u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
-                transfers.insert(ballot.voter, to_transfer);
+                transfers.insert(ballot.voter, to_transfer - ballot.stake);
+            } else {
+                burns.insert(ballot.voter, ballot.stake);
             }
         }
-
-        // mark leftovers
-        let dust = total_stake - transferred;
-
-        if dust > U512::zero() {
-            if dust > u256_max {
-                revert(Error::ArithmeticOverflow)
-            }
-
-            self.dust_amount.set(
-                self.get_dust_amount()
-                    + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow),
-            );
-        }
-
-        transfers
+        (transfers, burns)
     }
 
     fn is_va(&self, address: Address) -> bool {

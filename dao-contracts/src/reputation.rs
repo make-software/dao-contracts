@@ -96,7 +96,7 @@ pub trait ReputationContractInterface {
     fn all_balances(&self) -> (U256, Balances);
     
     // Redistributes the reputation based on the voting summary
-    fn redistribute(&mut self, voting_id: VotingId, result: Choice);
+    fn redistribute(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>, voting_id: VotingId);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -127,18 +127,6 @@ impl ReputationContractInterface for ReputationContract {
         self.balances.set(Balances::default());
     }
 
-    fn total_supply(&self) -> U256 {
-        self.total_supply.get().unwrap_or_default()
-    }
-
-    fn balance_of(&self, address: Address) -> U256 {
-        self.balances.get_or_revert().get(&address)
-    }
-
-    fn all_balances(&self) -> (U256, Balances) {
-        (self.total_supply(), self.balances.get_or_revert())
-    }
-
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
 
@@ -164,7 +152,7 @@ impl ReputationContractInterface for ReputationContract {
         let mut balances = self.balances.get_or_revert();
         balances.dec(owner, amount);
         self.balances.set(balances);
-    
+
         let (new_supply, is_overflowed) = self.total_supply().overflowing_sub(amount);
         if is_overflowed {
             casper_env::revert(Error::TotalSupplyOverflow);
@@ -178,8 +166,12 @@ impl ReputationContractInterface for ReputationContract {
         });
     }
 
-    fn get_stake(&self, address: Address) -> U256 {
-        self.total_stake.get(&address).unwrap_or_default()
+    fn total_supply(&self) -> U256 {
+        self.total_supply.get().unwrap_or_default()
+    }
+
+    fn balance_of(&self, address: Address) -> U256 {
+        self.balances.get_or_revert().get(&address)
     }
 
     fn stake_voting(&mut self, voter: Address, voting_id: VotingId, choice: Choice, amount: U256) {
@@ -240,20 +232,37 @@ impl ReputationContractInterface for ReputationContract {
         self.dec_total_stake(voter, amount);
     }
 
-    fn redistribute(&mut self, voting_id: VotingId, result: Choice) {
-        let stakes: BTreeMap<Account, (U256, Choice)> = self.stakes_info.get_or_revert().stakes_for(voting_id);
-        let total_stake: U256 = self.stakes_info.get_or_revert().total_stake(voting_id);
-        let in_favor_stake: U256 = self.stakes_info.get_or_revert().in_favor_stake(voting_id);
-        let against_stake: U256 = self.stakes_info.get_or_revert().against_stake(voting_id);
+    fn get_stake(&self, address: Address) -> U256 {
+        self.total_stake.get(&address).unwrap_or_default()
+    }
 
-        for (account, (stake, choice)) in stakes.iter() {
-            
-        } 
+    fn all_balances(&self) -> (U256, Balances) {
+        (self.total_supply(), self.balances.get_or_revert())
+    }
+
+    fn redistribute(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+
+        let mut total_supply = self.total_supply();
+        let mut balances = self.balances.get_or_revert();
+        for (address, amount) in mints {
+            balances.inc(address, amount);
+            self.unstake_voting(address, voting_id);
+            total_supply = total_supply + amount;
+        }
+        for (address, amount) in burns {
+            balances.dec(address, amount);
+            self.unstake_voting(address, voting_id);
+            total_supply = total_supply - amount;
+        }
+
+        self.balances.set(balances);
+        self.total_supply.set(total_supply);
     }
 }
 
 impl ReputationContract {
-    fn stake_info(&self, address: &Address) -> StakeInfo {
+    fn stake_info(&self, address: &Address) -> AccountStakeInfo {
         self.stakes.get(address).unwrap_or_default()
     }
 

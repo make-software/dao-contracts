@@ -162,8 +162,8 @@ fn balances(w: &mut DaoWorld, step: &Step) {
         // Check REP balance.
         let expected_rep_balance = to_rep(&row[2]);
         let real_rep_balance = w.get_rep_balance(address);
-        assert_eq!(
-            expected_rep_balance, real_rep_balance,
+        assert!(
+            is_rep_close_enough(expected_rep_balance, real_rep_balance),
             "For account {} REP balance should be {:?} but is {:?}",
             name, expected_rep_balance, real_rep_balance
         );
@@ -171,8 +171,8 @@ fn balances(w: &mut DaoWorld, step: &Step) {
         // Check CSPR balance
         let expected_cspr_balance = to_cspr(&row[1]);
         let real_cspr_balance = w.get_cspr_balance(address);
-        assert_eq!(
-            expected_cspr_balance, real_cspr_balance,
+        assert!(
+            is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
             "For account {} CSPR balance should be {:?} but is {:?}",
             name, expected_cspr_balance, real_cspr_balance
         );
@@ -180,8 +180,8 @@ fn balances(w: &mut DaoWorld, step: &Step) {
         // Check staked REP balance.
         let expected_rep_stake = to_rep(&row[3]);
         let real_rep_stake = w.reputation_token.get_stake(address);
-        assert_eq!(
-            expected_rep_stake, real_rep_stake,
+        assert!(
+            is_rep_close_enough(expected_rep_stake, real_rep_stake),
             "For account {} REP stake should be {:?} but is {:?}",
             name, expected_rep_stake, real_rep_stake
         );
@@ -194,6 +194,15 @@ fn to_rep(v: &str) -> U256 {
 
 fn to_cspr(v: &str) -> U512 {
     U512::from((v.parse::<f32>().unwrap() * 1_000f32) as u32) * 1_000_000
+}
+
+fn is_cspr_close_enough(a: U512, b: U512) -> bool {
+    let diff = if a > b { a - b } else { b - a };
+    diff < U512::from(10_000_000)
+}
+fn is_rep_close_enough(a: U256, b: U256) -> bool {
+    let diff = if a > b { a - b } else { b - a };
+    diff < U256::from(10_000_000)
 }
 
 fn main() {
