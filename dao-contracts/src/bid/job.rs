@@ -155,6 +155,11 @@ impl Job {
         self.bid_id
     }
 
+    /// Get the job's offer id.
+    pub fn job_offer_id(&self) -> JobOfferId {
+        self.job_offer_id
+    }
+
     /// Get the job's payment amount
     pub fn payment(&self) -> U512 {
         self.payment

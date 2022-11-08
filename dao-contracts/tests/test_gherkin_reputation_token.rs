@@ -130,7 +130,7 @@ fn is_whitelisted(w: &mut DaoWorld, account: String) {
     );
 }
 
-#[tokio::main]
-async fn main() {
-    DaoWorld::run("tests/features/reputation_token").await;
-}
+// #[tokio::main]
+// async fn main() {
+//     DaoWorld::run("tests/features/reputation_token").await;
+// }

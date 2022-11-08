@@ -201,6 +201,7 @@ impl TestEnvState {
         args: RuntimeArgs,
         has_return: bool,
     ) -> Result<Option<T>, Error> {
+        dbg!(entry_point);
         let session_code = PathBuf::from("getter_proxy.wasm");
 
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();
@@ -366,16 +367,13 @@ impl TestEnvState {
     }
 
     pub fn get_account_cspr_balance(&self, address: &Address) -> U512 {
-        let gas_used = match self.gas_used.get(&address) {
+        let gas_used = match self.gas_used.get(address) {
             Some(value) => *value,
             None => U512::zero(),
         };
-
         let account_hash = address.as_account_hash().unwrap();
-
         let account: Account = self.context.get_account(*account_hash).unwrap();
         let purse = account.main_purse();
-        dbg!(gas_used);
         self.context.get_purse_balance(purse) + gas_used
     }
 }

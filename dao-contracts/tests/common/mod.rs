@@ -3,7 +3,7 @@ pub mod helpers;
 pub mod setup;
 
 use casper_dao_utils::{Address, TestContract, TestEnv};
-use casper_types::bytesrepr::Bytes;
+use casper_types::bytesrepr::{Bytes, ToBytes};
 use casper_types::{U256, U512};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
@@ -93,7 +93,8 @@ impl DaoWorld {
     }
 
     // returns address of the account with the given name
-    pub fn named_address(&mut self, name: String) -> Address {
+    pub fn named_address<T: AsRef<str>>(&mut self, name: T) -> Address {
+        let name = String::from(name.as_ref());
         match self.addresses.get(&*name) {
             None => {
                 // add new address, but match the name
@@ -150,7 +151,7 @@ impl Default for DaoWorld {
     fn default() -> Self {
         let (env, bid_escrow, reputation_token, va_token, kyc_token, variable_repo) =
             dao::setup_dao();
-        Self {
+        let mut dao = Self {
             env,
             bid_escrow,
             va_token,
@@ -163,6 +164,14 @@ impl Default for DaoWorld {
             accounts_count: 0,
             kyc_count: 0.into(),
             va_count: 0.into(),
-        }
+        };
+
+        // Set multisig account.
+        let multisig_address = Bytes::from(dao.named_address("MultisigWallet").to_bytes().unwrap());
+        let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
+        dao.variable_repo.update_at(key, multisig_address, None).unwrap();
+
+        // Return DaoWorld!
+        dao
     }
 }

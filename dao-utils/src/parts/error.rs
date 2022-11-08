@@ -97,6 +97,11 @@ dao_errors!(
     JobNotFound => 4016,
     OnlyJobPosterCanPickABid => 4017,
     OnlyWorkerCanSubmitProof => 4018,
+
+    // Reputation Token Errors.
+    CannotStakeTwice => 4500,
+    StakeDoesntExists => 4501,
+
     InvalidAddress => 5000,
     TransferError => 6000,
 );

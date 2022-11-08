@@ -6,7 +6,7 @@ use casper_dao_utils::{
 
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    U256,
+    U256, U512,
 };
 
 use self::events::ValueUpdated;
@@ -147,6 +147,7 @@ impl Default for RepositoryDefaults {
         items.push(consts::JOB_SUBMIT_GRACE_PERIOD, U256::from(86400));
         // TODO: Confirm value
         items.push(consts::DEFAULT_REPUTATION_SLASH, U256::from(100));
+        items.push(consts::GOVERNANCE_PAYMENT_RATIO, U512::from(100));
         items
     }
 }

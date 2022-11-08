@@ -40,7 +40,7 @@ pub const REPUTATION_CONVERSION_RATE: &str = "ReputationConversionRate";
 pub const FIAT_CONVERSION_RATE_ADDRESS: &str = "FiatConversionRateAddress";
 pub const FORUM_KYC_REQUIRED: &str = "ForumKycRequired";
 pub const FORMAL_VOTING_QUORUM: &str = "FormalVotingQuorum";
-pub const INFORMAL_VOTING_QUORUM: &str = "InformalVotingquorum";
+pub const INFORMAL_VOTING_QUORUM: &str = "InformalVotingQuorum";
 pub const VOTING_QUORUM: &str = "VotingQuorum";
 pub const FORMAL_VOTING_TIME: &str = "FormalVotingTime";
 pub const INFORMAL_VOTING_TIME: &str = "InformalVotingTime";
@@ -49,8 +49,10 @@ pub const TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING: &str = "TimeBetweenInformalAn
 pub const VA_BID_ACCEPTANCE_TIMEOUT: &str = "VABidAcceptanceTimeout";
 pub const VA_CAN_BID_ON_PUBLIC_AUCTION: &str = "VACanBidOnPublicAuction";
 pub const GOVERNANCE_WALLET_ADDRESS: &str = "GovernanceWalletAddress";
+pub const GOVERNANCE_PAYMENT_RATIO: &str = "GovernancePaymentRatio";
 pub const JOB_SUBMIT_GRACE_PERIOD: &str = "JobSubmitGracePeriod";
 pub const DEFAULT_REPUTATION_SLASH: &str = "DefaultReputationSlash";
+
 // TODO: Remove
 pub const MINIMUM_GOVERNANCE_REPUTATION: &str = "minimum_governance_reputation";
 // TODO: Remove

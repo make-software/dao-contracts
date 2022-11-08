@@ -7,6 +7,7 @@ use casper_dao_utils::{
     casper_env::{caller, revert},
     consts as dao_consts, math, Address, Error,
 };
+use casper_types::bytesrepr::ToBytes;
 use casper_types::{
     bytesrepr::{Bytes, FromBytes},
     U256, U512,
@@ -232,5 +233,17 @@ impl VariableRepositoryContractCaller {
     /// Calculates amount of reputation to be redistributed
     pub fn reputation_to_redistribute(&self, reputation_amount: U256) -> U256 {
         math::promils_of(reputation_amount, self.default_policing_rate()).unwrap_or_revert()
+    }
+
+    pub fn governance_wallet(&self) -> Address {
+        self.get_variable(dao_consts::GOVERNANCE_WALLET_ADDRESS)
+    }
+    
+    pub fn governance_payment_ratio(&self) -> U512 {
+        self.get_variable(dao_consts::GOVERNANCE_PAYMENT_RATIO)
+    }
+
+    pub fn payment_for_governance(&self, cspr_amount: U512) -> U512 {
+        math::promils_of_u512(cspr_amount, self.governance_payment_ratio()).unwrap_or_revert()
     }
 }

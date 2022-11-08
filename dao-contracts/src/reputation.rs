@@ -1,8 +1,14 @@
-use crate::voting::{Choice, VotingId};
+use std::collections::BTreeMap;
+
+use crate::{
+    bid::types::BidId,
+    voting::{Choice, VotingId},
+};
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{self, caller, emit},
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
+    casper_env::{self, caller, emit, revert},
     math::{add_to_balance, rem_from_balance},
     Address, Error, Mapping, Variable, VecMapping,
 };
@@ -48,16 +54,6 @@ pub trait ReputationContractInterface {
     /// It emits [`Burn`](casper_dao_contracts::reputation::events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U256);
 
-    /// Transfer `amount` of tokens from `owner` to `recipient`. Only whitelisted addresses are
-    /// permited to call this method.
-    ///
-    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
-    /// is not whitelisted.
-    ///
-    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance)
-    /// if `recipient`'s balance is less then `amount`.
-    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
-
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
     /// is permited to call this method.
     ///
@@ -86,12 +82,18 @@ pub trait ReputationContractInterface {
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
 
-    /// Returns the amount of the debt the owner has.
-    fn debt(&self, owner: Address) -> U256;
-
     /// Stakes the reputation for a given voting and choice.
-    fn stake(&mut self, voter_address: Address, voting_id: VotingId, choice: Choice, amount: U256);
+    fn stake_voting(&mut self, voter: Address, voting_id: VotingId, choice: Choice, amount: U256);
 
+    fn unstake_voting(&mut self, voter: Address, voting_id: VotingId);
+
+    fn stake_bid(&mut self, voter: Address, bid_id: BidId, amount: U256);
+
+    fn unstake_bid(&mut self, voter: Address, bid_id: BidId);
+
+    fn get_stake(&self, address: Address) -> U256;
+
+    fn all_balances(&self) -> (U256, Balances);
     // /// Redistributes the reputation based on the voting summary
     // fn redistribute(&mut self, voting_id, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>);
 }
@@ -100,8 +102,9 @@ pub trait ReputationContractInterface {
 #[derive(Instance)]
 pub struct ReputationContract {
     total_supply: Variable<U256>,
-    balances: Mapping<Address, (bool, U256)>,
-    stakes: VecMapping<(Address, VotingId), Vec<(Address, U256, Choice)>>,
+    balances: Variable<Balances>,
+    // (owner, staker, voting) -> (stake, choice)
+    stakes: Mapping<Address, StakeInfo>,
     total_stake: Mapping<Address, U256>,
     pub access_control: AccessControl,
 }
@@ -120,6 +123,7 @@ impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
         let deployer = caller();
         self.access_control.init(deployer);
+        self.balances.set(Balances::default());
     }
 
     fn total_supply(&self) -> U256 {
@@ -127,45 +131,25 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn balance_of(&self, address: Address) -> U256 {
-        match self.get_signed_balance(address) {
-            (true, value) => value,
-            (false, _) => U256::zero(),
-        }
+        self.balances.get_or_revert().get(&address)
     }
 
-    fn debt(&self, address: Address) -> U256 {
-        match self.get_signed_balance(address) {
-            (true, _) => U256::zero(),
-            (false, value) => value,
-        }
+    fn all_balances(&self) -> (U256, Balances) {
+        (self.total_supply(), self.balances.get_or_revert())
     }
 
     fn mint(&mut self, recipient: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
 
-        // Load a balance of the account.
-        let signed_balance = self.get_signed_balance(recipient);
-        let (is_positive, balance) = signed_balance;
+        let mut balances = self.balances.get_or_revert();
+        balances.inc(recipient, amount);
+        self.balances.set(balances);
 
-        // Increase total_supply by the amount above the debt.
-        // This prevents total_supply from overflowing.
-        let real_increase_amount = if is_positive {
-            amount
-        } else if amount > balance {
-            amount - balance
-        } else {
-            U256::zero()
-        };
-
-        let (new_supply, is_overflowed) = self.total_supply().overflowing_add(real_increase_amount);
+        let (new_supply, is_overflowed) = self.total_supply().overflowing_add(amount);
         if is_overflowed {
             casper_env::revert(Error::TotalSupplyOverflow);
         }
         self.total_supply.set(new_supply);
-
-        // Increase the balance of the account.
-        let new_balance = add_to_balance(signed_balance, amount);
-        self.balances.set(&recipient, new_balance);
 
         emit(Mint {
             address: recipient,
@@ -176,24 +160,15 @@ impl ReputationContractInterface for ReputationContract {
     fn burn(&mut self, owner: Address, amount: U256) {
         self.access_control.ensure_whitelisted();
 
-        // Load a balance of the account.
-        let signed_balance = self.get_signed_balance(owner);
-        let (is_positive, balance) = signed_balance;
-
-        // Reduce the balance of the account.
-        let new_balance = rem_from_balance(signed_balance, amount);
-        self.balances.set(&owner, new_balance);
-
-        // Decrease total_supply by only decreased positive balance of owner.
-        // This prevents total_supply of getting negative.
-        if is_positive {
-            let total_supply = self.total_supply();
-            if amount > balance {
-                self.total_supply.set(total_supply - balance);
-            } else {
-                self.total_supply.set(total_supply - amount);
-            }
+        let mut balances = self.balances.get_or_revert();
+        balances.dec(owner, amount);
+        self.balances.set(balances);
+    
+        let (new_supply, is_overflowed) = self.total_supply().overflowing_sub(amount);
+        if is_overflowed {
+            casper_env::revert(Error::TotalSupplyOverflow);
         }
+        self.total_supply.set(new_supply);
 
         // Emit Burn event.
         emit(Burn {
@@ -202,54 +177,68 @@ impl ReputationContractInterface for ReputationContract {
         });
     }
 
-    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
-        self.access_control.ensure_whitelisted();
-
-        // Load the balance of the owner.
-        let owner_signed_balance = self.get_signed_balance(owner);
-        let (is_positive_owner_balance, owner_balance) = owner_signed_balance;
-
-        // Check if the owner has sufficient balance.
-        if !is_positive_owner_balance || owner_balance < amount {
-            casper_env::revert(Error::InsufficientBalance)
-        }
-
-        // Load the balance of the recipient.
-        let recipient_signed_balance = self.get_signed_balance(recipient);
-
-        // Settle the transfer.
-        self.balances
-            .set(&owner, rem_from_balance(owner_signed_balance, amount));
-        self.balances
-            .set(&recipient, add_to_balance(recipient_signed_balance, amount));
+    fn get_stake(&self, address: Address) -> U256 {
+        self.total_stake.get(&address).unwrap_or_default()
     }
 
-    fn stake(&mut self, voter_address: Address, voting_id: VotingId, choice: Choice, amount: U256) {
+    fn stake_voting(&mut self, voter: Address, voting_id: VotingId, choice: Choice, amount: U256) {
         self.access_control.ensure_whitelisted();
 
-        // Load a balance of the account.
-        let signed_balance = self.get_signed_balance(voter_address);
-        let (is_positive, balance) = signed_balance;
-        let current_stake = self.total_stake.get(&voter_address).unwrap_or_default();
+        let mut stake_info = self.stake_info(&voter);
+        stake_info.add_stake_from_voting(caller(), voting_id, choice, amount);
+        self.stakes.set(&voter, stake_info);
 
-        // Check if the voter has sufficient balance.
-        if !is_positive || balance - current_stake < amount {
-            casper_env::revert(Error::InsufficientBalance)
-        }
-
-        // Set the stake
-        // let stake_key = (caller(), voting_id);
-        // let stake = (voter_address, amount, choice);
-        // self.stakes.add(stake_key, stake);
+        self.inc_total_stake(voter, amount);
 
         // // Emit Stake event.
         // emit(Stake {
-        //     voter_address,
+        //     voter,
         //     voting_id,
         //     choice,
         //     amount,
         // });
     }
+
+    fn unstake_voting(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+
+        let mut stake_info = self.stake_info(&voter);
+        let amount = stake_info.remove_stake_from_voting(caller(), voting_id);
+        self.stakes.set(&voter, stake_info);
+
+        // // Decrement total stake.
+        self.dec_total_stake(voter, amount);
+    }
+
+    fn stake_bid(&mut self, voter: Address, bid_id: BidId, amount: U256) {
+        self.access_control.ensure_whitelisted();
+
+        let mut stake_info = self.stake_info(&voter);
+        stake_info.add_stake_from_bid(caller(), bid_id, amount);
+        self.stakes.set(&voter, stake_info);
+
+        self.inc_total_stake(voter, amount);
+
+        // // Emit Stake event.
+        // emit(Stake {
+        //     voter,
+        //     bid_id,
+        //     choice,
+        //     amount,
+        // });
+    }
+
+    fn unstake_bid(&mut self, voter: Address, bid_id: BidId) {
+        self.access_control.ensure_whitelisted();
+
+        let mut stake_info = self.stake_info(&voter);
+        let amount = stake_info.remove_stake_from_bid(caller(), bid_id);
+        self.stakes.set(&voter, stake_info);
+
+        // // Decrement total stake.
+        self.dec_total_stake(voter, amount);
+    }
+
 
     // fn redistribute(&mut self, voting_id: VotingId, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>) {
 
@@ -257,8 +246,18 @@ impl ReputationContractInterface for ReputationContract {
 }
 
 impl ReputationContract {
-    fn get_signed_balance(&self, address: Address) -> (bool, U256) {
-        self.balances.get(&address).unwrap_or((true, U256::zero()))
+    fn stake_info(&self, address: &Address) -> StakeInfo {
+        self.stakes.get(address).unwrap_or_default()
+    }
+
+    fn inc_total_stake(&mut self, account: Address, amount: U256) {
+        self.total_stake
+            .set(&account, self.get_stake(account) + amount);
+    }
+
+    fn dec_total_stake(&mut self, account: Address, amount: U256) {
+        self.total_stake
+            .set(&account, self.get_stake(account) - amount);
     }
 }
 
@@ -277,6 +276,78 @@ pub enum CSPRRedistributionMode {
 pub struct CSPRRedistribution {
     pub mode: CSPRRedistributionMode,
     pub purse: URef,
+}
+
+#[derive(Default, FromBytes, ToBytes, CLTyped)]
+struct StakeInfo {
+    stakes_from_voting: BTreeMap<(Address, VotingId), (Choice, U256)>,
+    stakes_from_bid: BTreeMap<(Address, BidId), U256>,
+}
+
+impl StakeInfo {
+    fn add_stake_from_voting(
+        &mut self,
+        operator: Address,
+        voting_id: VotingId,
+        choice: Choice,
+        amount: U256,
+    ) {
+        let result = self
+            .stakes_from_voting
+            .insert((operator, voting_id), (choice, amount));
+        if result.is_some() {
+            revert(Error::CannotStakeTwice)
+        }
+    }
+
+    fn add_stake_from_bid(&mut self, operator: Address, bid_id: BidId, amount: U256) {
+        let result = self.stakes_from_bid.insert((operator, bid_id), amount);
+        if result.is_some() {
+            revert(Error::CannotStakeTwice)
+        }
+    }
+
+    fn remove_stake_from_voting(&mut self, operator: Address, voting_id: VotingId) -> U256 {
+        let key = (operator, voting_id);
+        match self.stakes_from_voting.remove(&key) {
+            Some((_, amount)) => amount,
+            None => revert(Error::StakeDoesntExists),
+        }
+    }
+
+    fn remove_stake_from_bid(&mut self, operator: Address, bid_id: BidId) -> U256 {
+        let key = (operator, bid_id);
+        self.stakes_from_bid
+            .remove(&key)
+            .unwrap_or_revert_with(Error::StakeDoesntExists)
+    }
+}
+
+#[derive(Default, FromBytes, ToBytes, CLTyped)]
+pub struct Balances {
+    pub balances: BTreeMap<Address, U256>
+}
+
+impl Balances {
+    pub fn get(&self, address: &Address) -> U256 {
+        self.balances.get(address).cloned().unwrap_or_default()
+    }
+
+    pub fn set(&mut self, address: Address, amount: U256) {
+        if amount.is_zero() {
+            self.balances.remove(&address);
+        } else {
+            self.balances.insert(address, amount);
+        }
+    }
+
+    pub fn inc(&mut self, address: Address, amount: U256) {
+        self.set(address, self.get(&address) + amount);
+    }
+
+    pub fn dec(&mut self, address: Address, amount: U256) {
+        self.set(address, self.get(&address) - amount);
+    }
 }
 
 pub mod events {

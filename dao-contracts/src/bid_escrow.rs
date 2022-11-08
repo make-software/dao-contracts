@@ -7,7 +7,7 @@ use casper_dao_utils::{
     },
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
-    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator,
+    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator, consts,
 };
 use casper_types::{URef, U256, U512};
 
@@ -181,10 +181,16 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::JobPosterNotKycd);
         }
 
-        self.deposit_dos_fee(purse);
+        let dos_fee = self.deposit_dos_fee(purse);
 
         let job_offer_id = self.next_job_offer_id();
-        let job_offer = JobOffer::new(job_offer_id, caller(), expected_timeframe, max_budget);
+        let job_offer = JobOffer::new(
+            job_offer_id,
+            caller(),
+            expected_timeframe,
+            max_budget,
+            dos_fee,
+        );
 
         self.job_offers.set(&job_offer_id, job_offer);
 
@@ -223,7 +229,11 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let bid_id = self.next_bid_id();
 
         let cspr_stake = match purse {
-            None => None,
+            None => {
+                self.reputation_token()
+                    .stake_bid(worker, bid_id, reputation_stake);
+                None
+            }
             Some(purse) => {
                 let cspr_stake = self.deposit(purse);
                 Some(cspr_stake)
@@ -266,6 +276,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::PurseBalanceMismatch)
         }
 
+        // TODO: Unstake all bidders for the given job offer.
+
         let finish_time = get_block_time() + bid.proposed_timeframe;
         let job_id = self.next_job_id();
 
@@ -306,6 +318,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         job.submit_proof(proof);
         // TODO: Emit event.
 
+        self.reputation_token().unstake_bid(worker, job.bid_id());
+
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
             .cast_first_vote(true)
             .create_minimum_reputation(U256::zero())
@@ -320,38 +334,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         self.jobs.set(&job_id, job);
     }
-
-    // fn pick_bid(
-    //     &mut self,
-    //     worker: Address,
-    //     document_hash: DocumentHash,
-    //     time: BlockTime,
-    //     required_stake: Option<U256>,
-    //     purse: URef,
-    // ) {
-
-    //     if !self.kyc.is_kycd(&caller) {
-    //         revert(Error::JobPosterNotKycd);
-    //     }
-
-    //     if !self.kyc.is_kycd(&worker) {
-    //         revert(Error::WorkerNotKycd);
-    //     }
-
-    //     if !self.onboarding.is_onboarded(&worker) && required_stake.is_some() {
-    //         revert(Error::NotOnboardedWorkerCannotStakeReputation);
-    //     }
-
-    //     JobCreated::new(&job).emit();
-
-    //     if !self.onboarding.is_onboarded(&worker) {
-    //         job.accept(job.worker(), get_block_time())
-    //             .unwrap_or_revert();
-    //         JobAccepted::new(&job).emit();
-    //     }
-
-    //     self.jobs.set(&bid_id, job);
-    // }
 
     fn cancel_job(&mut self, bid_id: BidId, reason: DocumentHash) {
         let mut job = self.jobs.get_or_revert(&bid_id);
@@ -410,15 +392,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_summary = self.voting.finish_voting(voting_id);
         match voting_summary.voting_type() {
             crate::voting::voting::VotingType::Informal => match voting_summary.result() {
-                VotingResult::InFavor => {
-                    job.set_formal_voting_id(voting_summary.formal_voting_id());
+                VotingResult::InFavor | VotingResult::Against => {
+                    job.set_formal_voting_id(voting_summary.formal_voting_id())
                 }
-                VotingResult::Against => {
-                    self.job_rejected(&mut job);
-                }
-                VotingResult::QuorumNotReached => {
-                    self.job_rejected(&mut job);
-                }
+                VotingResult::QuorumNotReached => self.job_rejected(&mut job),
             },
             crate::voting::voting::VotingType::Formal => match voting_summary.result() {
                 VotingResult::InFavor => {
@@ -492,24 +469,48 @@ impl BidEscrowContract {
     }
 
     fn pay_for_job(&mut self, job: &Job) {
-        self.withdraw(job.worker(), job.payment());
         self.mint_and_redistribute_reputation(job);
+        self.redistribute_cspr(job);
     }
-
+    
     fn job_done(&mut self, job: &mut Job) {
+        self.return_dos_fee(&job);
         self.pay_for_job(job);
         job.complete();
         JobDone::new(job, caller()).emit();
     }
-
+    
     fn job_rejected(&mut self, job: &mut Job) {
+        self.return_dos_fee(&job);
         self.refund(job);
         job.not_completed();
         JobRejected::new(job, caller()).emit();
     }
+    
+    fn redistribute_cspr(&mut self, job: &Job) {
+        // 10% dla Mutlisiga
+        let repo = self.variable_repository();
+        let governance_wallet: Address = repo.governance_wallet();
+        let governance_wallet_payment = repo.payment_for_governance(job.payment());
+        self.withdraw(governance_wallet, governance_wallet_payment);
+        
+        // Dla wszystkich po równo.
+        let cspr_pool = job.payment() - governance_wallet_payment;
+        let (total_supply, balances) = self.reputation_token().all_balances();
+        let total_supply = U512::from(total_supply.as_u128());
+        for (address, balance) in balances.balances {
+            let amount = cspr_pool * U512::from(balance.as_u128()) / total_supply;
+            self.withdraw(address, amount);
+        }
+    }
 
     fn refund(&mut self, job: &Job) {
         self.withdraw(job.poster(), job.payment());
+    }
+
+    fn return_dos_fee(&mut self, job: &Job) {
+        let job_offer = self.job_offers.get_or_revert(&job.job_offer_id());
+        self.withdraw(job.poster(), job_offer.dos_fee);
     }
 
     fn mint_and_redistribute_reputation(&mut self, job: &Job) {
@@ -535,15 +536,20 @@ impl BidEscrowContract {
             .voting
             .get_voting(job.formal_voting_id().unwrap_or_revert())
             .unwrap_or_revert();
-        let result = voting.is_in_favor();
         for i in 0..self.voting.voters().len(voting.voting_id()) {
             let ballot = self.voting.get_ballot_at(voting.voting_id(), i);
-            if ballot.choice.is_in_favor() == result {
-                let to_transfer = ballot.stake * amount / voting.get_winning_stake();
-                ReputationContractCaller::at(self.voting.get_reputation_token_address())
-                    .mint(ballot.voter, to_transfer);
-            }
+            let to_transfer = ballot.stake * amount / voting.total_stake();
+            ReputationContractCaller::at(self.voting.get_reputation_token_address())
+                .mint(ballot.voter, to_transfer);
         }
+    }
+
+    fn reputation_token(&self) -> ReputationContractCaller {
+        ReputationContractCaller::at(self.voting.get_reputation_token_address())
+    }
+
+    fn variable_repository(&self) -> VariableRepositoryContractCaller {
+        VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
     }
 }
 

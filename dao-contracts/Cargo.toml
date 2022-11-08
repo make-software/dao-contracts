@@ -12,9 +12,9 @@ delegate = "0.6.2"
 
 [dev-dependencies]
 cucumber = "0.15.0"
-tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread", "time"] }
 speculate = "0.1.2"
 test-case = "2.0.2"
+futures = "0.3.5"
 
 [[test]]
 name = "test_gherkin_bid_escrow"

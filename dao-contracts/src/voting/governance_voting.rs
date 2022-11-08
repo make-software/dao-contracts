@@ -319,11 +319,8 @@ impl GovernanceVoting {
         }
 
         // Stake the reputation
-        ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-            voter,
-            self_address(),
-            stake,
-        );
+        ReputationContractCaller::at(self.get_reputation_token_address())
+            .stake_voting(voter, voting_id, choice, stake);
 
         // Create a new vote
         let vote = Ballot {
@@ -429,11 +426,11 @@ impl GovernanceVoting {
             } else {
                 // the voters - transfer from contract to them
                 transfers.insert(ballot.voter, ballot.stake);
-                ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-                    self_address(),
-                    ballot.voter,
-                    ballot.stake,
-                );
+                // ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
+                //     self_address(),
+                //     ballot.voter,
+                //     ballot.stake,
+                // );
             }
         }
 
@@ -445,11 +442,8 @@ impl GovernanceVoting {
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
             transfers.insert(ballot.voter, ballot.stake);
-            ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-                self_address(),
-                ballot.voter,
-                ballot.stake,
-            );
+            ReputationContractCaller::at(self.get_reputation_token_address())
+                .unstake_voting(ballot.voter, ballot.voting_id);
         }
 
         transfers
@@ -466,6 +460,7 @@ impl GovernanceVoting {
         for i in 0..self.voters.len(voting.voting_id()) {
             let ballot = self.get_ballot_at(voting.voting_id(), i);
             if ballot.choice.is_in_favor() == result {
+                
                 let to_transfer = total_stake * u256_to_512(ballot.stake).unwrap_or_revert()
                     / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
 
@@ -479,7 +474,9 @@ impl GovernanceVoting {
                     u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
                 transfers.insert(ballot.voter, to_transfer);
-                ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
+                let rep = ReputationContractCaller::at(self.get_reputation_token_address());
+                rep.unstake
+                .transfer_from(
                     self_address(),
                     ballot.voter,
                     to_transfer,

@@ -20,39 +20,39 @@ mod common;
 
 #[test]
 fn test_balance() {
-    let (env, mut bid_escrow, reputation_token, mut va_token, mut kyc_token, variable_repo) =
-        common::dao::setup_dao();
-    let bid_escrow_address = bid_escrow.address();
-    assert_eq!(
-        bid_escrow
-            .get_env()
-            .get_address_cspr_balance(bid_escrow_address),
-        U512::zero()
-    );
-    let job_poster = bid_escrow.get_env().get_account(0);
-    let worker = bid_escrow.get_env().get_account(1);
-    kyc_token.mint(job_poster, 1.into()).unwrap();
-    kyc_token.mint(worker, 2.into()).unwrap();
-    va_token.mint(worker, 1.into()).unwrap();
+    // let (env, mut bid_escrow, reputation_token, mut va_token, mut kyc_token, variable_repo) =
+    //     common::dao::setup_dao();
+    // let bid_escrow_address = bid_escrow.address();
+    // assert_eq!(
+    //     bid_escrow
+    //         .get_env()
+    //         .get_address_cspr_balance(bid_escrow_address),
+    //     U512::zero()
+    // );
+    // let job_poster = bid_escrow.get_env().get_account(0);
+    // let worker = bid_escrow.get_env().get_account(1);
+    // kyc_token.mint(job_poster, 1.into()).unwrap();
+    // kyc_token.mint(worker, 2.into()).unwrap();
+    // va_token.mint(worker, 1.into()).unwrap();
 
-    let job_poster_balance: U512 = bid_escrow.get_env().get_address_cspr_balance(job_poster);
+    // let job_poster_balance: U512 = bid_escrow.get_env().get_address_cspr_balance(job_poster);
 
-    bid_escrow.pick_bid_with_cspr_amount(
-        worker,
-        DocumentHash::from(b"some hash".to_vec()),
-        60,
-        Some(500.into()),
-        500.into(),
-    );
+    // bid_escrow.pick_bid_with_cspr_amount(
+    //     worker,
+    //     DocumentHash::from(b"some hash".to_vec()),
+    //     60,
+    //     Some(500.into()),
+    //     500.into(),
+    // );
 
-    assert_eq!(
-        bid_escrow
-            .get_env()
-            .get_address_cspr_balance(bid_escrow_address),
-        500.into()
-    );
-    assert_eq!(
-        bid_escrow.get_env().get_address_cspr_balance(job_poster),
-        job_poster_balance - U512::from(500)
-    );
+    // assert_eq!(
+    //     bid_escrow
+    //         .get_env()
+    //         .get_address_cspr_balance(bid_escrow_address),
+    //     500.into()
+    // );
+    // assert_eq!(
+    //     bid_escrow.get_env().get_address_cspr_balance(job_poster),
+    //     job_poster_balance - U512::from(500)
+    // );
 }

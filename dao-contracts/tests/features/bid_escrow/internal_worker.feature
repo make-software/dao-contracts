@@ -37,16 +37,16 @@ Feature: Internal Flow
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-#    When FormalVoting ends with votes
-#      | account          | vote | stake |
-#      | InternalWorker   | Yes  | 100   |
-#      | VA1              | Yes  | 500   |
-#      | VA2              | No   | 500   |
-#    Then balances are:
-#      | account          | CSPR balance | REP balance  | REP stake  |
-#      | BidEscrow        | 0            | 0            | 0          |
-#      | MultisigWallet   | 50           | 0            | 0          |
-#      | JobPoster        | 500          | 0            | 0          |
-#      | InternalWorker   | 183.83       | 1121         | 0          |
-#      | VA1              | 233.19       | 1422         | 0          |
-#      | VA2              | 82.97        | 506          | 0          |
+    When Formal voting ends with votes
+      | account          | vote | stake |
+     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
+      | VA1              | Yes  | 500   |
+      | VA2              | No   | 500   |
+    Then balances are
+      | account          | CSPR balance | REP balance  | REP stake  |
+      | MultisigWallet   | 50           | 0            | 0          |
+      | JobPoster        | 500          | 0            | 0          |
+      | InternalWorker   | 183.83       | 1121         | 0          |
+      | VA1              | 233.19       | 1422         | 0          |
+      | VA2              | 82.97        | 506          | 0          |
+      | BidEscrow        | 0            | 0            | 0          |
