@@ -474,13 +474,6 @@ impl GovernanceVoting {
                     u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
 
                 transfers.insert(ballot.voter, to_transfer);
-                let rep = ReputationContractCaller::at(self.get_reputation_token_address());
-                rep.unstake
-                .transfer_from(
-                    self_address(),
-                    ballot.voter,
-                    to_transfer,
-                );
             }
         }
 

@@ -94,8 +94,9 @@ pub trait ReputationContractInterface {
     fn get_stake(&self, address: Address) -> U256;
 
     fn all_balances(&self) -> (U256, Balances);
-    // /// Redistributes the reputation based on the voting summary
-    // fn redistribute(&mut self, voting_id, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>);
+    
+    // Redistributes the reputation based on the voting summary
+    fn redistribute(&mut self, voting_id: VotingId, result: Choice);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -104,7 +105,7 @@ pub struct ReputationContract {
     total_supply: Variable<U256>,
     balances: Variable<Balances>,
     // (owner, staker, voting) -> (stake, choice)
-    stakes: Mapping<Address, StakeInfo>,
+    stakes: Mapping<Address, AccountStakeInfo>,
     total_stake: Mapping<Address, U256>,
     pub access_control: AccessControl,
 }
@@ -239,10 +240,16 @@ impl ReputationContractInterface for ReputationContract {
         self.dec_total_stake(voter, amount);
     }
 
+    fn redistribute(&mut self, voting_id: VotingId, result: Choice) {
+        let stakes: BTreeMap<Account, (U256, Choice)> = self.stakes_info.get_or_revert().stakes_for(voting_id);
+        let total_stake: U256 = self.stakes_info.get_or_revert().total_stake(voting_id);
+        let in_favor_stake: U256 = self.stakes_info.get_or_revert().in_favor_stake(voting_id);
+        let against_stake: U256 = self.stakes_info.get_or_revert().against_stake(voting_id);
 
-    // fn redistribute(&mut self, voting_id: VotingId, voting_summary: VotingSummary, cspr_redistribution: Option<CSPRRedistribution>) {
-
-    // }
+        for (account, (stake, choice)) in stakes.iter() {
+            
+        } 
+    }
 }
 
 impl ReputationContract {
@@ -279,12 +286,12 @@ pub struct CSPRRedistribution {
 }
 
 #[derive(Default, FromBytes, ToBytes, CLTyped)]
-struct StakeInfo {
+struct AccountStakeInfo {
     stakes_from_voting: BTreeMap<(Address, VotingId), (Choice, U256)>,
     stakes_from_bid: BTreeMap<(Address, BidId), U256>,
 }
 
-impl StakeInfo {
+impl AccountStakeInfo {
     fn add_stake_from_voting(
         &mut self,
         operator: Address,
@@ -322,6 +329,8 @@ impl StakeInfo {
             .unwrap_or_revert_with(Error::StakeDoesntExists)
     }
 }
+
+struct StakesInfo {}
 
 #[derive(Default, FromBytes, ToBytes, CLTyped)]
 pub struct Balances {
