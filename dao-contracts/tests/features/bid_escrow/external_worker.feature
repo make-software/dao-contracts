@@ -1,36 +1,32 @@
-Feature: External Worker submits job
-  Job Poster picks a bid of an External Worker, and the External Worker accepts the job.
+Feature: External Worker who wants to become a VA submits job
+  Job Poster picks a bid of an External Worker, and the External Worker does the job.
+  The External Worker wants to become a VA.
   The voting process is completed.
-#
-#  Background:
-#    Given following starting balances
-#      | account          | CSPR balance | REP balance  |
-#      | Bid Escrow       | 0            | 0            |
-#      | Multisig wallet  | 0            | 0            |
-#      | Job Poster       | 1000         | 0            |
-#      | External Worker  | 1000         | 0            |
-#      | VA1              | 0            | 1000         |
-#      | VA2              | 0            | 1000         |
-#    And following configuration
-#      | variable                   | value |
-#      # how much CSPR is sent to the multisig wallet
-#      | governance_payment_ratio   | 0.1   |
-#      # how much REP is minted after the job is done (price * reputation_conversion_rate)
-#      | reputation_conversion_rate | 0.1   |
-#      # how much REP is given to voters
-#      | policing_rate              | 0.3   |
-#      # if the worker stake is counted as a yes vote
-#      | worker_stake_as_yes_vote   | true  |
-#
-#  Scenario: External Worker accepts the job by staking CSPR
-#    Given Job Poster picked a bid with 500 CSPR and 500 CSPR stake
-#    When Internal Worker accepts the job
-#    Then balances are
-#      | account          | CSPR balance | REP balance  |
-#      | Bid Escrow       | 500          | 50           |
-#      | Multisig wallet  | 500          | 0            |
-#      | Job Poster       | 500          | 0            |
-#      | External Worker  | 500          | 0            |
+
+  Background:
+    Given following balances
+      | account          | CSPR balance | REP balance  | REP stake  |
+      | BidEscrow        | 0            | 0            | 0          |
+      | MultisigWallet   | 0            | 0            | 0          |
+      | JobPoster        | 1000         | 0            | 0          |
+      | InternalWorker   | 0            | 1000         | 0          |
+      | ExternalWorker   | 500          | 0            | 0          |
+      | VA1              | 0            | 1000         | 0          |
+      | VA2              | 0            | 1000         | 0          |
+    And JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
+    And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake
+    And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
+    And JobPoster picked the Bid of ExternalWorker
+
+  Scenario: JobPoster picked the Bid of Internal Worker
+    Then balances are
+      | account          | CSPR balance | REP balance  | REP stake  |
+      | BidEscrow        | 1100         | 0            | 0          |
+      | JobPoster        | 400          | 0            | 0          |
+      | InternalWorker   | 0            | 1000         | 0          |
+      | ExternalWorker   | 0            | 0            | 0          |
+      | VA1              | 0            | 1000         | 0          |
+      | VA2              | 0            | 1000         | 0          |
 #
 #  Scenario: External Worker does the job
 #    Given Job Poster picked a bid with 500 CSPR and 500 Reputation

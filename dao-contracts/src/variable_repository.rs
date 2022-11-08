@@ -7,7 +7,6 @@ use casper_dao_utils::{
     casper_env::{caller, revert},
     consts as dao_consts, math, Address, Error,
 };
-use casper_types::bytesrepr::ToBytes;
 use casper_types::{
     bytesrepr::{Bytes, FromBytes},
     U256, U512,
@@ -238,7 +237,7 @@ impl VariableRepositoryContractCaller {
     pub fn governance_wallet(&self) -> Address {
         self.get_variable(dao_consts::GOVERNANCE_WALLET_ADDRESS)
     }
-    
+
     pub fn governance_payment_ratio(&self) -> U512 {
         self.get_variable(dao_consts::GOVERNANCE_PAYMENT_RATIO)
     }

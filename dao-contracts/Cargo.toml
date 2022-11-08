@@ -17,9 +17,10 @@ test-case = "2.0.2"
 futures = "0.3.5"
 
 [[test]]
-name = "test_gherkin_bid_escrow"
+name = "test_bid_escrow"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
+
 
 #[[test]]
 #name = "test_gherkin_reputation_token"

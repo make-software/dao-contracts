@@ -269,7 +269,9 @@ impl GovernanceVoting {
         };
 
         ReputationContractCaller::at(self.get_reputation_token_address()).redistribute(
-            mints.clone(), burns.clone(), voting.voting_id()
+            mints.clone(),
+            burns.clone(),
+            voting.voting_id(),
         );
 
         let formal_voting_id = voting.voting_id();
@@ -453,7 +455,10 @@ impl GovernanceVoting {
         transfers
     }
 
-    fn redistribute_reputation(&mut self, voting: &Voting) -> (BTreeMap<Address, U256>, BTreeMap<Address, U256>) {
+    fn redistribute_reputation(
+        &mut self,
+        voting: &Voting,
+    ) -> (BTreeMap<Address, U256>, BTreeMap<Address, U256>) {
         // TODO: update conversion after support for U256<>U512 conversion will be added to Casper
         let mut transfers = BTreeMap::new();
         let mut burns = BTreeMap::new();
@@ -465,7 +470,6 @@ impl GovernanceVoting {
         for i in 0..self.voters.len(voting.voting_id()) {
             let ballot = self.get_ballot_at(voting.voting_id(), i);
             if ballot.choice.is_in_favor() == result {
-                
                 let to_transfer = total_stake * u256_to_512(ballot.stake).unwrap_or_revert()
                     / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
 

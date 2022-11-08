@@ -9,8 +9,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{self, caller, emit, revert},
-    math::{add_to_balance, rem_from_balance},
-    Address, Error, Mapping, Variable, VecMapping,
+    Address, Error, Mapping, Variable,
 };
 use casper_types::{URef, U256};
 use delegate::delegate;
@@ -94,9 +93,14 @@ pub trait ReputationContractInterface {
     fn get_stake(&self, address: Address) -> U256;
 
     fn all_balances(&self) -> (U256, Balances);
-    
+
     // Redistributes the reputation based on the voting summary
-    fn redistribute(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>, voting_id: VotingId);
+    fn redistribute(
+        &mut self,
+        mints: BTreeMap<Address, U256>,
+        burns: BTreeMap<Address, U256>,
+        voting_id: VotingId,
+    );
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -240,7 +244,12 @@ impl ReputationContractInterface for ReputationContract {
         (self.total_supply(), self.balances.get_or_revert())
     }
 
-    fn redistribute(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>, voting_id: VotingId) {
+    fn redistribute(
+        &mut self,
+        mints: BTreeMap<Address, U256>,
+        burns: BTreeMap<Address, U256>,
+        voting_id: VotingId,
+    ) {
         self.access_control.ensure_whitelisted();
 
         let mut total_supply = self.total_supply();
@@ -339,11 +348,9 @@ impl AccountStakeInfo {
     }
 }
 
-struct StakesInfo {}
-
 #[derive(Default, FromBytes, ToBytes, CLTyped)]
 pub struct Balances {
-    pub balances: BTreeMap<Address, U256>
+    pub balances: BTreeMap<Address, U256>,
 }
 
 impl Balances {

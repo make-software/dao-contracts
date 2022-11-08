@@ -40,24 +40,16 @@ impl DaoWorld {
 
     // gets relative amount of motes of the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
-        // dbg!(account);
-        // dbg!(self.test_env().get_address_cspr_balance(account));
         let balance = self.balances.get(&account).unwrap()
             + self.test_env().get_address_cspr_balance(account);
         let result = balance
             .checked_sub(*self.starting_balances.get(&account).unwrap())
             .unwrap();
-        // dbg!(result);
         result
     }
 
     // sets amount of reputation on the account
     pub fn set_rep_balance(&mut self, account: Address, amount: U256) {
-        assert_eq!(
-            self.reputation_token.balance_of(account),
-            U256::zero(),
-            "Starting reputation balance is not zero"
-        );
         self.reputation_token.mint(account, amount).unwrap();
     }
 
@@ -133,7 +125,7 @@ impl DaoWorld {
         }
     }
 
-    pub fn named_address2(&self, name: String) -> Address {
+    pub fn _named_address2(&self, name: String) -> Address {
         match name.as_ref() {
             "Owner" => self.env.get_account(0),
             _ => panic!("Unknown address {:?}", name),
@@ -169,7 +161,9 @@ impl Default for DaoWorld {
         // Set multisig account.
         let multisig_address = Bytes::from(dao.named_address("MultisigWallet").to_bytes().unwrap());
         let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
-        dao.variable_repo.update_at(key, multisig_address, None).unwrap();
+        dao.variable_repo
+            .update_at(key, multisig_address, None)
+            .unwrap();
 
         // Return DaoWorld!
         dao

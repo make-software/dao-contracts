@@ -7,7 +7,7 @@ use casper_dao_utils::{
     },
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
-    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator, consts,
+    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator,
 };
 use casper_types::{URef, U256, U512};
 
@@ -472,28 +472,28 @@ impl BidEscrowContract {
         self.mint_and_redistribute_reputation(job);
         self.redistribute_cspr(job);
     }
-    
+
     fn job_done(&mut self, job: &mut Job) {
         self.return_dos_fee(&job);
         self.pay_for_job(job);
         job.complete();
         JobDone::new(job, caller()).emit();
     }
-    
+
     fn job_rejected(&mut self, job: &mut Job) {
         self.return_dos_fee(&job);
         self.refund(job);
         job.not_completed();
         JobRejected::new(job, caller()).emit();
     }
-    
+
     fn redistribute_cspr(&mut self, job: &Job) {
         // 10% dla Mutlisiga
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
         let governance_wallet_payment = repo.payment_for_governance(job.payment());
         self.withdraw(governance_wallet, governance_wallet_payment);
-        
+
         // Dla wszystkich po równo.
         let cspr_pool = job.payment() - governance_wallet_payment;
         let (total_supply, balances) = self.reputation_token().all_balances();
