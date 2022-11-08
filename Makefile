@@ -67,3 +67,6 @@ clean:
 	
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
+
+run-e2e-tests:
+	cd client && ./run-e2e-tests.sh
