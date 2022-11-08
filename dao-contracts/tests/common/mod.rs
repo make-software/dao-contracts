@@ -94,34 +94,34 @@ impl DaoWorld {
                     "BidEscrow" => {
                         let address = self.bid_escrow.address();
                         self.addresses.insert(name, address);
-                        return address.clone();
+                        address
                     }
                     _ => {
                         let address = self.bid_escrow.get_env().get_account(self.accounts_count);
-                        self.addresses.insert(name.clone(), address.clone());
+                        self.addresses.insert(name.clone(), address);
                         self.accounts_count += 1;
 
                         if name.contains("JobPoster") {
-                            self.kyc(address.clone());
+                            self.kyc(address);
                         }
 
                         if name.contains("Worker") {
-                            self.kyc(address.clone());
+                            self.kyc(address);
                         }
 
                         if name.contains("VA") {
-                            self.make_va(address.clone());
+                            self.make_va(address);
                         }
 
                         if name.contains("Internal") {
-                            self.make_va(address.clone());
+                            self.make_va(address);
                         }
 
-                        address.clone()
+                        address
                     }
                 }
             }
-            Some(address) => address.clone(),
+            Some(address) => *address,
         }
     }
 

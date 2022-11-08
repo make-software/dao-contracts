@@ -12,7 +12,7 @@ fn starting_balances(w: &mut DaoWorld, step: &Step) {
         let rep_balance = to_rep(&row[2]);
 
         // set balances
-        let address = w.named_address(name.to_string());
+        let address = w.named_address(name);
         w.set_cspr_balance(address, cspr_balance);
         w.set_rep_balance(address, rep_balance);
     }
@@ -20,14 +20,14 @@ fn starting_balances(w: &mut DaoWorld, step: &Step) {
 
 #[then(expr = "balances are")]
 fn balances(w: &mut DaoWorld, step: &Step) {
-    let (total_rep_supply, all_rep_balances) = w.reputation_token.all_balances();
-    dbg!(total_rep_supply);
-    dbg!(all_rep_balances.balances);
+    // let (total_rep_supply, all_rep_balances) = w.reputation_token.all_balances();
+    // dbg!(total_rep_supply);
+    // dbg!(all_rep_balances.balances);
 
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
         let name = row.get(0).unwrap();
-        let address = w.named_address(name.to_string());
+        let address = w.named_address(name);
 
         // Check REP balance.
         let expected_rep_balance = to_rep(&row[2]);

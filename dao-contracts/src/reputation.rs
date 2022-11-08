@@ -257,12 +257,12 @@ impl ReputationContractInterface for ReputationContract {
         for (address, amount) in mints {
             balances.inc(address, amount);
             self.unstake_voting(address, voting_id);
-            total_supply = total_supply + amount;
+            total_supply += amount;
         }
         for (address, amount) in burns {
             balances.dec(address, amount);
             self.unstake_voting(address, voting_id);
-            total_supply = total_supply - amount;
+            total_supply -= amount;
         }
 
         self.balances.set(balances);

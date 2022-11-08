@@ -10,9 +10,7 @@ use casper_engine_test_support::{
     DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
     DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
 };
-use casper_execution_engine::core::engine_state::{
-    self, run_genesis_request::RunGenesisRequest, GenesisAccount,
-};
+use casper_execution_engine::core::engine_state::{self, run_genesis_request::RunGenesisRequest, GenesisAccount, DeployItem};
 use casper_types::{
     account::{Account, AccountHash},
     bytesrepr::{self, Bytes, FromBytes, ToBytes},
@@ -178,14 +176,7 @@ impl TestEnvState {
 
     pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) {
         let session_code = PathBuf::from(wasm_path);
-        let deploy_item = DeployItemBuilder::new()
-            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
-            .with_authorization_keys(&[self.active_account_hash()])
-            .with_address(self.active_account_hash())
-            .with_session_code(session_code, args)
-            .with_deploy_hash(self.next_hash())
-            .build();
-
+        let deploy_item = self.build_deploy_item(session_code, args);
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
             .with_block_time(self.block_time)
             .build();
@@ -212,13 +203,7 @@ impl TestEnvState {
             "has_return" => has_return
         };
 
-        let deploy_item = DeployItemBuilder::new()
-            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
-            .with_authorization_keys(&[self.active_account_hash()])
-            .with_address(self.active_account_hash())
-            .with_session_code(session_code, args)
-            .with_deploy_hash(self.next_hash())
-            .build();
+        let deploy_item = self.build_deploy_item(session_code, args);
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
             .with_block_time(self.block_time)
@@ -238,6 +223,17 @@ impl TestEnvState {
         self.collect_gas();
         self.active_account = self.get_account(0);
         result
+    }
+
+    fn build_deploy_item(&mut self, session_code: PathBuf, args: RuntimeArgs) -> DeployItem {
+        let deploy_item = DeployItemBuilder::new()
+            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
+            .with_authorization_keys(&[self.active_account_hash()])
+            .with_address(self.active_account_hash())
+            .with_session_code(session_code, args)
+            .with_deploy_hash(self.next_hash())
+            .build();
+        deploy_item
     }
 
     fn collect_gas(&mut self) {

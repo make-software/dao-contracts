@@ -213,7 +213,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         let job_offer = self
-            .get_job_offer(job_offer_id.clone())
+            .get_job_offer(job_offer_id)
             .unwrap_or_revert_with(Error::JobOfferNotFound);
 
         if job_offer.job_poster == worker {
@@ -258,7 +258,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef) {
         let job_offer = self
-            .get_job_offer(job_offer_id.clone())
+            .get_job_offer(job_offer_id)
             .unwrap_or_revert_with(Error::JobOfferNotFound);
         let job_poster = caller();
 
@@ -267,7 +267,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         let bid = self
-            .get_bid(bid_id.clone())
+            .get_bid(bid_id)
             .unwrap_or_revert_with(Error::BidNotFound);
 
         let cspr_amount = self.deposit(purse);
@@ -299,7 +299,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
         let mut job = self
-            .get_job(job_id.clone())
+            .get_job(job_id)
             .unwrap_or_revert_with(Error::JobNotFound);
         let worker = caller();
 
@@ -474,14 +474,14 @@ impl BidEscrowContract {
     }
 
     fn job_done(&mut self, job: &mut Job) {
-        self.return_dos_fee(&job);
+        self.return_dos_fee(job);
         self.pay_for_job(job);
         job.complete();
         JobDone::new(job, caller()).emit();
     }
 
     fn job_rejected(&mut self, job: &mut Job) {
-        self.return_dos_fee(&job);
+        self.return_dos_fee(job);
         self.refund(job);
         job.not_completed();
         JobRejected::new(job, caller()).emit();
