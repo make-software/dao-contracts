@@ -1,5 +1,7 @@
 .idea
 .vscode
+.casper-node
+.env
 /target
 dao-contracts/wasm
 dao-erc20/wasm
