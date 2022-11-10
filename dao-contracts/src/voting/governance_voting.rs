@@ -20,10 +20,7 @@ use self::{
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
 
-use crate::{
-    ReputationContractCaller, ReputationContractInterface, VaNftContractCaller,
-    VaNftContractInterface,
-};
+use crate::{ReputationContractCaller, ReputationContractInterface, VaNftContract, VaNftContractCaller, VaNftContractInterface};
 use casper_dao_utils::VecMapping;
 
 use super::ballot::Choice;
@@ -94,12 +91,6 @@ impl GovernanceVoting {
         stake: U256,
         voting_configuration: VotingConfiguration,
     ) -> VotingId {
-        if voting_configuration.cast_first_vote
-            && stake < voting_configuration.create_minimum_reputation
-        {
-            revert(Error::NotEnoughReputation)
-        }
-
         if voting_configuration.only_va_can_create && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
         }
@@ -109,12 +100,21 @@ impl GovernanceVoting {
         VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
 
         let cast_first_vote = voting_configuration.cast_first_vote;
+        let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
+
         let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
-        self.set_voting(voting);
+        self.set_voting(voting.clone());
 
         // Cast first vote in favor
-        if cast_first_vote {
-            self.vote(creator, voting_id, Choice::InFavor, stake);
+        match (cast_first_vote, unbounded_tokens_for_creator) {
+            // External voter, we use unbounded tokens
+            (true, true) => {
+                self.cast_ballot(creator, voting_id, Choice::InFavor, stake, voting);
+            },
+            // Internal voter, cast normally
+            (true, false) => self.vote(creator, voting_id, Choice::InFavor, stake),
+            // Do not cast first vote automaatically
+            (_,_) => {},
         }
 
         voting_id
@@ -162,10 +162,11 @@ impl GovernanceVoting {
         }
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
+        let skip_first_vote = voting.skip_first_vote();
         let (result, transfers, burns) = match voting_result {
             VotingResult::InFavor => {
                 let informal_voting_id = voting.voting_id();
-                let transfers = self.return_reputation(informal_voting_id);
+                let transfers = self.return_reputation(informal_voting_id, skip_first_vote);
 
                 let formal_voting_id = self.next_voting_id();
                 let creator_address = self.voters.get(informal_voting_id, 0).unwrap_or_revert();
@@ -187,13 +188,24 @@ impl GovernanceVoting {
                 )
                 .emit();
 
-                if voting.voting_configuration().cast_first_vote {
-                    self.vote(
+
+                let cast_first_vote = voting.voting_configuration().cast_first_vote;
+                let unbounded_tokens_for_creator = voting.voting_configuration().unbounded_tokens_for_creator;
+
+                // Cast first vote in favor
+                match (cast_first_vote, unbounded_tokens_for_creator) {
+                    // External voter, we use unbounded tokens
+                    (true, true) => {
+                        self.cast_ballot(creator_address, formal_voting_id, Choice::InFavor, creator_stake, voting.clone());
+                    },
+                    // Internal voter, cast normally
+                    (true, false) => self.vote(
                         creator_address,
                         formal_voting_id,
                         Choice::InFavor,
-                        creator_stake,
-                    );
+                        creator_stake),
+                    // Do not cast first vote automaatically
+                    (_,_) => {},
                 }
 
                 // Informal voting is completed and referenced with formal voting
@@ -253,6 +265,14 @@ impl GovernanceVoting {
 
         let (result, mints, burns) = match voting_result {
             VotingResult::InFavor => {
+                if voting.voting_configuration().onboard_creator {
+                    // TODO fix token id generation
+                    self.va_token().mint(self.voters.get(voting.voting_id(), 0).unwrap_or_revert(), U256::from(18));
+                    let ballot_key = &(voting.voting_id(), voting.creator());
+                    let mut creator_ballot = self.ballots.get(ballot_key).unwrap_or_revert().unwrap_or_revert_with(Error::BallotDoesNotExist);
+                    creator_ballot.unbounded = false;
+                    self.ballots.set(ballot_key, creator_ballot);
+                }
                 let (mints, burns) = self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
                 (consts::FORMAL_VOTING_PASSED, mints, burns)
@@ -328,7 +348,11 @@ impl GovernanceVoting {
         ReputationContractCaller::at(self.get_reputation_token_address())
             .stake_voting(voter, voting_id, choice, stake);
 
-        // Create a new vote
+        self.cast_ballot(voter, voting_id, choice, stake, voting);
+    }
+
+    // TODO: REFACTOR EVERYTHING
+    fn cast_ballot(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256, mut voting: Voting) {
         let vote = Ballot {
             voter,
             choice,
@@ -443,9 +467,12 @@ impl GovernanceVoting {
         (transfers, burns)
     }
 
-    fn return_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U256> {
+    fn return_reputation(&mut self, voting_id: VotingId, skip_first_vote: bool) -> BTreeMap<Address, U256> {
         let mut transfers = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
+            if i ==0 && skip_first_vote {
+                continue;
+            }
             let ballot = self.get_ballot_at(voting_id, i);
             transfers.insert(ballot.voter, ballot.stake);
             ReputationContractCaller::at(self.get_reputation_token_address())
@@ -496,6 +523,10 @@ impl GovernanceVoting {
             .is_zero()
     }
 
+    fn va_token(&self) -> VaNftContractCaller
+    {
+        VaNftContractCaller::at(self.get_va_token_address())
+    }
     /// Get a reference to the governance voting's voters.
     pub fn voters(&self) -> &VecMapping<VotingId, Address> {
         &self.voters

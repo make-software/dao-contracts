@@ -48,7 +48,6 @@ pub struct VotingCreated {
     pub config_formal_voting_time: u64,
     pub config_informal_voting_quorum: U256,
     pub config_informal_voting_time: u64,
-    pub config_create_minimum_reputation: U256,
 }
 
 impl VotingCreated {
@@ -68,7 +67,6 @@ impl VotingCreated {
             config_formal_voting_time: config.formal_voting_time,
             config_informal_voting_quorum: config.informal_voting_quorum,
             config_informal_voting_time: config.informal_voting_time,
-            config_create_minimum_reputation: config.create_minimum_reputation,
         }
     }
 }

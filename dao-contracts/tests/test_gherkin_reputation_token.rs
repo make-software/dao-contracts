@@ -113,7 +113,7 @@ fn total_supply_is(w: &mut DaoWorld, total_supply: u128) {
 
 #[then(expr = "{word} is set as an owner")]
 fn is_owner(w: &mut DaoWorld, account: String) {
-    let account = w.named_address2(account);
+    let account = w._named_address2(account);
     assert_eq!(
         w.reputation_token.get_owner().unwrap(),
         account,
@@ -123,7 +123,7 @@ fn is_owner(w: &mut DaoWorld, account: String) {
 
 #[then(expr = "{word} is whitelisted")]
 fn is_whitelisted(w: &mut DaoWorld, account: String) {
-    let account = w.named_address2(account);
+    let account = w._named_address2(account);
     assert!(
         w.reputation_token.is_whitelisted(account),
         "Not whitelisted"

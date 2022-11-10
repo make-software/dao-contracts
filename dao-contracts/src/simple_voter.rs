@@ -87,6 +87,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
 
     fn finish_voting(&mut self, voting_id: VotingId) {
         let voting_summary = self.voting.finish_voting(voting_id);
+
         if let VotingType::Informal = voting_summary.voting_type() {
             match voting_summary.formal_voting_id() {
                 None => {}

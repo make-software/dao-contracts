@@ -28,6 +28,7 @@ pub struct Ballot {
     pub voting_id: VotingId,
     pub choice: Choice,
     pub stake: U256,
+    pub unbounded: bool,
 }
 
 #[cfg(test)]
@@ -43,6 +44,7 @@ fn test_vote_serialization() {
         voting_id: 123,
         choice: Choice::InFavor,
         stake: U256::from(456),
+        unbounded: false,
     };
 
     let (deserialized_vote, _) = Ballot::from_bytes(&vote.to_bytes().unwrap()).unwrap();

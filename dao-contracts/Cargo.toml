@@ -124,6 +124,12 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "submit_bid"
+path = "bin/submit_bid.rs"
+bench = false
+doctest = false
+test = false
 
 [[bin]]
 name = "post_job_offer"

@@ -6,7 +6,6 @@ use crate::{
 };
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{self, caller, emit, revert},
     Address, Error, Mapping, Variable,
@@ -140,7 +139,7 @@ impl ReputationContractInterface for ReputationContract {
 
         let (new_supply, is_overflowed) = self.total_supply().overflowing_add(amount);
         if is_overflowed {
-            casper_env::revert(Error::TotalSupplyOverflow);
+            revert(Error::TotalSupplyOverflow);
         }
         self.total_supply.set(new_supply);
 
@@ -159,7 +158,7 @@ impl ReputationContractInterface for ReputationContract {
 
         let (new_supply, is_overflowed) = self.total_supply().overflowing_sub(amount);
         if is_overflowed {
-            casper_env::revert(Error::TotalSupplyOverflow);
+            revert(Error::TotalSupplyOverflow);
         }
         self.total_supply.set(new_supply);
 
@@ -180,7 +179,7 @@ impl ReputationContractInterface for ReputationContract {
 
     fn stake_voting(&mut self, voter: Address, voting_id: VotingId, choice: Choice, amount: U256) {
         self.access_control.ensure_whitelisted();
-
+        self.assert_available_balance(voter, amount);
         let mut stake_info = self.stake_info(&voter);
         stake_info.add_stake_from_voting(caller(), voting_id, choice, amount);
         self.stakes.set(&voter, stake_info);
@@ -209,7 +208,7 @@ impl ReputationContractInterface for ReputationContract {
 
     fn stake_bid(&mut self, voter: Address, bid_id: BidId, amount: U256) {
         self.access_control.ensure_whitelisted();
-
+        self.assert_available_balance(voter, amount);
         let mut stake_info = self.stake_info(&voter);
         stake_info.add_stake_from_bid(caller(), bid_id, amount);
         self.stakes.set(&voter, stake_info);
@@ -284,6 +283,12 @@ impl ReputationContract {
         self.total_stake
             .set(&account, self.get_stake(account) - amount);
     }
+
+    fn assert_available_balance(&mut self, voter: Address, amount: U256) {
+        if amount > self.balance_of(voter) - self.get_stake(voter) {
+            revert(Error::InsufficientBalance);
+        }
+    }
 }
 
 impl ReputationContractCaller {
@@ -303,7 +308,7 @@ pub struct CSPRRedistribution {
     pub purse: URef,
 }
 
-#[derive(Default, FromBytes, ToBytes, CLTyped)]
+#[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]
 struct AccountStakeInfo {
     stakes_from_voting: BTreeMap<(Address, VotingId), (Choice, U256)>,
     stakes_from_bid: BTreeMap<(Address, BidId), U256>,
@@ -342,13 +347,14 @@ impl AccountStakeInfo {
 
     fn remove_stake_from_bid(&mut self, operator: Address, bid_id: BidId) -> U256 {
         let key = (operator, bid_id);
-        self.stakes_from_bid
-            .remove(&key)
-            .unwrap_or_revert_with(Error::StakeDoesntExists)
+        match self.stakes_from_bid.remove(&key) {
+            Some(amount) => amount,
+            None => revert(Error::StakeDoesntExists),
+        }
     }
 }
 
-#[derive(Default, FromBytes, ToBytes, CLTyped)]
+#[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]
 pub struct Balances {
     pub balances: BTreeMap<Address, U256>,
 }

@@ -18,6 +18,12 @@ fn starting_balances(w: &mut DaoWorld, step: &Step) {
     }
 }
 
+#[then(expr = "{word} is a VA")]
+fn is_va(w: &mut DaoWorld, va_name: String) {
+    let va = w.named_address(va_name);
+    assert!(w.is_va(va));
+}
+
 #[then(expr = "balances are")]
 fn balances(w: &mut DaoWorld, step: &Step) {
     // let (total_rep_supply, all_rep_balances) = w.reputation_token.all_balances();
@@ -39,17 +45,17 @@ fn balances(w: &mut DaoWorld, step: &Step) {
             expected_rep_balance,
             real_rep_balance
         );
-
-        // Check CSPR balance
-        let expected_cspr_balance = to_cspr(&row[1]);
-        let real_cspr_balance = w.get_cspr_balance(address);
-        assert!(
-            is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
-            "For account {} CSPR balance should be {:?} but is {:?}",
-            name,
-            expected_cspr_balance,
-            real_cspr_balance
-        );
+        //
+        // // Check CSPR balance
+        // let expected_cspr_balance = to_cspr(&row[1]);
+        // let real_cspr_balance = w.get_cspr_balance(address);
+        // assert!(
+        //     is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
+        //     "For account {} CSPR balance should be {:?} but is {:?}",
+        //     name,
+        //     expected_cspr_balance,
+        //     real_cspr_balance
+        // );
 
         // Check staked REP balance.
         let expected_rep_stake = to_rep(&row[3]);

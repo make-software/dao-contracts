@@ -32,16 +32,18 @@ impl VotingConfigurationBuilder {
         self
     }
 
-    pub fn create_minimum_reputation(
-        mut self,
-        minimum_reputation: U256,
-    ) -> VotingConfigurationBuilder {
-        self.voting_configuration.create_minimum_reputation = minimum_reputation;
+    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> VotingConfigurationBuilder {
+        self.voting_configuration.only_va_can_create = only_va_can_create;
         self
     }
 
-    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> VotingConfigurationBuilder {
-        self.voting_configuration.only_va_can_create = only_va_can_create;
+    pub fn unbounded_tokens_for_creator(mut self, unbounded_tokens_for_creator: bool) -> VotingConfigurationBuilder {
+        self.voting_configuration.unbounded_tokens_for_creator = unbounded_tokens_for_creator;
+        self
+    }
+
+    pub fn onboard(mut self, onboard: bool) -> VotingConfigurationBuilder {
+        self.voting_configuration.onboard_creator = onboard;
         self
     }
 

@@ -39,7 +39,9 @@ pub struct Job {
     worker: Address,
     poster: Address,
     payment: U512,
+    onboard: bool,
     stake: U256,
+    external_worker_cspr_stake: U512,
 }
 
 impl Job {
@@ -52,7 +54,9 @@ impl Job {
         worker: Address,
         poster: Address,
         payment: U512,
+        onboard: bool,
         stake: U256,
+        external_worker_cspr_stake: U512,
     ) -> Self {
         Job {
             job_id,
@@ -66,7 +70,9 @@ impl Job {
             worker,
             poster,
             payment,
+            onboard,
             stake,
+            external_worker_cspr_stake,
         }
     }
 
@@ -205,7 +211,15 @@ impl Job {
         self.finish_time
     }
 
+    pub fn onboard(&self) -> bool {
+        self.onboard
+    }
+
     pub fn stake(&self) -> U256 {
         self.stake
+    }
+
+    pub fn external_worker_cspr_stake(&self) -> U512 {
+        self.external_worker_cspr_stake
     }
 }

@@ -42,36 +42,63 @@ fn post_job_offer(
 }
 
 #[given(
-    expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} {word} stake"
+    expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} REP stake"
 )]
-fn post_bid(
+fn submit_bid_internal(
     w: &mut DaoWorld,
     worker_name: String,
     timeframe: BlockTime,
     budget: u32,
     stake: u32,
-    stake_type: String,
 ) {
     let worker = w.named_address(worker_name);
-    match stake_type.as_str() {
-        "CSPR" => {
-            todo!();
+    w.bid_escrow
+        .as_account(worker)
+        .submit_bid(
+            0,
+            timeframe,
+            U512::from(budget) * 1_000_000_000,
+            U256::from(stake) * 1_000_000_000,
+            false,
+            None,
+        )
+        .unwrap();
+}
+
+#[given(
+    expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} CSPR stake {word} onboarding"
+)]
+fn submit_bid_external(
+    w: &mut DaoWorld,
+    worker_name: String,
+    timeframe: BlockTime,
+    budget: u32,
+    stake: u32,
+    onboarding: String,
+) {
+    let worker = w.named_address(worker_name);
+    let onboarding = match onboarding.as_str() {
+        "with" => {
+            true
+        },
+        "without" => {
+            false
+        },
+        _ => {
+            panic!("Unknown onboarding option");
         }
-        "REP" => {
-            w.bid_escrow
-                .as_account(worker)
-                .submit_bid(
-                    0,
-                    timeframe,
-                    U512::from(budget) * 1_000_000_000,
-                    U256::from(stake) * 1_000_000_000,
-                    false,
-                    None,
-                )
-                .unwrap();
-        }
-        _ => panic!("Unknown stake type"),
-    }
+    };
+
+    w.bid_escrow
+        .as_account(worker)
+        .submit_bid_with_cspr_amount(
+            0,
+            timeframe,
+            U512::from(budget) * 1_000_000_000,
+            U256::from(0),
+            onboarding,
+            U512::from(stake) * 1_000_000_000,
+        );
 }
 
 #[given(expr = "{word} picked the Bid of {word}")]

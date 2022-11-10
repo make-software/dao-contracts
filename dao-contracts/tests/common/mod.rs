@@ -80,6 +80,10 @@ impl DaoWorld {
         self.va_count += U256::one();
     }
 
+    pub fn is_va(&self, account: Address) -> bool {
+        self.va_token.balance_of(account) > U256::zero()
+    }
+
     pub fn test_env(&self) -> &TestEnv {
         self.bid_escrow.get_env()
     }

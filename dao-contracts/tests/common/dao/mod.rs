@@ -18,7 +18,7 @@ pub fn setup_dao() -> (
     let variable_repo = VariableRepositoryContractTest::new(&env);
     let mut reputation_token = ReputationContractTest::new(&env);
 
-    let va_token = VaNftContractTest::new(
+    let mut va_token = VaNftContractTest::new(
         &env,
         "va_token".to_string(),
         "VAT".to_string(),
@@ -44,6 +44,9 @@ pub fn setup_dao() -> (
         .add_to_whitelist(bid_escrow.address())
         .unwrap();
 
+    va_token
+        .add_to_whitelist(bid_escrow.address())
+        .unwrap();
     (
         env,
         bid_escrow,

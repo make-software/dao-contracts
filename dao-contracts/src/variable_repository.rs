@@ -167,14 +167,9 @@ impl VariableRepositoryContractCaller {
         self.get_variable(dao_consts::INFORMAL_VOTING_TIME)
     }
 
-    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
+    /// Retrieves the value stored under the [FORMAL_VOTING_TIME](dao_consts::FORMAL_VOTING_TIME) key.
     pub fn formal_voting_time(&self) -> u64 {
         self.get_variable(dao_consts::FORMAL_VOTING_TIME)
-    }
-
-    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
-    pub fn minimum_governance_reputation(&self) -> U256 {
-        self.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
     }
 
     /// Retrieves the value stored under the [REPUTATION_CONVERSION_RATE](dao_consts::REPUTATION_CONVERSION_RATE) key.
@@ -213,10 +208,11 @@ impl VariableRepositoryContractCaller {
             informal_voting_quorum: self.informal_voting_quorum(total_onboarded),
             informal_voting_time: self.informal_voting_time(),
             cast_first_vote: true,
-            create_minimum_reputation: self.minimum_governance_reputation(),
             cast_minimum_reputation: U256::zero(),
             contract_call: None,
             only_va_can_create: true,
+            unbounded_tokens_for_creator: false,
+            onboard_creator: false
         }
     }
 

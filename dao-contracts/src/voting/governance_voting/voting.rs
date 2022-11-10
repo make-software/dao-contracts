@@ -84,10 +84,11 @@ pub struct VotingConfiguration {
     pub informal_voting_quorum: U256,
     pub informal_voting_time: u64,
     pub cast_first_vote: bool,
-    pub create_minimum_reputation: U256,
     pub cast_minimum_reputation: U256,
     pub contract_call: Option<ContractCall>,
     pub only_va_can_create: bool,
+    pub unbounded_tokens_for_creator: bool,
+    pub onboard_creator: bool,
 }
 
 /// Voting struct
@@ -129,6 +130,10 @@ impl Voting {
         } else {
             VotingType::Formal
         }
+    }
+
+    pub fn skip_first_vote(&self) -> bool {
+        self.voting_configuration.cast_first_vote && self.voting_configuration.unbounded_tokens_for_creator
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
@@ -269,10 +274,6 @@ impl Voting {
     /// Get a reference to the voting's voting configuration.
     pub fn voting_configuration(&self) -> &VotingConfiguration {
         &self.voting_configuration
-    }
-
-    pub fn create_minimum_reputation(&self) -> U256 {
-        self.voting_configuration.create_minimum_reputation
     }
 }
 

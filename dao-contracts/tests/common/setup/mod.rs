@@ -391,8 +391,10 @@ pub fn setup_voting_contract_with_formal_voting(
     formal_quorum: U256,
     total_onboarded: usize,
 ) -> (MockVoterContractTest, ReputationContractTest, Voting) {
+    let minimum_reputation = 500.into();
     let (mut mock_voter_contract, reputation_token_contract, voting) =
-        setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
+    setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
+
 
     for account in 1..total_onboarded {
         mock_voter_contract
@@ -400,7 +402,7 @@ pub fn setup_voting_contract_with_formal_voting(
             .vote(
                 voting.voting_id(),
                 Choice::InFavor,
-                voting.create_minimum_reputation(),
+                minimum_reputation,
             )
             .unwrap();
     }
@@ -495,6 +497,7 @@ pub fn mass_vote(
     voting_contract: &mut MockVoterContractTest,
     voting: &Voting,
 ) {
+    let minimum_reputation = 500.into();
     let mut account = 1;
     for _ in 1..votes_in_favor {
         // we skip one vote in favor - creator's vote
@@ -503,7 +506,7 @@ pub fn mass_vote(
             .vote(
                 voting.voting_id(),
                 Choice::InFavor,
-                voting.create_minimum_reputation(),
+                minimum_reputation,
             )
             .unwrap();
         account += 1;
@@ -515,7 +518,7 @@ pub fn mass_vote(
             .vote(
                 voting.voting_id(),
                 Choice::Against,
-                voting.create_minimum_reputation(),
+                minimum_reputation,
             )
             .unwrap();
         account += 1;
@@ -533,6 +536,7 @@ pub fn assert_reputation(reputation_contract: &ReputationContractTest, reputatio
 #[allow(dead_code)]
 pub fn assert_voting_completed(voter_contract: &mut MockVoterContractTest, voting_id: VotingId) {
     let voting = voter_contract.get_voting(voting_id).unwrap();
+    let minimum_reputation = 500.into();
 
     // it is completed
     assert!(voting.completed());
@@ -542,7 +546,7 @@ pub fn assert_voting_completed(voter_contract: &mut MockVoterContractTest, votin
         voter_contract.as_nth_account(1).vote(
             voting.voting_id(),
             Choice::InFavor,
-            voting.create_minimum_reputation()
+            minimum_reputation,
         ),
         Err(Error::VoteOnCompletedVotingNotAllowed)
     );

@@ -7,10 +7,11 @@ use casper_dao_utils::{
     },
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
-    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator,
+    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator, VecMapping,
 };
 use casper_types::{URef, U256, U512};
 
+use crate::voting::VotingId;
 use crate::{
     bid::{
         events::{JobCancelled, JobDone, JobRejected},
@@ -27,8 +28,6 @@ use crate::{
     VotingConfigurationBuilder,
 };
 use delegate::delegate;
-
-use crate::voting::VotingId;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -160,6 +159,7 @@ pub struct BidEscrowContract {
     job_offers: Mapping<JobOfferId, JobOffer>,
     job_offers_count: SequenceGenerator<JobOfferId>,
     bids: Mapping<BidId, Bid>,
+    job_offers_bids: VecMapping<JobOfferId, BidId>,
     bids_count: SequenceGenerator<BidId>,
 }
 
@@ -251,6 +251,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         );
 
         self.bids.set(&bid_id, bid);
+        self.job_offers_bids.add(job_offer_id, bid_id);
 
         // TODO: Implement Event
         // BidCreated::new(&bid).emit();
@@ -277,6 +278,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         // TODO: Unstake all bidders for the given job offer.
+        self.unstake_not_picked(job_offer_id, bid_id);
 
         let finish_time = get_block_time() + bid.proposed_timeframe;
         let job_id = self.next_job_id();
@@ -289,7 +291,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
             bid.worker,
             job_poster,
             bid.proposed_payment,
+            bid.onboard,
             bid.reputation_stake,
+            bid.cspr_stake.unwrap_or_default(),
         );
 
         self.jobs.set(&job_id, job);
@@ -318,17 +322,28 @@ impl BidEscrowContractInterface for BidEscrowContract {
         job.submit_proof(proof);
         // TODO: Emit event.
 
-        self.reputation_token().unstake_bid(worker, job.bid_id());
+        if job.stake() != U256::zero() {
+            self.reputation_token().unstake_bid(worker, job.bid_id());
+        }
 
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
             .cast_first_vote(true)
-            .create_minimum_reputation(U256::zero())
+            .unbounded_tokens_for_creator(true)
+            .onboard(job.onboard())
             .only_va_can_create(false)
             .build();
 
+        let stake = if job.external_worker_cspr_stake().is_zero() {
+            job.stake()
+        } else {
+            // TODO: Implement promils of governance variable
+            let stake = job.external_worker_cspr_stake() / U512::from(10);
+            U256::from(stake.as_u128())
+        };
+
         let voting_id = self
             .voting
-            .create_voting(worker, job.stake(), voting_configuration);
+            .create_voting(worker, stake, voting_configuration);
 
         job.set_informal_voting_id(Some(voting_id));
 
@@ -389,18 +404,41 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
-        let voting_summary = self.voting.finish_voting(voting_id);
+        let voting_summary = self.voting.summary(voting_id);
         match voting_summary.voting_type() {
-            crate::voting::voting::VotingType::Informal => match voting_summary.result() {
+            VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against => {
-                    job.set_formal_voting_id(voting_summary.formal_voting_id())
+                    job.set_formal_voting_id(voting_summary.formal_voting_id());
+                    self.voting.return_reputation(voting_id);
+                    let formal_voting_id = self.voting.create_formal_voting(voting_id);
+                    self.voting.recast_creators_ballot(voting_id, formal_voting_id);
                 }
-                VotingResult::QuorumNotReached => self.job_rejected(&mut job),
+                VotingResult::QuorumNotReached => {
+                    self.job_rejected(&mut job);
+                    self.voting.return_reputation(voting_id);
+                },
             },
-            crate::voting::voting::VotingType::Formal => match voting_summary.result() {
+            VotingType::Formal => match voting_summary.result() {
                 VotingResult::InFavor => {
                     self.job_done(&mut job);
-                }
+
+                    match job.worker_type() {
+                        WorkerType::ExternalToVA => {
+                            self.make_va(&job.worker());
+                            self.voting.return_reputation_of_yes_voters(voting_id);
+                            self.voting.redistribute_reputation_of_no_voters(voting_id);
+                        },
+                        WorkerType::VA => {
+                            self.voting.return_reputation_of_yes_voters(voting_id);
+                            self.voting.redistribute_reputation_of_no_voters(voting_id);
+                        },
+                        WorkerType::External => {
+                            self.voting.return_reputation_of_yes_voters_skip_unbounded(voting_id);
+                            self.voting.redistribute_reputation_of_no_voters_skip_creator(voting_id);
+                            self.voting.mint_and_redistribute_unbounded_reputation(voting_id);
+                        }
+                    }
+                },
                 VotingResult::Against => {
                     self.job_rejected(&mut job);
                 }
@@ -491,7 +529,7 @@ impl BidEscrowContract {
         // 10% dla Mutlisiga
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
-        let governance_wallet_payment = repo.payment_for_governance(job.payment());
+        let governance_wallet_payment = repo.payment_for_governance(job.payment() + job.external_worker_cspr_stake());
         self.withdraw(governance_wallet, governance_wallet_payment);
 
         // Dla wszystkich po równo.
@@ -551,6 +589,23 @@ impl BidEscrowContract {
     fn variable_repository(&self) -> VariableRepositoryContractCaller {
         VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
     }
+
+    fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
+        let bids_amount = self.job_offers_bids.len(job_offer_id.clone());
+        for i in 0..bids_amount {
+            let unstake_bid_id = self
+                .job_offers_bids
+                .get(job_offer_id.clone(), i)
+                .unwrap_or_revert_with(Error::BidNotFound);
+            let bid = self
+                .get_bid(unstake_bid_id)
+                .unwrap_or_revert_with(Error::BidNotFound);
+            if unstake_bid_id != bid_id {
+                self.reputation_token()
+                    .unstake_bid(bid.worker, unstake_bid_id);
+            }
+        }
+    }
 }
 
 use crate::bid::bid::Bid;
@@ -558,6 +613,7 @@ use crate::bid::job_offer::JobOffer;
 use crate::bid::types::{JobId, JobOfferId};
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
+use crate::voting::voting::VotingType;
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
@@ -588,6 +644,31 @@ impl BidEscrowContractTest {
                 "bid_escrow_address" => self.address(),
                 "expected_timeframe" => expected_timeframe,
                 "budget" => budget,
+                "cspr_amount" => cspr_amount,
+                "amount" => cspr_amount,
+            },
+        );
+    }
+
+    pub fn submit_bid_with_cspr_amount(
+        &mut self,
+        job_offer_id: JobOfferId,
+        time: BlockTime,
+        payment: U512,
+        reputation_stake: U256,
+        onboard: bool,
+        cspr_amount: U512,
+    ) {
+        use casper_types::{runtime_args, RuntimeArgs};
+        self.env.deploy_wasm_file(
+            "submit_bid.wasm",
+            runtime_args! {
+                "bid_escrow_address" => self.address(),
+                "job_offer_id" => job_offer_id,
+                "time" => time,
+                "payment" => payment,
+                "reputation_stake" => reputation_stake,
+                "onboard" => onboard,
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
