@@ -99,23 +99,11 @@ impl GovernanceVoting {
 
         VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
 
-        let cast_first_vote = voting_configuration.cast_first_vote;
-        let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
+        // let cast_first_vote = voting_configuration.cast_first_vote;
+        // let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
 
-        let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
+        let voting = Voting::new(voting_id, get_block_time(), creator, voting_configuration);
         self.set_voting(voting.clone());
-
-        // Cast first vote in favor
-        match (cast_first_vote, unbounded_tokens_for_creator) {
-            // External voter, we use unbounded tokens
-            (true, true) => {
-                self.cast_ballot(creator, voting_id, Choice::InFavor, stake, voting);
-            },
-            // Internal voter, cast normally
-            (true, false) => self.vote(creator, voting_id, Choice::InFavor, stake),
-            // Do not cast first vote automaatically
-            (_,_) => {},
-        }
 
         voting_id
     }
@@ -156,31 +144,35 @@ impl GovernanceVoting {
         }
     }
 
+    pub fn summary(&self, voting_id: VotingId) -> VotingSummary {
+        let voting = self.get_voting_or_revert(voting_id);
+        let voters_len = self.voters.len(voting.voting_id());
+        VotingSummary::new(
+            voting.get_result(voters_len),
+            voting.get_voting_type(),
+            voting.informal_voting_id(),
+            voting.formal_voting_id(),
+        )
+    }
+
     fn finish_informal_voting(&mut self, mut voting: Voting) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
-        let skip_first_vote = voting.skip_first_vote();
-        let (result, transfers, burns) = match voting_result {
-            VotingResult::InFavor => {
+        match voting_result {
+            VotingResult::InFavor | VotingResult::Against => {
                 let informal_voting_id = voting.voting_id();
-                let transfers = self.return_reputation(informal_voting_id, skip_first_vote);
+                // let transfers = self.return_reputation(informal_voting_id, skip_first_vote);
 
                 let formal_voting_id = self.next_voting_id();
-                let creator_address = self.voters.get(informal_voting_id, 0).unwrap_or_revert();
-                let creator_stake = self
-                    .ballots
-                    .get(&(informal_voting_id, creator_address))
-                    .unwrap_or_revert_with(Error::BallotDoesNotExist)
-                    .stake;
 
-                // Formal voting is created and first vote cast
+                // Formal voting is created.
                 self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
 
                 VotingCreated::new(
-                    &creator_address,
+                    voting.creator(),
                     formal_voting_id,
                     informal_voting_id,
                     Some(formal_voting_id),
@@ -188,62 +180,33 @@ impl GovernanceVoting {
                 )
                 .emit();
 
-
-                let cast_first_vote = voting.voting_configuration().cast_first_vote;
-                let unbounded_tokens_for_creator = voting.voting_configuration().unbounded_tokens_for_creator;
-
-                // Cast first vote in favor
-                match (cast_first_vote, unbounded_tokens_for_creator) {
-                    // External voter, we use unbounded tokens
-                    (true, true) => {
-                        self.cast_ballot(creator_address, formal_voting_id, Choice::InFavor, creator_stake, voting.clone());
-                    },
-                    // Internal voter, cast normally
-                    (true, false) => self.vote(
-                        creator_address,
-                        formal_voting_id,
-                        Choice::InFavor,
-                        creator_stake),
-                    // Do not cast first vote automaatically
-                    (_,_) => {},
-                }
-
                 // Informal voting is completed and referenced with formal voting
                 voting.complete(Some(formal_voting_id));
-
-                (consts::INFORMAL_VOTING_PASSED, transfers, BTreeMap::new())
-            }
-            VotingResult::Against => {
-                let (transfers, burns) =
-                    self.burn_creators_and_return_others_reputation(voting.voting_id());
-                voting.complete(None);
-
-                (consts::INFORMAL_VOTING_REJECTED, transfers, burns)
-            }
+            },
             VotingResult::QuorumNotReached => {
-                let (transfers, burns) =
-                    self.burn_creators_and_return_others_reputation(voting.voting_id());
+                // let (transfers, burns) =
+                //     self.burn_creators_and_return_others_reputation(voting.voting_id());
                 voting.complete(None);
-
-                (consts::INFORMAL_VOTING_QUORUM_NOT_REACHED, transfers, burns)
             }
         };
 
         let informal_voting_id = voting.voting_id();
         let formal_voting_id = voting.formal_voting_id();
-        VotingEnded {
-            voting_id: informal_voting_id,
-            informal_voting_id,
-            formal_voting_id: voting.formal_voting_id(),
-            result: result.into(),
-            votes_count: voters_len.into(),
-            stake_in_favor: voting.stake_in_favor(),
-            stake_against: voting.stake_against(),
-            transfers,
-            burns,
-            mints: BTreeMap::new(),
-        }
-        .emit();
+        
+        // Move up in stack.
+        // VotingEnded {
+        //     voting_id: informal_voting_id,
+        //     informal_voting_id,
+        //     formal_voting_id: voting.formal_voting_id(),
+        //     result: result.into(),
+        //     votes_count: voters_len.into(),
+        //     stake_in_favor: voting.stake_in_favor(),
+        //     stake_against: voting.stake_against(),
+        //     transfers,
+        //     burns,
+        //     mints: BTreeMap::new(),
+        // }
+        // .emit();
 
         self.set_voting(voting);
 
@@ -265,14 +228,14 @@ impl GovernanceVoting {
 
         let (result, mints, burns) = match voting_result {
             VotingResult::InFavor => {
-                if voting.voting_configuration().onboard_creator {
-                    // TODO fix token id generation
-                    self.va_token().mint(self.voters.get(voting.voting_id(), 0).unwrap_or_revert(), U256::from(18));
-                    let ballot_key = &(voting.voting_id(), voting.creator());
-                    let mut creator_ballot = self.ballots.get(ballot_key).unwrap_or_revert().unwrap_or_revert_with(Error::BallotDoesNotExist);
-                    creator_ballot.unbounded = false;
-                    self.ballots.set(ballot_key, creator_ballot);
-                }
+                // if voting.voting_configuration().onboard_creator {
+                //     // TODO fix token id generation
+                //     self.va_token().mint(self.voters.get(voting.voting_id(), 0).unwrap_or_revert(), U256::from(18));
+                //     let ballot_key = &(voting.voting_id(), voting.creator());
+                //     let mut creator_ballot = self.ballots.get(ballot_key).unwrap_or_revert().unwrap_or_revert_with(Error::BallotDoesNotExist);
+                //     creator_ballot.unbounded = false;
+                //     self.ballots.set(ballot_key, creator_ballot);
+                // }
                 let (mints, burns) = self.redistribute_reputation(&voting);
                 self.perform_action(&voting);
                 (consts::FORMAL_VOTING_PASSED, mints, burns)
@@ -344,20 +307,23 @@ impl GovernanceVoting {
             revert(Error::CannotVoteTwice)
         }
 
-        // Stake the reputation
-        ReputationContractCaller::at(self.get_reputation_token_address())
-            .stake_voting(voter, voting_id, choice, stake);
-
-        self.cast_ballot(voter, voting_id, choice, stake, voting);
+        self.cast_ballot(voter, voting_id, choice, stake, false, voting);
     }
 
     // TODO: REFACTOR EVERYTHING
-    fn cast_ballot(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256, mut voting: Voting) {
+    pub fn cast_ballot(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256, unbounded: bool, mut voting: Voting) {
+        if !unbounded {
+            // Stake the reputation
+            ReputationContractCaller::at(self.get_reputation_token_address())
+                .stake_voting(voter, voting_id, choice, stake);
+        }
+    
         let vote = Ballot {
             voter,
             choice,
             voting_id,
             stake,
+            unbounded
         };
 
         BallotCast::new(&vote).emit();
@@ -369,7 +335,7 @@ impl GovernanceVoting {
         self.ballots.set(&(voting_id, voter), vote);
 
         // update voting
-        voting.stake(stake, choice);
+        voting.add_stake(stake, choice);
         self.set_voting(voting);
     }
 
@@ -421,6 +387,10 @@ impl GovernanceVoting {
             .map(|x| x.unwrap_or_revert())
     }
 
+    pub fn get_voting_or_revert(&self, voting_id: VotingId) -> Voting {
+        self.get_voting(voting_id).unwrap_or_revert_with(Error::VotingDoesNotExist)
+    }
+
     fn set_voting(&self, voting: Voting) {
         self.votings.set(&voting.voting_id(), Some(voting))
     }
@@ -467,19 +437,29 @@ impl GovernanceVoting {
         (transfers, burns)
     }
 
-    fn return_reputation(&mut self, voting_id: VotingId, skip_first_vote: bool) -> BTreeMap<Address, U256> {
+    pub fn unstake_all_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U256> {
         let mut transfers = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
-            if i ==0 && skip_first_vote {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.unbounded {
                 continue;
             }
-            let ballot = self.get_ballot_at(voting_id, i);
             transfers.insert(ballot.voter, ballot.stake);
             ReputationContractCaller::at(self.get_reputation_token_address())
                 .unstake_voting(ballot.voter, ballot.voting_id);
         }
 
         transfers
+    }
+
+    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, formal_voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(formal_voting_id);
+        let informal_voting_id = voting.informal_voting_id();
+        let creator = voting.creator();
+        let creator_ballot = self.get_ballot(informal_voting_id, creator.clone()).unwrap_or_revert_with(Error::BallotDoesNotExist);
+
+        self.cast_ballot(creator.clone(), formal_voting_id, Choice::InFavor, creator_ballot.stake, creator_ballot.unbounded, voting);
+
     }
 
     fn redistribute_reputation(

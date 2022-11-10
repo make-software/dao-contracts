@@ -37,9 +37,9 @@ pub struct Job {
     finish_time: BlockTime,
     status: JobStatus,
     worker: Address,
+    worker_type: WorkerType,
     poster: Address,
     payment: U512,
-    onboard: bool,
     stake: U256,
     external_worker_cspr_stake: U512,
 }
@@ -52,9 +52,9 @@ impl Job {
         job_offer_id: JobOfferId,
         finish_time: BlockTime,
         worker: Address,
+        worker_type: WorkerType,
         poster: Address,
         payment: U512,
-        onboard: bool,
         stake: U256,
         external_worker_cspr_stake: U512,
     ) -> Self {
@@ -68,9 +68,9 @@ impl Job {
             finish_time,
             status: JobStatus::Created,
             worker,
+            worker_type,
             poster,
             payment,
-            onboard,
             stake,
             external_worker_cspr_stake,
         }
@@ -211,8 +211,8 @@ impl Job {
         self.finish_time
     }
 
-    pub fn onboard(&self) -> bool {
-        self.onboard
+    pub fn worker_type(&self) -> &WorkerType {
+        &self.worker_type
     }
 
     pub fn stake(&self) -> U256 {
@@ -222,4 +222,11 @@ impl Job {
     pub fn external_worker_cspr_stake(&self) -> U512 {
         self.external_worker_cspr_stake
     }
+}
+
+#[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq, Clone)]
+pub enum WorkerType {
+    Internal,
+    ExternalToVA,
+    External
 }

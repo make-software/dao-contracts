@@ -11,7 +11,7 @@ use casper_dao_utils::{
 };
 use casper_types::{URef, U256, U512};
 
-use crate::voting::VotingId;
+use crate::{voting::VotingId, VaNftContractCaller, VaNftContractInterface, bid::job::WorkerType};
 use crate::{
     bid::{
         events::{JobCancelled, JobDone, JobRejected},
@@ -280,6 +280,14 @@ impl BidEscrowContractInterface for BidEscrowContract {
         // TODO: Unstake all bidders for the given job offer.
         self.unstake_not_picked(job_offer_id, bid_id);
 
+        let worker_type = if self.is_va(bid.worker) {
+            WorkerType::Internal
+        } else if bid.onboard {
+            WorkerType::ExternalToVA
+        } else {
+            WorkerType::External
+        };
+
         let finish_time = get_block_time() + bid.proposed_timeframe;
         let job_id = self.next_job_id();
 
@@ -289,9 +297,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
             job_offer_id,
             finish_time,
             bid.worker,
+            worker_type,
             job_poster,
             bid.proposed_payment,
-            bid.onboard,
             bid.reputation_stake,
             bid.cspr_stake.unwrap_or_default(),
         );
@@ -327,9 +335,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
-            .cast_first_vote(true)
-            .unbounded_tokens_for_creator(true)
-            .onboard(job.onboard())
             .only_va_can_create(false)
             .build();
 
@@ -344,6 +349,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = self
             .voting
             .create_voting(worker, stake, voting_configuration);
+        
+        let is_unbounded = job.worker_type() != &WorkerType::Internal;
+        self.voting.cast_ballot(worker, voting_id, Choice::InFavor, stake, is_unbounded, self.get_voting(voting_id).unwrap_or_revert_with(Error::VotingDoesNotExist));
 
         job.set_informal_voting_id(Some(voting_id));
 
@@ -404,49 +412,66 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
-        let voting_summary = self.voting.summary(voting_id);
-        match voting_summary.voting_type() {
-            VotingType::Informal => match voting_summary.result() {
-                VotingResult::InFavor | VotingResult::Against => {
-                    job.set_formal_voting_id(voting_summary.formal_voting_id());
-                    self.voting.return_reputation(voting_id);
-                    let formal_voting_id = self.voting.create_formal_voting(voting_id);
-                    self.voting.recast_creators_ballot(voting_id, formal_voting_id);
-                }
-                VotingResult::QuorumNotReached => {
-                    self.job_rejected(&mut job);
-                    self.voting.return_reputation(voting_id);
-                },
-            },
-            VotingType::Formal => match voting_summary.result() {
-                VotingResult::InFavor => {
-                    self.job_done(&mut job);
+        let voting_summary = self.voting.finish_voting(voting_id);
 
-                    match job.worker_type() {
-                        WorkerType::ExternalToVA => {
-                            self.make_va(&job.worker());
-                            self.voting.return_reputation_of_yes_voters(voting_id);
-                            self.voting.redistribute_reputation_of_no_voters(voting_id);
-                        },
-                        WorkerType::VA => {
-                            self.voting.return_reputation_of_yes_voters(voting_id);
-                            self.voting.redistribute_reputation_of_no_voters(voting_id);
-                        },
-                        WorkerType::External => {
-                            self.voting.return_reputation_of_yes_voters_skip_unbounded(voting_id);
-                            self.voting.redistribute_reputation_of_no_voters_skip_creator(voting_id);
-                            self.voting.mint_and_redistribute_unbounded_reputation(voting_id);
-                        }
-                    }
-                },
-                VotingResult::Against => {
-                    self.job_rejected(&mut job);
+        match voting_summary.voting_type() {
+            VotingType::Informal => {
+                match voting_summary.result() {
+                    VotingResult::InFavor => {
+                        let formal_voting_id = voting_summary.formal_voting_id().unwrap_or_revert();
+                        job.set_formal_voting_id(Some(formal_voting_id));
+                        self.voting.unstake_all_reputation(voting_id);
+                        self.voting.recast_creators_ballot_from_informal_to_formal(formal_voting_id);
+                    },
+                    VotingResult::Against => todo!(),
+                    VotingResult::QuorumNotReached => todo!(),
                 }
-                VotingResult::QuorumNotReached => {
-                    self.job_rejected(&mut job);
-                }
+            }
+            VotingType::Formal => {
+                
             },
         }
+        //     VotingType::Informal => match voting_summary.result() {
+        //         VotingResult::InFavor | VotingResult::Against => {
+        //             job.set_formal_voting_id(voting_summary.formal_voting_id());
+        //             self.voting.return_reputation(voting_id);
+        //             let formal_voting_id = self.voting.create_formal_voting(voting_id);
+        //             self.voting.recast_creators_ballot(voting_id, formal_voting_id);
+        //         }
+        //         VotingResult::QuorumNotReached => {
+        //             self.job_rejected(&mut job);
+        //             self.voting.return_reputation(voting_id);
+        //         },
+        //     },
+        //     VotingType::Formal => match voting_summary.result() {
+        //         VotingResult::InFavor => {
+        //             self.job_done(&mut job);
+
+        //             match job.worker_type() {
+        //                 WorkerType::ExternalToVA => {
+        //                     self.make_va(&job.worker());
+        //                     self.voting.return_reputation_of_yes_voters(voting_id);
+        //                     self.voting.redistribute_reputation_of_no_voters(voting_id);
+        //                 },
+        //                 WorkerType::VA => {
+        //                     self.voting.return_reputation_of_yes_voters(voting_id);
+        //                     self.voting.redistribute_reputation_of_no_voters(voting_id);
+        //                 },
+        //                 WorkerType::External => {
+        //                     self.voting.return_reputation_of_yes_voters_skip_unbounded(voting_id);
+        //                     self.voting.redistribute_reputation_of_no_voters_skip_creator(voting_id);
+        //                     self.voting.mint_and_redistribute_unbounded_reputation(voting_id);
+        //                 }
+        //             }
+        //         },
+        //         VotingResult::Against => {
+        //             self.job_rejected(&mut job);
+        //         }
+        //         VotingResult::QuorumNotReached => {
+        //             self.job_rejected(&mut job);
+        //         }
+        //     },
+        // }
 
         self.jobs.set(&job_id, job);
     }
@@ -588,6 +613,14 @@ impl BidEscrowContract {
 
     fn variable_repository(&self) -> VariableRepositoryContractCaller {
         VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
+    }
+
+    fn va_token(&self) -> VaNftContractCaller {
+        VaNftContractCaller::at(self.voting.get_va_token_address())
+    }
+
+    fn is_va(&self, address: Address) -> bool {
+        !self.va_token().balance_of(address).is_zero()
     }
 
     fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
