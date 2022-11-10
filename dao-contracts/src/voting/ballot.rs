@@ -13,11 +13,15 @@ pub enum Choice {
 }
 
 impl Choice {
-    pub(crate) fn is_in_favor(&self) -> bool {
+    pub fn is_in_favor(&self) -> bool {
         match self {
             Choice::InFavor => true,
             Choice::Against => false,
         }
+    }
+
+    pub fn is_against(&self) -> bool {
+        !self.is_in_favor()
     }
 }
 

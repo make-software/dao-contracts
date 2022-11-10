@@ -428,7 +428,21 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 }
             }
             VotingType::Formal => {
-                
+                match voting_summary.result() {
+                    VotingResult::InFavor => match job.worker_type() {
+                        WorkerType::Internal => {
+                            self.voting.return_reputation_of_yes_voters(voting_id);
+                            self.voting.redistribute_reputation_of_no_voters(voting_id);
+                            self.mint_and_redistribute_reputation(&job);
+                            self.redistribute_cspr(&job);
+                            self.return_dos_fee(&job);
+                        },
+                        WorkerType::ExternalToVA => todo!(),
+                        WorkerType::External => todo!(),
+                    },
+                    VotingResult::Against => todo!(),
+                    VotingResult::QuorumNotReached => todo!(),
+                }
             },
         }
         //     VotingType::Informal => match voting_summary.result() {

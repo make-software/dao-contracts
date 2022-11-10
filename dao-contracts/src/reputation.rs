@@ -94,11 +94,10 @@ pub trait ReputationContractInterface {
     fn all_balances(&self) -> (U256, Balances);
 
     // Redistributes the reputation based on the voting summary
-    fn redistribute(
+    fn bulk_mint_burn(
         &mut self,
         mints: BTreeMap<Address, U256>,
-        burns: BTreeMap<Address, U256>,
-        voting_id: VotingId,
+        burns: BTreeMap<Address, U256>
     );
 }
 
@@ -243,11 +242,10 @@ impl ReputationContractInterface for ReputationContract {
         (self.total_supply(), self.balances.get_or_revert())
     }
 
-    fn redistribute(
+    fn bulk_mint_burn(
         &mut self,
         mints: BTreeMap<Address, U256>,
-        burns: BTreeMap<Address, U256>,
-        voting_id: VotingId,
+        burns: BTreeMap<Address, U256>
     ) {
         self.access_control.ensure_whitelisted();
 
@@ -255,12 +253,12 @@ impl ReputationContractInterface for ReputationContract {
         let mut balances = self.balances.get_or_revert();
         for (address, amount) in mints {
             balances.inc(address, amount);
-            self.unstake_voting(address, voting_id);
+            // self.unstake_voting(address, voting_id);
             total_supply += amount;
         }
         for (address, amount) in burns {
             balances.dec(address, amount);
-            self.unstake_voting(address, voting_id);
+            // self.unstake_voting(address, voting_id);
             total_supply -= amount;
         }
 

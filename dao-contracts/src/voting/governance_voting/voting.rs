@@ -98,6 +98,8 @@ pub struct Voting {
     completed: bool,
     stake_in_favor: U256,
     stake_against: U256,
+    unbounded_stake_in_favor: U256,
+    unbounded_stake_against: U256,
     start_time: u64,
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
@@ -118,6 +120,8 @@ impl Voting {
             completed: false,
             stake_in_favor: U256::zero(),
             stake_against: U256::zero(),
+            unbounded_stake_in_favor: U256::zero(),
+            unbounded_stake_against: U256::zero(),
             start_time,
             informal_voting_id: voting_id,
             formal_voting_id: None,
@@ -214,9 +218,22 @@ impl Voting {
         }
     }
 
+    pub fn add_unbounded_stake(&mut self, stake: U256, choice: Choice) {
+        // overflow is not possible due to reputation token having U256 as max
+        match choice {
+            Choice::InFavor => self.unbounded_stake_in_favor += stake,
+            Choice::Against => self.unbounded_stake_against += stake,
+        }
+    }
+    
     pub fn total_stake(&self) -> U256 {
         // overflow is not possible due to reputation token having U256 as max
-        self.stake_in_favor + self.stake_against
+        self.stake_in_favor + self.stake_against + self.total_unbounded_stake()
+    }
+
+    pub fn total_unbounded_stake(&self) -> U256 {
+        // overflow is not possible due to reputation token having U256 as max
+        self.unbounded_stake_in_favor + self.unbounded_stake_against
     }
 
     /// Get the voting's voting id.

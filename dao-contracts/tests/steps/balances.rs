@@ -45,17 +45,17 @@ fn balances(w: &mut DaoWorld, step: &Step) {
             expected_rep_balance,
             real_rep_balance
         );
-        //
-        // // Check CSPR balance
-        // let expected_cspr_balance = to_cspr(&row[1]);
-        // let real_cspr_balance = w.get_cspr_balance(address);
-        // assert!(
-        //     is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
-        //     "For account {} CSPR balance should be {:?} but is {:?}",
-        //     name,
-        //     expected_cspr_balance,
-        //     real_cspr_balance
-        // );
+        
+        // Check CSPR balance
+        let expected_cspr_balance = to_cspr(&row[1]);
+        let real_cspr_balance = w.get_cspr_balance(address);
+        assert!(
+            is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
+            "For account {} CSPR balance should be {:?} but is {:?}",
+            name,
+            expected_cspr_balance,
+            real_cspr_balance
+        );
 
         // Check staked REP balance.
         let expected_rep_stake = to_rep(&row[3]);
