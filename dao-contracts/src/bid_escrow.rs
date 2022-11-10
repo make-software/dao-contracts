@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_contract::{
         contract_api::{system::{
             get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
-        }},
+        }, runtime::print},
         unwrap_or_revert::UnwrapOrRevert,
     },
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -147,8 +147,6 @@ pub trait BidEscrowContractInterface {
     fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
-
-    fn get_total_unbounded(&self, voting_id: VotingId) -> U256;
 }
 
 #[derive(Instance)]
@@ -414,8 +412,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
+        let unbounded = self.voting.get_voting_or_revert(voting_id).total_unbounded_stake();
+        print(&format!("unbounded 1: {}", unbounded));
         let voting_summary = self.voting.finish_voting(voting_id);
-
+        print(&format!("voting id: {}", voting_id));
         match voting_summary.voting_type() {
             VotingType::Informal => {
                 match voting_summary.result() {
@@ -444,13 +444,17 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.va_token().mint(job.worker(), U256::from(18));
                             
                             // Bound ballot for worker.
+                            let unbounded = self.voting.get_voting_or_revert(voting_id).total_unbounded_stake();
+                            print(&format!("unbounded 2: {}", unbounded));
                             self.voting.bound_ballot(voting_id, job.worker());
+                            let unbounded = self.voting.get_voting_or_revert(voting_id).total_unbounded_stake();
+                            print(&format!("unbounded 3: {}", unbounded));
 
-                            // self.voting.return_reputation_of_yes_voters(voting_id);
-                            // self.voting.redistribute_reputation_of_no_voters(voting_id);
-                            // self.mint_and_redistribute_reputation(&job);
-                            // self.redistribute_cspr(&job);
-                            // self.return_dos_fee(&job);
+                            self.voting.return_reputation_of_yes_voters(voting_id);
+                            self.voting.redistribute_reputation_of_no_voters(voting_id);
+                            self.mint_and_redistribute_reputation(&job);
+                            self.redistribute_cspr(&job);
+                            self.return_dos_fee(&job);
                         },
                         WorkerType::External => todo!(),
                     },
@@ -507,11 +511,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn get_cspr_balance(&self) -> U512 {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
     }
-
-    fn get_total_unbounded(&self, voting_id: VotingId) -> U256 {
-        self.get_voting(voting_id).unwrap_or_revert().total_unbounded_stake()
-    }
-
 }
 
 impl BidEscrowContract {

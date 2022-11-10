@@ -70,9 +70,3 @@ fn balances(w: &mut DaoWorld, step: &Step) {
         );
     }
 }
-
-#[then(expr = "total_unbounded_stake is {int}")]
-fn total_unbounded_stakes(w: &mut DaoWorld, total_unbounded_stake: u32) {
-    let total = w.bid_escrow.get_total_unbounded(0);
-    assert_eq!(U256::from(total_unbounded_stake), total);
-}

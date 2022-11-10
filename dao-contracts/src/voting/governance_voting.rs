@@ -3,6 +3,7 @@ pub mod consts;
 pub mod events;
 pub mod voting;
 
+use casper_dao_utils::casper_contract::contract_api::runtime::print;
 use casper_dao_utils::conversions::{u256_to_512, u512_to_u256};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
@@ -442,13 +443,13 @@ impl GovernanceVoting {
     }
 
     pub fn recast_creators_ballot_from_informal_to_formal(&mut self, formal_voting_id: VotingId) {
+        print(&format!("recast: {}", formal_voting_id));
         let voting = self.get_voting_or_revert(formal_voting_id);
         let informal_voting_id = voting.informal_voting_id();
         let creator = voting.creator();
         let creator_ballot = self.get_ballot(informal_voting_id, creator.clone()).unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         self.cast_ballot(creator.clone(), formal_voting_id, Choice::InFavor, creator_ballot.stake, creator_ballot.unbounded, voting);
-
     }
 
     fn redistribute_reputation(

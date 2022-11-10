@@ -3,7 +3,7 @@ use crate::voting::ballot::Choice;
 use crate::voting::types::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    ContractCall, Address,
+    ContractCall, Address, casper_contract::contract_api::runtime::print,
 };
 use casper_types::U256;
 
@@ -224,6 +224,7 @@ impl Voting {
             Choice::InFavor => self.unbounded_stake_in_favor += stake,
             Choice::Against => self.unbounded_stake_against += stake,
         }
+        print(&format!("add_unbounded_stake: {} {:?}", stake, choice));
     }
 
     pub fn bound_stake(&mut self, stake: U256, choice: Choice) {
