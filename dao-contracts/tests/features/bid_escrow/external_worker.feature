@@ -47,6 +47,7 @@ Feature: External Worker who wants to become a VA submits job
      #| ExternalWorker   | Yes  | 50    | - automatically voted by the system
       | VA1              | Yes  | 500   |
       | VA2              | No   | 500   |
+    Then total_unbounded_stake is 0
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 100          | 0            | 0          |

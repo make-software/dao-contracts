@@ -225,6 +225,14 @@ impl Voting {
             Choice::Against => self.unbounded_stake_against += stake,
         }
     }
+
+    pub fn bound_stake(&mut self, stake: U256, choice: Choice) {
+        match choice {
+            Choice::InFavor => self.unbounded_stake_in_favor -= stake,
+            Choice::Against => self.unbounded_stake_against -= stake,
+        };
+        self.add_stake(stake, choice);
+    }
     
     pub fn total_stake(&self) -> U256 {
         // overflow is not possible due to reputation token having U256 as max

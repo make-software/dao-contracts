@@ -538,4 +538,18 @@ impl GovernanceVoting {
     pub fn voters(&self) -> &VecMapping<VotingId, Address> {
         &self.voters
     }
+
+    pub fn bound_ballot(&mut self, voting_id: u32, worker: Address) {
+        let mut ballot = self.get_ballot(voting_id, worker).unwrap_or_revert_with(Error::BallotDoesNotExist);
+
+        let mut voting = self.get_voting_or_revert(voting_id);
+        voting.bound_stake(ballot.stake, ballot.choice);
+        self.set_voting(voting);
+
+        self.reputation_token().mint(worker, ballot.stake);
+        self.reputation_token().stake_voting(worker, voting_id, ballot.choice, ballot.stake);
+
+        ballot.unbounded = false;
+        self.ballots.set(&(voting_id, worker), ballot);
+    }
 }
