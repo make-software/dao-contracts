@@ -143,6 +143,12 @@ fn informal_voting(w: &mut DaoWorld, step: &Step) {
     }
 }
 
+#[then(expr = "Formal voting does not start")]
+fn formal_does_not_start(w: &mut DaoWorld) {
+    let voting = w.bid_escrow.get_voting(0).unwrap();
+    assert_eq!(voting.formal_voting_id(), None);
+}
+
 #[then(expr = "ballot for voting {int} for {word} has {int} unbounded tokens")]
 fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: String, amount: u32) {
     let account = w.named_address(account);

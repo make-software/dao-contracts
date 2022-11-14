@@ -455,6 +455,16 @@ impl GovernanceVoting {
         }
     }
 
+    pub fn return_reputation_of_no_voters(&self, voting_id: VotingId) {
+        for i in 0..self.voters.len(voting_id) {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.choice.is_against() && !ballot.unbounded {
+                self.reputation_token()
+                    .unstake_voting(ballot.voter, voting_id);
+            }
+        }
+    }
+
     pub fn redistribute_reputation_of_no_voters(&self, voting_id: VotingId) {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
@@ -472,6 +482,29 @@ impl GovernanceVoting {
                 burns.insert(ballot.voter, ballot.stake);
             } else {
                 let amount_to_mint = total_stake_against * ballot.stake / total_stake_in_favor;
+                mints.insert(ballot.voter, amount_to_mint);
+            }
+        }
+        self.reputation_token().bulk_mint_burn(mints, burns);
+    }
+
+    pub fn redistribute_reputation_of_yes_voters(&self, voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(voting_id);
+        let total_stake_in_favor = voting.stake_in_favor();
+        let total_stake_against = voting.stake_against();
+        let mut burns: BTreeMap<Address, U256> = BTreeMap::new();
+        let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
+        for i in 0..self.voters.len(voting_id) {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.unbounded {
+                continue;
+            }
+            if ballot.choice.is_in_favor() {
+                self.reputation_token()
+                    .unstake_voting(ballot.voter, voting_id);
+                burns.insert(ballot.voter, ballot.stake);
+            } else {
+                let amount_to_mint = total_stake_in_favor * ballot.stake / total_stake_against;
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }

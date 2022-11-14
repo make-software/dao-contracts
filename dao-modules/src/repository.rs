@@ -131,7 +131,7 @@ impl Default for RepositoryDefaults {
         items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(100));
         items.push(consts::FORUM_KYC_REQUIRED, true);
         items.push(consts::FORMAL_VOTING_QUORUM, U256::from(500));
-        items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(50));
+        items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(500));
         items.push(consts::VOTING_QUORUM, U256::from(200));
         items.push(consts::FORMAL_VOTING_TIME, 432000000u64);
         items.push(consts::INFORMAL_VOTING_TIME, 86400000u64);
