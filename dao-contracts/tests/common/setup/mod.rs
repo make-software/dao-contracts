@@ -393,17 +393,12 @@ pub fn setup_voting_contract_with_formal_voting(
 ) -> (MockVoterContractTest, ReputationContractTest, Voting) {
     let minimum_reputation = 500.into();
     let (mut mock_voter_contract, reputation_token_contract, voting) =
-    setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
-
+        setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
 
     for account in 1..total_onboarded {
         mock_voter_contract
             .as_nth_account(account)
-            .vote(
-                voting.voting_id(),
-                Choice::InFavor,
-                minimum_reputation,
-            )
+            .vote(voting.voting_id(), Choice::InFavor, minimum_reputation)
             .unwrap();
     }
 
@@ -503,11 +498,7 @@ pub fn mass_vote(
         // we skip one vote in favor - creator's vote
         voting_contract
             .as_nth_account(account)
-            .vote(
-                voting.voting_id(),
-                Choice::InFavor,
-                minimum_reputation,
-            )
+            .vote(voting.voting_id(), Choice::InFavor, minimum_reputation)
             .unwrap();
         account += 1;
     }
@@ -515,11 +506,7 @@ pub fn mass_vote(
     for _ in 0..votes_against {
         voting_contract
             .as_nth_account(account)
-            .vote(
-                voting.voting_id(),
-                Choice::Against,
-                minimum_reputation,
-            )
+            .vote(voting.voting_id(), Choice::Against, minimum_reputation)
             .unwrap();
         account += 1;
     }

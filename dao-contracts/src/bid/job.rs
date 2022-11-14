@@ -46,6 +46,7 @@ pub struct Job {
 
 impl Job {
     /// Job constructor
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         job_id: JobId,
         bid_id: BidId,
@@ -228,5 +229,5 @@ impl Job {
 pub enum WorkerType {
     Internal,
     ExternalToVA,
-    External
+    External,
 }

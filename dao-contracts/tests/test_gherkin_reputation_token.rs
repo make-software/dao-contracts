@@ -1,12 +1,12 @@
-use casper_dao_utils::{DocumentHash, TestContract};
-use casper_types::{U256, U512};
+
+use casper_types::{U256};
 
 mod common;
 
-use crate::common::helpers::value_to_bytes;
+
 use crate::common::DaoWorld;
-use cucumber::gherkin::Step;
-use cucumber::{given, then, when, World as _};
+
+use cucumber::{given, then, World as _};
 
 // #[given(expr = "following balances")]
 // fn starting_balances(w: &mut DaoWorld, step: &Step) {
@@ -100,7 +100,7 @@ use cucumber::{given, then, when, World as _};
 // }
 
 #[given(expr = "deployed Reputation Token Contract")]
-fn reputation_is_deployed(w: &mut DaoWorld) {}
+fn reputation_is_deployed(_w: &mut DaoWorld) {}
 
 #[then(expr = "total supply is {int}")]
 fn total_supply_is(w: &mut DaoWorld, total_supply: u128) {

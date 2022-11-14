@@ -7,7 +7,7 @@ use crate::{
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
-    casper_env::{self, caller, emit, revert},
+    casper_env::{caller, emit, revert},
     Address, Error, Mapping, Variable,
 };
 use casper_types::{URef, U256};
@@ -94,11 +94,7 @@ pub trait ReputationContractInterface {
     fn all_balances(&self) -> (U256, Balances);
 
     // Redistributes the reputation based on the voting summary
-    fn bulk_mint_burn(
-        &mut self,
-        mints: BTreeMap<Address, U256>,
-        burns: BTreeMap<Address, U256>
-    );
+    fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -242,11 +238,7 @@ impl ReputationContractInterface for ReputationContract {
         (self.total_supply(), self.balances.get_or_revert())
     }
 
-    fn bulk_mint_burn(
-        &mut self,
-        mints: BTreeMap<Address, U256>,
-        burns: BTreeMap<Address, U256>
-    ) {
+    fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>) {
         self.access_control.ensure_whitelisted();
 
         let mut total_supply = self.total_supply();

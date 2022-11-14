@@ -38,6 +38,7 @@ pub struct BidSubmitted {
 }
 
 impl BidSubmitted {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         bid_id: BidId,
         job_offer_id: JobOfferId,

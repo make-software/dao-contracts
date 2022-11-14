@@ -24,11 +24,12 @@ Feature: Internal Flow
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     When InternalWorker submits the JobProof
-    And Informal voting ends with votes
+    And votes are
       | account          | vote | stake |
      #| InternalWorker   | Yes  | 100   | - automatically voted by the system
       | VA1              | Yes  | 500   |
       | VA2              | Yes  | 500   |
+    And Informal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 600          | 0            | 0          |
@@ -37,11 +38,12 @@ Feature: Internal Flow
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    When Formal voting ends with votes
+    When votes are
       | account          | vote | stake |
      #| InternalWorker   | Yes  | 100   | - automatically voted by the system
       | VA1              | Yes  | 500   |
       | VA2              | No   | 500   |
+    And Informal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 50           | 0            | 0          |

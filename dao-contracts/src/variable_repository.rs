@@ -212,7 +212,7 @@ impl VariableRepositoryContractCaller {
             contract_call: None,
             only_va_can_create: true,
             unbounded_tokens_for_creator: false,
-            onboard_creator: false
+            onboard_creator: false,
         }
     }
 

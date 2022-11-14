@@ -228,14 +228,13 @@ impl TestEnvState {
     }
 
     fn build_deploy_item(&mut self, session_code: PathBuf, args: RuntimeArgs) -> DeployItem {
-        let deploy_item = DeployItemBuilder::new()
+        DeployItemBuilder::new()
             .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
             .with_authorization_keys(&[self.active_account_hash()])
             .with_address(self.active_account_hash())
             .with_session_code(session_code, args)
             .with_deploy_hash(self.next_hash())
-            .build();
-        deploy_item
+            .build()
     }
 
     fn collect_gas(&mut self) {

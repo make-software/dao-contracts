@@ -44,9 +44,7 @@ pub fn setup_dao() -> (
         .add_to_whitelist(bid_escrow.address())
         .unwrap();
 
-    va_token
-        .add_to_whitelist(bid_escrow.address())
-        .unwrap();
+    va_token.add_to_whitelist(bid_escrow.address()).unwrap();
     (
         env,
         bid_escrow,

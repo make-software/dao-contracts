@@ -1,5 +1,5 @@
 use casper_dao_utils::ContractCall;
-use casper_types::U256;
+
 
 use crate::{
     voting::{voting::VotingConfiguration, GovernanceVoting},
@@ -37,7 +37,10 @@ impl VotingConfigurationBuilder {
         self
     }
 
-    pub fn unbounded_tokens_for_creator(mut self, unbounded_tokens_for_creator: bool) -> VotingConfigurationBuilder {
+    pub fn unbounded_tokens_for_creator(
+        mut self,
+        unbounded_tokens_for_creator: bool,
+    ) -> VotingConfigurationBuilder {
         self.voting_configuration.unbounded_tokens_for_creator = unbounded_tokens_for_creator;
         self
     }

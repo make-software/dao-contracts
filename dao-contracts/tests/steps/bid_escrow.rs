@@ -4,7 +4,7 @@ use casper_dao_contracts::voting::Choice;
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::{U256, U512};
 use cucumber::gherkin::Step;
-use cucumber::{given, when};
+use cucumber::{given, then, when};
 
 #[given(expr = "following configuration")]
 fn configuration(w: &mut DaoWorld, step: &Step) {
@@ -78,27 +78,21 @@ fn submit_bid_external(
 ) {
     let worker = w.named_address(worker_name);
     let onboarding = match onboarding.as_str() {
-        "with" => {
-            true
-        },
-        "without" => {
-            false
-        },
+        "with" => true,
+        "without" => false,
         _ => {
             panic!("Unknown onboarding option");
         }
     };
 
-    w.bid_escrow
-        .as_account(worker)
-        .submit_bid_with_cspr_amount(
-            0,
-            timeframe,
-            U512::from(budget) * 1_000_000_000,
-            U256::from(0),
-            onboarding,
-            U512::from(stake) * 1_000_000_000,
-        );
+    w.bid_escrow.as_account(worker).submit_bid_with_cspr_amount(
+        0,
+        timeframe,
+        U512::from(budget) * 1_000_000_000,
+        U256::from(0),
+        onboarding,
+        U512::from(stake) * 1_000_000_000,
+    );
 }
 
 #[given(expr = "{word} picked the Bid of {word}")]
@@ -122,7 +116,13 @@ fn submit_job_proof(w: &mut DaoWorld, worker_name: String) {
         .unwrap();
 }
 
-#[when(expr = "Formal/Informal voting ends with votes")]
+#[when(expr = "Formal/Informal voting ends")]
+fn voting_ends(w: &mut DaoWorld) {
+    w.bid_escrow.advance_block_time_by(432000000u64);
+    w.bid_escrow.finish_voting(0).unwrap();
+}
+
+#[when(expr = "votes are")]
 fn informal_voting(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
@@ -141,7 +141,38 @@ fn informal_voting(w: &mut DaoWorld, step: &Step) {
             .vote(0, choice, stake)
             .unwrap();
     }
+}
 
-    w.bid_escrow.advance_block_time_by(432000000u64);
-    w.bid_escrow.finish_voting(0).unwrap();
+#[then(expr = "ballot for voting {int} for {word} has {int} unbounded tokens")]
+fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: String, amount: u32) {
+    let account = w.named_address(account);
+    let ballot = w.bid_escrow.get_ballot(voting_id, account);
+    let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
+    let amount = U256::from(amount) * 1_000_000_000;
+    assert_eq!(
+        ballot.choice,
+        Choice::InFavor,
+        "Ballot choice not in favour"
+    );
+    assert!(ballot.unbounded, "Ballot is not unbounded");
+    assert_eq!(
+        ballot.stake, amount,
+        "Ballot has stake {:?}, but should be {:?}",
+        ballot.stake, amount
+    );
+}
+
+#[then(expr = "total unbounded stake for voting {int} is {int} tokens")]
+fn total_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: u32) {
+    let total_unbounded_stake = w
+        .bid_escrow
+        .get_voting(voting_id)
+        .unwrap()
+        .total_unbounded_stake();
+    let amount = U256::from(amount) * 1_000_000_000;
+    assert_eq!(
+        total_unbounded_stake, amount,
+        "Total unbounded stake is {:?}, but should be {:?}",
+        total_unbounded_stake, amount
+    );
 }

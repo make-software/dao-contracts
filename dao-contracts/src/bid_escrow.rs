@@ -1,20 +1,22 @@
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::{system::{
-            get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
-        }, runtime::print},
+        contract_api::{
+            system::{
+                get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
+            },
+        },
         unwrap_or_revert::UnwrapOrRevert,
     },
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
     Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator, VecMapping,
 };
-use casper_types::{URef, U256, U512, ApiError};
+use casper_types::{URef, U256, U512};
 
-use crate::{voting::VotingId, VaNftContractCaller, VaNftContractInterface, bid::job::WorkerType};
+use crate::{bid::job::WorkerType, voting::VotingId, VaNftContractCaller, VaNftContractInterface};
 use crate::{
     bid::{
-        events::{JobCancelled, JobDone, JobRejected},
+        events::{JobCancelled},
         job::Job,
         types::BidId,
     },
@@ -349,9 +351,17 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = self
             .voting
             .create_voting(worker, stake, voting_configuration);
-        
+
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
-        self.voting.cast_ballot(worker, voting_id, Choice::InFavor, stake, is_unbounded, self.get_voting(voting_id).unwrap_or_revert_with(Error::VotingDoesNotExist));
+        self.voting.cast_ballot(
+            worker,
+            voting_id,
+            Choice::InFavor,
+            stake,
+            is_unbounded,
+            self.get_voting(voting_id)
+                .unwrap_or_revert_with(Error::VotingDoesNotExist),
+        );
 
         job.set_informal_voting_id(Some(voting_id));
 
@@ -412,23 +422,19 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
-        let unbounded = self.voting.get_voting_or_revert(voting_id).total_unbounded_stake();
-        print(&format!("unbounded 1: {}", unbounded));
         let voting_summary = self.voting.finish_voting(voting_id);
-        print(&format!("voting id: {}", voting_id));
         match voting_summary.voting_type() {
-            VotingType::Informal => {
-                match voting_summary.result() {
-                    VotingResult::InFavor => {
-                        let formal_voting_id = voting_summary.formal_voting_id().unwrap_or_revert();
-                        job.set_formal_voting_id(Some(formal_voting_id));
-                        self.voting.unstake_all_reputation(voting_id);
-                        self.voting.recast_creators_ballot_from_informal_to_formal(formal_voting_id);
-                    },
-                    VotingResult::Against => todo!(),
-                    VotingResult::QuorumNotReached => todo!(),
+            VotingType::Informal => match voting_summary.result() {
+                VotingResult::InFavor => {
+                    let formal_voting_id = voting_summary.formal_voting_id().unwrap_or_revert();
+                    job.set_formal_voting_id(Some(formal_voting_id));
+                    self.voting.unstake_all_reputation(voting_id);
+                    self.voting
+                        .recast_creators_ballot_from_informal_to_formal(formal_voting_id);
                 }
-            }
+                VotingResult::Against => todo!(),
+                VotingResult::QuorumNotReached => todo!(),
+            },
             VotingType::Formal => {
                 match voting_summary.result() {
                     VotingResult::InFavor => match job.worker_type() {
@@ -438,30 +444,26 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.mint_and_redistribute_reputation(&job);
                             self.redistribute_cspr(&job);
                             self.return_dos_fee(&job);
-                        },
+                        }
                         WorkerType::ExternalToVA => {
                             // Make user VA.
                             self.va_token().mint(job.worker(), U256::from(18));
-                            
+
                             // Bound ballot for worker.
-                            let unbounded = self.voting.get_voting_or_revert(voting_id).total_unbounded_stake();
-                            print(&format!("unbounded 2: {}", unbounded));
                             self.voting.bound_ballot(voting_id, job.worker());
-                            let unbounded = self.voting.get_voting_or_revert(voting_id).total_unbounded_stake();
-                            print(&format!("unbounded 3: {}", unbounded));
 
                             self.voting.return_reputation_of_yes_voters(voting_id);
                             self.voting.redistribute_reputation_of_no_voters(voting_id);
                             self.mint_and_redistribute_reputation(&job);
                             self.redistribute_cspr(&job);
                             self.return_dos_fee(&job);
-                        },
+                        }
                         WorkerType::External => todo!(),
                     },
                     VotingResult::Against => todo!(),
                     VotingResult::QuorumNotReached => todo!(),
                 }
-            },
+            }
         }
         //     VotingType::Informal => match voting_summary.result() {
         //         VotingResult::InFavor | VotingResult::Against => {
@@ -563,34 +565,16 @@ impl BidEscrowContract {
         .unwrap_or_revert_with(Error::TransferError);
     }
 
-    fn pay_for_job(&mut self, job: &Job) {
-        self.mint_and_redistribute_reputation(job);
-        self.redistribute_cspr(job);
-    }
-
-    fn job_done(&mut self, job: &mut Job) {
-        self.return_dos_fee(job);
-        self.pay_for_job(job);
-        job.complete();
-        JobDone::new(job, caller()).emit();
-    }
-
-    fn job_rejected(&mut self, job: &mut Job) {
-        self.return_dos_fee(job);
-        self.refund(job);
-        job.not_completed();
-        JobRejected::new(job, caller()).emit();
-    }
-
     fn redistribute_cspr(&mut self, job: &Job) {
         // 10% dla Mutlisiga
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
-        let governance_wallet_payment = repo.payment_for_governance(job.payment() + job.external_worker_cspr_stake());
+        let payment = job.payment() + job.external_worker_cspr_stake();
+        let governance_wallet_payment = repo.payment_for_governance(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
         // Dla wszystkich po równo.
-        let cspr_pool = job.payment() - governance_wallet_payment;
+        let cspr_pool = payment - governance_wallet_payment;
         let (total_supply, balances) = self.reputation_token().all_balances();
         let total_supply = U512::from(total_supply.as_u128());
         for (address, balance) in balances.balances {
@@ -661,11 +645,11 @@ impl BidEscrowContract {
     }
 
     fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
-        let bids_amount = self.job_offers_bids.len(job_offer_id.clone());
+        let bids_amount = self.job_offers_bids.len(job_offer_id);
         for i in 0..bids_amount {
             let unstake_bid_id = self
                 .job_offers_bids
-                .get(job_offer_id.clone(), i)
+                .get(job_offer_id, i)
                 .unwrap_or_revert_with(Error::BidNotFound);
             let bid = self
                 .get_bid(unstake_bid_id)
@@ -681,9 +665,9 @@ impl BidEscrowContract {
 use crate::bid::bid::Bid;
 use crate::bid::job_offer::JobOffer;
 use crate::bid::types::{JobId, JobOfferId};
+use crate::voting::voting::VotingType;
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
-use crate::voting::voting::VotingType;
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {

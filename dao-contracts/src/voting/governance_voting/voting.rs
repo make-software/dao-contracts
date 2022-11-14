@@ -3,7 +3,7 @@ use crate::voting::ballot::Choice;
 use crate::voting::types::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    ContractCall, Address, casper_contract::contract_api::runtime::print,
+    Address, ContractCall,
 };
 use casper_types::U256;
 
@@ -140,19 +140,25 @@ impl Voting {
     }
 
     pub fn skip_first_vote(&self) -> bool {
-        self.voting_configuration.cast_first_vote && self.voting_configuration.unbounded_tokens_for_creator
+        self.voting_configuration.cast_first_vote
+            && self.voting_configuration.unbounded_tokens_for_creator
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
     pub fn create_formal_voting(&self, new_voting_id: VotingId, start_time: u64) -> Self {
-        let mut voting = self.clone();
-        voting.formal_voting_id = Some(new_voting_id);
-        voting.voting_id = new_voting_id;
-        voting.start_time = start_time;
-        voting.stake_against = U256::zero();
-        voting.stake_in_favor = U256::zero();
-        voting.completed = false;
-        voting
+        Voting {
+            voting_id: new_voting_id,
+            completed: false,
+            stake_in_favor: U256::zero(),
+            stake_against: U256::zero(),
+            unbounded_stake_in_favor: U256::zero(),
+            unbounded_stake_against: U256::zero(),
+            start_time,
+            informal_voting_id: self.informal_voting_id,
+            formal_voting_id: Some(new_voting_id),
+            creator: self.creator,
+            voting_configuration: self.voting_configuration.clone(),
+        }
     }
 
     pub fn can_be_completed(&self, block_time: u64) -> bool {
@@ -224,7 +230,6 @@ impl Voting {
             Choice::InFavor => self.unbounded_stake_in_favor += stake,
             Choice::Against => self.unbounded_stake_against += stake,
         }
-        print(&format!("add_unbounded_stake: {} {:?}", stake, choice));
     }
 
     pub fn bound_stake(&mut self, stake: U256, choice: Choice) {
@@ -234,7 +239,7 @@ impl Voting {
         };
         self.add_stake(stake, choice);
     }
-    
+
     pub fn total_stake(&self) -> U256 {
         // overflow is not possible due to reputation token having U256 as max
         self.stake_in_favor + self.stake_against + self.total_unbounded_stake()
