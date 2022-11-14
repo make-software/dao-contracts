@@ -1,6 +1,6 @@
 use casper_dao_contracts::{
-    BidEscrowContractTest, KycNftContractTest, ReputationContractTest, VaNftContractTest,
-    VariableRepositoryContractTest,
+    BidEscrowContractTest, KycNftContractTest, ReputationContractTest, SlashingVoterContractTest,
+    VaNftContractTest, VariableRepositoryContractTest,
 };
 
 use casper_dao_utils::{TestContract, TestEnv};
@@ -13,6 +13,7 @@ pub fn setup_dao() -> (
     VaNftContractTest,
     KycNftContractTest,
     VariableRepositoryContractTest,
+    SlashingVoterContractTest,
 ) {
     let env = TestEnv::new();
     let variable_repo = VariableRepositoryContractTest::new(&env);
@@ -40,8 +41,19 @@ pub fn setup_dao() -> (
         va_token.address(),
     );
 
+    let slashing_voter = SlashingVoterContractTest::new(
+        variable_repo.get_env(),
+        variable_repo.address(),
+        reputation_token.address(),
+        va_token.address(),
+    );
+
     reputation_token
         .add_to_whitelist(bid_escrow.address())
+        .unwrap();
+
+    reputation_token
+        .add_to_whitelist(slashing_voter.address())
         .unwrap();
 
     va_token.add_to_whitelist(bid_escrow.address()).unwrap();
@@ -52,5 +64,6 @@ pub fn setup_dao() -> (
         va_token,
         kyc_token,
         variable_repo,
+        slashing_voter,
     )
 }

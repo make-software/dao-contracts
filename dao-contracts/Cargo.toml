@@ -21,6 +21,11 @@ name = "test_bid_escrow"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
 
+[[test]]
+name = "test_slashing"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
 #[[test]]
 #name = "test_gherkin_reputation_token"
 #harness = false  # allows Cucumber to print output instead of libtest
@@ -98,6 +103,13 @@ test = false
 [[bin]]
 name = "admin_contract"
 path = "bin/admin_contract.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "slashing_voter_contract"
+path = "bin/slashing_voter_contract.rs"
 bench = false
 doctest = false
 test = false

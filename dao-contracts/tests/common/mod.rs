@@ -15,6 +15,7 @@ pub struct DaoWorld {
     pub va_token: casper_dao_contracts::VaNftContractTest,
     pub reputation_token: casper_dao_contracts::ReputationContractTest,
     pub kyc_token: casper_dao_contracts::KycNftContractTest,
+    pub slashing_voter: casper_dao_contracts::SlashingVoterContractTest,
     variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
     addresses: HashMap<String, Address>,
     balances: HashMap<Address, U512>,
@@ -145,7 +146,7 @@ impl Debug for DaoWorld {
 
 impl Default for DaoWorld {
     fn default() -> Self {
-        let (env, bid_escrow, reputation_token, va_token, kyc_token, variable_repo) =
+        let (env, bid_escrow, reputation_token, va_token, kyc_token, variable_repo, slashing_voter) =
             dao::setup_dao();
         let mut dao = Self {
             env,
@@ -154,6 +155,7 @@ impl Default for DaoWorld {
             reputation_token,
             kyc_token,
             variable_repo,
+            slashing_voter,
             addresses: Default::default(),
             balances: Default::default(),
             starting_balances: Default::default(),

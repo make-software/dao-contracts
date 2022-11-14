@@ -334,7 +334,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let voting_id = self
             .voting
-            .create_voting(worker, stake, voting_configuration);
+            .create_voting_without_first_vote(worker, voting_configuration);
 
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
         self.voting.cast_ballot(
@@ -394,7 +394,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
-        let voting_summary = self.voting.finish_voting(voting_id);
+        let voting_summary = self
+            .voting
+            .finish_voting_without_token_redistribution(voting_id);
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor => {

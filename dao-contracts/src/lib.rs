@@ -8,6 +8,7 @@ mod bid_escrow;
 mod builder;
 mod kyc_nft;
 mod kyc_voter;
+mod slashing_voter;
 mod va_nft;
 
 #[doc(hidden)]
@@ -37,6 +38,9 @@ pub use reputation::{ReputationContract, ReputationContractCaller, ReputationCon
 pub use reputation_voter::{
     ReputationVoterContract, ReputationVoterContractCaller, ReputationVoterContractInterface,
 };
+pub use slashing_voter::{
+    SlashingVoterContract, SlashingVoterContractCaller, SlashingVoterContractInterface,
+};
 pub use va_nft::{VaNftContract, VaNftContractCaller, VaNftContractInterface};
 pub use variable_repository::{
     VariableRepositoryContract, VariableRepositoryContractCaller,
@@ -62,6 +66,9 @@ pub use repo_voter::RepoVoterContractTest;
 #[doc(hidden)]
 #[cfg(feature = "test-support")]
 pub use admin::AdminContractTest;
+
+#[cfg(feature = "test-support")]
+pub use slashing_voter::SlashingVoterContractTest;
 
 #[cfg(feature = "test-support")]
 pub use bid_escrow::BidEscrowContractTest;

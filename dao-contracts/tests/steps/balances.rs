@@ -1,6 +1,6 @@
 use crate::common::helpers::{is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep};
 use crate::common::DaoWorld;
-
+use casper_types::U256;
 use cucumber::gherkin::Step;
 use cucumber::{given, then};
 
@@ -29,6 +29,15 @@ fn is_va(w: &mut DaoWorld, va_name: String) {
 fn is_not_va(w: &mut DaoWorld, va_name: String) {
     let va = w.named_address(va_name);
     assert!(!w.is_va(va));
+}
+
+#[then(expr = "total reputation is {int}")]
+fn total_reputation(w: &mut DaoWorld, total_reputation_expected: u64) {
+    let total_reputation = w.reputation_token.total_supply();
+    assert_eq!(
+        total_reputation,
+        U256::from(total_reputation_expected * 1_000_000_000)
+    );
 }
 
 #[then(expr = "balances are")]

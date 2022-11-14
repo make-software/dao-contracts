@@ -26,11 +26,6 @@ impl VotingConfigurationBuilder {
         self
     }
 
-    pub fn cast_first_vote(mut self, cast: bool) -> VotingConfigurationBuilder {
-        self.voting_configuration.cast_first_vote = cast;
-        self
-    }
-
     pub fn only_va_can_create(mut self, only_va_can_create: bool) -> VotingConfigurationBuilder {
         self.voting_configuration.only_va_can_create = only_va_can_create;
         self

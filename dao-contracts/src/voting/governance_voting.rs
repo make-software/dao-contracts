@@ -3,8 +3,6 @@ pub mod consts;
 pub mod events;
 pub mod voting;
 
-use casper_dao_utils::casper_contract::contract_api::runtime::print;
-
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
@@ -20,7 +18,6 @@ use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
     voting::{Voting, VotingConfiguration, VotingResult, VotingType},
 };
-
 use crate::{
     ReputationContractCaller, ReputationContractInterface, VaNftContractCaller,
     VaNftContractInterface,
@@ -92,8 +89,26 @@ impl GovernanceVoting {
     pub fn create_voting(
         &mut self,
         creator: Address,
-        // TODO: Remove
-        _stake: U256,
+        stake: U256,
+        voting_configuration: VotingConfiguration,
+    ) -> VotingId {
+        if voting_configuration.only_va_can_create && !self.is_va(creator) {
+            revert(Error::VaNotOnboarded)
+        }
+
+        let voting_id = self.next_voting_id();
+
+        VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
+        let voting = Voting::new(voting_id, get_block_time(), creator, voting_configuration);
+        self.set_voting(voting);
+        self.vote(creator, voting_id, Choice::InFavor, stake);
+
+        voting_id
+    }
+
+    pub fn create_voting_without_first_vote(
+        &mut self,
+        creator: Address,
         voting_configuration: VotingConfiguration,
     ) -> VotingId {
         if voting_configuration.only_va_can_create && !self.is_va(creator) {
@@ -135,6 +150,59 @@ impl GovernanceVoting {
     ///
     /// Throws [`ArithmeticOverflow`](casper_dao_utils::Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
     pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {
+        let voting = self
+            .get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
+
+        if voting.completed() {
+            revert(Error::FinishingCompletedVotingNotAllowed)
+        }
+
+        match voting.get_voting_type() {
+            VotingType::Informal => {
+                let voting_result = self.finish_informal_voting(voting);
+                self.return_reputation_of_yes_voters(voting_id);
+                self.return_reputation_of_no_voters(voting_id);
+
+                match voting_result.result() {
+                    VotingResult::InFavor | VotingResult::Against => {
+                        self.recast_creators_ballot_from_informal_to_formal(
+                            voting_result.formal_voting_id().unwrap_or_revert(),
+                        );
+                    }
+                    VotingResult::QuorumNotReached => {
+                        // TODO: Burn reputation of creator?
+                        // TODO: Emit events
+                    }
+                }
+                voting_result
+            }
+            VotingType::Formal => {
+                let voting_result = self.finish_formal_voting(voting);
+                match voting_result.result() {
+                    VotingResult::InFavor => {
+                        self.return_reputation_of_yes_voters(voting_id);
+                        self.redistribute_reputation_of_no_voters(voting_id);
+                    }
+                    VotingResult::Against => {
+                        self.return_reputation_of_no_voters(voting_id);
+                        self.redistribute_reputation_of_yes_voters(voting_id);
+                    }
+                    VotingResult::QuorumNotReached => {
+                        self.return_reputation_of_yes_voters(voting_id);
+                        self.return_reputation_of_no_voters(voting_id);
+                        // TODO: Should we burn the reputation of the creator?
+                    }
+                }
+                voting_result
+            }
+        }
+    }
+
+    pub fn finish_voting_without_token_redistribution(
+        &mut self,
+        voting_id: VotingId,
+    ) -> VotingSummary {
         let voting = self
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
@@ -189,8 +257,6 @@ impl GovernanceVoting {
                 voting.complete(Some(formal_voting_id));
             }
             VotingResult::QuorumNotReached => {
-                // let (transfers, burns) =
-                //     self.burn_creators_and_return_others_reputation(voting.voting_id());
                 voting.complete(None);
             }
         };
@@ -233,7 +299,7 @@ impl GovernanceVoting {
 
         match voting_result {
             VotingResult::InFavor => {
-                self.perform_action(&voting);
+                self.perform_action(voting.voting_id());
             }
             VotingResult::Against => {}
             VotingResult::QuorumNotReached => {}
@@ -402,7 +468,8 @@ impl GovernanceVoting {
         voting_id
     }
 
-    fn perform_action(&self, voting: &Voting) {
+    fn perform_action(&self, voting_id: VotingId) {
+        let voting = self.get_voting(voting_id).unwrap_or_revert();
         match voting.contract_call() {
             Some(contract_call) => {
                 contract_call.call();
@@ -427,7 +494,6 @@ impl GovernanceVoting {
     }
 
     pub fn recast_creators_ballot_from_informal_to_formal(&mut self, formal_voting_id: VotingId) {
-        print(&format!("recast: {}", formal_voting_id));
         let voting = self.get_voting_or_revert(formal_voting_id);
         let informal_voting_id = voting.informal_voting_id();
         let creator = voting.creator();
@@ -519,7 +585,7 @@ impl GovernanceVoting {
         VaNftContractCaller::at(self.get_va_token_address())
     }
 
-    fn reputation_token(&self) -> ReputationContractCaller {
+    pub fn reputation_token(&self) -> ReputationContractCaller {
         ReputationContractCaller::at(self.get_reputation_token_address())
     }
 

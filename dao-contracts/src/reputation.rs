@@ -5,6 +5,7 @@ use crate::{
     voting::{Choice, VotingId},
 };
 use casper_dao_modules::AccessControl;
+use casper_dao_utils::casper_contract::contract_api::runtime::print;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit, revert},
