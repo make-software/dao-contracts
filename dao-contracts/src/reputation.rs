@@ -174,6 +174,9 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn stake_voting(&mut self, voter: Address, voting_id: VotingId, choice: Choice, amount: U256) {
+        if amount.is_zero() {
+            revert(Error::ZeroStake);
+        }
         self.access_control.ensure_whitelisted();
         self.assert_available_balance(voter, amount);
         let mut stake_info = self.stake_info(&voter);
@@ -203,6 +206,9 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn stake_bid(&mut self, voter: Address, bid_id: BidId, amount: U256) {
+        if amount.is_zero() {
+            revert(Error::ZeroStake);
+        }
         self.access_control.ensure_whitelisted();
         self.assert_available_balance(voter, amount);
         let mut stake_info = self.stake_info(&voter);
@@ -276,7 +282,7 @@ impl ReputationContract {
     }
 
     fn assert_available_balance(&mut self, voter: Address, amount: U256) {
-        if amount > self.balance_of(voter) - self.get_stake(voter) {
+        if amount > self.balance_of(voter).saturating_sub(self.get_stake(voter)) {
             revert(Error::InsufficientBalance);
         }
     }
