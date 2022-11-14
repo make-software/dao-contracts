@@ -242,7 +242,12 @@ impl Voting {
 
     pub fn total_stake(&self) -> U256 {
         // overflow is not possible due to reputation token having U256 as max
-        self.stake_in_favor + self.stake_against + self.total_unbounded_stake()
+        self.total_bounded_stake() + self.total_unbounded_stake()
+    }
+
+    pub fn total_bounded_stake(&self) -> U256 {
+        // overflow is not possible due to reputation token having U256 as max
+        self.stake_in_favor + self.stake_against
     }
 
     pub fn total_unbounded_stake(&self) -> U256 {

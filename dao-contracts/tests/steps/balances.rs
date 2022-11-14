@@ -25,6 +25,12 @@ fn is_va(w: &mut DaoWorld, va_name: String) {
     assert!(w.is_va(va));
 }
 
+#[then(expr = "{word} is not a VA")]
+fn is_not_va(w: &mut DaoWorld, va_name: String) {
+    let va = w.named_address(va_name);
+    assert!(!w.is_va(va));
+}
+
 #[then(expr = "balances are")]
 fn balances(w: &mut DaoWorld, step: &Step) {
     // let (total_rep_supply, all_rep_balances) = w.reputation_token.all_balances();

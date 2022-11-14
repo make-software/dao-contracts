@@ -13,7 +13,7 @@ use casper_dao_utils::{
 };
 use std::collections::BTreeMap;
 
-use casper_types::{U256};
+use casper_types::U256;
 
 use self::voting::VotingSummary;
 use self::{
@@ -463,11 +463,10 @@ impl GovernanceVoting {
         let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.unbounded {
+                continue;
+            }
             if ballot.choice.is_against() {
-                if ballot.unbounded {
-                    continue;
-                }
-
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
                 burns.insert(ballot.voter, ballot.stake);
@@ -480,9 +479,7 @@ impl GovernanceVoting {
     }
 
     fn is_va(&self, address: Address) -> bool {
-        !self.va_token()
-            .balance_of(address)
-            .is_zero()
+        !self.va_token().balance_of(address).is_zero()
     }
 
     fn va_token(&self) -> VaNftContractCaller {

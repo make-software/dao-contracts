@@ -1,8 +1,6 @@
-
-use casper_types::{U256};
+use casper_types::U256;
 
 mod common;
-
 
 use crate::common::DaoWorld;
 

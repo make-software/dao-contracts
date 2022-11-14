@@ -1,6 +1,6 @@
 use crate::voting::voting::VotingConfiguration;
 use casper_dao_modules::{AccessControl, Record, Repository};
-use casper_dao_utils::conversions::u512_to_u256;
+use casper_dao_utils::conversions::{u256_to_512, u512_to_u256};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -228,6 +228,15 @@ impl VariableRepositoryContractCaller {
     /// Calculates amount of reputation to be redistributed
     pub fn reputation_to_redistribute(&self, reputation_amount: U256) -> U256 {
         math::promils_of(reputation_amount, self.default_policing_rate()).unwrap_or_revert()
+    }
+
+    /// Calculates amount of CSPR to be redistributed
+    pub fn cspr_to_redistribute(&self, cspr_amount: U512) -> U512 {
+        math::promils_of_u512(
+            cspr_amount,
+            u256_to_512(self.default_policing_rate()).unwrap_or_revert(),
+        )
+        .unwrap_or_revert()
     }
 
     pub fn governance_wallet(&self) -> Address {

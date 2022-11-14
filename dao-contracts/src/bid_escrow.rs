@@ -1,9 +1,7 @@
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::{
-            system::{
-                get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
-            },
+        contract_api::system::{
+            get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
@@ -15,11 +13,7 @@ use casper_types::{URef, U256, U512};
 
 use crate::{bid::job::WorkerType, voting::VotingId, VaNftContractCaller, VaNftContractInterface};
 use crate::{
-    bid::{
-        events::{JobCancelled},
-        job::Job,
-        types::BidId,
-    },
+    bid::{events::JobCancelled, job::Job, types::BidId},
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
@@ -441,8 +435,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
                         WorkerType::Internal => {
                             self.voting.return_reputation_of_yes_voters(voting_id);
                             self.voting.redistribute_reputation_of_no_voters(voting_id);
-                            self.mint_and_redistribute_reputation(&job);
-                            self.redistribute_cspr(&job);
+                            self.mint_and_redistribute_reputation_for_internal_worker(&job);
+                            self.redistribute_cspr_internal_worker(&job);
                             self.return_dos_fee(&job);
                         }
                         WorkerType::ExternalToVA => {
@@ -454,11 +448,17 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
                             self.voting.return_reputation_of_yes_voters(voting_id);
                             self.voting.redistribute_reputation_of_no_voters(voting_id);
-                            self.mint_and_redistribute_reputation(&job);
-                            self.redistribute_cspr(&job);
+                            self.mint_and_redistribute_reputation_for_internal_worker(&job);
+                            self.redistribute_cspr_internal_worker(&job);
                             self.return_dos_fee(&job);
                         }
-                        WorkerType::External => todo!(),
+                        WorkerType::External => {
+                            self.voting.return_reputation_of_yes_voters(voting_id);
+                            self.voting.redistribute_reputation_of_no_voters(voting_id);
+                            self.mint_and_redistribute_reputation_for_external_worker(&job);
+                            self.redistribute_cspr_external_worker(&job);
+                            self.return_dos_fee(&job);
+                        }
                     },
                     VotingResult::Against => todo!(),
                     VotingResult::QuorumNotReached => todo!(),
@@ -565,7 +565,7 @@ impl BidEscrowContract {
         .unwrap_or_revert_with(Error::TransferError);
     }
 
-    fn redistribute_cspr(&mut self, job: &Job) {
+    fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
         // 10% dla Mutlisiga
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
@@ -583,6 +583,30 @@ impl BidEscrowContract {
         }
     }
 
+    fn redistribute_cspr_external_worker(&mut self, job: &Job) {
+        // 10% dla Mutlisiga
+        let repo = self.variable_repository();
+        let governance_wallet: Address = repo.governance_wallet();
+        let payment = job.payment() + job.external_worker_cspr_stake();
+        let governance_wallet_payment = repo.payment_for_governance(payment);
+        self.withdraw(governance_wallet, governance_wallet_payment);
+
+        let total_left = payment - governance_wallet_payment;
+        let to_redistribute = repo.cspr_to_redistribute(total_left);
+        let to_worker = total_left - to_redistribute;
+
+        // To worker.
+        self.withdraw(job.worker(), to_worker);
+
+        // To REP holders.
+        let (total_supply, balances) = self.reputation_token().all_balances();
+        let total_supply = U512::from(total_supply.as_u128());
+        for (address, balance) in balances.balances {
+            let amount = to_redistribute * U512::from(balance.as_u128()) / total_supply;
+            self.withdraw(address, amount);
+        }
+    }
+
     fn refund(&mut self, job: &Job) {
         self.withdraw(job.poster(), job.payment());
     }
@@ -592,7 +616,7 @@ impl BidEscrowContract {
         self.withdraw(job.poster(), job_offer.dos_fee);
     }
 
-    fn mint_and_redistribute_reputation(&mut self, job: &Job) {
+    fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
         let reputation_to_mint =
             VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
                 .reputation_to_mint(job.payment());
@@ -610,19 +634,31 @@ impl BidEscrowContract {
         self.mint_reputation_for_voters(job, reputation_to_redistribute);
     }
 
+    fn mint_and_redistribute_reputation_for_external_worker(&mut self, job: &Job) {
+        let var_repo = self.variable_repository();
+
+        let payment_reputation_to_mint = var_repo.reputation_to_mint(job.payment());
+        let stake_reputation_to_mint =
+            var_repo.reputation_to_mint(job.external_worker_cspr_stake());
+        let stake_reputation_to_mint =
+            var_repo.reputation_to_redistribute(stake_reputation_to_mint);
+
+        let total = payment_reputation_to_mint + stake_reputation_to_mint;
+        self.mint_reputation_for_voters(job, total);
+    }
+
     fn mint_reputation_for_voters(&mut self, job: &Job, amount: U256) {
         let voting = self
             .voting
             .get_voting(job.formal_voting_id().unwrap_or_revert())
             .unwrap_or_revert();
 
-        // if !voting.total_unbounded_stake().is_zero() {
-        //     let err = (voting.total_unbounded_stake().as_u32()/10000u32) as u16;
-        //     revert(ApiError::User(err));
-        // }
         for i in 0..self.voting.voters().len(voting.voting_id()) {
             let ballot = self.voting.get_ballot_at(voting.voting_id(), i);
-            let to_transfer = ballot.stake * amount / voting.total_stake();
+            if ballot.unbounded {
+                continue;
+            }
+            let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
             ReputationContractCaller::at(self.voting.get_reputation_token_address())
                 .mint(ballot.voter, to_transfer);
         }
