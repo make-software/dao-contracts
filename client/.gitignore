@@ -4,3 +4,4 @@ dist/
 .npmrc
 .env
 package-lock.json
+.casper-node
