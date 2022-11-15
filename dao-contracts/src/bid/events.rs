@@ -1,18 +1,72 @@
-use crate::bid::job::Job;
 use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
-use casper_types::{U256, U512};
+use casper_types::U512;
 
 use super::types::BidId;
+use crate::bid::{job::Job, job_offer::JobOffer, types::JobOfferId};
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct JobOfferCreated {
+    pub job_offer_id: JobOfferId,
+    pub job_poster: Address,
+    pub max_budget: U512,
+    pub expected_timeframe: BlockTime,
+}
+
+impl JobOfferCreated {
+    pub fn new(job_offer: &JobOffer) -> Self {
+        JobOfferCreated {
+            job_offer_id: job_offer.job_offer_id,
+            job_poster: job_offer.job_poster,
+            max_budget: job_offer.max_budget,
+            expected_timeframe: job_offer.expected_timeframe,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct BidSubmitted {
+    pub bid_id: BidId,
+    pub job_offer_id: JobOfferId,
+    pub worker: Address,
+    pub onboard: bool,
+    pub proposed_timeframe: BlockTime,
+    pub proposed_payment: U512,
+    pub reputation_stake: Option<U512>,
+    pub cspr_stake: Option<U512>,
+}
+
+impl BidSubmitted {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        bid_id: BidId,
+        job_offer_id: JobOfferId,
+        worker: Address,
+        onboard: bool,
+        proposed_timeframe: BlockTime,
+        proposed_payment: U512,
+        reputation_stake: Option<U512>,
+        cspr_stake: Option<U512>,
+    ) -> Self {
+        BidSubmitted {
+            bid_id,
+            job_offer_id,
+            worker,
+            onboard,
+            proposed_timeframe,
+            proposed_payment,
+            reputation_stake,
+            cspr_stake,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
     pub bid_id: BidId,
     pub job_poster: Address,
     pub worker: Address,
-    pub document_hash: DocumentHash,
     pub finish_time: BlockTime,
-    pub required_stake: Option<U256>,
-    pub cspr_amount: U512,
+    pub payment: U512,
 }
 
 impl JobCreated {
@@ -21,10 +75,8 @@ impl JobCreated {
             bid_id: job.bid_id(),
             job_poster: job.poster(),
             worker: job.worker(),
-            document_hash: job.document_hash().clone(),
             finish_time: job.finish_time(),
-            required_stake: job.required_stake(),
-            cspr_amount: job.cspr_amount(),
+            payment: job.payment(),
         }
     }
 }
@@ -109,7 +161,7 @@ impl JobDone {
             caller,
             job_poster: job.poster(),
             worker: job.worker(),
-            cspr_amount: job.cspr_amount(),
+            cspr_amount: job.payment(),
         }
     }
 }
@@ -130,7 +182,7 @@ impl JobRejected {
             caller,
             job_poster: job.poster(),
             worker: job.worker(),
-            cspr_amount: job.cspr_amount(),
+            cspr_amount: job.payment(),
         }
     }
 }

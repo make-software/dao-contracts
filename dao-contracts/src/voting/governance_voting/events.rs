@@ -1,13 +1,10 @@
 use std::collections::BTreeMap;
 
-use crate::voting::Ballot;
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
-use crate::voting::ballot::Choice;
-use crate::voting::types::VotingId;
-
 use super::voting::VotingConfiguration;
+use crate::voting::{ballot::Choice, types::VotingId, Ballot};
 
 /// Event thrown after voting contract is created
 #[derive(Debug, PartialEq, Eq, Event)]
@@ -48,7 +45,6 @@ pub struct VotingCreated {
     pub config_formal_voting_time: u64,
     pub config_informal_voting_quorum: U256,
     pub config_informal_voting_time: u64,
-    pub config_create_minimum_reputation: U256,
 }
 
 impl VotingCreated {
@@ -68,7 +64,6 @@ impl VotingCreated {
             config_formal_voting_time: config.formal_voting_time,
             config_informal_voting_quorum: config.informal_voting_quorum,
             config_informal_voting_time: config.informal_voting_time,
-            config_create_minimum_reputation: config.create_minimum_reputation,
         }
     }
 }

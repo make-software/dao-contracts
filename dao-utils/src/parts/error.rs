@@ -33,6 +33,7 @@ macro_rules! wildcard {
 }
 
 dao_errors!(
+    PurseBalanceMismatch => 403,
     InsufficientBalance => 404,
     InsufficientAllowance => 401,
     NotAnOwner => 1000,
@@ -76,6 +77,8 @@ dao_errors!(
     BallotDoesNotExist => 3405,
     VoterDoesNotExist => 3406,
     VotingDoesNotExist => 3407,
+    ZeroStake => 3408,
+    // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,
     JobPosterNotKycd => 4001,
     WorkerNotKycd => 4002,
@@ -87,6 +90,19 @@ dao_errors!(
     VotingNotStarted => 4008,
     JobAlreadySubmitted => 4009,
     NotOnboardedWorkerCannotStakeReputation => 4010,
+    DosFeeTooLow => 4011,
+    CannotBidOnOwnJob => 4012,
+    PaymentExceedsMaxBudget => 4013,
+    JobOfferNotFound => 4014,
+    BidNotFound => 4015,
+    JobNotFound => 4016,
+    OnlyJobPosterCanPickABid => 4017,
+    OnlyWorkerCanSubmitProof => 4018,
+
+    // Reputation Token Errors.
+    CannotStakeTwice => 4500,
+    StakeDoesntExists => 4501,
+
     InvalidAddress => 5000,
     TransferError => 6000,
 );

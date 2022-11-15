@@ -1,14 +1,8 @@
-use proc_macro2::Span;
-use proc_macro2::TokenStream;
-use quote::quote;
-use quote::TokenStreamExt;
-use syn::punctuated::Punctuated;
-use syn::token::Comma;
-use syn::FnArg;
-use syn::ReturnType;
+use proc_macro2::{Span, TokenStream};
+use quote::{quote, TokenStreamExt};
+use syn::{punctuated::Punctuated, token::Comma, FnArg, ReturnType};
 
-use super::parser::CasperContractItem;
-use super::utils;
+use super::{parser::CasperContractItem, utils};
 
 pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
     let contract_test_interface = generate_test_interface(input)?;

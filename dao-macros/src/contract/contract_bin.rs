@@ -2,9 +2,8 @@ use convert_case::Casing;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
 
-use crate::contract::utils;
-
 use super::CasperContractItem;
+use crate::contract::utils;
 
 pub fn generate_code(input: &CasperContractItem) -> TokenStream {
     let contract_ident = &input.contract_ident;
@@ -91,9 +90,8 @@ mod tests {
     use pretty_assertions::assert_eq;
     use quote::quote;
 
-    use crate::contract::utils::tests::mock_valid_item;
-
     use super::generate_code;
+    use crate::contract::utils::tests::mock_valid_item;
 
     #[test]
     fn generating_no_mangles_works() {

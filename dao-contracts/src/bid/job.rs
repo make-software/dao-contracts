@@ -1,12 +1,15 @@
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address, BlockTime, DocumentHash, Error,
+    casper_env::revert,
+    Address,
+    BlockTime,
+    DocumentHash,
+    Error,
 };
 use casper_types::{U256, U512};
 
+use super::types::{BidId, JobId, JobOfferId};
 use crate::voting::types::VotingId;
-
-use super::types::BidId;
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -27,42 +30,52 @@ impl Default for JobStatus {
 /// Struct holding Job
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct Job {
+    job_id: JobId,
     bid_id: BidId,
+    job_offer_id: JobOfferId,
     informal_voting_id: Option<VotingId>,
     formal_voting_id: Option<VotingId>,
-    document_hash: DocumentHash,
-    result: Option<DocumentHash>,
+    job_proof: Option<DocumentHash>,
     finish_time: BlockTime,
-    required_stake: Option<U256>,
-    cspr_amount: U512,
-    poster: Address,
-    worker: Address,
     status: JobStatus,
+    worker: Address,
+    worker_type: WorkerType,
+    poster: Address,
+    payment: U512,
+    stake: U256,
+    external_worker_cspr_stake: U512,
 }
 
 impl Job {
     /// Job constructor
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
+        job_id: JobId,
         bid_id: BidId,
-        document_hash: DocumentHash,
-        poster: Address,
-        worker: Address,
+        job_offer_id: JobOfferId,
         finish_time: BlockTime,
-        required_stake: Option<U256>,
-        cspr_amount: U512,
+        worker: Address,
+        worker_type: WorkerType,
+        poster: Address,
+        payment: U512,
+        stake: U256,
+        external_worker_cspr_stake: U512,
     ) -> Self {
         Job {
+            job_id,
             bid_id,
-            document_hash,
-            result: None,
-            finish_time,
-            required_stake,
-            cspr_amount,
-            poster,
-            worker,
-            status: JobStatus::default(),
+            job_offer_id,
             informal_voting_id: None,
             formal_voting_id: None,
+            job_proof: None,
+            finish_time,
+            status: JobStatus::Created,
+            worker,
+            worker_type,
+            poster,
+            payment,
+            stake,
+            external_worker_cspr_stake,
         }
     }
 
@@ -112,35 +125,18 @@ impl Job {
         self.finish_time <= block_time
     }
 
-    fn can_submit(&self, caller: Address, block_time: BlockTime) -> bool {
-        if self.has_time_ended(block_time) {
-            if caller == self.worker() || caller == self.poster() {
-                return true;
-            }
-        } else if caller == self.worker() && self.status() == JobStatus::Accepted {
-            return true;
-        }
-
+    pub fn is_grace_period(&self, _block_time: BlockTime) -> bool {
+        // TODO: Implement
         false
     }
 
-    pub fn submit(
-        &mut self,
-        caller: Address,
-        block_time: BlockTime,
-        result: DocumentHash,
-    ) -> Result<(), Error> {
-        if !self.can_submit(caller, block_time) {
-            return Err(Error::NotAuthorizedToSubmitResult);
+    pub fn submit_proof(&mut self, job_proof: DocumentHash) {
+        if self.job_proof().is_some() {
+            revert(Error::JobAlreadySubmitted);
         }
 
-        if self.result().is_some() {
-            return Err(Error::JobAlreadySubmitted);
-        }
-
-        self.result = Some(result);
+        self.job_proof = Some(job_proof);
         self.status = JobStatus::Submitted;
-        Ok(())
     }
 
     /// Get the job's status.
@@ -160,7 +156,7 @@ impl Job {
 
     /// Get the job's result.
     pub fn result(&self) -> Option<&DocumentHash> {
-        self.result.as_ref()
+        self.job_proof.as_ref()
     }
 
     /// Get the job's bid id.
@@ -168,19 +164,14 @@ impl Job {
         self.bid_id
     }
 
-    /// Get the job's required stake for va.
-    pub fn required_stake(&self) -> Option<U256> {
-        self.required_stake
+    /// Get the job's offer id.
+    pub fn job_offer_id(&self) -> JobOfferId {
+        self.job_offer_id
     }
 
-    /// Get a reference to the job's description.
-    pub fn document_hash(&self) -> &DocumentHash {
-        &self.document_hash
-    }
-
-    /// Get the job's cspr amount.
-    pub fn cspr_amount(&self) -> U512 {
-        self.cspr_amount
+    /// Get the job's payment amount
+    pub fn payment(&self) -> U512 {
+        self.payment
     }
 
     /// Get the job's informal voting id.
@@ -214,8 +205,31 @@ impl Job {
         None
     }
 
+    pub fn job_proof(&self) -> Option<&DocumentHash> {
+        self.job_proof.as_ref()
+    }
+
     /// Get the job's finish time
     pub fn finish_time(&self) -> BlockTime {
         self.finish_time
     }
+
+    pub fn worker_type(&self) -> &WorkerType {
+        &self.worker_type
+    }
+
+    pub fn stake(&self) -> U256 {
+        self.stake
+    }
+
+    pub fn external_worker_cspr_stake(&self) -> U512 {
+        self.external_worker_cspr_stake
+    }
+}
+
+#[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq, Clone)]
+pub enum WorkerType {
+    Internal,
+    ExternalToVA,
+    External,
 }

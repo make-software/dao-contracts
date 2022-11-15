@@ -3,32 +3,31 @@ pub mod consts;
 pub mod events;
 pub mod voting;
 
-use casper_dao_utils::conversions::{u256_to_512, u512_to_u256};
+use std::collections::BTreeMap;
+
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     casper_env::{get_block_time, revert, self_address},
-    Address, Error, Mapping, Variable,
+    Address,
+    Error,
+    Mapping,
+    Variable,
+    VecMapping,
 };
-use std::collections::BTreeMap;
+use casper_types::U256;
 
-use casper_types::{U256, U512};
-
-use self::voting::VotingSummary;
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
-    voting::{Voting, VotingConfiguration, VotingResult, VotingType},
+    voting::{Voting, VotingConfiguration, VotingResult, VotingSummary, VotingType},
 };
-
+use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
-    ReputationContractCaller, ReputationContractInterface, VaNftContractCaller,
+    ReputationContractCaller,
+    ReputationContractInterface,
+    VaNftContractCaller,
     VaNftContractInterface,
 };
-use casper_dao_utils::VecMapping;
-
-use super::ballot::Choice;
-use super::VotingEnded;
-use super::{types::VotingId, Ballot};
 
 pub trait GovernanceVotingTrait {
     fn init(&mut self, variable_repo: Address, reputation_token: Address);
@@ -94,12 +93,25 @@ impl GovernanceVoting {
         stake: U256,
         voting_configuration: VotingConfiguration,
     ) -> VotingId {
-        if voting_configuration.cast_first_vote
-            && stake < voting_configuration.create_minimum_reputation
-        {
-            revert(Error::NotEnoughReputation)
+        if voting_configuration.only_va_can_create && !self.is_va(creator) {
+            revert(Error::VaNotOnboarded)
         }
 
+        let voting_id = self.next_voting_id();
+
+        VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
+        let voting = Voting::new(voting_id, get_block_time(), creator, voting_configuration);
+        self.set_voting(voting);
+        self.vote(creator, voting_id, Choice::InFavor, stake);
+
+        voting_id
+    }
+
+    pub fn create_voting_without_first_vote(
+        &mut self,
+        creator: Address,
+        voting_configuration: VotingConfiguration,
+    ) -> VotingId {
         if voting_configuration.only_va_can_create && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
         }
@@ -108,14 +120,11 @@ impl GovernanceVoting {
 
         VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
 
-        let cast_first_vote = voting_configuration.cast_first_vote;
-        let voting = Voting::new(voting_id, get_block_time(), voting_configuration);
-        self.set_voting(voting);
+        // let cast_first_vote = voting_configuration.cast_first_vote;
+        // let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
 
-        // Cast first vote in favor
-        if cast_first_vote {
-            self.vote(creator, voting_id, Choice::InFavor, stake);
-        }
+        let voting = Voting::new(voting_id, get_block_time(), creator, voting_configuration);
+        self.set_voting(voting);
 
         voting_id
     }
@@ -151,9 +160,73 @@ impl GovernanceVoting {
         }
 
         match voting.get_voting_type() {
+            VotingType::Informal => {
+                let voting_result = self.finish_informal_voting(voting);
+                self.return_reputation_of_yes_voters(voting_id);
+                self.return_reputation_of_no_voters(voting_id);
+
+                match voting_result.result() {
+                    VotingResult::InFavor | VotingResult::Against => {
+                        self.recast_creators_ballot_from_informal_to_formal(
+                            voting_result.formal_voting_id().unwrap_or_revert(),
+                        );
+                    }
+                    VotingResult::QuorumNotReached => {
+                        // TODO: Burn reputation of creator?
+                        // TODO: Emit events
+                    }
+                }
+                voting_result
+            }
+            VotingType::Formal => {
+                let voting_result = self.finish_formal_voting(voting);
+                match voting_result.result() {
+                    VotingResult::InFavor => {
+                        self.return_reputation_of_yes_voters(voting_id);
+                        self.redistribute_reputation_of_no_voters(voting_id);
+                    }
+                    VotingResult::Against => {
+                        self.return_reputation_of_no_voters(voting_id);
+                        self.redistribute_reputation_of_yes_voters(voting_id);
+                    }
+                    VotingResult::QuorumNotReached => {
+                        self.return_reputation_of_yes_voters(voting_id);
+                        self.return_reputation_of_no_voters(voting_id);
+                        // TODO: Should we burn the reputation of the creator?
+                    }
+                }
+                voting_result
+            }
+        }
+    }
+
+    pub fn finish_voting_without_token_redistribution(
+        &mut self,
+        voting_id: VotingId,
+    ) -> VotingSummary {
+        let voting = self
+            .get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
+
+        if voting.completed() {
+            revert(Error::FinishingCompletedVotingNotAllowed)
+        }
+
+        match voting.get_voting_type() {
             VotingType::Informal => self.finish_informal_voting(voting),
             VotingType::Formal => self.finish_formal_voting(voting),
         }
+    }
+
+    pub fn summary(&self, voting_id: VotingId) -> VotingSummary {
+        let voting = self.get_voting_or_revert(voting_id);
+        let voters_len = self.voters.len(voting.voting_id());
+        VotingSummary::new(
+            voting.get_result(voters_len),
+            voting.get_voting_type(),
+            voting.informal_voting_id(),
+            voting.formal_voting_id(),
+        )
     }
 
     fn finish_informal_voting(&mut self, mut voting: Voting) -> VotingSummary {
@@ -162,24 +235,18 @@ impl GovernanceVoting {
         }
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
-        let (result, transfers, burns) = match voting_result {
-            VotingResult::InFavor => {
+        match voting_result {
+            VotingResult::InFavor | VotingResult::Against => {
                 let informal_voting_id = voting.voting_id();
-                let transfers = self.return_reputation(informal_voting_id);
+                // let transfers = self.return_reputation(informal_voting_id, skip_first_vote);
 
                 let formal_voting_id = self.next_voting_id();
-                let creator_address = self.voters.get(informal_voting_id, 0).unwrap_or_revert();
-                let creator_stake = self
-                    .ballots
-                    .get(&(informal_voting_id, creator_address))
-                    .unwrap_or_revert_with(Error::BallotDoesNotExist)
-                    .stake;
 
-                // Formal voting is created and first vote cast
+                // Formal voting is created.
                 self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
 
                 VotingCreated::new(
-                    &creator_address,
+                    voting.creator(),
                     formal_voting_id,
                     informal_voting_id,
                     Some(formal_voting_id),
@@ -187,51 +254,31 @@ impl GovernanceVoting {
                 )
                 .emit();
 
-                if voting.voting_configuration().cast_first_vote {
-                    self.vote(
-                        creator_address,
-                        formal_voting_id,
-                        Choice::InFavor,
-                        creator_stake,
-                    );
-                }
-
                 // Informal voting is completed and referenced with formal voting
                 voting.complete(Some(formal_voting_id));
-
-                (consts::INFORMAL_VOTING_PASSED, transfers, BTreeMap::new())
-            }
-            VotingResult::Against => {
-                let (transfers, burns) =
-                    self.burn_creators_and_return_others_reputation(voting.voting_id());
-                voting.complete(None);
-
-                (consts::INFORMAL_VOTING_REJECTED, transfers, burns)
             }
             VotingResult::QuorumNotReached => {
-                let (transfers, burns) =
-                    self.burn_creators_and_return_others_reputation(voting.voting_id());
                 voting.complete(None);
-
-                (consts::INFORMAL_VOTING_QUORUM_NOT_REACHED, transfers, burns)
             }
         };
 
         let informal_voting_id = voting.voting_id();
         let formal_voting_id = voting.formal_voting_id();
-        VotingEnded {
-            voting_id: informal_voting_id,
-            informal_voting_id,
-            formal_voting_id: voting.formal_voting_id(),
-            result: result.into(),
-            votes_count: voters_len.into(),
-            stake_in_favor: voting.stake_in_favor(),
-            stake_against: voting.stake_against(),
-            transfers,
-            burns,
-            mints: BTreeMap::new(),
-        }
-        .emit();
+
+        // Move up in stack.
+        // VotingEnded {
+        //     voting_id: informal_voting_id,
+        //     informal_voting_id,
+        //     formal_voting_id: voting.formal_voting_id(),
+        //     result: result.into(),
+        //     votes_count: voters_len.into(),
+        //     stake_in_favor: voting.stake_in_favor(),
+        //     stake_against: voting.stake_against(),
+        //     transfers,
+        //     burns,
+        //     mints: BTreeMap::new(),
+        // }
+        // .emit();
 
         self.set_voting(voting);
 
@@ -251,38 +298,35 @@ impl GovernanceVoting {
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
 
-        let (result, transfers, burns) = match voting_result {
+        match voting_result {
             VotingResult::InFavor => {
-                let transfers = self.redistribute_reputation(&voting);
-                self.perform_action(&voting);
-                (consts::FORMAL_VOTING_PASSED, transfers, BTreeMap::new())
+                self.perform_action(voting.voting_id());
             }
-            VotingResult::Against => {
-                let transfers = self.redistribute_reputation(&voting);
-                (consts::FORMAL_VOTING_REJECTED, transfers, BTreeMap::new())
-            }
-            VotingResult::QuorumNotReached => {
-                let (transfers, burns) =
-                    self.burn_creators_and_return_others_reputation(voting.voting_id());
-                (consts::FORMAL_VOTING_QUORUM_NOT_REACHED, transfers, burns)
-            }
+            VotingResult::Against => {}
+            VotingResult::QuorumNotReached => {}
         };
+
+        // ReputationContractCaller::at(self.get_reputation_token_address()).redistribute(
+        //     mints.clone(),
+        //     burns.clone(),
+        //     voting.voting_id(),
+        // );
 
         let formal_voting_id = voting.voting_id();
         let informal_voting_id = voting.informal_voting_id();
-        VotingEnded {
-            voting_id: formal_voting_id,
-            informal_voting_id,
-            formal_voting_id: Some(formal_voting_id),
-            result: result.into(),
-            votes_count: voters_len.into(),
-            stake_in_favor: voting.stake_in_favor(),
-            stake_against: voting.stake_against(),
-            transfers,
-            burns,
-            mints: BTreeMap::new(),
-        }
-        .emit();
+        // VotingEnded {
+        //     voting_id: formal_voting_id,
+        //     informal_voting_id,
+        //     formal_voting_id: Some(formal_voting_id),
+        //     result: result.into(),
+        //     votes_count: voters_len.into(),
+        //     stake_in_favor: voting.stake_in_favor(),
+        //     stake_against: voting.stake_against(),
+        //     transfers: mints,
+        //     burns,
+        //     mints: BTreeMap::new(),
+        // }
+        // .emit();
 
         voting.complete(None);
         self.set_voting(voting);
@@ -305,7 +349,7 @@ impl GovernanceVoting {
     ///
     /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
     pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256) {
-        let mut voting = self.get_voting(voting_id).unwrap_or_revert();
+        let voting = self.get_voting(voting_id).unwrap_or_revert();
 
         // We cannot vote on a completed voting
         if voting.completed() {
@@ -318,19 +362,31 @@ impl GovernanceVoting {
             revert(Error::CannotVoteTwice)
         }
 
-        // Stake the reputation
-        ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-            voter,
-            self_address(),
-            stake,
-        );
+        self.cast_ballot(voter, voting_id, choice, stake, false, voting);
+    }
 
-        // Create a new vote
+    // TODO: REFACTOR EVERYTHING
+    pub fn cast_ballot(
+        &mut self,
+        voter: Address,
+        voting_id: VotingId,
+        choice: Choice,
+        stake: U256,
+        unbounded: bool,
+        mut voting: Voting,
+    ) {
+        if !unbounded {
+            // Stake the reputation
+            ReputationContractCaller::at(self.get_reputation_token_address())
+                .stake_voting(voter, voting_id, choice, stake);
+        }
+
         let vote = Ballot {
             voter,
             choice,
             voting_id,
             stake,
+            unbounded,
         };
 
         BallotCast::new(&vote).emit();
@@ -342,7 +398,11 @@ impl GovernanceVoting {
         self.ballots.set(&(voting_id, voter), vote);
 
         // update voting
-        voting.stake(stake, choice);
+        if unbounded {
+            voting.add_unbounded_stake(stake, choice)
+        } else {
+            voting.add_stake(stake, choice);
+        }
         self.set_voting(voting);
     }
 
@@ -374,7 +434,7 @@ impl GovernanceVoting {
     }
 
     /// Returns the nth [Ballot](Ballot) of cast on `voting_id`
-    pub fn get_ballot_at(&mut self, voting_id: VotingId, i: u32) -> Ballot {
+    pub fn get_ballot_at(&self, voting_id: VotingId, i: u32) -> Ballot {
         let address = self
             .get_voter(voting_id, i)
             .unwrap_or_revert_with(Error::VoterDoesNotExist);
@@ -394,6 +454,11 @@ impl GovernanceVoting {
             .map(|x| x.unwrap_or_revert())
     }
 
+    pub fn get_voting_or_revert(&self, voting_id: VotingId) -> Voting {
+        self.get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VotingDoesNotExist)
+    }
+
     fn set_voting(&self, voting: Voting) {
         self.votings.set(&voting.voting_id(), Some(voting))
     }
@@ -404,7 +469,8 @@ impl GovernanceVoting {
         voting_id
     }
 
-    fn perform_action(&self, voting: &Voting) {
+    fn perform_action(&self, voting_id: VotingId) {
+        let voting = self.get_voting(voting_id).unwrap_or_revert();
         match voting.contract_call() {
             Some(contract_call) => {
                 contract_call.call();
@@ -413,105 +479,136 @@ impl GovernanceVoting {
         }
     }
 
-    fn burn_creators_and_return_others_reputation(
-        &mut self,
-        voting_id: VotingId,
-    ) -> (BTreeMap<Address, U256>, BTreeMap<Address, U256>) {
-        let (mut transfers, mut burns) = (BTreeMap::new(), BTreeMap::new());
-        let voting = self.get_voting(voting_id).unwrap_or_revert();
-        for i in 0..self.voters.len(voting_id) {
-            let ballot = self.get_ballot_at(voting_id, i);
-            if voting.voting_configuration().cast_first_vote && i == 0 {
-                // the creator (if any) - burn
-                burns.insert(ballot.voter, ballot.stake);
-                ReputationContractCaller::at(self.get_reputation_token_address())
-                    .burn(self_address(), ballot.stake);
-            } else {
-                // the voters - transfer from contract to them
-                transfers.insert(ballot.voter, ballot.stake);
-                ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-                    self_address(),
-                    ballot.voter,
-                    ballot.stake,
-                );
-            }
-        }
-
-        (transfers, burns)
-    }
-
-    fn return_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U256> {
+    pub fn unstake_all_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U256> {
         let mut transfers = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.unbounded {
+                continue;
+            }
             transfers.insert(ballot.voter, ballot.stake);
-            ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-                self_address(),
-                ballot.voter,
-                ballot.stake,
-            );
+            ReputationContractCaller::at(self.get_reputation_token_address())
+                .unstake_voting(ballot.voter, ballot.voting_id);
         }
 
         transfers
     }
 
-    fn redistribute_reputation(&mut self, voting: &Voting) -> BTreeMap<Address, U256> {
-        // TODO: update conversion after support for U256<>U512 conversion will be added to Casper
-        let mut transfers = BTreeMap::new();
-        let total_stake = u256_to_512(voting.total_stake()).unwrap_or_revert();
-        let mut transferred = U512::zero();
-        let result = voting.is_in_favor();
-        let u256_max = u256_to_512(U256::MAX).unwrap_or_revert();
+    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, formal_voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(formal_voting_id);
+        let informal_voting_id = voting.informal_voting_id();
+        let creator = voting.creator();
+        let creator_ballot = self
+            .get_ballot(informal_voting_id, *creator)
+            .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
-        for i in 0..self.voters.len(voting.voting_id()) {
-            let ballot = self.get_ballot_at(voting.voting_id(), i);
-            if ballot.choice.is_in_favor() == result {
-                let to_transfer = total_stake * u256_to_512(ballot.stake).unwrap_or_revert()
-                    / u256_to_512(voting.get_winning_stake()).unwrap_or_revert();
+        self.cast_ballot(
+            *creator,
+            formal_voting_id,
+            Choice::InFavor,
+            creator_ballot.stake,
+            creator_ballot.unbounded,
+            voting,
+        );
+    }
 
-                if to_transfer > u256_max {
-                    revert(Error::ArithmeticOverflow)
-                }
-
-                transferred += to_transfer;
-
-                let to_transfer =
-                    u512_to_u256(to_transfer).unwrap_or_revert_with(Error::ArithmeticOverflow);
-
-                transfers.insert(ballot.voter, to_transfer);
-                ReputationContractCaller::at(self.get_reputation_token_address()).transfer_from(
-                    self_address(),
-                    ballot.voter,
-                    to_transfer,
-                );
+    pub fn return_reputation_of_yes_voters(&self, voting_id: VotingId) {
+        for i in 0..self.voters.len(voting_id) {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.choice.is_in_favor() && !ballot.unbounded {
+                self.reputation_token()
+                    .unstake_voting(ballot.voter, voting_id);
             }
         }
+    }
 
-        // mark leftovers
-        let dust = total_stake - transferred;
-
-        if dust > U512::zero() {
-            if dust > u256_max {
-                revert(Error::ArithmeticOverflow)
+    pub fn return_reputation_of_no_voters(&self, voting_id: VotingId) {
+        for i in 0..self.voters.len(voting_id) {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.choice.is_against() && !ballot.unbounded {
+                self.reputation_token()
+                    .unstake_voting(ballot.voter, voting_id);
             }
-
-            self.dust_amount.set(
-                self.get_dust_amount()
-                    + u512_to_u256(dust).unwrap_or_revert_with(Error::ArithmeticOverflow),
-            );
         }
+    }
 
-        transfers
+    pub fn redistribute_reputation_of_no_voters(&self, voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(voting_id);
+        let total_stake_in_favor = voting.stake_in_favor();
+        let total_stake_against = voting.stake_against();
+        let mut burns: BTreeMap<Address, U256> = BTreeMap::new();
+        let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
+        for i in 0..self.voters.len(voting_id) {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.unbounded {
+                continue;
+            }
+            if ballot.choice.is_against() {
+                self.reputation_token()
+                    .unstake_voting(ballot.voter, voting_id);
+                burns.insert(ballot.voter, ballot.stake);
+            } else {
+                let amount_to_mint = total_stake_against * ballot.stake / total_stake_in_favor;
+                mints.insert(ballot.voter, amount_to_mint);
+            }
+        }
+        self.reputation_token().bulk_mint_burn(mints, burns);
+    }
+
+    pub fn redistribute_reputation_of_yes_voters(&self, voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(voting_id);
+        let total_stake_in_favor = voting.stake_in_favor();
+        let total_stake_against = voting.stake_against();
+        let mut burns: BTreeMap<Address, U256> = BTreeMap::new();
+        let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
+        for i in 0..self.voters.len(voting_id) {
+            let ballot = self.get_ballot_at(voting_id, i);
+            if ballot.unbounded {
+                continue;
+            }
+            if ballot.choice.is_in_favor() {
+                self.reputation_token()
+                    .unstake_voting(ballot.voter, voting_id);
+                burns.insert(ballot.voter, ballot.stake);
+            } else {
+                let amount_to_mint = total_stake_in_favor * ballot.stake / total_stake_against;
+                mints.insert(ballot.voter, amount_to_mint);
+            }
+        }
+        self.reputation_token().bulk_mint_burn(mints, burns);
     }
 
     fn is_va(&self, address: Address) -> bool {
-        !VaNftContractCaller::at(self.get_va_token_address())
-            .balance_of(address)
-            .is_zero()
+        !self.va_token().balance_of(address).is_zero()
+    }
+
+    fn va_token(&self) -> VaNftContractCaller {
+        VaNftContractCaller::at(self.get_va_token_address())
+    }
+
+    pub fn reputation_token(&self) -> ReputationContractCaller {
+        ReputationContractCaller::at(self.get_reputation_token_address())
     }
 
     /// Get a reference to the governance voting's voters.
     pub fn voters(&self) -> &VecMapping<VotingId, Address> {
         &self.voters
+    }
+
+    pub fn bound_ballot(&mut self, voting_id: u32, worker: Address) {
+        let mut ballot = self
+            .get_ballot(voting_id, worker)
+            .unwrap_or_revert_with(Error::BallotDoesNotExist);
+
+        let mut voting = self.get_voting_or_revert(voting_id);
+        voting.bound_stake(ballot.stake, ballot.choice);
+        self.set_voting(voting);
+
+        self.reputation_token().mint(worker, ballot.stake);
+        self.reputation_token()
+            .stake_voting(worker, voting_id, ballot.choice, ballot.stake);
+
+        ballot.unbounded = false;
+        self.ballots.set(&(voting_id, worker), ballot);
     }
 }

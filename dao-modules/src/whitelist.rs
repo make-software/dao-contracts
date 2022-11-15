@@ -3,7 +3,9 @@
 use casper_dao_utils::{
     casper_dao_macros::Instance,
     casper_env::{self, caller, emit},
-    Address, Error, Mapping,
+    Address,
+    Error,
+    Mapping,
 };
 
 use self::events::{AddedToWhitelist, RemovedFromWhitelist};

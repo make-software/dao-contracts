@@ -2,17 +2,27 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, ContractCall, DocumentHash, Error, SequenceGenerator,
+    consts,
+    Address,
+    ContractCall,
+    DocumentHash,
+    Error,
+    SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
+use delegate::delegate;
 
 use crate::{
     voting::{
-        kyc_info::KycInfo, types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting,
+        kyc_info::KycInfo,
+        types::VotingId,
+        voting::Voting,
+        Ballot,
+        Choice,
+        GovernanceVoting,
     },
     VotingConfigurationBuilder,
 };
-use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
@@ -74,17 +84,6 @@ pub struct KycVoterContract {
 }
 
 impl KycVoterContractInterface for KycVoterContract {
-    fn init(
-        &mut self,
-        variable_repo: Address,
-        reputation_token: Address,
-        va_token: Address,
-        kyc_token: Address,
-    ) {
-        self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token, va_token);
-    }
-
     delegate! {
         to self.kyc {
             fn get_kyc_token_address(&self) -> Address;
@@ -98,6 +97,17 @@ impl KycVoterContractInterface for KycVoterContract {
             fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
+    }
+
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        va_token: Address,
+        kyc_token: Address,
+    ) {
+        self.kyc.init(kyc_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     fn create_voting(

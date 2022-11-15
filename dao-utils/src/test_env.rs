@@ -5,28 +5,46 @@ use std::{
     time::Duration,
 };
 
-use crate::{Address, Error};
-use casper_engine_test_support::{
-    DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
-    DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
-};
-use casper_execution_engine::core::engine_state::{
-    self, run_genesis_request::RunGenesisRequest, GenesisAccount,
-};
-use casper_types::{
-    account::{Account, AccountHash},
-    bytesrepr::{self, Bytes, FromBytes, ToBytes},
-    runtime_args, ApiError, CLTyped, ContractPackageHash, Key, Motes, PublicKey, RuntimeArgs,
-    SecretKey, URef, U512,
-};
-
 use blake2::{
     digest::{Update, VariableOutput},
     VarBlake2b,
 };
-
-use casper_engine_test_support::DEFAULT_PAYMENT;
+use casper_engine_test_support::{
+    DeployItemBuilder,
+    ExecuteRequestBuilder,
+    InMemoryWasmTestBuilder,
+    ARG_AMOUNT,
+    DEFAULT_ACCOUNT_INITIAL_BALANCE,
+    DEFAULT_GENESIS_CONFIG,
+    DEFAULT_GENESIS_CONFIG_HASH,
+    DEFAULT_PAYMENT,
+};
+use casper_execution_engine::core::engine_state::{
+    self,
+    run_genesis_request::RunGenesisRequest,
+    DeployItem,
+    GenesisAccount,
+};
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
+use casper_types::{
+    account::{Account, AccountHash},
+    bytesrepr::{self, Bytes, FromBytes, ToBytes},
+    runtime_args,
+    ApiError,
+    CLTyped,
+    Contract,
+    ContractHash,
+    ContractPackageHash,
+    Key,
+    Motes,
+    PublicKey,
+    RuntimeArgs,
+    SecretKey,
+    URef,
+    U512,
+};
+
+use crate::{consts::CONTRACT_MAIN_PURSE, Address, Error};
 
 /// CasperVM based testing environment.
 #[derive(Clone)]
@@ -103,8 +121,19 @@ impl TestEnv {
         self.state.lock().unwrap().block_time
     }
 
-    pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
-        self.state.lock().unwrap().get_account_cspr_balance(account)
+    pub fn get_address_cspr_balance(&self, address: Address) -> U512 {
+        match address.is_contract() {
+            true => self
+                .state
+                .lock()
+                .unwrap()
+                .get_contract_cspr_balance(address.as_contract_package_hash().unwrap()),
+            false => self
+                .state
+                .lock()
+                .unwrap()
+                .get_account_cspr_balance(&address),
+        }
     }
 }
 
@@ -167,14 +196,7 @@ impl TestEnvState {
 
     pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) {
         let session_code = PathBuf::from(wasm_path);
-        let deploy_item = DeployItemBuilder::new()
-            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
-            .with_authorization_keys(&[self.active_account_hash()])
-            .with_address(self.active_account_hash())
-            .with_session_code(session_code, args)
-            .with_deploy_hash(self.next_hash())
-            .build();
-
+        let deploy_item = self.build_deploy_item(session_code, args);
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
             .with_block_time(self.block_time)
             .build();
@@ -190,6 +212,7 @@ impl TestEnvState {
         args: RuntimeArgs,
         has_return: bool,
     ) -> Result<Option<T>, Error> {
+        dbg!(entry_point);
         let session_code = PathBuf::from("getter_proxy.wasm");
 
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();
@@ -200,13 +223,7 @@ impl TestEnvState {
             "has_return" => has_return
         };
 
-        let deploy_item = DeployItemBuilder::new()
-            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
-            .with_authorization_keys(&[self.active_account_hash()])
-            .with_address(self.active_account_hash())
-            .with_session_code(session_code, args)
-            .with_deploy_hash(self.next_hash())
-            .build();
+        let deploy_item = self.build_deploy_item(session_code, args);
 
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
             .with_block_time(self.block_time)
@@ -228,6 +245,16 @@ impl TestEnvState {
         result
     }
 
+    fn build_deploy_item(&mut self, session_code: PathBuf, args: RuntimeArgs) -> DeployItem {
+        DeployItemBuilder::new()
+            .with_empty_payment_bytes(runtime_args! {ARG_AMOUNT => *DEFAULT_PAYMENT})
+            .with_authorization_keys(&[self.active_account_hash()])
+            .with_address(self.active_account_hash())
+            .with_session_code(session_code, args)
+            .with_deploy_hash(self.next_hash())
+            .build()
+    }
+
     fn collect_gas(&mut self) {
         *self
             .gas_used
@@ -242,6 +269,14 @@ impl TestEnvState {
             .unwrap();
         let key: &Key = account.named_keys().get(name).unwrap();
         ContractPackageHash::from(key.into_hash().unwrap())
+    }
+
+    pub fn get_contract_hash(&self, contract_hash: ContractPackageHash) -> ContractHash {
+        self.context
+            .get_contract_package(contract_hash)
+            .unwrap()
+            .current_contract_hash()
+            .unwrap()
     }
 
     pub fn get_value<T: FromBytes + CLTyped>(&self, hash: ContractPackageHash, name: &str) -> T {
@@ -330,15 +365,29 @@ impl TestEnvState {
         hash
     }
 
-    pub fn get_account_cspr_balance(&self, account: Address) -> U512 {
-        let gas_used = match self.gas_used.get(&account) {
+    pub fn get_contract_cspr_balance(&self, contract_hash: &ContractPackageHash) -> U512 {
+        let contract_hash: ContractHash = self.get_contract_hash(*contract_hash);
+
+        let contract: Contract = self.context.get_contract(contract_hash).unwrap();
+
+        let main_purse_uref = contract
+            .named_keys()
+            .get(CONTRACT_MAIN_PURSE)
+            .and_then(|key| key.as_uref());
+
+        match main_purse_uref {
+            Some(purse) => self.context.get_purse_balance(*purse),
+            None => U512::zero(),
+        }
+    }
+
+    pub fn get_account_cspr_balance(&self, address: &Address) -> U512 {
+        let gas_used = match self.gas_used.get(address) {
             Some(value) => *value,
             None => U512::zero(),
         };
-        let account: Account = self
-            .context
-            .get_account(*account.as_account_hash().unwrap())
-            .unwrap();
+        let account_hash = address.as_account_hash().unwrap();
+        let account: Account = self.context.get_account(*account_hash).unwrap();
         let purse = account.main_purse();
         self.context.get_purse_balance(purse) + gas_used
     }

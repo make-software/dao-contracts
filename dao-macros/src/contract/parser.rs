@@ -1,8 +1,12 @@
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span};
 use quote::format_ident;
-use syn::parse::{Parse, ParseStream};
-use syn::{braced, Token, TraitItemMethod};
+use syn::{
+    braced,
+    parse::{Parse, ParseStream},
+    Token,
+    TraitItemMethod,
+};
 
 use super::utils;
 

@@ -57,10 +57,10 @@ clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
 
 check-lint: clippy
-	cargo fmt -- --check
+	cargo +nightly fmt -- --check
 
 lint: clippy
-	cargo fmt
+	cargo +nightly fmt
 
 clean:
 	cargo clean
@@ -70,3 +70,11 @@ docs:
 
 run-e2e-tests:
 	cd client && ./run-e2e-tests.sh
+
+test-bid-escrow: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_bid_escrow
+
+test-slashing: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_slashing

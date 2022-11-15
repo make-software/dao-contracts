@@ -1,17 +1,22 @@
-use crate::voting::voting::VotingConfiguration;
 use casper_dao_modules::{AccessControl, Record, Repository};
-use casper_dao_utils::conversions::u512_to_u256;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
-    consts as dao_consts, math, Address, Error,
+    consts as dao_consts,
+    conversions::{u256_to_512, u512_to_u256},
+    math,
+    Address,
+    Error,
 };
 use casper_types::{
     bytesrepr::{Bytes, FromBytes},
-    U256, U512,
+    U256,
+    U512,
 };
 use delegate::delegate;
+
+use crate::voting::voting::VotingConfiguration;
 
 // Interface of the Variable Repository Contract.
 //
@@ -167,14 +172,9 @@ impl VariableRepositoryContractCaller {
         self.get_variable(dao_consts::INFORMAL_VOTING_TIME)
     }
 
-    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
+    /// Retrieves the value stored under the [FORMAL_VOTING_TIME](dao_consts::FORMAL_VOTING_TIME) key.
     pub fn formal_voting_time(&self) -> u64 {
         self.get_variable(dao_consts::FORMAL_VOTING_TIME)
-    }
-
-    /// Retrieves the value stored under the [MINIMUM_GOVERNANCE_REPUTATION](dao_consts::MINIMUM_GOVERNANCE_REPUTATION) key.
-    pub fn minimum_governance_reputation(&self) -> U256 {
-        self.get_variable(dao_consts::MINIMUM_GOVERNANCE_REPUTATION)
     }
 
     /// Retrieves the value stored under the [REPUTATION_CONVERSION_RATE](dao_consts::REPUTATION_CONVERSION_RATE) key.
@@ -213,10 +213,11 @@ impl VariableRepositoryContractCaller {
             informal_voting_quorum: self.informal_voting_quorum(total_onboarded),
             informal_voting_time: self.informal_voting_time(),
             cast_first_vote: true,
-            create_minimum_reputation: self.minimum_governance_reputation(),
             cast_minimum_reputation: U256::zero(),
             contract_call: None,
             only_va_can_create: true,
+            unbounded_tokens_for_creator: false,
+            onboard_creator: false,
         }
     }
 
@@ -232,5 +233,26 @@ impl VariableRepositoryContractCaller {
     /// Calculates amount of reputation to be redistributed
     pub fn reputation_to_redistribute(&self, reputation_amount: U256) -> U256 {
         math::promils_of(reputation_amount, self.default_policing_rate()).unwrap_or_revert()
+    }
+
+    /// Calculates amount of CSPR to be redistributed
+    pub fn cspr_to_redistribute(&self, cspr_amount: U512) -> U512 {
+        math::promils_of_u512(
+            cspr_amount,
+            u256_to_512(self.default_policing_rate()).unwrap_or_revert(),
+        )
+        .unwrap_or_revert()
+    }
+
+    pub fn governance_wallet(&self) -> Address {
+        self.get_variable(dao_consts::GOVERNANCE_WALLET_ADDRESS)
+    }
+
+    pub fn governance_payment_ratio(&self) -> U512 {
+        self.get_variable(dao_consts::GOVERNANCE_PAYMENT_RATIO)
+    }
+
+    pub fn payment_for_governance(&self, cspr_amount: U512) -> U512 {
+        math::promils_of_u512(cspr_amount, self.governance_payment_ratio()).unwrap_or_revert()
     }
 }

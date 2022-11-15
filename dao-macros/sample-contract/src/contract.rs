@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use casper_dao_utils::casper_dao_macros::casper_contract_interface;
-use casper_dao_utils::casper_dao_macros::Instance;
+use casper_dao_utils::casper_dao_macros::{casper_contract_interface, Instance};
 
 #[casper_contract_interface]
 pub trait ImportantContractInterface {

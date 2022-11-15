@@ -48,8 +48,16 @@ fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStrea
 mod tests {
     use quote::quote;
     use syn::{
-        punctuated::Punctuated, token, DataStruct, Field, Fields, FieldsNamed, Token, Type,
-        VisPublic, Visibility,
+        punctuated::Punctuated,
+        token,
+        DataStruct,
+        Field,
+        Fields,
+        FieldsNamed,
+        Token,
+        Type,
+        VisPublic,
+        Visibility,
     };
 
     use super::parse_data;

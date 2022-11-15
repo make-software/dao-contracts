@@ -1,6 +1,7 @@
 use casper_dao_utils::{
     casper_env::{self, emit},
-    Address, Error,
+    Address,
+    Error,
 };
 
 use crate::{core::ERC721Token, events::Transfer, TokenId};

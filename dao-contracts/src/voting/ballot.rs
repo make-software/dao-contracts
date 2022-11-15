@@ -1,9 +1,10 @@
-use crate::voting::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
 };
 use casper_types::U256;
+
+use crate::voting::VotingId;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Eq, Clone, Copy)]
@@ -13,11 +14,15 @@ pub enum Choice {
 }
 
 impl Choice {
-    pub(crate) fn is_in_favor(&self) -> bool {
+    pub fn is_in_favor(&self) -> bool {
         match self {
             Choice::InFavor => true,
             Choice::Against => false,
         }
+    }
+
+    pub fn is_against(&self) -> bool {
+        !self.is_in_favor()
     }
 }
 
@@ -28,14 +33,16 @@ pub struct Ballot {
     pub voting_id: VotingId,
     pub choice: Choice,
     pub stake: U256,
+    pub unbounded: bool,
 }
 
 #[cfg(test)]
 #[test]
 fn test_vote_serialization() {
-    use casper_types::account::AccountHash;
-    use casper_types::bytesrepr::FromBytes;
-    use casper_types::bytesrepr::ToBytes;
+    use casper_types::{
+        account::AccountHash,
+        bytesrepr::{FromBytes, ToBytes},
+    };
     let address = Address::Account(AccountHash::default());
 
     let vote = Ballot {
@@ -43,6 +50,7 @@ fn test_vote_serialization() {
         voting_id: 123,
         choice: Choice::InFavor,
         stake: U256::from(456),
+        unbounded: false,
     };
 
     let (deserialized_vote, _) = Ballot::from_bytes(&vote.to_bytes().unwrap()).unwrap();

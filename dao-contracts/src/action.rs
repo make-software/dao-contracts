@@ -33,8 +33,7 @@ impl Action {
 
 #[test]
 fn test_action() {
-    use casper_types::bytesrepr::FromBytes;
-    use casper_types::bytesrepr::ToBytes;
+    use casper_types::bytesrepr::{FromBytes, ToBytes};
     let action = Action::ChangeOwner;
     let (deserialized_action, _) = Action::from_bytes(&action.to_bytes().unwrap()).unwrap();
 

@@ -2,7 +2,10 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     casper_env::{self, emit},
-    Address, Error, Mapping, Variable,
+    Address,
+    Error,
+    Mapping,
+    Variable,
 };
 use casper_types::{bytesrepr::Bytes, U256};
 

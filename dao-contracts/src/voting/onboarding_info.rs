@@ -1,10 +1,14 @@
-use crate::{VaNftContractCaller, VaNftContractInterface};
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
-    Address, Error, Mapping, Variable,
+    Address,
+    Error,
+    Mapping,
+    Variable,
 };
+
+use crate::{VaNftContractCaller, VaNftContractInterface};
 
 /// A utility module that provides information about the current status of the onboarding process.
 #[derive(Instance)]

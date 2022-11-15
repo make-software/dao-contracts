@@ -6,9 +6,8 @@ use casper_types::{
     CLTyped,
 };
 
-use crate::{consts, instance::Instanced, Variable};
-
 use super::mapping::IndexedMapping;
+use crate::{consts, instance::Instanced, Variable};
 
 pub struct OrderedCollection<T> {
     pub values: IndexedMapping<T>,

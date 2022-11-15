@@ -1,5 +1,6 @@
-use casper_types::{bytesrepr::FromBytes, ContractPackageHash};
 use std::fmt::Debug;
+
+use casper_types::{bytesrepr::FromBytes, ContractPackageHash};
 
 use crate::{Address, TestEnv};
 

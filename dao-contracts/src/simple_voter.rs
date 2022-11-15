@@ -1,20 +1,25 @@
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
     casper_env::caller,
-    Address, DocumentHash, Error, Mapping,
+    Address,
+    DocumentHash,
+    Error,
+    Mapping,
 };
 use casper_types::U256;
+use delegate::delegate;
 
 use crate::{
-    voting::{voting::Voting, Ballot, Choice, GovernanceVoting},
+    voting::{
+        types::VotingId,
+        voting::{Voting, VotingType},
+        Ballot,
+        Choice,
+        GovernanceVoting,
+    },
     VotingConfigurationBuilder,
 };
-
-use crate::voting::types::VotingId;
-use crate::voting::voting::VotingType;
-use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
-use casper_dao_utils::casper_dao_macros::Event;
-use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait SimpleVoterContractInterface {
@@ -65,6 +70,18 @@ pub struct SimpleVoterContract {
 }
 
 impl SimpleVoterContractInterface for SimpleVoterContract {
+    delegate! {
+        to self.voting {
+            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+        }
+    }
+
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U256) {
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting).build();
 
@@ -87,6 +104,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
 
     fn finish_voting(&mut self, voting_id: VotingId) {
         let voting_summary = self.voting.finish_voting(voting_id);
+
         if let VotingType::Informal = voting_summary.voting_type() {
             match voting_summary.formal_voting_id() {
                 None => {}
@@ -105,17 +123,5 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
 
     fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash> {
         self.simple_votings.get(&voting_id)
-    }
-
-    delegate! {
-        to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
-        }
     }
 }

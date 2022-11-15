@@ -1,8 +1,12 @@
 use alloc::vec::Vec;
+
 use casper_types::{
     account::AccountHash,
     bytesrepr::{self, FromBytes, ToBytes},
-    CLType, CLTyped, ContractPackageHash, Key,
+    CLType,
+    CLTyped,
+    ContractPackageHash,
+    Key,
 };
 
 /// An enum representing an [`AccountHash`] or a [`ContractPackageHash`].

@@ -5,13 +5,12 @@ use casper_dao_utils::{
     Address,
 };
 use casper_types::{bytesrepr::Bytes, U256};
+use delegate::delegate;
 
 use crate::{
     core::ERC721Token,
     extensions::{BurnableERC721, MetadataERC721, MintableERC721},
 };
-
-use delegate::delegate;
 
 pub type TokenId = U256;
 pub type TokenUri = String;

@@ -1,8 +1,9 @@
-use pretty_assertions::assert_eq;
 use std::{
     fs,
     process::{Command, Stdio},
 };
+
+use pretty_assertions::assert_eq;
 
 #[test]
 fn verify_expand_output_casper_contract_interface() {

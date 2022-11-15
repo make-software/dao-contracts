@@ -1,12 +1,19 @@
 use casper_dao_erc721::{
-    core::ERC721Token, BurnableERC721, MetadataERC721, MintableERC721, TokenId, TokenUri,
+    core::ERC721Token,
+    BurnableERC721,
+    MetadataERC721,
+    MintableERC721,
+    TokenId,
+    TokenUri,
 };
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    Address, Error, Mapping,
+    Address,
+    Error,
+    Mapping,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -102,12 +109,6 @@ pub struct KycNftContract {
 }
 
 impl KycNftContractInterface for KycNftContract {
-    fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
-        let deployer = caller();
-        self.metadata.init(name, symbol, base_uri);
-        self.access_control.init(deployer);
-    }
-
     delegate! {
         to self.access_control {
             fn is_whitelisted(&self, address: Address) -> bool;
@@ -128,6 +129,12 @@ impl KycNftContractInterface for KycNftContract {
             fn balance_of(&self, owner: Address) -> U256;
             fn total_supply(&self) -> U256;
         }
+    }
+
+    fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
+        let deployer = caller();
+        self.metadata.init(name, symbol, base_uri);
+        self.access_control.init(deployer);
     }
 
     fn token_id(&self, address: Address) -> Option<TokenId> {

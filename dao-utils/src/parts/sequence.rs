@@ -1,7 +1,10 @@
-use crate::{instance::Instanced, Variable};
-use casper_types::bytesrepr::{FromBytes, ToBytes};
-use casper_types::CLTyped;
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    CLTyped,
+};
 use num_traits::{Num, One, Zero};
+
+use crate::{instance::Instanced, Variable};
 
 pub struct SequenceGenerator<T>
 where
@@ -20,7 +23,10 @@ where
 
     pub fn next_value(&mut self) -> T {
         match self.value.get() {
-            None => T::zero(),
+            None => {
+                self.value.set(T::zero());
+                T::zero()
+            }
             Some(value) => {
                 let next = value + T::one();
                 self.value.set(next);

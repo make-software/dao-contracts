@@ -1,18 +1,17 @@
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
-    Address, ContractCall,
+    Address,
+    ContractCall,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
+use delegate::delegate;
 
 use crate::{
     action::Action,
-    voting::{voting::Voting, Ballot, Choice, GovernanceVoting},
+    voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting},
     VotingConfigurationBuilder,
 };
-
-use crate::voting::types::VotingId;
-use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait AdminContractInterface {
@@ -62,6 +61,19 @@ pub struct AdminContract {
 }
 
 impl AdminContractInterface for AdminContract {
+    delegate! {
+        to self.voting {
+            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+            fn finish_voting(&mut self, voting_id: VotingId);
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+        }
+    }
+
     fn create_voting(
         &mut self,
         contract_to_update: Address,
@@ -85,18 +97,5 @@ impl AdminContractInterface for AdminContract {
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
         self.voting.vote(caller(), voting_id, choice, stake);
-    }
-
-    delegate! {
-        to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn finish_voting(&mut self, voting_id: VotingId);
-            fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
-        }
     }
 }
