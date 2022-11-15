@@ -1,10 +1,12 @@
-use crate::common::helpers::{to_rep, value_to_bytes};
-use crate::common::DaoWorld;
 use casper_dao_contracts::voting::Choice;
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::{U256, U512};
-use cucumber::gherkin::Step;
-use cucumber::{given, then, when};
+use cucumber::{gherkin::Step, given, then, when};
+
+use crate::common::{
+    helpers::{to_rep, value_to_bytes},
+    DaoWorld,
+};
 
 #[given(expr = "following configuration")]
 fn configuration(w: &mut DaoWorld, step: &Step) {

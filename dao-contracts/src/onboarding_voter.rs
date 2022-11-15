@@ -2,20 +2,28 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
-    consts, Address, ContractCall, Error, SequenceGenerator,
+    consts,
+    Address,
+    ContractCall,
+    Error,
+    SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
+use delegate::delegate;
 
 use crate::{
     voting::{
         kyc_info::KycInfo,
         onboarding_info::{OnboardingAction, OnboardingInfo},
         voting::Voting,
-        Ballot, Choice, GovernanceVoting, VotingId,
+        Ballot,
+        Choice,
+        GovernanceVoting,
+        VotingId,
     },
-    ReputationContractCaller, VotingConfigurationBuilder,
+    ReputationContractCaller,
+    VotingConfigurationBuilder,
 };
-use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait OnboardingVoterContractInterface {
@@ -88,18 +96,6 @@ pub struct OnboardingVoterContract {
 }
 
 impl OnboardingVoterContractInterface for OnboardingVoterContract {
-    fn init(
-        &mut self,
-        variable_repo: Address,
-        reputation_token: Address,
-        kyc_token: Address,
-        va_token: Address,
-    ) {
-        self.onboarding.init(va_token);
-        self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token, va_token);
-    }
-
     delegate! {
         to self.onboarding {
             fn get_va_token_address(&self) -> Address;
@@ -117,6 +113,18 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
+    }
+
+    fn init(
+        &mut self,
+        variable_repo: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    ) {
+        self.onboarding.init(va_token);
+        self.kyc.init(kyc_token);
+        self.voting.init(variable_repo, reputation_token, va_token);
     }
 
     fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256) {

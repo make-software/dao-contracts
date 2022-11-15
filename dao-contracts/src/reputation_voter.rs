@@ -1,18 +1,18 @@
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
     casper_env::caller,
-    Address, ContractCall, DocumentHash, Mapping,
+    Address,
+    ContractCall,
+    DocumentHash,
+    Mapping,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
+use delegate::delegate;
 
 use crate::{
-    voting::{voting::Voting, Ballot, Choice, GovernanceVoting},
+    voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting},
     VotingConfigurationBuilder,
 };
-
-use crate::voting::types::VotingId;
-use casper_dao_utils::casper_dao_macros::{CLTyped, Event, FromBytes, ToBytes};
-use delegate::delegate;
 
 /// Action to perform against reputation
 #[derive(CLTyped, PartialEq, Eq, Debug, FromBytes, ToBytes, Clone)]
@@ -111,6 +111,19 @@ pub struct ReputationVoterContract {
 }
 
 impl ReputationVoterContractInterface for ReputationVoterContract {
+    delegate! {
+        to self.voting {
+            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+            fn finish_voting(&mut self, voting_id: VotingId);
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+        }
+    }
+
     fn create_voting(
         &mut self,
         account: Address,
@@ -146,19 +159,6 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
             voting_id,
         }
         .emit();
-    }
-
-    delegate! {
-        to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn finish_voting(&mut self, voting_id: VotingId);
-            fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
-        }
     }
 
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {

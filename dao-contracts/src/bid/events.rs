@@ -1,10 +1,8 @@
-use crate::bid::job::Job;
-use crate::bid::job_offer::JobOffer;
-use crate::bid::types::JobOfferId;
 use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
 use casper_types::U512;
 
 use super::types::BidId;
+use crate::bid::{job::Job, job_offer::JobOffer, types::JobOfferId};
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobOfferCreated {

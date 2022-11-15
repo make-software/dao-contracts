@@ -1,8 +1,11 @@
 use casper_dao_contracts::{
-    BidEscrowContractTest, KycNftContractTest, ReputationContractTest, SlashingVoterContractTest,
-    VaNftContractTest, VariableRepositoryContractTest,
+    BidEscrowContractTest,
+    KycNftContractTest,
+    ReputationContractTest,
+    SlashingVoterContractTest,
+    VaNftContractTest,
+    VariableRepositoryContractTest,
 };
-
 use casper_dao_utils::{TestContract, TestEnv};
 
 #[allow(dead_code)]

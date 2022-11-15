@@ -1,8 +1,10 @@
-use crate::common::helpers::{is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep};
-use crate::common::DaoWorld;
 use casper_types::U256;
-use cucumber::gherkin::Step;
-use cucumber::{given, then};
+use cucumber::{gherkin::Step, given, then};
+
+use crate::common::{
+    helpers::{is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep},
+    DaoWorld,
+};
 
 #[given(expr = "following balances")]
 fn starting_balances(w: &mut DaoWorld, step: &Step) {

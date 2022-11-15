@@ -2,7 +2,6 @@ mod common;
 mod steps;
 
 use common::DaoWorld;
-
 use cucumber::World as _;
 
 fn main() {

@@ -1,29 +1,46 @@
 use casper_dao_utils::{
     casper_contract::{
         contract_api::system::{
-            get_purse_balance, transfer_from_purse_to_account, transfer_from_purse_to_purse,
+            get_purse_balance,
+            transfer_from_purse_to_account,
+            transfer_from_purse_to_purse,
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
-    Address, BlockTime, DocumentHash, Error, Mapping, SequenceGenerator, VecMapping,
+    Address,
+    BlockTime,
+    DocumentHash,
+    Error,
+    Mapping,
+    SequenceGenerator,
+    VecMapping,
 };
 use casper_types::{URef, U256, U512};
+use delegate::delegate;
 
-use crate::{bid::job::WorkerType, voting::VotingId, VaNftContractCaller, VaNftContractInterface};
 use crate::{
-    bid::{job::Job, types::BidId},
+    bid::{
+        job::{Job, WorkerType},
+        types::BidId,
+    },
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
         voting::{Voting, VotingResult},
-        Ballot, Choice, GovernanceVoting,
+        Ballot,
+        Choice,
+        GovernanceVoting,
+        VotingId,
     },
-    ReputationContractCaller, ReputationContractInterface, VariableRepositoryContractCaller,
+    ReputationContractCaller,
+    ReputationContractInterface,
+    VaNftContractCaller,
+    VaNftContractInterface,
+    VariableRepositoryContractCaller,
     VotingConfigurationBuilder,
 };
-use delegate::delegate;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -150,6 +167,17 @@ pub struct BidEscrowContract {
 }
 
 impl BidEscrowContractInterface for BidEscrowContract {
+    delegate! {
+        to self.voting {
+            fn get_dust_amount(&self) -> U256;
+            fn get_variable_repo_address(&self) -> Address;
+            fn get_reputation_token_address(&self) -> Address;
+            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+        }
+    }
+
     fn init(
         &mut self,
         variable_repo: Address,
@@ -368,17 +396,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn get_job(&self, bid_id: BidId) -> Option<Job> {
         self.jobs.get_or_none(&bid_id)
-    }
-
-    delegate! {
-        to self.voting {
-            fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
-        }
     }
 
     fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer> {
@@ -714,12 +731,17 @@ impl BidEscrowContract {
     }
 }
 
-use crate::bid::bid::Bid;
-use crate::bid::job_offer::JobOffer;
-use crate::bid::types::{JobId, JobOfferId};
-use crate::voting::voting::{VotingSummary, VotingType};
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
+
+use crate::{
+    bid::{
+        bid::Bid,
+        job_offer::JobOffer,
+        types::{JobId, JobOfferId},
+    },
+    voting::voting::{VotingSummary, VotingType},
+};
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {

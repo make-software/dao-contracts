@@ -1,11 +1,12 @@
 //! Voting struct with logic for governance voting
-use crate::voting::ballot::Choice;
-use crate::voting::types::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address, ContractCall,
+    Address,
+    ContractCall,
 };
 use casper_types::U256;
+
+use crate::voting::{ballot::Choice, types::VotingId};
 
 /// Result of a Voting
 #[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]

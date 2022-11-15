@@ -1,5 +1,8 @@
-use casper_types::bytesrepr::{Bytes, ToBytes};
-use casper_types::{U256, U512};
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    U256,
+    U512,
+};
 
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str) -> Bytes {

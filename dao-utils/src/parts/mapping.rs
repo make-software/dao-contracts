@@ -11,7 +11,9 @@ use casper_contract::{
 };
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
-    CLTyped, Key, URef,
+    CLTyped,
+    Key,
+    URef,
 };
 use lazy_static::lazy_static;
 

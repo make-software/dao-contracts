@@ -1,9 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::contract::{caller, contract_bin, contract_struct, contract_test};
-
 use super::parser::CasperContractItem;
+use crate::contract::{caller, contract_bin, contract_struct, contract_test};
 
 pub fn generate_code(item: CasperContractItem) -> TokenStream {
     match generate_or_err(item) {

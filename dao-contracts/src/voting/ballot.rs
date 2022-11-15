@@ -1,9 +1,10 @@
-use crate::voting::VotingId;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
 };
 use casper_types::U256;
+
+use crate::voting::VotingId;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Eq, Clone, Copy)]
@@ -38,9 +39,10 @@ pub struct Ballot {
 #[cfg(test)]
 #[test]
 fn test_vote_serialization() {
-    use casper_types::account::AccountHash;
-    use casper_types::bytesrepr::FromBytes;
-    use casper_types::bytesrepr::ToBytes;
+    use casper_types::{
+        account::AccountHash,
+        bytesrepr::{FromBytes, ToBytes},
+    };
     let address = Address::Account(AccountHash::default());
 
     let vote = Ballot {

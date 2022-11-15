@@ -2,11 +2,17 @@ pub mod dao;
 pub mod helpers;
 pub mod setup;
 
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Formatter},
+};
+
 use casper_dao_utils::{Address, TestContract, TestEnv};
-use casper_types::bytesrepr::{Bytes, ToBytes};
-use casper_types::{U256, U512};
-use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    U256,
+    U512,
+};
 
 #[derive(cucumber::World)]
 pub struct DaoWorld {

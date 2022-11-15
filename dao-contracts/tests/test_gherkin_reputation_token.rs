@@ -2,9 +2,9 @@ use casper_types::U256;
 
 mod common;
 
-use crate::common::DaoWorld;
-
 use cucumber::{given, then, World as _};
+
+use crate::common::DaoWorld;
 
 // #[given(expr = "following balances")]
 // fn starting_balances(w: &mut DaoWorld, step: &Step) {

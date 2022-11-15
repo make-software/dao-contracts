@@ -8,7 +8,8 @@ use casper_dao_utils::{
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
-    Address, BlockTime,
+    Address,
+    BlockTime,
 };
 use casper_types::{URef, U256, U512};
 

@@ -1,13 +1,17 @@
 use casper_dao_contracts::{
     action::Action,
-    voting::{voting::Voting, Choice},
-    AdminContractTest, BidEscrowContractTest, KycNftContractTest, MockVoterContractTest,
-    RepoVoterContractTest, ReputationContractTest, ReputationVoterContractTest, VaNftContractTest,
+    simple_voter::SimpleVoterContractTest,
+    voting::{types::VotingId, voting::Voting, Choice},
+    AdminContractTest,
+    BidEscrowContractTest,
+    KycNftContractTest,
+    MockVoterContractTest,
+    RepoVoterContractTest,
+    ReputationContractTest,
+    ReputationVoterContractTest,
+    VaNftContractTest,
     VariableRepositoryContractTest,
 };
-
-use casper_dao_contracts::simple_voter::SimpleVoterContractTest;
-use casper_dao_contracts::voting::types::VotingId;
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
 use casper_types::{

@@ -1,11 +1,12 @@
-use crate::common::DaoWorld;
-
-use crate::common::helpers::{to_rep, value_to_bytes};
 use casper_dao_contracts::voting::Choice;
 use casper_dao_utils::TestContract;
 use casper_types::U256;
-use cucumber::gherkin::Step;
-use cucumber::{given, then, when};
+use cucumber::{gherkin::Step, given, then, when};
+
+use crate::common::{
+    helpers::{to_rep, value_to_bytes},
+    DaoWorld,
+};
 
 #[when(
     expr = "{word} starts slashing vote for {word} with {int} REP stake and {int}% slashing rate"

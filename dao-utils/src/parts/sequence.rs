@@ -1,7 +1,10 @@
-use crate::{instance::Instanced, Variable};
-use casper_types::bytesrepr::{FromBytes, ToBytes};
-use casper_types::CLTyped;
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    CLTyped,
+};
 use num_traits::{Num, One, Zero};
+
+use crate::{instance::Instanced, Variable};
 
 pub struct SequenceGenerator<T>
 where

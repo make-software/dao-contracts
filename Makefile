@@ -57,10 +57,10 @@ clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
 
 check-lint: clippy
-	cargo fmt -- --check
+	cargo +nightly fmt -- --check
 
 lint: clippy
-	cargo fmt
+	cargo +nightly fmt
 
 clean:
 	cargo clean

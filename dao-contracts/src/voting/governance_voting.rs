@@ -3,30 +3,31 @@ pub mod consts;
 pub mod events;
 pub mod voting;
 
+use std::collections::BTreeMap;
+
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     casper_env::{get_block_time, revert, self_address},
-    Address, Error, Mapping, Variable,
+    Address,
+    Error,
+    Mapping,
+    Variable,
+    VecMapping,
 };
-use std::collections::BTreeMap;
-
 use casper_types::U256;
 
-use self::voting::VotingSummary;
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
-    voting::{Voting, VotingConfiguration, VotingResult, VotingType},
+    voting::{Voting, VotingConfiguration, VotingResult, VotingSummary, VotingType},
 };
+use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
-    ReputationContractCaller, ReputationContractInterface, VaNftContractCaller,
+    ReputationContractCaller,
+    ReputationContractInterface,
+    VaNftContractCaller,
     VaNftContractInterface,
 };
-use casper_dao_utils::VecMapping;
-
-use super::ballot::Choice;
-
-use super::{types::VotingId, Ballot};
 
 pub trait GovernanceVotingTrait {
     fn init(&mut self, variable_repo: Address, reputation_token: Address);

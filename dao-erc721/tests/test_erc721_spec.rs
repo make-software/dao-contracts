@@ -1,13 +1,16 @@
 #[allow(unused_variables)]
 mod test {
     extern crate speculate;
-    use speculate::speculate;
-
     use casper_dao_erc721::{
         events::{Approval, ApprovalForAll, Transfer},
-        ERC721Test, MockERC721NonReceiverTest, MockERC721ReceiverTest, Received, TokenId,
+        ERC721Test,
+        MockERC721NonReceiverTest,
+        MockERC721ReceiverTest,
+        Received,
+        TokenId,
     };
     use casper_dao_utils::{Address, BytesConversion, Error, TestContract, TestEnv};
+    use speculate::speculate;
 
     speculate! {
         static NAME: &str = "Plascoin";

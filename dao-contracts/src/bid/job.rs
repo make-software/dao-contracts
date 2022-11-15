@@ -1,13 +1,15 @@
-use casper_dao_utils::casper_env::revert;
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address, BlockTime, DocumentHash, Error,
+    casper_env::revert,
+    Address,
+    BlockTime,
+    DocumentHash,
+    Error,
 };
 use casper_types::{U256, U512};
 
-use crate::voting::types::VotingId;
-
 use super::types::{BidId, JobId, JobOfferId};
+use crate::voting::types::VotingId;
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {

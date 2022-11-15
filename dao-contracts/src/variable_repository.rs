@@ -1,17 +1,22 @@
-use crate::voting::voting::VotingConfiguration;
 use casper_dao_modules::{AccessControl, Record, Repository};
-use casper_dao_utils::conversions::{u256_to_512, u512_to_u256};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
-    consts as dao_consts, math, Address, Error,
+    consts as dao_consts,
+    conversions::{u256_to_512, u512_to_u256},
+    math,
+    Address,
+    Error,
 };
 use casper_types::{
     bytesrepr::{Bytes, FromBytes},
-    U256, U512,
+    U256,
+    U512,
 };
 use delegate::delegate;
+
+use crate::voting::voting::VotingConfiguration;
 
 // Interface of the Variable Repository Contract.
 //

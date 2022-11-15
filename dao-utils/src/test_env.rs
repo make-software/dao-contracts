@@ -5,28 +5,46 @@ use std::{
     time::Duration,
 };
 
-use crate::{Address, Error};
-use casper_engine_test_support::{
-    DeployItemBuilder, ExecuteRequestBuilder, InMemoryWasmTestBuilder, ARG_AMOUNT,
-    DEFAULT_ACCOUNT_INITIAL_BALANCE, DEFAULT_GENESIS_CONFIG, DEFAULT_GENESIS_CONFIG_HASH,
-};
-use casper_execution_engine::core::engine_state::{
-    self, run_genesis_request::RunGenesisRequest, DeployItem, GenesisAccount,
-};
-use casper_types::{
-    account::{Account, AccountHash},
-    bytesrepr::{self, Bytes, FromBytes, ToBytes},
-    runtime_args, ApiError, CLTyped, Contract, ContractHash, ContractPackageHash, Key, Motes,
-    PublicKey, RuntimeArgs, SecretKey, URef, U512,
-};
-
-use crate::consts::CONTRACT_MAIN_PURSE;
 use blake2::{
     digest::{Update, VariableOutput},
     VarBlake2b,
 };
-use casper_engine_test_support::DEFAULT_PAYMENT;
+use casper_engine_test_support::{
+    DeployItemBuilder,
+    ExecuteRequestBuilder,
+    InMemoryWasmTestBuilder,
+    ARG_AMOUNT,
+    DEFAULT_ACCOUNT_INITIAL_BALANCE,
+    DEFAULT_GENESIS_CONFIG,
+    DEFAULT_GENESIS_CONFIG_HASH,
+    DEFAULT_PAYMENT,
+};
+use casper_execution_engine::core::engine_state::{
+    self,
+    run_genesis_request::RunGenesisRequest,
+    DeployItem,
+    GenesisAccount,
+};
 pub use casper_execution_engine::core::execution::Error as ExecutionError;
+use casper_types::{
+    account::{Account, AccountHash},
+    bytesrepr::{self, Bytes, FromBytes, ToBytes},
+    runtime_args,
+    ApiError,
+    CLTyped,
+    Contract,
+    ContractHash,
+    ContractPackageHash,
+    Key,
+    Motes,
+    PublicKey,
+    RuntimeArgs,
+    SecretKey,
+    URef,
+    U512,
+};
+
+use crate::{consts::CONTRACT_MAIN_PURSE, Address, Error};
 
 /// CasperVM based testing environment.
 #[derive(Clone)]

@@ -1,6 +1,10 @@
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert, casper_dao_macros::Instance, Address, Error,
-    Mapping, Variable,
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::Instance,
+    Address,
+    Error,
+    Mapping,
+    Variable,
 };
 
 use crate::{KycNftContractCaller, KycNftContractInterface};

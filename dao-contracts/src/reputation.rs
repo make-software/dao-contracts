@@ -1,20 +1,23 @@
 use std::collections::BTreeMap;
 
-use crate::{
-    bid::types::BidId,
-    voting::{Choice, VotingId},
-};
 use casper_dao_modules::AccessControl;
-use casper_dao_utils::casper_contract::contract_api::runtime::print;
 use casper_dao_utils::{
+    casper_contract::contract_api::runtime::print,
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit, revert},
-    Address, Error, Mapping, Variable,
+    Address,
+    Error,
+    Mapping,
+    Variable,
 };
 use casper_types::{URef, U256};
 use delegate::delegate;
 
 use self::events::{Burn, Mint};
+use crate::{
+    bid::types::BidId,
+    voting::{Choice, VotingId},
+};
 
 // Interface of the Reputation Contract.
 //

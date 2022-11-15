@@ -3,9 +3,9 @@
 
 extern crate alloc;
 
+use alloc::{string::String, vec::Vec};
 use core::mem::MaybeUninit;
 
-use alloc::{string::String, vec::Vec};
 use casper_contract::{
     contract_api::{self, runtime},
     ext_ffi,
@@ -14,7 +14,10 @@ use casper_contract::{
 use casper_types::{
     api_error,
     bytesrepr::{Bytes, FromBytes, ToBytes},
-    ApiError, ContractPackageHash, ContractVersion, RuntimeArgs,
+    ApiError,
+    ContractPackageHash,
+    ContractVersion,
+    RuntimeArgs,
 };
 
 #[no_mangle]

@@ -2,7 +2,9 @@ use casper_dao_utils::ContractCall;
 
 use crate::{
     voting::{voting::VotingConfiguration, GovernanceVoting},
-    KycNftContractCaller, KycNftContractInterface, VariableRepositoryContractCaller,
+    KycNftContractCaller,
+    KycNftContractInterface,
+    VariableRepositoryContractCaller,
 };
 
 pub struct VotingConfigurationBuilder {

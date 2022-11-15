@@ -86,9 +86,8 @@ mod tests {
     use pretty_assertions::assert_eq;
     use quote::quote;
 
-    use crate::contract::utils;
-
     use super::{generate_interface_impl, generate_struct};
+    use crate::contract::utils;
 
     #[test]
     fn generating_caller_struct_works() {

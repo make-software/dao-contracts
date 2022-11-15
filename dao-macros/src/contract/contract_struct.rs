@@ -117,9 +117,10 @@ fn build_entry_point_params(method: &TraitItemMethod) -> TokenStream {
 }
 
 pub mod interface {
-    use super::CasperContractItem;
     use proc_macro2::TokenStream;
     use quote::{quote, TokenStreamExt};
+
+    use super::CasperContractItem;
 
     pub fn generate_code(model: &CasperContractItem) -> TokenStream {
         let id = &model.ident;
@@ -141,12 +142,13 @@ pub mod interface {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+    use quote::quote;
+
     use crate::contract::{
         contract_struct::{generate_entry_points, generate_install},
         utils,
     };
-    use pretty_assertions::assert_eq;
-    use quote::quote;
 
     #[test]
     fn generating_install_without_init_method_fails() {

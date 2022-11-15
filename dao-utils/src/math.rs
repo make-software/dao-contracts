@@ -1,6 +1,6 @@
-use crate::conversions::BytesConversion;
-use crate::Error;
 use casper_types::{U256, U512};
+
+use crate::{conversions::BytesConversion, Error};
 
 pub const RATIO_DIVISOR: u32 = 1000;
 
@@ -62,11 +62,8 @@ pub fn rem_from_balance(current: (bool, U256), amount: U256) -> (bool, U256) {
 
 #[cfg(test)]
 mod tests {
+    use super::{add_to_balance, promils_of, U256};
     use crate::math::rem_from_balance;
-
-    use super::{add_to_balance, promils_of};
-
-    use super::U256;
     #[test]
     fn test_promils_of() {
         assert_eq!(promils_of(1000.into(), 1.into()).unwrap(), 1.into());

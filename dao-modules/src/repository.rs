@@ -1,12 +1,16 @@
 use casper_dao_utils::{
     casper_dao_macros::Instance,
     casper_env::{self, emit, get_block_time},
-    consts, Error, Mapping, OrderedCollection, Set,
+    consts,
+    Error,
+    Mapping,
+    OrderedCollection,
+    Set,
 };
-
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    U256, U512,
+    U256,
+    U512,
 };
 
 use self::events::ValueUpdated;
