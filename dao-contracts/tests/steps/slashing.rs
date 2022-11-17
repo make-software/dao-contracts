@@ -1,10 +1,10 @@
 use casper_dao_contracts::voting::Choice;
 use casper_dao_utils::TestContract;
 use casper_types::U256;
-use cucumber::{gherkin::Step, given, then, when};
+use cucumber::{gherkin::Step, when};
 
 use crate::common::{
-    helpers::{to_rep, value_to_bytes},
+    helpers::{to_rep, to_voting_type},
     DaoWorld,
 };
 
@@ -21,8 +21,9 @@ fn start_vote(w: &mut DaoWorld, creator: String, va_name: String, stake: u64, sl
         .unwrap();
 }
 
-#[when(expr = "slashing votes in voting {int} are")]
-fn informal_voting(w: &mut DaoWorld, voting_id: u32, step: &Step) {
+#[when(expr = "slashing votes in {word} voting {int} are")]
+fn informal_voting(w: &mut DaoWorld, voting_type: String, voting_id: u32, step: &Step) {
+    let voting_type = to_voting_type(&voting_type);
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
         let name = row.get(0).unwrap();
@@ -37,13 +38,14 @@ fn informal_voting(w: &mut DaoWorld, voting_id: u32, step: &Step) {
 
         w.slashing_voter
             .as_account(voter)
-            .vote(voting_id, choice, stake)
+            .vote(voting_id, voting_type.clone(), choice, stake)
             .unwrap();
     }
 }
 
-#[when(expr = "slashing voting {int} ends")]
-fn voting_ends(w: &mut DaoWorld, voting_id: u32) {
+#[when(expr = "slashing {word} voting {int} ends")]
+fn voting_ends(w: &mut DaoWorld, voting_type: String, voting_id: u32) {
+    let voting_type = to_voting_type(&voting_type);
     w.slashing_voter.advance_block_time_by(432000000u64);
-    w.slashing_voter.finish_voting(voting_id).unwrap();
+    w.slashing_voter.finish_voting(voting_id, voting_type).unwrap();
 }

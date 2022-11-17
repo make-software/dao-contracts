@@ -32,9 +32,9 @@ pub trait SimpleVoterContractInterface {
     /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::vote())
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
-    fn finish_voting(&mut self, voting_id: VotingId);
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
@@ -42,13 +42,13 @@ pub trait SimpleVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
-    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
-    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns document hash being voted on for given voting id.
-    fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash>;
+    fn get_document_hash(&self, voting_id: VotingId, voting_type: VotingType) -> Option<DocumentHash>;
 }
 
 /// Event thrown after SimpleVoting is created
@@ -76,9 +76,6 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 
@@ -98,11 +95,8 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         .emit();
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
-        self.voting.vote(caller(), voting_id, choice, stake);
-    }
-
-    fn finish_voting(&mut self, voting_id: VotingId) {
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         let voting_summary = self.voting.finish_voting(voting_id);
 
         if let VotingType::Informal = voting_summary.voting_type() {
@@ -121,7 +115,28 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         }
     }
 
-    fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash> {
+    fn get_document_hash(&self, voting_id: VotingId, voting_type: VotingType) -> Option<DocumentHash> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.simple_votings.get(&voting_id)
+    }
+
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256) {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.vote(caller(), voting_id, choice, stake);
+    }
+
+    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voting(voting_id)
+    }
+    
+    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_ballot(voting_id, address)
+    }
+    
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voter(voting_id, at)
     }
 }

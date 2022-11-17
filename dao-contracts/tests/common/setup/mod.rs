@@ -1,12 +1,12 @@
 use casper_dao_contracts::{
-    action::Action,
+    // action::Action,
     simple_voter::SimpleVoterContractTest,
     voting::{types::VotingId, voting::Voting, Choice},
-    AdminContractTest,
+    // AdminContractTest,
     BidEscrowContractTest,
     KycNftContractTest,
     MockVoterContractTest,
-    RepoVoterContractTest,
+    // RepoVoterContractTest,
     ReputationContractTest,
     ReputationVoterContractTest,
     VaNftContractTest,
@@ -15,7 +15,7 @@ use casper_dao_contracts::{
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
 use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
+    bytesrepr::{ToBytes},
     U256,
 };
 
@@ -213,101 +213,101 @@ pub fn setup_simple_voter() -> SimpleVoterContractTest {
     simple_voter_contract
 }
 
-#[allow(dead_code)]
-pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
-    let minimum_reputation = 500.into();
-    let informal_quorum = 500.into();
-    let formal_quorum = 500.into();
-    let total_onboarded = 3;
+// #[allow(dead_code)]
+// pub fn setup_admin() -> (AdminContractTest, ReputationContractTest) {
+//     let minimum_reputation = 500.into();
+//     let informal_quorum = 500.into();
+//     let formal_quorum = 500.into();
+//     let total_onboarded = 3;
 
-    let (variable_repo_contract, mut reputation_token_contract, va_token) =
-        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+//     let (variable_repo_contract, mut reputation_token_contract, va_token) =
+//         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
-    #[allow(unused_mut)]
-    let mut admin_contract = AdminContractTest::new(
-        variable_repo_contract.get_env(),
-        variable_repo_contract.address(),
-        reputation_token_contract.address(),
-        va_token.address(),
-    );
+//     #[allow(unused_mut)]
+//     let mut admin_contract = AdminContractTest::new(
+//         variable_repo_contract.get_env(),
+//         variable_repo_contract.address(),
+//         reputation_token_contract.address(),
+//         va_token.address(),
+//     );
 
-    reputation_token_contract
-        .change_ownership(admin_contract.address())
-        .unwrap();
+//     reputation_token_contract
+//         .change_ownership(admin_contract.address())
+//         .unwrap();
 
-    admin_contract
-        .create_voting(
-            reputation_token_contract.address(),
-            Action::AddToWhitelist,
-            admin_contract.get_env().get_account(1),
-            minimum_reputation,
-        )
-        .unwrap();
+//     admin_contract
+//         .create_voting(
+//             reputation_token_contract.address(),
+//             Action::AddToWhitelist,
+//             admin_contract.get_env().get_account(1),
+//             minimum_reputation,
+//         )
+//         .unwrap();
 
-    let voting_id = 0;
-    let voting: Voting = admin_contract.get_voting(voting_id).unwrap();
+//     let voting_id = 0;
+//     let voting: Voting = admin_contract.get_voting(voting_id).unwrap();
 
-    admin_contract
-        .as_nth_account(1)
-        .vote(voting_id, Choice::InFavor, minimum_reputation)
-        .unwrap();
-    admin_contract.advance_block_time_by(voting.informal_voting_time() + 1);
-    admin_contract.finish_voting(voting_id).unwrap();
+//     admin_contract
+//         .as_nth_account(1)
+//         .vote(voting_id, Choice::InFavor, minimum_reputation)
+//         .unwrap();
+//     admin_contract.advance_block_time_by(voting.informal_voting_time() + 1);
+//     admin_contract.finish_voting(voting_id).unwrap();
 
-    (admin_contract, reputation_token_contract)
-}
+//     (admin_contract, reputation_token_contract)
+// }
 
-#[allow(dead_code)]
-pub fn setup_repo_voter(
-    key: String,
-    value: Bytes,
-) -> (RepoVoterContractTest, VariableRepositoryContractTest) {
-    let minimum_reputation = 500.into();
-    let informal_quorum = 500.into();
-    let formal_quorum = 500.into();
-    let total_onboarded = 3;
+// #[allow(dead_code)]
+// pub fn setup_repo_voter(
+//     key: String,
+//     value: Bytes,
+// ) -> (RepoVoterContractTest, VariableRepositoryContractTest) {
+//     let minimum_reputation = 500.into();
+//     let informal_quorum = 500.into();
+//     let formal_quorum = 500.into();
+//     let total_onboarded = 3;
 
-    let (mut variable_repo_contract, mut reputation_token_contract, va_token) =
-        setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
+//     let (mut variable_repo_contract, mut reputation_token_contract, va_token) =
+//         setup_repository_and_reputation_contracts(informal_quorum, formal_quorum, total_onboarded);
 
-    #[allow(unused_mut)]
-    let mut repo_voter_contract = RepoVoterContractTest::new(
-        variable_repo_contract.get_env(),
-        variable_repo_contract.address(),
-        reputation_token_contract.address(),
-        va_token.address(),
-    );
+//     #[allow(unused_mut)]
+//     let mut repo_voter_contract = RepoVoterContractTest::new(
+//         variable_repo_contract.get_env(),
+//         variable_repo_contract.address(),
+//         reputation_token_contract.address(),
+//         va_token.address(),
+//     );
 
-    variable_repo_contract
-        .add_to_whitelist(repo_voter_contract.address())
-        .unwrap();
+//     variable_repo_contract
+//         .add_to_whitelist(repo_voter_contract.address())
+//         .unwrap();
 
-    reputation_token_contract
-        .add_to_whitelist(repo_voter_contract.address())
-        .unwrap();
+//     reputation_token_contract
+//         .add_to_whitelist(repo_voter_contract.address())
+//         .unwrap();
 
-    repo_voter_contract
-        .create_voting(
-            repo_voter_contract.get_variable_repo_address(),
-            key,
-            value,
-            None,
-            minimum_reputation,
-        )
-        .unwrap();
+//     repo_voter_contract
+//         .create_voting(
+//             repo_voter_contract.get_variable_repo_address(),
+//             key,
+//             value,
+//             None,
+//             minimum_reputation,
+//         )
+//         .unwrap();
 
-    let voting_id = 0;
-    let voting: Voting = repo_voter_contract.get_voting(voting_id).unwrap();
+//     let voting_id = 0;
+//     let voting: Voting = repo_voter_contract.get_voting(voting_id).unwrap();
 
-    repo_voter_contract
-        .as_nth_account(1)
-        .vote(voting_id, Choice::InFavor, minimum_reputation)
-        .unwrap();
-    repo_voter_contract.advance_block_time_by(voting.informal_voting_time() + 1);
-    repo_voter_contract.finish_voting(voting_id).unwrap();
+//     repo_voter_contract
+//         .as_nth_account(1)
+//         .vote(voting_id, Choice::InFavor, minimum_reputation)
+//         .unwrap();
+//     repo_voter_contract.advance_block_time_by(voting.informal_voting_time() + 1);
+//     repo_voter_contract.finish_voting(voting_id).unwrap();
 
-    (repo_voter_contract, variable_repo_contract)
-}
+//     (repo_voter_contract, variable_repo_contract)
+// }
 
 pub fn setup_voting_contract(
     informal_quorum: U256,
