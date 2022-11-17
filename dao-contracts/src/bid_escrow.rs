@@ -143,11 +143,16 @@ pub trait BidEscrowContractInterface {
     /// see [GovernanceVoting](GovernanceVoting)
     fn get_reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
 }
@@ -172,9 +177,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn get_dust_amount(&self) -> U256;
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 
@@ -371,7 +373,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             Choice::InFavor,
             stake,
             is_unbounded,
-            self.get_voting(voting_id)
+            self.voting
+                .get_voting(voting_id)
                 .unwrap_or_revert_with(Error::VotingDoesNotExist),
         );
 
@@ -496,6 +499,26 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn get_cspr_balance(&self) -> U512 {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
+    }
+
+    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voting(voting_id)
+    }
+
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_ballot(voting_id, address)
+    }
+
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voter(voting_id, at)
     }
 }
 

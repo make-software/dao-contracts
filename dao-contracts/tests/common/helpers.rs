@@ -1,3 +1,4 @@
+use casper_dao_contracts::voting::voting::VotingType;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
@@ -33,4 +34,12 @@ pub fn is_cspr_close_enough(a: U512, b: U512) -> bool {
 pub fn is_rep_close_enough(a: U256, b: U256) -> bool {
     let diff = if a > b { a - b } else { b - a };
     diff < U256::from(10_000_000)
+}
+
+pub fn to_voting_type(value: &str) -> VotingType {
+    match value {
+        "formal" => VotingType::Formal,
+        "informal" => VotingType::Informal,
+        _ => panic!("Unexpected voting type {}", value),
+    }
 }

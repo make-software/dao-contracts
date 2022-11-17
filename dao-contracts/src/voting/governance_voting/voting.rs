@@ -17,7 +17,7 @@ pub enum VotingResult {
 }
 
 /// Type of Voting (Formal or Informal)
-#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone)]
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
 pub enum VotingType {
     Informal,
     Formal,
