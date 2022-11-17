@@ -10,18 +10,18 @@ Feature: Slashing a percentage of the Reputation of a VA who has not any Reputat
 
   Scenario: VA1 gets his reputation slashed in half
     When VA2 starts slashing vote for VA1 with 500 REP stake and 50% slashing rate
-    And slashing votes in voting 0 are
+    And slashing votes in informal voting 0 are
       | account          | vote | stake |
      #| VA2              | Yes  | 500   | - automatically voted by the system
       | VA3              | Yes  | 500   |
       | VA4              | Yes  | 500   |
-    And slashing voting 0 ends
-    And slashing votes in voting 1 are
+    And slashing informal voting 0 ends
+    And slashing votes in formal voting 0 are
       | account          | vote | stake |
      #| VA2              | Yes  | 500   | - automatically voted by the system
       | VA3              | Yes  | 500   |
       | VA4              | No   | 500   |
-    When slashing voting 1 ends
+    When slashing formal voting 0 ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | VA1              | 0            | 500          | 0          |
@@ -32,18 +32,18 @@ Feature: Slashing a percentage of the Reputation of a VA who has not any Reputat
 
   Scenario: Reputation slash fails
     When VA2 starts slashing vote for VA1 with 500 REP stake and 50% slashing rate
-    And slashing votes in voting 0 are
+    And slashing votes in informal voting 0 are
       | account          | vote | stake |
      #| VA2              | Yes  | 500   | - automatically voted by the system
       | VA3              | No   | 500   |
       | VA4              | No   | 500   |
-    And slashing voting 0 ends
-    And slashing votes in voting 1 are
+    And slashing informal voting 0 ends
+    And slashing votes in formal voting 0 are
       | account          | vote | stake |
      #| VA2              | Yes  | 500   | - automatically voted by the system
       | VA3              | No   | 500   |
       | VA4              | No   | 500   |
-    And slashing voting 1 ends
+    And slashing formal voting 0 ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | VA1              | 0            | 1000         | 0          |

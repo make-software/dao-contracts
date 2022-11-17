@@ -15,7 +15,7 @@ use crate::{
     voting::{
         kyc_info::KycInfo,
         onboarding_info::{OnboardingAction, OnboardingInfo},
-        voting::Voting,
+        voting::{Voting, VotingType},
         Ballot,
         Choice,
         GovernanceVoting,
@@ -61,9 +61,9 @@ pub trait OnboardingVoterContractInterface {
     /// `subject_address` - an [Address](Address) to be on/offboarded.
     fn create_voting(&mut self, action: OnboardingAction, subject_address: Address, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::vote())
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
-    fn finish_voting(&mut self, voting_id: VotingId);
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
@@ -71,11 +71,11 @@ pub trait OnboardingVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
     fn get_reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
-    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
+    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
-    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
     /// see [OnboardingInfo](OnboardingInfo::get_va_token_address())
@@ -109,9 +109,6 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             fn get_variable_repo_address(&self) -> Address;
             fn get_reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }
     }
 
@@ -149,12 +146,14 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         self.onboarding.set_voting(&subject_address);
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256) {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         let voter = caller();
         self.voting.vote(voter, voting_id, choice, stake);
     }
 
-    fn finish_voting(&mut self, voting_id: VotingId) {
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         let address = self.extract_address_from_args(voting_id);
         let summary = self.voting.finish_voting(voting_id);
         // The voting is ended when:
@@ -163,6 +162,21 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         if summary.is_voting_process_finished() {
             self.onboarding.clear_voting(&address);
         }
+    }
+
+    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voting(voting_id)
+    }
+    
+    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_ballot(voting_id, address)
+    }
+    
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voter(voting_id, at)
     }
 }
 

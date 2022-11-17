@@ -611,4 +611,22 @@ impl GovernanceVoting {
         ballot.unbounded = false;
         self.ballots.set(&(voting_id, worker), ballot);
     }
+
+    pub fn to_real_voting_id(&self, voting_id: VotingId, voting_type: VotingType) -> VotingId {
+        let voting = self.get_voting_or_revert(voting_id);
+
+        // voting_id should point at informal voting.
+        // Revert if it's formal voting.
+        if voting.get_voting_type() == VotingType::Formal {
+            revert(Error::ExpectedInformal);
+        }
+
+        match voting_type {
+            VotingType::Informal => voting_id,
+            VotingType::Formal => match voting.formal_voting_id() {
+                Some(formal_voting_id) => formal_voting_id,
+                None => revert(Error::ExpectedFormalToBeOn),
+            },
+        }
+    }
 }

@@ -105,4 +105,7 @@ dao_errors!(
 
     InvalidAddress => 5000,
     TransferError => 6000,
+
+    ExpectedInformal => 7000,
+    ExpectedFormalToBeOn => 7001,
 );

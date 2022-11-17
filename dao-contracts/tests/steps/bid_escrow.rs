@@ -1,10 +1,10 @@
-use casper_dao_contracts::voting::Choice;
+use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::{U256, U512};
 use cucumber::{gherkin::Step, given, then, when};
 
 use crate::common::{
-    helpers::{to_rep, value_to_bytes},
+    helpers::{to_rep, to_voting_type, value_to_bytes},
     DaoWorld,
 };
 
@@ -147,14 +147,21 @@ fn informal_voting(w: &mut DaoWorld, step: &Step) {
 
 #[then(expr = "Formal voting does not start")]
 fn formal_does_not_start(w: &mut DaoWorld) {
-    let voting = w.bid_escrow.get_voting(0).unwrap();
+    let voting = w.bid_escrow.get_voting(0, VotingType::Informal).unwrap();
     assert_eq!(voting.formal_voting_id(), None);
 }
 
-#[then(expr = "ballot for voting {int} for {word} has {int} unbounded tokens")]
-fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: String, amount: u32) {
+#[then(expr = "ballot for {word} voting {int} for {word} has {int} unbounded tokens")]
+fn ballot_is_unbounded(
+    w: &mut DaoWorld,
+    voting_type: String,
+    voting_id: u32,
+    account: String,
+    amount: u32,
+) {
     let account = w.named_address(account);
-    let ballot = w.bid_escrow.get_ballot(voting_id, account);
+    let voting_type = to_voting_type(&voting_type);
+    let ballot = w.bid_escrow.get_ballot(voting_id, voting_type, account);
     let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
     let amount = U256::from(amount) * 1_000_000_000;
     assert_eq!(
@@ -170,11 +177,12 @@ fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: String, amount
     );
 }
 
-#[then(expr = "total unbounded stake for voting {int} is {int} tokens")]
-fn total_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: u32) {
+#[then(expr = "total unbounded stake for {word} voting {int} is {int} tokens")]
+fn total_unbounded_stake_is(w: &mut DaoWorld, voting_type: String, voting_id: u32, amount: u32) {
+    let voting_type = to_voting_type(&voting_type);
     let total_unbounded_stake = w
         .bid_escrow
-        .get_voting(voting_id)
+        .get_voting(voting_id, voting_type)
         .unwrap()
         .total_unbounded_stake();
     let amount = U256::from(amount) * 1_000_000_000;

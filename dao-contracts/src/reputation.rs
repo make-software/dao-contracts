@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::contract_api::runtime::print,
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit, revert},
     Address,
