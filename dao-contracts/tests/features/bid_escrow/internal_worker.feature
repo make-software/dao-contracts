@@ -43,7 +43,7 @@ Feature: Internal Flow
      #| InternalWorker   | Yes  | 100   | - automatically voted by the system
       | VA1              | Yes  | 500   |
       | VA2              | No   | 500   |
-    And Informal voting ends
+    And Formal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 50           | 0            | 0          |

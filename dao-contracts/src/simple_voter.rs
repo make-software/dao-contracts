@@ -44,11 +44,20 @@ pub trait SimpleVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns document hash being voted on for given voting id.
-    fn get_document_hash(&self, voting_id: VotingId, voting_type: VotingType) -> Option<DocumentHash>;
+    fn get_document_hash(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<DocumentHash>;
 }
 
 /// Event thrown after SimpleVoting is created
@@ -115,7 +124,11 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         }
     }
 
-    fn get_document_hash(&self, voting_id: VotingId, voting_type: VotingType) -> Option<DocumentHash> {
+    fn get_document_hash(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<DocumentHash> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.simple_votings.get(&voting_id)
     }
@@ -129,12 +142,17 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }
-    
-    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot> {
+
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_ballot(voting_id, address)
     }
-    
+
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voter(voting_id, at)

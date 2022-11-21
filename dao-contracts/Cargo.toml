@@ -26,6 +26,11 @@ name = "test_slashing"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
 
+[[test]]
+name = "test_variables"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
 #[[test]]
 #name = "test_gherkin_reputation_token"
 #harness = false  # allows Cucumber to print output instead of libtest
