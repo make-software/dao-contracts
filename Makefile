@@ -82,3 +82,7 @@ test-slashing: build-dao-contracts
 test-variables: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_variables
+
+test-kyc: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_kyc
