@@ -8,7 +8,13 @@ use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U256};
 use delegate::delegate;
 
 use crate::{
-    voting::{types::VotingId, voting::{Voting, VotingType}, Ballot, Choice, GovernanceVoting},
+    voting::{
+        types::VotingId,
+        voting::{Voting, VotingType},
+        Ballot,
+        Choice,
+        GovernanceVoting,
+    },
     VotingConfigurationBuilder,
 };
 
@@ -42,7 +48,12 @@ pub trait RepoVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
 }
@@ -100,12 +111,17 @@ impl RepoVoterContractInterface for RepoVoterContract {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }
-    
-    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot> {
+
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_ballot(voting_id, address)
     }
-    
+
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voter(voting_id, at)

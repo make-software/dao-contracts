@@ -14,10 +14,7 @@ use casper_dao_contracts::{
 };
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{consts, Error, TestContract, TestEnv};
-use casper_types::{
-    bytesrepr::{ToBytes},
-    U256,
-};
+use casper_types::{bytesrepr::ToBytes, U256};
 
 #[allow(dead_code)]
 pub fn setup_bid_escrow_gherkin() -> (

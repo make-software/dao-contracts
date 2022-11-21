@@ -73,7 +73,12 @@ pub trait OnboardingVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
-    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// see [KycInfo](KycInfo::get_kyc_token_address())
@@ -168,12 +173,17 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }
-    
-    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot> {
+
+    fn get_ballot(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -> Option<Ballot> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_ballot(voting_id, address)
     }
-    
+
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voter(voting_id, at)

@@ -155,6 +155,12 @@ pub trait BidEscrowContractInterface {
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
+
+    fn job_offers_count(&self) -> u32;
+
+    fn jobs_count(&self) -> u32;
+
+    fn bids_count(&self) -> u32;
 }
 
 #[derive(Instance)]
@@ -165,7 +171,7 @@ pub struct BidEscrowContract {
     jobs: Mapping<JobId, Job>,
     jobs_count: SequenceGenerator<JobId>,
     job_offers: Mapping<JobOfferId, JobOffer>,
-    job_offers_count: SequenceGenerator<JobOfferId>,
+    pub job_offers_count: SequenceGenerator<JobOfferId>,
     bids: Mapping<BidId, Bid>,
     job_offers_bids: VecMapping<JobOfferId, BidId>,
     bids_count: SequenceGenerator<BidId>,
@@ -519,6 +525,18 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voter(voting_id, at)
+    }
+
+    fn job_offers_count(&self) -> u32 {
+        self.job_offers_count.get_current_value()
+    }
+
+    fn jobs_count(&self) -> u32 {
+        self.jobs_count.get_current_value()
+    }
+
+    fn bids_count(&self) -> u32 {
+        self.bids_count.get_current_value()
     }
 }
 

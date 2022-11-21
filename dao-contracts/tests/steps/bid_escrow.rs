@@ -1,6 +1,6 @@
 use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
-use casper_types::{U256, U512};
+use casper_types::U256;
 use cucumber::{gherkin::Step, given, then, when};
 
 use crate::common::{
@@ -30,17 +30,11 @@ fn post_job_offer(
     w: &mut DaoWorld,
     job_poster_name: String,
     timeframe: BlockTime,
-    maximum_budget: u32,
-    dos_fee: u32,
+    maximum_budget: u64,
+    dos_fee: u64,
 ) {
     let job_poster = w.named_address(job_poster_name);
-    w.bid_escrow
-        .as_account(job_poster)
-        .post_job_offer_with_cspr_amount(
-            timeframe,
-            U512::from(maximum_budget) * 1_000_000_000,
-            U512::from(dos_fee) * 1_000_000_000,
-        );
+    w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
 #[given(
@@ -50,21 +44,11 @@ fn submit_bid_internal(
     w: &mut DaoWorld,
     worker_name: String,
     timeframe: BlockTime,
-    budget: u32,
-    stake: u32,
+    budget: u64,
+    stake: u64,
 ) {
     let worker = w.named_address(worker_name);
-    w.bid_escrow
-        .as_account(worker)
-        .submit_bid(
-            0,
-            timeframe,
-            U512::from(budget) * 1_000_000_000,
-            U256::from(stake) * 1_000_000_000,
-            false,
-            None,
-        )
-        .unwrap();
+    w.post_bid(0, worker, timeframe, budget, stake, false, None);
 }
 
 #[given(
@@ -74,8 +58,8 @@ fn submit_bid_external(
     w: &mut DaoWorld,
     worker_name: String,
     timeframe: BlockTime,
-    budget: u32,
-    stake: u32,
+    budget: u64,
+    stake: u64,
     onboarding: String,
 ) {
     let worker = w.named_address(worker_name);
@@ -87,14 +71,7 @@ fn submit_bid_external(
         }
     };
 
-    w.bid_escrow.as_account(worker).submit_bid_with_cspr_amount(
-        0,
-        timeframe,
-        U512::from(budget) * 1_000_000_000,
-        U256::from(0),
-        onboarding,
-        U512::from(stake) * 1_000_000_000,
-    );
+    w.post_bid(0, worker, timeframe, budget, 0, onboarding, Some(stake));
 }
 
 #[given(expr = "{word} picked the Bid of {word}")]
