@@ -20,6 +20,7 @@ pub mod reputation_voter;
 pub mod simple_voter;
 pub mod variable_repository;
 pub mod voting;
+pub mod dao;
 
 #[doc(hidden)]
 #[cfg(feature = "test-support")]
@@ -29,6 +30,7 @@ pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 pub use bid_escrow::BidEscrowContractTest;
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
 pub use builder::voting_configuration_builder::VotingConfigurationBuilder;
+pub use dao::configuration::*;
 #[cfg(feature = "test-support")]
 pub use kyc_nft::KycNftContractTest;
 pub use kyc_nft::{KycNftContract, KycNftContractCaller, KycNftContractInterface};

@@ -6,6 +6,7 @@ use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
 };
+use std::time::Duration;
 
 use casper_dao_contracts::bid::{
     bid::Bid,
@@ -38,6 +39,10 @@ pub struct DaoWorld {
 }
 
 impl DaoWorld {
+    pub fn advance_time(&mut self, seconds: u32) {
+        self.env.advance_block_time_by(Duration::from_secs(seconds as u64));
+    }
+
     // sets relative amount of motes to the account
     pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
         assert!(
@@ -52,8 +57,13 @@ impl DaoWorld {
     }
 
     pub fn get_bid(&self, offer_id: JobOfferId, poster: Address) -> Option<Bid> {
-        let bid_id = self.bids.get(&(offer_id, poster)).unwrap();
-        self.bid_escrow.get_bid(*bid_id)
+        let bid_id = self.bids.get(&(offer_id, poster));
+
+        if bid_id.is_none() {
+            return None;
+        }
+
+        self.bid_escrow.get_bid(*bid_id.unwrap())
     }
 
     pub fn post_bid(
@@ -65,7 +75,9 @@ impl DaoWorld {
         stake: u64,
         onboarding: bool,
         cspr_stake: Option<u64>,
-    ) -> BidId {
+    ) {
+        let bids_count = self.bid_escrow.bids_count();
+
         match cspr_stake {
             None => {
                 self.bid_escrow
@@ -77,8 +89,7 @@ impl DaoWorld {
                         U256::from(stake * 1_000_000_000),
                         onboarding,
                         None,
-                    )
-                    .unwrap();
+                    );
             }
             Some(cspr_stake) => self
                 .bid_escrow
@@ -94,8 +105,9 @@ impl DaoWorld {
         }
 
         let bid_id = self.bid_escrow.bids_count();
-        self.bids.insert((offer_id, bidder), bid_id);
-        bid_id
+        if bids_count != bid_id {
+            self.bids.insert((offer_id, bidder), bid_id);
+        }
     }
 
     pub fn post_offer(

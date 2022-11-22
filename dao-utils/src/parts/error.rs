@@ -98,6 +98,9 @@ dao_errors!(
     JobNotFound => 4016,
     OnlyJobPosterCanPickABid => 4017,
     OnlyWorkerCanSubmitProof => 4018,
+    InternalAuctionTimeExpired => 4019,
+    PublicAuctionTimeExpired => 4020,
+    PublicAuctionNotStarted => 4021,
 
     // Reputation Token Errors.
     CannotStakeTwice => 4500,

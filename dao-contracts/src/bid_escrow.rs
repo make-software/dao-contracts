@@ -20,27 +20,18 @@ use casper_dao_utils::{
 use casper_types::{URef, U256, U512};
 use delegate::delegate;
 
-use crate::{
-    bid::{
-        job::{Job, WorkerType},
-        types::BidId,
-    },
-    voting::{
-        kyc_info::KycInfo,
-        onboarding_info::OnboardingInfo,
-        voting::{Voting, VotingResult},
-        Ballot,
-        Choice,
-        GovernanceVoting,
-        VotingId,
-    },
-    ReputationContractCaller,
-    ReputationContractInterface,
-    VaNftContractCaller,
-    VaNftContractInterface,
-    VariableRepositoryContractCaller,
-    VotingConfigurationBuilder,
-};
+use crate::{bid::{
+    job::{Job, WorkerType},
+    types::BidId,
+}, voting::{
+    kyc_info::KycInfo,
+    onboarding_info::OnboardingInfo,
+    voting::{Voting, VotingResult},
+    Ballot,
+    Choice,
+    GovernanceVoting,
+    VotingId,
+}, ReputationContractCaller, ReputationContractInterface, VaNftContractCaller, VaNftContractInterface, VariableRepositoryContractCaller, VotingConfigurationBuilder, BidEscrowConfiguration};
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -212,6 +203,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             expected_timeframe,
             max_budget,
             dos_fee,
+            get_block_time(),
+            BidEscrowConfiguration {}
         );
 
         self.job_offers.set(&job_offer_id, job_offer);
@@ -234,7 +227,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::WorkerNotKycd);
         }
 
-        let job_offer = self
+        let job_offer: JobOffer = self
             .get_job_offer(job_offer_id)
             .unwrap_or_revert_with(Error::JobOfferNotFound);
 
@@ -242,8 +235,16 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::CannotBidOnOwnJob);
         }
 
-        if payment > job_offer.max_budget {
-            revert(Error::PaymentExceedsMaxBudget);
+        let is_va = self.onboarding.is_onboarded(&worker);
+
+        if onboard && is_va {
+            revert(Error::VaOnboardedAlready);
+        }
+
+        let bid_validation = job_offer.validate_bid(get_block_time(),self.is_va(worker), payment);
+        
+        if let Err(error) = bid_validation {
+            revert(error);
         }
 
         // TODO: Implement rest of constraints
