@@ -181,7 +181,7 @@ impl DaoWorld {
                         address
                     }
                     _ => {
-                        let address = self.bid_escrow.get_env().get_account(self.accounts_count);
+                        let address = self.env.get_account(self.accounts_count);
                         self.addresses.insert(name.clone(), address);
                         self.accounts_count += 1;
 

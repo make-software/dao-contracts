@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
+use casper_dao_utils::{Address, TestContract};
 use casper_types::U256;
-use cucumber::{given, then, when, World};
+use cucumber::{given, then, when, Parameter};
+
 
 use crate::common::DaoWorld;
 
@@ -12,61 +16,73 @@ fn total_reputation(w: &mut DaoWorld, expected_total_supply: u32) {
     );
 }
 
-// use std::str::FromStr;
+#[when(expr = "the {account} adds {account} to the whitelist")]
+fn whitelist(world: &mut DaoWorld, active_account: Account, candidate: Account) {
+    let active_account = active_account.get_address(world);
+    let candidate = candidate.get_address(world);
 
-// use cucumber::Parameter;
+    world.kyc_token
+        .as_account(active_account)
+        .add_to_whitelist(candidate)
+        .expect("{active_account} Should be added to the whitelist");
+}
 
-// #[derive(Debug, Default)]
-// struct Cat {
-//     pub hungry: State,
-// }
+#[given(expr = "a {account}")]
+async fn setup(world: &mut DaoWorld, user: Account) {
+    let minter = user.get_address(world);
+    world.env.as_account(minter);
+}
 
-// impl Cat {
-//     fn feed(&mut self) {
-//         self.hungry = State::Satiated;
-//     }
-// }
+#[when(expr = "a {account} mints a token to any user.")]
+async fn mint(world: &mut DaoWorld, minter: Account) {
+    let minter = minter.get_address(world);
+    let any_user = Account::Any.get_address(world);
 
-// #[derive(Debug, Default, Parameter)]
-// // NOTE: `name` is optional, by default the lowercased type name is implied.
-// #[param(name = "hungriness", regex = "hungry|satiated")]
-// enum State {
-//     Hungry,
-//     #[default]
-//     Satiated,
-// }
+    let _ = world.kyc_token
+        .as_account(minter)
+        .mint(any_user);
+}
 
-// // NOTE: `Parameter` requires `FromStr` being implemented.
-// impl FromStr for State {
-//     type Err = String;
 
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         Ok(match s {
-//             "hungry" => Self::Hungry,
-//             "satiated" => Self::Satiated,
-//             invalid => return Err(format!("Invalid `State`: {invalid}")),
-//         })
-//     }
-// }
+#[then(expr = "the balance is {int}.")]
+fn balance(world: &mut DaoWorld, expected_balance: u32) {
+    let any_user = Account::Any.get_address(world);
 
-// #[derive(Debug, Default, World)]
-// pub struct AnimalWorld {
-//     cat: Cat,
-// }
+    let balance = world.kyc_token.balance_of(any_user);
+    assert_eq!(balance, expected_balance.into());
+}
 
-// #[given(expr = "a {hungriness} cat")]
-// fn hungry_cat(world: &mut AnimalWorld, state: State) {
-//     world.cat.hungry = state;
-// }
+#[derive(Debug, Default, Parameter)]
+#[param(name = "account", regex = "Bob|Alice|Owner|user|any||")]
+enum Account {
+    Alice,
+    Bob,
+    Owner,
+    #[default]
+    Any,
+}
 
-// #[when(expr = "I feed the cat {int} time(s)")]
-// fn feed_cat(world: &mut AnimalWorld, times: u8) {
-//     for _ in 0..times {
-//         world.cat.feed();
-//     }
-// }
+impl Account {
+    fn get_address(&self, world: &DaoWorld) -> Address {
+        let idx = match self {
+            Account::Owner => 0,
+            Account::Alice => 1,
+            Account::Bob => 2,
+            Account::Any => 3,
+        };
+        world.env.get_account(idx)
+    }
+}
 
-// #[then("the cat is not hungry")]
-// fn cat_is_fed(world: &mut AnimalWorld) {
-//     assert!(matches!(world.cat.hungry, State::Satiated));
-// }
+impl FromStr for Account {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "Bob" => Self::Bob,
+            "Alice" => Self::Alice,
+            "Owner" => Self::Owner,
+            _ => Self::Any,
+        })
+    }
+}
