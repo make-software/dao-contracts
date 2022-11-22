@@ -786,7 +786,7 @@ use crate::{
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
-    pub fn pick_bid_with_cspr_amount(&mut self, job_offer_id: u32, bid_id: u32, cspr_amount: U512) {
+    pub fn pick_bid_with_cspr_amount(&mut self, job_offer_id: u32, bid_id: u32, cspr_amount: U512) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "pick_bid.wasm",
@@ -797,7 +797,7 @@ impl BidEscrowContractTest {
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
-        );
+        )
     }
 
     pub fn post_job_offer_with_cspr_amount(
@@ -805,7 +805,7 @@ impl BidEscrowContractTest {
         expected_timeframe: BlockTime,
         budget: U512,
         cspr_amount: U512,
-    ) {
+    ) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "post_job_offer.wasm",
@@ -816,7 +816,7 @@ impl BidEscrowContractTest {
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
-        );
+        )
     }
 
     pub fn submit_bid_with_cspr_amount(
@@ -827,7 +827,7 @@ impl BidEscrowContractTest {
         reputation_stake: U256,
         onboard: bool,
         cspr_amount: U512,
-    ) {
+    ) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "submit_bid.wasm",
@@ -841,6 +841,6 @@ impl BidEscrowContractTest {
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
-        );
+        )
     }
 }

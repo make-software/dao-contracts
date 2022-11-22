@@ -90,7 +90,7 @@ impl DaoWorld {
                     U256::from(stake * 1_000_000_000),
                     onboarding,
                     U512::from(cspr_stake * 1_000_000_000),
-                ),
+                ).unwrap(),
         }
 
         let bid_id = self.bid_escrow.bids_count();
@@ -111,7 +111,7 @@ impl DaoWorld {
                 timeframe,
                 U512::from(maximum_budget * 1_000_000_000),
                 U512::from(dos_fee * 1_000_000_000),
-            );
+            ).unwrap();
 
         let offer_id = self.bid_escrow.job_offers_count();
         self.offers.insert(poster, offer_id);
