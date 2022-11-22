@@ -82,7 +82,8 @@ fn bid_picked(w: &mut DaoWorld, job_poster_name: String, worker_name: String) {
     // TODO: Use bid_ids from the storage.
     w.bid_escrow
         .as_account(job_poster)
-        .pick_bid_with_cspr_amount(0, 0, required_budget);
+        .pick_bid_with_cspr_amount(0, 0, required_budget)
+        .unwrap();
 }
 
 #[when(expr = "{word} submits the JobProof")]

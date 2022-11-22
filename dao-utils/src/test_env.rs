@@ -61,11 +61,11 @@ impl TestEnv {
     }
 
     /// Deploy new wasm file.
-    pub fn deploy_wasm_file(&self, session_code: &str, session_args: RuntimeArgs) {
+    pub fn deploy_wasm_file(&self, session_code: &str, session_args: RuntimeArgs) -> Result<(), Error> {
         self.state
             .lock()
             .unwrap()
-            .deploy_wasm_file(session_code, session_args);
+            .deploy_wasm_file(session_code, session_args)
     }
 
     /// Call contract and return a value.
@@ -194,15 +194,21 @@ impl TestEnvState {
         }
     }
 
-    pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) {
+    pub fn deploy_wasm_file(&mut self, wasm_path: &str, args: RuntimeArgs) -> Result<(), Error> {
         let session_code = PathBuf::from(wasm_path);
         let deploy_item = self.build_deploy_item(session_code, args);
         let execute_request = ExecuteRequestBuilder::from_deploy_item(deploy_item)
             .with_block_time(self.block_time)
             .build();
-        self.context.exec(execute_request).commit().expect_success();
+        self.context.exec(execute_request).commit();
         self.collect_gas();
         self.active_account = self.get_account(0);
+
+        if self.context.is_error() {
+            Err(parse_error(self.context.get_error().unwrap()))
+        } else {
+            Ok(())
+        }
     }
 
     pub fn call<T: FromBytes>(
