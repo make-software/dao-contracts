@@ -97,13 +97,6 @@ doctest = false
 test = false
 
 [[bin]]
-name = "onboarding_voter_contract"
-path = "bin/onboarding_voter_contract.rs"
-bench = false
-doctest = false
-test = false
-
-[[bin]]
 name = "kyc_voter_contract"
 path = "bin/kyc_voter_contract.rs"
 bench = false
