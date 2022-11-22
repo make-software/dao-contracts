@@ -13,7 +13,7 @@ use casper_dao_utils::{
     casper_env::{self, caller},
     Address,
     Error,
-    Mapping,
+    Mapping, SequenceGenerator,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -81,7 +81,7 @@ pub trait VaNftContractInterface {
     ///
     /// # Events
     /// Emits [`Transfer`](casper_dao_erc721::events::Transfer) event when minted successfully.
-    fn mint(&mut self, to: Address, token_id: TokenId);
+    fn mint(&mut self, to: Address);
     /// Burns a token with the given id. Decrements the balance of the token owner
     /// and decrements the total supply.
     ///
@@ -106,6 +106,7 @@ pub struct VaNftContract {
     metadata: MetadataERC721,
     access_control: AccessControl,
     tokens: Mapping<Address, Option<TokenId>>,
+    id_gen: SequenceGenerator<TokenId>,
 }
 
 impl VaNftContractInterface for VaNftContract {
@@ -145,10 +146,11 @@ impl VaNftContractInterface for VaNftContract {
         self.metadata.token_uri(&self.token, token_id)
     }
 
-    fn mint(&mut self, to: Address, token_id: TokenId) {
+    fn mint(&mut self, to: Address) {
         self.access_control.ensure_whitelisted();
         self.assert_does_not_own_token(&to);
-
+        
+        let token_id = self.id_gen.next_value();
         MintableERC721::mint(&mut self.token, to, token_id);
         self.tokens.set(&to, Some(token_id));
     }

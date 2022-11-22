@@ -450,7 +450,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                         }
                         WorkerType::ExternalToVA => {
                             // Make user VA.
-                            self.va_token().mint(job.worker(), U256::from(18));
+                            self.va_token().mint(job.worker());
 
                             // Bound ballot for worker.
                             self.voting.bound_ballot(voting_id, job.worker());
