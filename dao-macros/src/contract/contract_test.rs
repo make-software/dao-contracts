@@ -129,7 +129,7 @@ fn build_constructor(item: &CasperContractItem) -> Result<TokenStream, syn::Erro
 
     Ok(quote! {
         pub fn new(env: &casper_dao_utils::TestEnv, #args) -> #contract_test_ident {
-            env.deploy_wasm_file(#wasm_file_name, #casper_args);
+            env.deploy_wasm_file(#wasm_file_name, #casper_args).unwrap();
             let package_hash = env.get_contract_package_hash(#package_hash);
             #contract_test_ident {
                 env: env.clone(),
@@ -213,7 +213,7 @@ mod tests {
 
         let expected = quote! {
             pub fn new(env: &casper_dao_utils::TestEnv,) -> ContractTest {
-                env.deploy_wasm_file("contract_wasm", casper_types::RuntimeArgs::new());
+                env.deploy_wasm_file("contract_wasm", casper_types::RuntimeArgs::new()).unwrap();
                 let package_hash = env.get_contract_package_hash("contract");
                 ContractTest {
                     env: env.clone(),
@@ -252,7 +252,7 @@ mod tests {
                         named_args.insert(stringify!(arg2), arg2).unwrap();
                         named_args
                     }
-                );
+                ).unwrap();
                 let package_hash = env.get_contract_package_hash("contract");
                 ContractTest {
                     env: env.clone(),

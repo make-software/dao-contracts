@@ -1,5 +1,7 @@
-use casper_dao_utils::BlockTime;
-use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
+use casper_dao_utils::{
+    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
+    BlockTime,
+};
 
 pub trait DaoConfigurationTrait {
     fn ReputationConversionRate(&self) -> u32;
@@ -37,19 +39,13 @@ pub trait BidEscrowConfigurationTrait {
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct DaoConfiguration {
-    
-}
+pub struct DaoConfiguration {}
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct BidEscrowConfiguration {
-
-}
+pub struct BidEscrowConfiguration {}
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct VotingConfiguration {
-
-}
+pub struct VotingConfiguration {}
 
 impl BidEscrowConfigurationTrait for BidEscrowConfiguration {
     fn PostJobDOSFee(&self) -> u32 {

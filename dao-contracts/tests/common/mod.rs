@@ -5,8 +5,8 @@ pub mod setup;
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
+    time::Duration,
 };
-use std::time::Duration;
 
 use casper_dao_contracts::bid::{
     bid::Bid,
@@ -40,7 +40,8 @@ pub struct DaoWorld {
 
 impl DaoWorld {
     pub fn advance_time(&mut self, seconds: u32) {
-        self.env.advance_block_time_by(Duration::from_secs(seconds as u64));
+        self.env
+            .advance_block_time_by(Duration::from_secs(seconds as u64));
     }
 
     // sets relative amount of motes to the account
@@ -78,19 +79,15 @@ impl DaoWorld {
     ) {
         let bids_count = self.bid_escrow.bids_count();
 
-        match cspr_stake {
-            None => {
-                self.bid_escrow
-                    .as_account(bidder)
-                    .submit_bid(
-                        0,
-                        timeframe,
-                        U512::from(budget * 1_000_000_000),
-                        U256::from(stake * 1_000_000_000),
-                        onboarding,
-                        None,
-                    );
-            }
+        let result = match cspr_stake {
+            None => self.bid_escrow.as_account(bidder).submit_bid(
+                0,
+                timeframe,
+                U512::from(budget * 1_000_000_000),
+                U256::from(stake * 1_000_000_000),
+                onboarding,
+                None,
+            ),
             Some(cspr_stake) => self
                 .bid_escrow
                 .as_account(bidder)
@@ -102,10 +99,10 @@ impl DaoWorld {
                     onboarding,
                     U512::from(cspr_stake * 1_000_000_000),
                 ),
-        }
+        };
 
-        let bid_id = self.bid_escrow.bids_count();
-        if bids_count != bid_id {
+        if result.is_ok() {
+            let bid_id = self.bid_escrow.bids_count();
             self.bids.insert((offer_id, bidder), bid_id);
         }
     }
@@ -123,7 +120,8 @@ impl DaoWorld {
                 timeframe,
                 U512::from(maximum_budget * 1_000_000_000),
                 U512::from(dos_fee * 1_000_000_000),
-            );
+            )
+            .unwrap();
 
         let offer_id = self.bid_escrow.job_offers_count();
         self.offers.insert(poster, offer_id);

@@ -11,6 +11,7 @@ mod kyc_voter;
 mod slashing_voter;
 mod va_nft;
 
+pub mod dao;
 #[doc(hidden)]
 pub mod mocks;
 pub mod onboarding_voter;
@@ -20,7 +21,6 @@ pub mod reputation_voter;
 pub mod simple_voter;
 pub mod variable_repository;
 pub mod voting;
-pub mod dao;
 
 #[doc(hidden)]
 #[cfg(feature = "test-support")]

@@ -2,12 +2,17 @@ use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
     BlockTime,
+    Error::{
+        BytesConversionError,
+        InternalAuctionTimeExpired,
+        PaymentExceedsMaxBudget,
+        PublicAuctionNotStarted,
+        PublicAuctionTimeExpired,
+    },
 };
 use casper_types::{Error, U512};
-use casper_dao_utils::Error::{BytesConversionError, InternalAuctionTimeExpired, PaymentExceedsMaxBudget, PublicAuctionNotStarted, PublicAuctionTimeExpired};
 
-use crate::bid::types::JobOfferId;
-use crate::{BidEscrowConfiguration, BidEscrowConfigurationTrait};
+use crate::{bid::types::JobOfferId, BidEscrowConfiguration, BidEscrowConfigurationTrait};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub enum JobOfferStatus {
@@ -22,9 +27,7 @@ pub enum AuctionState {
     External,
 }
 
-pub struct JobOfferConfiguration {
-
-}
+pub struct JobOfferConfiguration {}
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct JobOffer {
@@ -64,19 +67,30 @@ impl JobOffer {
         todo!()
     }
 
-    pub fn validate_bid(&self, block_time: BlockTime, worker_onboarded: bool, proposed_payment: U512) -> Result<(), casper_dao_utils::Error> {
+    pub fn validate_bid(
+        &self,
+        block_time: BlockTime,
+        worker_onboarded: bool,
+        proposed_payment: U512,
+    ) -> Result<(), casper_dao_utils::Error> {
         // Payment
         if proposed_payment > self.max_budget {
             return Err(PaymentExceedsMaxBudget);
         }
 
         // InternalAuction time
-        if worker_onboarded && block_time > self.start_time + self.bid_escrow_configuration.InternalAuctionTime() {
+        if worker_onboarded
+            && block_time > self.start_time + self.bid_escrow_configuration.InternalAuctionTime()
+        {
             return Err(InternalAuctionTimeExpired);
         }
 
         if !worker_onboarded {
-            if block_time > self.start_time + self.bid_escrow_configuration.PublicAuctionTime() + self.bid_escrow_configuration.InternalAuctionTime() {
+            if block_time
+                > self.start_time
+                    + self.bid_escrow_configuration.PublicAuctionTime()
+                    + self.bid_escrow_configuration.InternalAuctionTime()
+            {
                 return Err(PublicAuctionTimeExpired);
             }
 
@@ -86,7 +100,13 @@ impl JobOffer {
         }
 
         // PublicAuction time
-        if !worker_onboarded && block_time < self.start_time + self.bid_escrow_configuration.InternalAuctionTime() && block_time > self.start_time + self.bid_escrow_configuration.InternalAuctionTime() + self.bid_escrow_configuration.PublicAuctionTime() {
+        if !worker_onboarded
+            && block_time < self.start_time + self.bid_escrow_configuration.InternalAuctionTime()
+            && block_time
+                > self.start_time
+                    + self.bid_escrow_configuration.InternalAuctionTime()
+                    + self.bid_escrow_configuration.PublicAuctionTime()
+        {
             return Err(PublicAuctionTimeExpired);
         }
 
@@ -96,8 +116,8 @@ impl JobOffer {
 
 #[cfg(test)]
 mod tests {
-    use casper_types::account::AccountHash;
-    use casper_types::bytesrepr::FromBytes;
+    use casper_types::{account::AccountHash, bytesrepr::FromBytes};
+
     use super::*;
 
     #[test]

@@ -20,18 +20,28 @@ use casper_dao_utils::{
 use casper_types::{URef, U256, U512};
 use delegate::delegate;
 
-use crate::{bid::{
-    job::{Job, WorkerType},
-    types::BidId,
-}, voting::{
-    kyc_info::KycInfo,
-    onboarding_info::OnboardingInfo,
-    voting::{Voting, VotingResult},
-    Ballot,
-    Choice,
-    GovernanceVoting,
-    VotingId,
-}, ReputationContractCaller, ReputationContractInterface, VaNftContractCaller, VaNftContractInterface, VariableRepositoryContractCaller, VotingConfigurationBuilder, BidEscrowConfiguration};
+use crate::{
+    bid::{
+        job::{Job, WorkerType},
+        types::BidId,
+    },
+    voting::{
+        kyc_info::KycInfo,
+        onboarding_info::OnboardingInfo,
+        voting::{Voting, VotingResult},
+        Ballot,
+        Choice,
+        GovernanceVoting,
+        VotingId,
+    },
+    BidEscrowConfiguration,
+    ReputationContractCaller,
+    ReputationContractInterface,
+    VaNftContractCaller,
+    VaNftContractInterface,
+    VariableRepositoryContractCaller,
+    VotingConfigurationBuilder,
+};
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -204,7 +214,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             max_budget,
             dos_fee,
             get_block_time(),
-            BidEscrowConfiguration {}
+            BidEscrowConfiguration {},
         );
 
         self.job_offers.set(&job_offer_id, job_offer);
@@ -241,8 +251,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::VaOnboardedAlready);
         }
 
-        let bid_validation = job_offer.validate_bid(get_block_time(),self.is_va(worker), payment);
-        
+        let bid_validation = job_offer.validate_bid(get_block_time(), self.is_va(worker), payment);
+
         if let Err(error) = bid_validation {
             revert(error);
         }
@@ -787,7 +797,12 @@ use crate::{
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
-    pub fn pick_bid_with_cspr_amount(&mut self, job_offer_id: u32, bid_id: u32, cspr_amount: U512) {
+    pub fn pick_bid_with_cspr_amount(
+        &mut self,
+        job_offer_id: u32,
+        bid_id: u32,
+        cspr_amount: U512,
+    ) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "pick_bid.wasm",
@@ -798,7 +813,7 @@ impl BidEscrowContractTest {
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
-        );
+        )
     }
 
     pub fn post_job_offer_with_cspr_amount(
@@ -806,7 +821,7 @@ impl BidEscrowContractTest {
         expected_timeframe: BlockTime,
         budget: U512,
         cspr_amount: U512,
-    ) {
+    ) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "post_job_offer.wasm",
@@ -817,7 +832,7 @@ impl BidEscrowContractTest {
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
-        );
+        )
     }
 
     pub fn submit_bid_with_cspr_amount(
@@ -828,7 +843,7 @@ impl BidEscrowContractTest {
         reputation_stake: U256,
         onboard: bool,
         cspr_amount: U512,
-    ) {
+    ) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "submit_bid.wasm",
@@ -842,6 +857,6 @@ impl BidEscrowContractTest {
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },
-        );
+        )
     }
 }
