@@ -192,7 +192,7 @@ impl DaoWorld {
                         if name.contains("Worker") {
                             self.kyc(address);
                         }
-                        
+
                         if name.contains("VA") {
                             self.make_va(address);
                         }

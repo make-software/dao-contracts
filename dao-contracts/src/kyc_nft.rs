@@ -13,7 +13,8 @@ use casper_dao_utils::{
     casper_env::{self, caller},
     Address,
     Error,
-    Mapping, SequenceGenerator,
+    Mapping,
+    SequenceGenerator,
 };
 use casper_types::U256;
 use delegate::delegate;

@@ -13,7 +13,8 @@ use casper_dao_utils::{
     casper_env::{self, caller},
     Address,
     Error,
-    Mapping, SequenceGenerator,
+    Mapping,
+    SequenceGenerator,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -149,7 +150,7 @@ impl VaNftContractInterface for VaNftContract {
     fn mint(&mut self, to: Address) {
         self.access_control.ensure_whitelisted();
         self.assert_does_not_own_token(&to);
-        
+
         let token_id = self.id_gen.next_value();
         MintableERC721::mint(&mut self.token, to, token_id);
         self.tokens.set(&to, Some(token_id));
