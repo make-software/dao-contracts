@@ -10,11 +10,12 @@ use crate::common::DaoWorld;
 pub struct TokenId(pub casper_dao_erc721::TokenId);
 
 #[derive(Debug, Default, Parameter)]
-#[param(name = "account", regex = "Bob|Alice|Owner|user|any|any user|")]
+#[param(name = "account", regex = "Bob|Alice|Owner|Holder|user|any|any user|")]
 pub enum Account {
     Alice,
     Bob,
     Owner,
+    Holder,
     #[default]
     Any,
 }
@@ -25,7 +26,8 @@ impl Account {
             Account::Owner => 0,
             Account::Alice => 1,
             Account::Bob => 2,
-            Account::Any => 3,
+            Account::Holder => 3,
+            Account::Any => 4,
         };
         world.env.get_account(idx)
     }
@@ -39,6 +41,7 @@ impl FromStr for Account {
             "Bob" => Self::Bob,
             "Alice" => Self::Alice,
             "Owner" => Self::Owner,
+            "Holder" => Self::Holder,
             _ => Self::Any,
         })
     }

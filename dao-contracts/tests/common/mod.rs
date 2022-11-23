@@ -1,10 +1,11 @@
 pub mod dao;
 pub mod helpers;
 pub mod setup;
+pub mod params;
 
 use std::{
     collections::HashMap,
-    fmt::{Debug, Formatter},
+    fmt::{Debug, Formatter}, cell::{RefCell, RefMut},
 };
 
 use casper_dao_contracts::bid::{
@@ -35,6 +36,13 @@ pub struct DaoWorld {
     accounts_count: usize,
     kyc_count: U256,
     va_count: U256,
+}
+
+impl DaoWorld {
+
+    // pub fn kyc_token(&self) -> RefMut<casper_dao_contracts::KycNftContractTest> {
+    //     self.kyc_token.borrow_mut()
+    // }
 }
 
 impl DaoWorld {
@@ -150,8 +158,8 @@ impl DaoWorld {
 
     // performs kyc for an address
     pub fn kyc(&mut self, account: Address) {
-        self.kyc_token.mint(account).unwrap();
-        self.kyc_count += U256::one();
+        // self.kyc_token.mint(account).unwrap();
+        // self.kyc_count += U256::one();
     }
 
     // makes an address a va
@@ -232,7 +240,7 @@ impl Default for DaoWorld {
             bid_escrow,
             va_token,
             reputation_token,
-            kyc_token,
+            kyc_token,// RefCell::new(kyc_token),
             variable_repo,
             slashing_voter,
             addresses: Default::default(),
