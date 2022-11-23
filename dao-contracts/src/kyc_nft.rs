@@ -28,7 +28,7 @@ pub trait KycNftContractInterface {
     /// See [MetadataERC721](MetadataERC721::init()), [AccessControl](AccessControl::init())
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri);
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
-    /// is permited to call this method.
+    /// is permitted to call this method.
     ///
     /// See [AccessControl](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
@@ -64,7 +64,7 @@ pub trait KycNftContractInterface {
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
     /// Returns a URI prefix that is used by all the assets.
     fn base_uri(&self) -> TokenUri;
-    /// Creates a new token with the given id and transfers it to a new owner.
+    /// Creates a new token with the next id and transfers it to a new owner.
     /// Increments the total supply and the balance of the `to` address.
     ///
     /// # Note
@@ -74,8 +74,6 @@ pub trait KycNftContractInterface {
     /// Each user is entitled to own only one token.
     ///
     /// # Errors
-    /// Throws [`TokenAlreadyExists`](Error::TokenAlreadyExists) if a token with
-    /// the `token_id` has been minted already.
     ///
     /// Throws [`UserAlreadyOwnsToken`](Error::UserAlreadyOwnsToken) if the `to` address
     /// already owns a token.
