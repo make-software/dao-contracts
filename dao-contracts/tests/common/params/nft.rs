@@ -10,7 +10,7 @@ use crate::common::DaoWorld;
 pub struct TokenId(pub casper_dao_erc721::TokenId);
 
 #[derive(Debug, Default, Parameter)]
-#[param(name = "account", regex = "Bob|Alice|Owner|Holder|user|any|any user|")]
+#[param(name = "account", regex = ".+")]
 pub enum Account {
     Alice,
     Bob,

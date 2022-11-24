@@ -1,18 +1,25 @@
-use crate::common::{params::{common::Contract, nft::Account}, DaoWorld};
+use crate::common::{params::{common::Contract, nft::Account}, DaoWorld, config::UserConfiguration};
 use cucumber::{gherkin::Step, given};
-
 
 #[given(expr = "users in {contract} contract")]
 fn users_setup(world: &mut DaoWorld, step: &Step, contract: Contract) {
     let users_iter = step.table.as_ref().unwrap().rows.iter().skip(1);
 
-    // rows: account, is_whitelisted
     for row in users_iter {
-        let account: Account = row[0].parse().unwrap();
-        let should_whitelist: bool = row[1].parse().unwrap();
+        let config: UserConfiguration = row.into();
 
-        if should_whitelist {
-            world.whitelist(&contract, &Account::Owner, &account);
+        if config.is_whitelisted() {
+            world.whitelist(&contract, &Account::Owner, config.account());
+        }
+
+        // TODO: world should accept an Account.
+        let user_address = config.account().get_address(world);
+        if config.is_kyced() {
+            world.kyc(user_address);
+        }
+
+        if config.is_va() {
+            world.make_va(user_address);
         }
     }
 }
