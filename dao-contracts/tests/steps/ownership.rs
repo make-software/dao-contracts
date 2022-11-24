@@ -1,6 +1,9 @@
 use cucumber::{then, when};
 
-use crate::common::{DaoWorld, params::{nft::Account, common::Contract}};
+use crate::common::{
+    params::{common::Contract, nft::Account},
+    DaoWorld,
+};
 
 #[when(expr = "{account} sets {account} as a new owner of {contract} contract")]
 fn change_ownership(world: &mut DaoWorld, caller: Account, new_owner: Account, contract: Contract) {

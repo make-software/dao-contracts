@@ -24,7 +24,7 @@ pub enum Account {
 impl Account {
     pub fn get_address(&self, world: &DaoWorld) -> Address {
         let idx = match self {
-            Account::Owner => 0, 
+            Account::Owner => 0,
             Account::Deployer => 0,
             Account::Alice => 1,
             Account::Bob => 2,

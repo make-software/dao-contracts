@@ -6,32 +6,60 @@ use casper_dao_contracts::{
     VaNftContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{TestContract, TestEnv, Address};
-use crate::common::{DaoWorld, params::{nft::Account, common::Contract}};
+use casper_dao_utils::{Address, TestContract, TestEnv};
+
+use crate::common::{
+    params::{common::Contract, nft::Account},
+    DaoWorld,
+};
 
 impl DaoWorld {
-    pub fn whitelist(&mut self, contract: &Contract, caller: &Account, user: &Account) -> Result<(), casper_dao_utils::Error> {
+    pub fn whitelist(
+        &mut self,
+        contract: &Contract,
+        caller: &Account,
+        user: &Account,
+    ) -> Result<(), casper_dao_utils::Error> {
         let user = user.get_address(self);
         let caller = caller.get_address(self);
 
         match contract {
             Contract::KycToken => self.kyc_token.as_account(caller).add_to_whitelist(user),
             Contract::VaToken => self.va_token.as_account(caller).add_to_whitelist(user),
-            Contract::ReputationToken => self.reputation_token.as_account(caller).add_to_whitelist(user),
-            Contract::VariableRepository => self.variable_repo.as_account(caller).add_to_whitelist(user),
+            Contract::ReputationToken => self
+                .reputation_token
+                .as_account(caller)
+                .add_to_whitelist(user),
+            Contract::VariableRepository => {
+                self.variable_repo.as_account(caller).add_to_whitelist(user)
+            }
             _ => Err(casper_dao_utils::Error::Unknown),
         }
     }
 
-    pub fn remove_from_whitelist(&mut self, contract: &Contract, caller: &Account, user: &Account) -> Result<(), casper_dao_utils::Error> {
+    pub fn remove_from_whitelist(
+        &mut self,
+        contract: &Contract,
+        caller: &Account,
+        user: &Account,
+    ) -> Result<(), casper_dao_utils::Error> {
         let user = user.get_address(self);
         let caller = caller.get_address(self);
 
         match contract {
-            Contract::KycToken => self.kyc_token.as_account(caller).remove_from_whitelist(user),
+            Contract::KycToken => self
+                .kyc_token
+                .as_account(caller)
+                .remove_from_whitelist(user),
             Contract::VaToken => self.va_token.as_account(caller).remove_from_whitelist(user),
-            Contract::ReputationToken => self.reputation_token.as_account(caller).remove_from_whitelist(user),
-            Contract::VariableRepository => self.variable_repo.as_account(caller).remove_from_whitelist(user),
+            Contract::ReputationToken => self
+                .reputation_token
+                .as_account(caller)
+                .remove_from_whitelist(user),
+            Contract::VariableRepository => self
+                .variable_repo
+                .as_account(caller)
+                .remove_from_whitelist(user),
             _ => Err(casper_dao_utils::Error::Unknown),
         }
     }
@@ -46,15 +74,29 @@ impl DaoWorld {
         }
     }
 
-    pub fn change_ownership(&mut self, contract: &Contract, caller: &Account, new_owner: &Account) -> Result<(), casper_dao_utils::Error> {
+    pub fn change_ownership(
+        &mut self,
+        contract: &Contract,
+        caller: &Account,
+        new_owner: &Account,
+    ) -> Result<(), casper_dao_utils::Error> {
         let new_owner = new_owner.get_address(self);
         let caller = caller.get_address(self);
 
         match contract {
-            Contract::KycToken => self.kyc_token.as_account(caller).change_ownership(new_owner),
+            Contract::KycToken => self
+                .kyc_token
+                .as_account(caller)
+                .change_ownership(new_owner),
             Contract::VaToken => self.va_token.as_account(caller).change_ownership(new_owner),
-            Contract::ReputationToken => self.reputation_token.as_account(caller).change_ownership(new_owner),
-            Contract::VariableRepository => self.variable_repo.as_account(caller).change_ownership(new_owner),
+            Contract::ReputationToken => self
+                .reputation_token
+                .as_account(caller)
+                .change_ownership(new_owner),
+            Contract::VariableRepository => self
+                .variable_repo
+                .as_account(caller)
+                .change_ownership(new_owner),
             _ => Err(casper_dao_utils::Error::Unknown),
         }
     }

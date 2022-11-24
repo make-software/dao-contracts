@@ -1,4 +1,4 @@
-use std::{str::FromStr, fmt::Debug};
+use std::{fmt::Debug, str::FromStr};
 
 use super::params::nft::Account;
 
@@ -10,12 +10,11 @@ pub struct UserConfiguration {
 }
 
 impl UserConfiguration {
-
     pub fn new(data: &Vec<String>) -> Self {
-        Self { 
+        Self {
             account: Self::parse(data.get(0), "Invalid config - missing Account"),
-            is_whitelisted: Self::parse_or_default(data.get(1)), 
-            is_kyced: Self::parse_or_default(data.get(2)), 
+            is_whitelisted: Self::parse_or_default(data.get(1)),
+            is_kyced: Self::parse_or_default(data.get(2)),
             is_va: Self::parse_or_default(data.get(3)),
         }
     }
@@ -37,7 +36,10 @@ impl UserConfiguration {
     }
 
     fn parse<T>(item: Option<&String>, err_msg: &str) -> T
-    where T: FromStr, <T as FromStr>::Err: Debug {
+    where
+        T: FromStr,
+        <T as FromStr>::Err: Debug,
+    {
         item.expect(err_msg).parse::<T>().expect("Parsing failed.")
     }
 

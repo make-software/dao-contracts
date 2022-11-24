@@ -1,9 +1,12 @@
 use cucumber::{given, then, when};
 
-use crate::common::{DaoWorld, params::{
+use crate::common::{
+    params::{
         common::U256,
         nft::{Account, TokenId},
-    }};
+    },
+    DaoWorld,
+};
 
 #[given(expr = "{account} that owns a KYC Token")]
 fn setup_user_with_token(world: &mut DaoWorld, user: Account) {
@@ -42,7 +45,7 @@ fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: U256) {
     assert_eq!(total_supply, expected_total_supply.0);
 }
 
-impl DaoWorld {       
+impl DaoWorld {
     fn balance_of(&self, account: &Account) -> U256 {
         U256(self.kyc_token.balance_of(account.get_address(self)))
     }
