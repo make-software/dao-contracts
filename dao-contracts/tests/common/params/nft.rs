@@ -15,6 +15,7 @@ pub enum Account {
     Alice,
     Bob,
     Owner,
+    Deployer,
     Holder,
     #[default]
     Any,
@@ -23,7 +24,8 @@ pub enum Account {
 impl Account {
     pub fn get_address(&self, world: &DaoWorld) -> Address {
         let idx = match self {
-            Account::Owner => 0,
+            Account::Owner => 0, 
+            Account::Deployer => 0,
             Account::Alice => 1,
             Account::Bob => 2,
             Account::Holder => 3,
@@ -41,6 +43,7 @@ impl FromStr for Account {
             "Bob" => Self::Bob,
             "Alice" => Self::Alice,
             "Owner" => Self::Owner,
+            "Deployer" => Self::Deployer,
             "Holder" => Self::Holder,
             _ => Self::Any,
         })

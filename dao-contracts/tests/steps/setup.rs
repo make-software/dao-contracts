@@ -9,7 +9,7 @@ fn users_setup(world: &mut DaoWorld, step: &Step, contract: Contract) {
         let config: UserConfiguration = row.into();
 
         if config.is_whitelisted() {
-            world.whitelist(&contract, &Account::Owner, config.account());
+            world.whitelist(&contract, &Account::Owner, config.account()).unwrap();
         }
 
         // TODO: world should accept an Account.
