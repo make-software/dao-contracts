@@ -12,7 +12,7 @@ use casper_dao_utils::{
 };
 use casper_types::{Error, U512};
 
-use crate::{bid::types::JobOfferId, BidEscrowConfiguration, BidEscrowConfigurationTrait};
+use crate::{bid::types::JobOfferId, DaoConfiguration, DaoConfigurationTrait};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub enum JobOfferStatus {
@@ -38,7 +38,7 @@ pub struct JobOffer {
     pub dos_fee: U512,
     pub status: JobOfferStatus,
     pub start_time: BlockTime,
-    pub bid_escrow_configuration: BidEscrowConfiguration,
+    pub dao_configuration: DaoConfiguration,
 }
 
 impl JobOffer {
@@ -49,7 +49,7 @@ impl JobOffer {
         max_budget: U512,
         dos_fee: U512,
         block_time: BlockTime,
-        bid_escrow_configuration: BidEscrowConfiguration,
+        dao_configuration: DaoConfiguration,
     ) -> Self {
         JobOffer {
             job_offer_id: offer_id,
@@ -59,7 +59,7 @@ impl JobOffer {
             dos_fee,
             status: JobOfferStatus::Created,
             start_time: block_time,
-            bid_escrow_configuration,
+            dao_configuration,
         }
     }
 
@@ -80,7 +80,7 @@ impl JobOffer {
 
         // InternalAuction time
         if worker_onboarded
-            && block_time > self.start_time + self.bid_escrow_configuration.InternalAuctionTime()
+            && block_time > self.start_time + self.dao_configuration.InternalAuctionTime()
         {
             return Err(InternalAuctionTimeExpired);
         }
@@ -88,24 +88,24 @@ impl JobOffer {
         if !worker_onboarded {
             if block_time
                 > self.start_time
-                    + self.bid_escrow_configuration.PublicAuctionTime()
-                    + self.bid_escrow_configuration.InternalAuctionTime()
+                    + self.dao_configuration.PublicAuctionTime()
+                    + self.dao_configuration.InternalAuctionTime()
             {
                 return Err(PublicAuctionTimeExpired);
             }
 
-            if block_time < self.start_time + self.bid_escrow_configuration.InternalAuctionTime() {
+            if block_time < self.start_time + self.dao_configuration.InternalAuctionTime() {
                 return Err(PublicAuctionNotStarted);
             }
         }
 
         // PublicAuction time
         if !worker_onboarded
-            && block_time < self.start_time + self.bid_escrow_configuration.InternalAuctionTime()
+            && block_time < self.start_time + self.dao_configuration.InternalAuctionTime()
             && block_time
                 > self.start_time
-                    + self.bid_escrow_configuration.InternalAuctionTime()
-                    + self.bid_escrow_configuration.PublicAuctionTime()
+                    + self.dao_configuration.InternalAuctionTime()
+                    + self.dao_configuration.PublicAuctionTime()
         {
             return Err(PublicAuctionTimeExpired);
         }

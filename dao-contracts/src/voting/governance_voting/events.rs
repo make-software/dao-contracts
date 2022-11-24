@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
-use super::voting::VotingConfiguration;
 use crate::voting::{ballot::Choice, types::VotingId, Ballot};
+use crate::{DaoConfiguration, DaoConfigurationTrait};
 
 /// Event thrown after voting contract is created
 #[derive(Debug, PartialEq, Eq, Event)]
@@ -53,17 +53,17 @@ impl VotingCreated {
         voting_id: VotingId,
         informal_voting_id: VotingId,
         formal_voting_id: Option<VotingId>,
-        config: &VotingConfiguration,
+        config: &DaoConfiguration,
     ) -> Self {
         VotingCreated {
             creator: *creator,
             voting_id,
             informal_voting_id,
             formal_voting_id,
-            config_formal_voting_quorum: config.formal_voting_quorum,
-            config_formal_voting_time: config.formal_voting_time,
-            config_informal_voting_quorum: config.informal_voting_quorum,
-            config_informal_voting_time: config.informal_voting_time,
+            config_formal_voting_quorum: config.formalVotingQuorum(),
+            config_formal_voting_time: config.FormalVotingTime(),
+            config_informal_voting_quorum: config.informalVotingQuorum(),
+            config_informal_voting_time: config.InformalVotingTime(),
         }
     }
 }

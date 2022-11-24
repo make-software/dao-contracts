@@ -38,9 +38,9 @@ pub trait SimpleVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
-    fn get_variable_repo_address(&self) -> Address;
+    fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
-    fn get_reputation_token_address(&self) -> Address;
+    fn reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
@@ -83,13 +83,13 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
+            fn variable_repo_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
         }
     }
 
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U256) {
-        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting).build();
+        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address()).build();
 
         let voting_id = self
             .voting

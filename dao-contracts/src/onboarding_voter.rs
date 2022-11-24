@@ -67,9 +67,9 @@ pub trait OnboardingVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
-    fn get_variable_repo_address(&self) -> Address;
+    fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
-    fn get_reputation_token_address(&self) -> Address;
+    fn reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
@@ -111,8 +111,8 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
         }
 
         to self.voting {
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
+            fn variable_repo_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
         }
     }
@@ -138,7 +138,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             OnboardingAction::Remove => self.configure_remove_voting(subject_address),
         };
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(ContractCall {
                 address: self.get_va_token_address(),
                 entry_point,
@@ -269,7 +269,7 @@ impl OnboardingVoterContract {
     }
 
     fn assert_has_reputation(&self, address: &Address) {
-        let caller = ReputationContractCaller::at(self.get_reputation_token_address());
+        let caller = ReputationContractCaller::at(self.reputation_token_address());
         if !caller.has_reputation(address) {
             casper_env::revert(Error::InsufficientBalance)
         }

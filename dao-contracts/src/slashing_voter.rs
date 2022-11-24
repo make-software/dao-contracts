@@ -33,9 +33,9 @@ pub trait SlashingVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
-    fn get_variable_repo_address(&self) -> Address;
+    fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
-    fn get_reputation_token_address(&self) -> Address;
+    fn reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
@@ -64,8 +64,8 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
+            fn variable_repo_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
         }
     }
 
@@ -76,7 +76,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         let contract_call = match slash_ratio {
             1000 => {
                 ContractCall {
-                    address: self.voting.get_reputation_token_address(),
+                    address: self.voting.reputation_token_address(),
                     // TODO: Should we also delete va_token?
                     entry_point: "burn_all".to_string(),
                     runtime_args: runtime_args! {
@@ -85,7 +85,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
                 }
             }
             slash_ratio if slash_ratio < 1000 => ContractCall {
-                address: self.voting.get_reputation_token_address(),
+                address: self.voting.reputation_token_address(),
                 entry_point: "burn".to_string(),
                 runtime_args: runtime_args! {
                     "owner" => address_to_slash,
@@ -98,7 +98,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             }
         };
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
+        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(contract_call)
             .build();
 

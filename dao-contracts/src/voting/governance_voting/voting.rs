@@ -7,6 +7,7 @@ use casper_dao_utils::{
 use casper_types::U256;
 
 use crate::voting::{ballot::Choice, types::VotingId};
+use crate::{DaoConfiguration, DaoConfigurationTrait};
 
 /// Result of a Voting
 #[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
@@ -77,23 +78,8 @@ impl VotingSummary {
     }
 }
 
-/// Voting configuration, created and persisted since voting start
-#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq, Eq)]
-pub struct VotingConfiguration {
-    pub formal_voting_quorum: U256,
-    pub formal_voting_time: u64,
-    pub informal_voting_quorum: U256,
-    pub informal_voting_time: u64,
-    pub cast_first_vote: bool,
-    pub cast_minimum_reputation: U256,
-    pub contract_call: Option<ContractCall>,
-    pub only_va_can_create: bool,
-    pub unbounded_tokens_for_creator: bool,
-    pub onboard_creator: bool,
-}
-
 /// Voting struct
-#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq, Eq)]
+#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
 pub struct Voting {
     voting_id: VotingId,
     completed: bool,
@@ -105,7 +91,7 @@ pub struct Voting {
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
     creator: Address,
-    voting_configuration: VotingConfiguration,
+    voting_configuration: DaoConfiguration,
 }
 
 impl Voting {
@@ -114,7 +100,7 @@ impl Voting {
         voting_id: VotingId,
         start_time: u64,
         creator: Address,
-        voting_configuration: VotingConfiguration,
+        voting_configuration: DaoConfiguration,
     ) -> Self {
         Voting {
             voting_id,
@@ -138,11 +124,6 @@ impl Voting {
         } else {
             VotingType::Formal
         }
-    }
-
-    pub fn skip_first_vote(&self) -> bool {
-        self.voting_configuration.cast_first_vote
-            && self.voting_configuration.unbounded_tokens_for_creator
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
@@ -179,11 +160,11 @@ impl Voting {
         match self.get_voting_type() {
             VotingType::Informal => {
                 let start_time = self.start_time;
-                let voting_time = self.voting_configuration.informal_voting_time;
+                let voting_time = self.voting_configuration.InformalVotingTime();
                 start_time + voting_time <= block_time
             }
             VotingType::Formal => {
-                self.start_time + self.voting_configuration.formal_voting_time <= block_time
+                self.start_time + self.voting_configuration.FormalVotingTime() <= block_time
             }
         }
     }
@@ -202,8 +183,8 @@ impl Voting {
 
     pub fn get_quorum(&self) -> U256 {
         match self.get_voting_type() {
-            VotingType::Informal => self.voting_configuration.informal_voting_quorum,
-            VotingType::Formal => self.voting_configuration.formal_voting_quorum,
+            VotingType::Informal => self.voting_configuration.informalVotingQuorum(),
+            VotingType::Formal => self.voting_configuration.formalVotingQuorum(),
         }
     }
 
@@ -288,22 +269,22 @@ impl Voting {
 
     /// Get the voting's formal voting quorum.
     pub fn formal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.formal_voting_quorum
+        self.voting_configuration.formalVotingQuorum()
     }
 
     /// Get the voting's informal voting quorum.
     pub fn informal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.informal_voting_quorum
+        self.voting_configuration.informalVotingQuorum()
     }
 
     /// Get the voting's formal voting time.
     pub fn formal_voting_time(&self) -> u64 {
-        self.voting_configuration.formal_voting_time
+        self.voting_configuration.FormalVotingTime()
     }
 
     /// Get the voting's informal voting time.
     pub fn informal_voting_time(&self) -> u64 {
-        self.voting_configuration.informal_voting_time
+        self.voting_configuration.InformalVotingTime()
     }
 
     /// Get the voting's contract call reference.
@@ -312,7 +293,7 @@ impl Voting {
     }
 
     /// Get a reference to the voting's voting configuration.
-    pub fn voting_configuration(&self) -> &VotingConfiguration {
+    pub fn voting_configuration(&self) -> &DaoConfiguration {
         &self.voting_configuration
     }
 

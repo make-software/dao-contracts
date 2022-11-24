@@ -1,21 +1,20 @@
-use casper_dao_utils::{
-    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    BlockTime,
-};
+use std::collections::HashMap;
+use std::io::Bytes;
+use casper_types::U256;
+use casper_dao_utils::{casper_dao_macros::{CLTyped, FromBytes, ToBytes}, BlockTime, ContractCall};
 
 pub trait DaoConfigurationTrait {
     fn ReputationConversionRate(&self) -> u32;
     fn FiatConversionRateAddress(&self) -> u32;
     fn ForumKYCRequired(&self) -> u32;
-}
-
-pub trait VotingConfigurationTrait {
     fn GovernanceInformalQuorumRatio(&self) -> u32;
     fn GovernanceFormalQuorumRatio(&self) -> u32;
     fn GovernanceInformalVotingTime(&self) -> BlockTime;
     fn GovernanceFormalVotingTime(&self) -> BlockTime;
     fn InformalQuorumRatio(&self) -> u32;
     fn FormalQuorumRatio(&self) -> u32;
+    fn formalVotingQuorum(&self) -> U256;
+    fn informalVotingQuorum(&self) -> U256;
     fn InformalVotingTime(&self) -> BlockTime;
     fn FormalVotingTime(&self) -> BlockTime;
     fn TimeBetweenInformalAndFormalVoting(&self) -> BlockTime;
@@ -24,9 +23,6 @@ pub trait VotingConfigurationTrait {
     fn VotingClearnessDelta(&self) -> u32;
     fn VotingStartAfterJobSubmition(&self) -> u32;
     fn GovernancePaymentRatio(&self) -> u32;
-}
-
-pub trait BidEscrowConfigurationTrait {
     fn PostJobDOSFee(&self) -> u32;
     fn InternalAuctionTime(&self) -> BlockTime;
     fn PublicAuctionTime(&self) -> BlockTime;
@@ -36,16 +32,15 @@ pub trait BidEscrowConfigurationTrait {
     fn DistributePaymentToNonVoters(&self) -> u32;
 }
 
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct DaoConfiguration {}
+#[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
+pub struct DaoConfiguration {
+    pub contract_call: Option<ContractCall>,
+    pub only_va_can_create: bool,
+    pub unbounded_tokens_for_creator: bool,
+    pub onboard_creator: bool,
+}
 
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct BidEscrowConfiguration {}
-
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct VotingConfiguration {}
-
-impl BidEscrowConfigurationTrait for BidEscrowConfiguration {
+impl DaoConfigurationTrait for DaoConfiguration {
     fn PostJobDOSFee(&self) -> u32 {
         todo!()
     }
@@ -75,9 +70,7 @@ impl BidEscrowConfigurationTrait for BidEscrowConfiguration {
     fn DistributePaymentToNonVoters(&self) -> u32 {
         todo!()
     }
-}
 
-impl VotingConfigurationTrait for VotingConfiguration {
     fn GovernanceInformalQuorumRatio(&self) -> u32 {
         todo!()
     }
@@ -100,6 +93,14 @@ impl VotingConfigurationTrait for VotingConfiguration {
     }
 
     fn FormalQuorumRatio(&self) -> u32 {
+        todo!()
+    }
+
+    fn formalVotingQuorum(&self) -> U256 {
+        todo!()
+    }
+
+    fn informalVotingQuorum(&self) -> U256 {
         todo!()
     }
 
@@ -136,9 +137,7 @@ impl VotingConfigurationTrait for VotingConfiguration {
     fn GovernancePaymentRatio(&self) -> u32 {
         todo!()
     }
-}
 
-impl DaoConfigurationTrait for DaoConfiguration {
     fn ReputationConversionRate(&self) -> u32 {
         todo!()
     }

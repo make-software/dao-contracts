@@ -1,3 +1,4 @@
+use std::collections::{BTreeMap, HashMap};
 use casper_dao_modules::{AccessControl, Record, Repository};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
@@ -15,8 +16,7 @@ use casper_types::{
     U512,
 };
 use delegate::delegate;
-
-use crate::voting::voting::VotingConfiguration;
+use crate::DaoConfiguration;
 
 // Interface of the Variable Repository Contract.
 //
@@ -104,6 +104,8 @@ pub trait VariableRepositoryContractInterface {
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
+
+    fn all_variables(&self) -> BTreeMap<String, Bytes>;
 }
 
 /// Variable Repository Contract implementation. See [`VariableRepositoryContractInterface`].
@@ -149,6 +151,18 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 
     fn keys_count(&self) -> u32 {
         self.repository.keys.size()
+    }
+
+    fn all_variables(&self) -> BTreeMap<String, Bytes> {
+        let mut result : BTreeMap<String, Bytes> = BTreeMap::new();
+
+        for key in 0..self.repository.keys.length.get().unwrap() {
+            let repo_key = self.repository.keys.get(key).unwrap();
+            let value = self.repository.get(repo_key.clone()).unwrap();
+            result.insert(repo_key, value);
+        }
+
+        result
     }
 }
 
@@ -203,22 +217,6 @@ impl VariableRepositoryContractCaller {
             self.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
         )
         .unwrap_or_revert()
-    }
-
-    /// Generates default voting configuration based on values stored in the repository
-    pub fn voting_configuration_defaults(&self, total_onboarded: U256) -> VotingConfiguration {
-        VotingConfiguration {
-            formal_voting_quorum: self.formal_voting_quorum(total_onboarded),
-            formal_voting_time: self.formal_voting_time(),
-            informal_voting_quorum: self.informal_voting_quorum(total_onboarded),
-            informal_voting_time: self.informal_voting_time(),
-            cast_first_vote: true,
-            cast_minimum_reputation: U256::zero(),
-            contract_call: None,
-            only_va_can_create: true,
-            unbounded_tokens_for_creator: false,
-            onboard_creator: false,
-        }
     }
 
     /// Calculates amount of reputation to be minted
