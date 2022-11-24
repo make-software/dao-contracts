@@ -8,14 +8,9 @@ use crate::common::{DaoWorld, params::{
 
 #[given(expr = "{account} that owns a KYC Token")]
 fn setup_user_with_token(world: &mut DaoWorld, user: Account) {
-    world.unchecked_mint(&Account::Owner, &user);
+    world.checked_mint(&Account::Owner, &user);
 
     assert_eq!(world.balance_of(&user), U256::one());
-}
-
-#[given(expr = "{account} is approved to manage {account}'s token")]
-fn kyc_approve(world: &mut DaoWorld, user: Account, holder: Account) {
-    // world.kyc_token
 }
 
 #[when(expr = "{account} mints a KYC Token to {account}")]
@@ -39,7 +34,7 @@ fn assert_token_ownership(world: &mut DaoWorld, token_id: TokenId, user: Account
     let user_address = user.get_address(world);
 
     assert_eq!(token_owner, Some(user_address));
-    assert_eq!(world.token_id(&user), U256::zero());
+    assert_eq!(world.token_id(&user), U256::one());
 }
 
 #[then(expr = "total supply is {u256} token(s)")]
@@ -60,18 +55,22 @@ impl DaoWorld {
             .mint(recipient)
     }
 
-    fn unchecked_mint(&mut self, minter: &Account, recipient: &Account) {
+    fn checked_mint(&mut self, minter: &Account, recipient: &Account) {
         self.mint(minter, recipient).expect("A token should be minted");
     }
-
+    
     fn burn(&mut self, burner: &Account, holder: &Account) -> Result<(), casper_dao_utils::Error> {
         let token_id = self.token_id(holder);
         let burner = burner.get_address(self);
-
+        
         self
-            .kyc_token
-            .as_account(burner)
-            .burn(*token_id)
+        .kyc_token
+        .as_account(burner)
+        .burn(*token_id)
+    }
+
+    fn checked_burn(&mut self, minter: &Account, recipient: &Account) {
+        self.burn(minter, recipient).expect("A token should be burned");
     }
 
     fn token_id(&self, holder: &Account) -> U256 {

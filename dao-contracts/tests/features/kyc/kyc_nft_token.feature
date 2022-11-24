@@ -1,17 +1,20 @@
 Feature: KYC Token
-  Background:
-    Given users in KycToken contract
-      | user   | is_whitelisted |
-      | Alice  | false          |
-      | Bob    | true           |
+  Rule: A new instance has the default state
+    Scenario: Deploy a new instance
+      Then total supply is 0 tokens
+  
+  Rule: A contract is set up
+    Background:
+      Given users in KycToken contract
+        | user    | is_whitelisted | is_kyced |
+        | Alice   | false          | false    |
+        | Bob     | true           | false    |
+        | Holder  | false          | true     |
+        | Account | false          | false    |
 
-  Scenario: KYC Token initial state
-    Then total supply is 0 tokens
-
-  Rule: Only whitelisted user can mint a KYC Token  
     Scenario Outline: If <minter> mints a KYC Token, the balance is updated
-      When <minter> mints a KYC Token to Holder
-      Then the Holder's balance is <balance>
+      When <minter> mints a KYC Token to Account
+      Then the Account's balance is <balance>
 
     Examples:
       | minter | balance |
@@ -19,26 +22,18 @@ Feature: KYC Token
       | Bob    | 1       |
       | Owner  | 1       |
 
-  Rule: Owner can mint the first token to a user
-    Scenario: If Owner mints KYC Token to Holder, he's balance is updated
+    Scenario: If Owner mints KYC Token to Bob, he's balance is updated
+      When Owner mints a KYC Token to Bob
+      Then the Bob's balance is 1
+      And Token with id 1 belongs to Bob
+      And total supply is 2 tokens
+      
+    Scenario: If Owner mints the second KYC Token to Holder, he's balance remains the same
       When Owner mints a KYC Token to Holder
       Then the Holder's balance is 1
-      And Token with id 0 belongs to Holder
       And total supply is 1 token
-
-  Rule: User can own only one KYC Token
-    Background:
-      Given Holder that owns a KYC Token
-    
-    Scenario: If Owner mints the second KYC Token for Holder, he's balance remains the same
-      When Owner mints a KYC Token to Holder
-      Then the Holder's balance is 1
-  
-  Rule: Only a whitelisted user can burn a KYC Token
-    Background:
-      Given Holder that owns a KYC Token
-    
-    Scenario: If whitelisted but not approved user burns token, Holder's balance and total supply remain the same
+      
+    Scenario: If a whitelisted user burns token, Holder's balance and total supply remain the same
       When Bob burns Holder's token
       Then the Holder's balance is 0
       And total supply is 0 tokens
