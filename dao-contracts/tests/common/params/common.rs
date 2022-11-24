@@ -22,6 +22,9 @@ pub enum Contract {
     KycToken,
     VaToken,
     ReputationToken,
+    BidEscrow,
+    VariableRepository,
+    SlashingVoter,
 }
 
 impl FromStr for Contract {
@@ -32,6 +35,9 @@ impl FromStr for Contract {
             "KycToken" => Self::KycToken,
             "VaToken" => Self::VaToken,
             "ReputationToken" => Self::ReputationToken,
+            "BidEscrow" => Self::BidEscrow,
+            "VariableRepository" => Self::VariableRepository,
+            "SlashingVoter" => Self::SlashingVoter,
             invalid => return Err(format!("Unknown contract {}", invalid)),
         };
         Ok(contract)

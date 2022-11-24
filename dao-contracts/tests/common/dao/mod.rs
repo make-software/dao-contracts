@@ -16,8 +16,10 @@ impl DaoWorld {
 
         match contract {
             Contract::KycToken => self.kyc_token.as_account(caller).add_to_whitelist(user).unwrap(),
-            Contract::VaToken => todo!(),
-            Contract::ReputationToken => todo!(),
+            Contract::VaToken => self.va_token.as_account(caller).add_to_whitelist(user).unwrap(),
+            Contract::ReputationToken => self.reputation_token.as_account(caller).add_to_whitelist(user).unwrap(),
+            Contract::VariableRepository => self.variable_repo.as_account(caller).add_to_whitelist(user).unwrap(),
+            not_supported => { dbg!(&format!("{:?} does not support whitelisting", not_supported)); }
         }
     }
 }
