@@ -160,7 +160,7 @@ impl KycNftContractInterface for KycNftContract {
             .token
             .owner_of(token_id)
             .unwrap_or_revert_with(Error::InvalidTokenOwner);
-        BurnableERC721::burn(&mut self.token, token_id);
+        BurnableERC721::burn_unchecked(&mut self.token, token_id);
         self.tokens.set(&owner, None);
     }
 }
