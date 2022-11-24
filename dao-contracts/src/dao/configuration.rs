@@ -10,19 +10,17 @@ pub trait DaoConfigurationTrait {
 }
 
 pub trait VotingConfigurationTrait {
-    fn GovernanceQuorumRatio(&self) -> u32;
     fn GovernanceInformalQuorumRatio(&self) -> u32;
+    fn GovernanceFormalQuorumRatio(&self) -> u32;
+    fn GovernanceInformalVotingTime(&self) -> BlockTime;
+    fn GovernanceFormalVotingTime(&self) -> BlockTime;
     fn InformalQuorumRatio(&self) -> u32;
-    fn InformalStakeReputation(&self) -> u32;
-    fn QuorumRatio(&self) -> u32;
-    fn GovernanceInformalVotingTime(&self) -> u32;
-    fn GovernanceVotingTime(&self) -> u32;
-    fn InformalVotingTime(&self) -> u32;
-    fn VotingTime(&self) -> u32;
-    fn TimeBetweenInformalAndFormalVoting(&self) -> u32;
+    fn FormalQuorumRatio(&self) -> u32;
+    fn InformalVotingTime(&self) -> BlockTime;
+    fn FormalVotingTime(&self) -> BlockTime;
+    fn TimeBetweenInformalAndFormalVoting(&self) -> BlockTime;
     fn GovernanceWalletAddress(&self) -> u32;
     fn DefaultReputationSlash(&self) -> u32;
-    fn TimeDifferenceBetweenInformalAndFormal(&self) -> u32;
     fn VotingClearnessDelta(&self) -> u32;
     fn VotingStartAfterJobSubmition(&self) -> u32;
     fn GovernancePaymentRatio(&self) -> u32;
@@ -80,11 +78,21 @@ impl BidEscrowConfigurationTrait for BidEscrowConfiguration {
 }
 
 impl VotingConfigurationTrait for VotingConfiguration {
-    fn GovernanceQuorumRatio(&self) -> u32 {
+
+    fn GovernanceInformalQuorumRatio(&self) -> u32 {
         todo!()
     }
 
-    fn GovernanceInformalQuorumRatio(&self) -> u32 {
+    fn GovernanceFormalQuorumRatio(&self) -> u32 {
+        todo!()
+    }
+
+    fn GovernanceInformalVotingTime(&self) -> BlockTime {
+        // TODO: implement
+        432000
+    }
+
+    fn GovernanceFormalVotingTime(&self) -> BlockTime {
         todo!()
     }
 
@@ -92,32 +100,22 @@ impl VotingConfigurationTrait for VotingConfiguration {
         todo!()
     }
 
-    fn InformalStakeReputation(&self) -> u32 {
+    fn FormalQuorumRatio(&self) -> u32 {
         todo!()
     }
 
-    fn QuorumRatio(&self) -> u32 {
+    fn InformalVotingTime(&self) -> BlockTime {
+        // TODO: implement
+        432000
+    }
+
+    fn FormalVotingTime(&self) -> BlockTime {
         todo!()
     }
 
-    fn GovernanceInformalVotingTime(&self) -> u32 {
-        todo!()
-    }
-
-    fn GovernanceVotingTime(&self) -> u32 {
-        todo!()
-    }
-
-    fn InformalVotingTime(&self) -> u32 {
-        todo!()
-    }
-
-    fn VotingTime(&self) -> u32 {
-        todo!()
-    }
-
-    fn TimeBetweenInformalAndFormalVoting(&self) -> u32 {
-        todo!()
+    fn TimeBetweenInformalAndFormalVoting(&self) -> BlockTime {
+        // TODO: implement
+        86400
     }
 
     fn GovernanceWalletAddress(&self) -> u32 {
@@ -125,10 +123,6 @@ impl VotingConfigurationTrait for VotingConfiguration {
     }
 
     fn DefaultReputationSlash(&self) -> u32 {
-        todo!()
-    }
-
-    fn TimeDifferenceBetweenInformalAndFormal(&self) -> u32 {
         todo!()
     }
 

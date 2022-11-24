@@ -10,9 +10,7 @@ Feature: AuctionTime Variables
       | InternalWorker   | 0            | 1000         | 0          |
     And following configuration
       | key                     | value        |
-      # TODO: change to "7 days"
       | InternalAuctionTime     | 604800       |
-      # TODO: change to "10 days"
       | ExternalAuctionTime     | 864000       |
     And JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
 

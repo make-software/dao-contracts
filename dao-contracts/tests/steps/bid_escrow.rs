@@ -4,24 +4,9 @@ use casper_types::U256;
 use cucumber::{gherkin::Step, given, then, when};
 
 use crate::common::{
-    helpers::{to_rep, to_voting_type, value_to_bytes},
+    helpers::{to_rep, to_voting_type, value_to_bytes, match_result, match_choice},
     DaoWorld,
 };
-
-#[given(expr = "following configuration")]
-fn configuration(w: &mut DaoWorld, step: &Step) {
-    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
-    for row in table {
-        let variable = row[0].as_str();
-        let value = row[1].as_str();
-        w.set_variable(variable.to_string(), value_to_bytes(value));
-        assert_eq!(
-            w.get_variable(variable.to_string()),
-            value_to_bytes(value),
-            "variable mismatch"
-        );
-    }
-}
 
 #[given(
     expr = "{word} posted a JobOffer with expected timeframe of {int} days, maximum budget of {int} CSPR and {int} CSPR DOS Fee"
@@ -169,4 +154,18 @@ fn total_unbounded_stake_is(w: &mut DaoWorld, voting_type: String, voting_id: u3
         "Total unbounded stake is {:?}, but should be {:?}",
         total_unbounded_stake, amount
     );
+}
+
+#[when(expr = "{word} {word} vote of {int} REP {word}")]
+fn cannot_vote(w: &mut DaoWorld, voter: String, choice: String, stake: u64, result: String) {
+    let voter = w.named_address(voter);
+    let stake = U256::from(stake * 1_000_000_000);
+    let choice = match_choice(choice);
+    let expected_result = match_result(result);
+
+    let vote_result = w.bid_escrow
+        .as_account(voter)
+        .vote(0, choice, stake);
+
+    assert_eq!(expected_result, vote_result.is_ok());
 }

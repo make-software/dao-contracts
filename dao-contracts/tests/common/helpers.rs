@@ -4,6 +4,7 @@ use casper_types::{
     U256,
     U512,
 };
+use casper_dao_contracts::voting::Choice;
 
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str) -> Bytes {
@@ -41,5 +42,36 @@ pub fn to_voting_type(value: &str) -> VotingType {
         "formal" => VotingType::Formal,
         "informal" => VotingType::Informal,
         _ => panic!("Unexpected voting type {}", value),
+    }
+}
+
+pub fn multiplier(unit: String) -> u32 {
+    let multiplier = match unit.as_str() {
+        "seconds" => 1,
+        "minutes" => 60,
+        "hours" => 60 * 60,
+        "days" => 60 * 60 * 24,
+        _ => panic!("Unknown unit option - it should be either seconds, minutes, hours or days"),
+    };
+    multiplier
+}
+
+pub fn match_choice(choice: String) -> Choice {
+    match choice.as_str() {
+        "yes" => Choice::InFavor,
+        "no" => Choice::Against,
+        _ => {
+            panic!("Unknown choice");
+        }
+    }
+}
+
+pub fn match_result(result: String) -> bool {
+    match result.as_str() {
+        "succeeds" => true,
+        "fails" => false,
+        _ => {
+            panic!("Unknown result option");
+        }
     }
 }

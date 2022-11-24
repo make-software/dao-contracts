@@ -14,8 +14,9 @@ Feature: External Worker who wants to become a VA submits job
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     And JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
-    And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
+    And 8 days passed
+    And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
     And JobPoster picked the Bid of ExternalWorker
 
   Scenario: JobPoster picked the Bid of External Worker
