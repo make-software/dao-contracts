@@ -17,7 +17,7 @@ use crate::{
         GovernanceVoting,
     },
     ReputationContractInterface,
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -98,7 +98,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             }
         };
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(contract_call)
             .build();
 

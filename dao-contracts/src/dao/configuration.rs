@@ -56,7 +56,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
     }
 
     fn DefaultPolicingRate(&self) -> u32 {
-        todo!()
+        300
     }
 
     fn VABidAcceptanceTimeout(&self) -> u32 {
@@ -89,19 +89,19 @@ impl DaoConfigurationTrait for DaoConfiguration {
     }
 
     fn InformalQuorumRatio(&self) -> u32 {
-        todo!()
+        500
     }
 
     fn FormalQuorumRatio(&self) -> u32 {
-        todo!()
+        500
     }
 
     fn formalVotingQuorum(&self) -> U256 {
-        todo!()
+        U256::from(3)
     }
 
     fn informalVotingQuorum(&self) -> U256 {
-        todo!()
+        U256::from(3)
     }
 
     fn InformalVotingTime(&self) -> BlockTime {
@@ -110,7 +110,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
     }
 
     fn FormalVotingTime(&self) -> BlockTime {
-        todo!()
+        432000
     }
 
     fn TimeBetweenInformalAndFormalVoting(&self) -> BlockTime {

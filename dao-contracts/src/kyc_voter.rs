@@ -21,7 +21,7 @@ use crate::{
         Choice,
         GovernanceVoting,
     },
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -124,7 +124,7 @@ impl KycVoterContractInterface for KycVoterContract {
         let creator = caller();
         let token_id = self.sequence.next_value();
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(ContractCall {
                 address: self.get_kyc_token_address(),
                 entry_point: consts::EP_MINT.to_string(),

@@ -15,7 +15,7 @@ use crate::{
         Choice,
         GovernanceVoting,
     },
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -86,7 +86,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(ContractCall {
                 address: variable_repo_to_edit,
                 entry_point: "update_at".into(),

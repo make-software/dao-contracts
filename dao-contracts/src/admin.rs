@@ -16,7 +16,7 @@ use crate::{
         Choice,
         GovernanceVoting,
     },
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -88,7 +88,7 @@ impl AdminContractInterface for AdminContract {
         address: Address,
         stake: U256,
     ) {
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(ContractCall {
                 address: contract_to_update,
                 entry_point: action.get_entry_point(),

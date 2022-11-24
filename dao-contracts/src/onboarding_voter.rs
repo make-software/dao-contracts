@@ -22,7 +22,7 @@ use crate::{
         VotingId,
     },
     ReputationContractCaller,
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -138,7 +138,7 @@ impl OnboardingVoterContractInterface for OnboardingVoterContract {
             OnboardingAction::Remove => self.configure_remove_voting(subject_address),
         };
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(ContractCall {
                 address: self.get_va_token_address(),
                 entry_point,

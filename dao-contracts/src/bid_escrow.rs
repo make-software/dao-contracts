@@ -34,7 +34,7 @@ use crate::{bid::{
     Choice,
     GovernanceVoting,
     VotingId,
-}, ReputationContractCaller, ReputationContractInterface, VaNftContractCaller, VaNftContractInterface, VariableRepositoryContractCaller, VotingConfigurationBuilder, DaoConfiguration};
+}, ReputationContractCaller, ReputationContractInterface, VaNftContractCaller, VaNftContractInterface, VariableRepositoryContractCaller, DaoConfigurationBuilder, DaoConfiguration};
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -200,7 +200,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let dos_fee = self.deposit_dos_fee(purse);
 
         let job_offer_id = self.next_job_offer_id();
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address());
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address());
         let job_offer = JobOffer::new(
             job_offer_id,
             caller(),
@@ -363,7 +363,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             self.reputation_token().unstake_bid(worker, job.bid_id());
         }
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .only_va_can_create(false)
             .build();
 

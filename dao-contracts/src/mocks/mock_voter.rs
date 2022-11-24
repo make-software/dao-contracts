@@ -10,7 +10,7 @@ use delegate::delegate;
 
 use crate::{
     voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting},
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -51,7 +51,7 @@ impl MockVoterContractInterface for MockVoterContract {
     }
 
     fn create_voting(&mut self, value: String, stake: U256) {
-        let voting_configuration = VotingConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
+        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
             .contract_call(ContractCall {
                 address: self_address(),
                 entry_point: "set_variable".into(),
