@@ -128,6 +128,17 @@ impl DaoWorld {
         offer_id
     }
 
+    pub fn pick_bid(&mut self, job_poster: Address, worker: Address) {
+        let job_offer_id = self.offers.get(&job_poster).unwrap();
+        let bid_id = self.bids.get(&(*job_offer_id, worker)).unwrap();
+        let bid = self.bid_escrow.get_bid(*bid_id).unwrap();
+
+        self.bid_escrow
+            .as_account(job_poster)
+            .pick_bid_with_cspr_amount(*job_offer_id, *bid_id, bid.proposed_payment)
+            .unwrap();
+    }
+
     // gets relative amount of motes of the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
         let balance = self.balances.get(&account).unwrap()

@@ -1,7 +1,9 @@
-use cucumber::{given, when, gherkin::Step};
+use cucumber::{gherkin::Step, given, when};
 
-use crate::common::DaoWorld;
-use crate::common::helpers::{multiplier, value_to_bytes};
+use crate::common::{
+    helpers::{multiplier, value_to_bytes},
+    DaoWorld,
+};
 
 #[when(expr = "{int} {word} passed")]
 fn advance_time(w: &mut DaoWorld, amount: u32, unit: String) {
@@ -14,7 +16,6 @@ fn gadvance_time(w: &mut DaoWorld, amount: u32, unit: String) {
     let multiplier = multiplier(unit);
     w.advance_time(amount * multiplier);
 }
-
 
 #[given(expr = "following configuration")]
 fn configuration(w: &mut DaoWorld, step: &Step) {
@@ -30,4 +31,3 @@ fn configuration(w: &mut DaoWorld, step: &Step) {
         );
     }
 }
-

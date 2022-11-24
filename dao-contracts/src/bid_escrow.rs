@@ -1,9 +1,12 @@
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::system::{
-            get_purse_balance,
-            transfer_from_purse_to_account,
-            transfer_from_purse_to_purse,
+        contract_api::{
+            runtime::print,
+            system::{
+                get_purse_balance,
+                transfer_from_purse_to_account,
+                transfer_from_purse_to_purse,
+            },
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
@@ -265,6 +268,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             None => {
                 self.reputation_token()
                     .stake_bid(worker, bid_id, reputation_stake);
+                print(format!("Staked {} reputation for {}", reputation_stake, bid_id).as_str());
                 None
             }
             Some(purse) => {
@@ -272,6 +276,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 Some(cspr_stake)
             }
         };
+
         let bid = Bid::new(
             bid_id,
             job_offer_id,
@@ -763,6 +768,9 @@ impl BidEscrowContract {
                 .get_bid(unstake_bid_id)
                 .unwrap_or_revert_with(Error::BidNotFound);
             if unstake_bid_id != bid_id {
+                print(
+                    format!("Unstaking bid: {}, chosen bid: {}", unstake_bid_id, bid_id).as_str(),
+                );
                 self.reputation_token()
                     .unstake_bid(bid.worker, unstake_bid_id);
             }

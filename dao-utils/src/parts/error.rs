@@ -104,7 +104,8 @@ dao_errors!(
 
     // Reputation Token Errors.
     CannotStakeTwice => 4500,
-    StakeDoesntExists => 4501,
+    VotingStakeDoesntExists => 4501,
+    BidStakeDoesntExists => 4502,
 
     InvalidAddress => 5000,
     TransferError => 6000,

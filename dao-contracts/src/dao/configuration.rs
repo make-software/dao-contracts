@@ -78,7 +78,6 @@ impl BidEscrowConfigurationTrait for BidEscrowConfiguration {
 }
 
 impl VotingConfigurationTrait for VotingConfiguration {
-
     fn GovernanceInformalQuorumRatio(&self) -> u32 {
         todo!()
     }

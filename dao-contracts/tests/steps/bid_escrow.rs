@@ -4,7 +4,7 @@ use casper_types::U256;
 use cucumber::{gherkin::Step, given, then, when};
 
 use crate::common::{
-    helpers::{to_rep, to_voting_type, value_to_bytes, match_result, match_choice},
+    helpers::{match_choice, match_result, to_rep, to_voting_type, value_to_bytes},
     DaoWorld,
 };
 
@@ -62,13 +62,8 @@ fn submit_bid_external(
 #[given(expr = "{word} picked the Bid of {word}")]
 fn bid_picked(w: &mut DaoWorld, job_poster_name: String, worker_name: String) {
     let job_poster = w.named_address(job_poster_name);
-    let _worker = w.named_address(worker_name);
-    let required_budget = w.bid_escrow.get_bid(0).unwrap().proposed_payment;
-    // TODO: Use bid_ids from the storage.
-    w.bid_escrow
-        .as_account(job_poster)
-        .pick_bid_with_cspr_amount(0, 0, required_budget)
-        .unwrap();
+    let worker = w.named_address(worker_name);
+    w.pick_bid(job_poster, worker);
 }
 
 #[when(expr = "{word} submits the JobProof")]
@@ -163,9 +158,7 @@ fn cannot_vote(w: &mut DaoWorld, voter: String, choice: String, stake: u64, resu
     let choice = match_choice(choice);
     let expected_result = match_result(result);
 
-    let vote_result = w.bid_escrow
-        .as_account(voter)
-        .vote(0, choice, stake);
+    let vote_result = w.bid_escrow.as_account(voter).vote(0, choice, stake);
 
     assert_eq!(expected_result, vote_result.is_ok());
 }
