@@ -3,13 +3,13 @@ use std::str::FromStr;
 use casper_dao_utils::Address;
 use cucumber::Parameter;
 
-use crate::common::DaoWorld;
+use crate::common::{helpers, DaoWorld};
 
 #[derive(Debug, Default, derive_more::FromStr, derive_more::Deref, Parameter)]
 #[param(name = "token_id", regex = r"\d+")]
 pub struct TokenId(pub casper_dao_erc721::TokenId);
 
-#[derive(Debug, Default, Parameter)]
+#[derive(Debug, Default, Parameter, Clone)]
 #[param(name = "account", regex = ".+")]
 pub enum Account {
     Alice,
@@ -47,5 +47,11 @@ impl FromStr for Account {
             "Holder" => Self::Holder,
             _ => Self::Any,
         })
+    }
+}
+
+impl From<Option<&String>> for Account {
+    fn from(value: Option<&String>) -> Self {
+        helpers::parse(value, "Couldn't parse Account")
     }
 }
