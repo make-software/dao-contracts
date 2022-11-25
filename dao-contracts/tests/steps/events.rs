@@ -2,7 +2,7 @@ use casper_dao_utils::TestContract;
 use cucumber::{gherkin::Step, then};
 
 use crate::common::{
-    params::common::{Contract, Event},
+    params::{events::Event, Contract},
     DaoWorld,
 };
 

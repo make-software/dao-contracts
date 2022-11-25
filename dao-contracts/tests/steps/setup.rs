@@ -2,7 +2,7 @@ use cucumber::{gherkin::Step, given};
 
 use crate::common::{
     config::UserConfiguration,
-    params::{common::Contract, nft::Account},
+    params::{Account, Contract},
     DaoWorld,
 };
 

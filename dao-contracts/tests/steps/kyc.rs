@@ -1,10 +1,7 @@
 use cucumber::{given, then, when};
 
 use crate::common::{
-    params::{
-        common::U256,
-        nft::{Account, TokenId},
-    },
+    params::{Account, TokenId, U256},
     DaoWorld,
 };
 

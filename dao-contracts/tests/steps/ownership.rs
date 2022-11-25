@@ -1,7 +1,7 @@
 use cucumber::{then, when};
 
 use crate::common::{
-    params::{common::Contract, nft::Account},
+    params::{Account, Contract},
     DaoWorld,
 };
 

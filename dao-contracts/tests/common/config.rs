@@ -1,5 +1,6 @@
-use super::{helpers, params::nft::Account};
+use super::{helpers, params::Account};
 
+#[allow(dead_code)]
 pub struct UserConfiguration {
     account: Account,
     is_whitelisted: bool,
@@ -7,6 +8,7 @@ pub struct UserConfiguration {
     is_va: bool,
 }
 
+#[allow(dead_code)]
 impl UserConfiguration {
     pub fn new(data: &Vec<String>) -> Self {
         Self {

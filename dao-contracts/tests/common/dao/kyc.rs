@@ -1,10 +1,8 @@
 use casper_dao_utils::TestContract;
 
-use super::{
-    params::{common::U256, nft::Account},
-    DaoWorld,
-};
+use crate::common::{DaoWorld, params::{Account, U256}};
 
+#[allow(dead_code)]
 impl DaoWorld {
     pub fn mint_kyc_token(
         &mut self,

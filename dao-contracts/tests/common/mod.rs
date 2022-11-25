@@ -1,7 +1,6 @@
 pub mod config;
 pub mod dao;
 pub mod helpers;
-pub mod kyc;
 pub mod params;
 pub mod setup;
 
