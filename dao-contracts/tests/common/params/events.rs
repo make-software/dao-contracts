@@ -29,14 +29,14 @@ impl From<&Vec<String>> for Event {
                 Self::RemovedFromWhitelist(account)
             }
             "Approval" => {
-                let from = helpers::parse_option::<Account>(value.get(1));
-                let to = helpers::parse_option::<Account>(value.get(2));
-                let token_id = helpers::parse::<U256>(value.get(3), "");
+                let from = helpers::parse_or_none::<Account>(value.get(1));
+                let to = helpers::parse_or_none::<Account>(value.get(2));
+                let token_id = helpers::parse::<U256>(value.get(3), "Couldn't parse token id");
                 Self::NtfEvent(NtfEvent::Approval(from, to, token_id))
             }
             "Transfer" => {
-                let from = helpers::parse_option::<Account>(value.get(1));
-                let to = helpers::parse_option::<Account>(value.get(2));
+                let from = helpers::parse_or_none::<Account>(value.get(1));
+                let to = helpers::parse_or_none::<Account>(value.get(2));
                 let token_id = helpers::parse::<U256>(value.get(3), "Couldn't parse token id");
                 Self::NtfEvent(NtfEvent::Transfer(from, to, token_id))
             }

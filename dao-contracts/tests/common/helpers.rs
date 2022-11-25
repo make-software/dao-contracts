@@ -61,7 +61,7 @@ pub fn parse_or_default<T: FromStr + Default>(item: Option<&String>) -> T {
     }
 }
 
-pub fn parse_option<T: FromStr>(item: Option<&String>) -> Option<T> {
+pub fn parse_or_none<T: FromStr>(item: Option<&String>) -> Option<T> {
     match item {
         Some(value) => {
             if value.is_empty() {
