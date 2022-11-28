@@ -2,7 +2,7 @@ use cucumber::{gherkin::Step, given, then};
 
 use crate::common::{
     params::{
-        voting::{Ballot, BallotBuilder, Voting, VotingType},
+        voting::{BallotBuilder, Voting, VotingType},
         Account,
         Contract,
     },
@@ -27,12 +27,11 @@ fn voting(
 ) {
     let rows = step.table.as_ref().unwrap().rows.iter().skip(1);
 
-    for row in rows {
-        let ballot: Ballot = BallotBuilder::default()
+    rows
+        .map(|row| BallotBuilder::default()
             .with_voting_id(voting_id)
             .with_voting_type(voting_type)
-            .build(row);
-
-        world.vote(&contract, ballot);
-    }
+            .build(row))
+        .filter(|ballot| !ballot.stake.is_zero())
+        .for_each(|ballot| world.vote(&contract, ballot));
 }

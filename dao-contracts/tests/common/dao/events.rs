@@ -71,6 +71,7 @@ impl DaoWorld {
             }
             Contract::BidEscrow => TestContract::assert_event_at(&self.bid_escrow, idx, ev),
             Contract::SlashingVoter => TestContract::assert_event_at(&self.slashing_voter, idx, ev),
+            Contract::KycVoter => todo!(),
         }
     }
 }

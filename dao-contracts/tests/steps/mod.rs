@@ -6,3 +6,4 @@ mod ownership;
 mod setup;
 mod slashing;
 mod variables;
+mod voting;

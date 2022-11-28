@@ -7,7 +7,6 @@ use casper_dao_utils::{
     ContractCall,
     DocumentHash,
     Error,
-    SequenceGenerator,
 };
 use casper_types::{runtime_args, RuntimeArgs, U256};
 use delegate::delegate;
@@ -85,7 +84,6 @@ pub trait KycVoterContractInterface {
 pub struct KycVoterContract {
     kyc: KycInfo,
     voting: GovernanceVoting,
-    sequence: SequenceGenerator<U256>,
 }
 
 impl KycVoterContractInterface for KycVoterContract {
@@ -122,7 +120,6 @@ impl KycVoterContractInterface for KycVoterContract {
         self.assert_not_kyced(&subject_address);
 
         let creator = caller();
-        let token_id = self.sequence.next_value();
 
         let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
             .contract_call(ContractCall {
@@ -130,7 +127,6 @@ impl KycVoterContractInterface for KycVoterContract {
                 entry_point: consts::EP_MINT.to_string(),
                 runtime_args: runtime_args! {
                     consts::ARG_TO => subject_address,
-                    consts::ARG_TOKEN_ID => token_id,
                 },
             })
             .build();

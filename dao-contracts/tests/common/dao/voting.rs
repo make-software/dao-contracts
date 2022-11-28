@@ -47,6 +47,10 @@ impl DaoWorld {
         let stake = ballot.stake.0;
         let voting_type = ballot.voting_type.into();
 
+        if stake.is_zero() {
+            return;
+        }
+
         match contract {
             Contract::KycVoter => self
                 .kyc_voter

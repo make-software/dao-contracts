@@ -136,10 +136,10 @@ impl BallotBuilder {
 
 impl From<&Vec<String>> for Ballot {
     fn from(value: &Vec<String>) -> Self {
-        let voter = value.get(0).unwrap().parse().unwrap();
-        let stake = value.get(1).unwrap().parse().unwrap();
-        let choice = value.get(2).unwrap().parse().unwrap();
-
+        let voter = helpers::parse(value.get(0), "Couldn't parse voter");
+        let stake = helpers::parse_or_default(value.get(1));
+        let choice = helpers::parse_or_default(value.get(2));
+        
         Self {
             voter,
             stake,
