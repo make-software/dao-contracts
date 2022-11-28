@@ -30,7 +30,7 @@ fn assert_balance(world: &mut DaoWorld, user: Account, expected_balance: U256) {
 #[then(expr = "Token with id {token_id} belongs to {account}")]
 fn assert_token_ownership(world: &mut DaoWorld, token_id: TokenId, user: Account) {
     let token_owner = world.kyc_token.owner_of(*token_id);
-    let user_address = user.get_address(world);
+    let user_address = world.get_address(&user);
 
     assert_eq!(token_owner, Some(user_address));
     assert_eq!(world.get_kyc_token_id(&user), U256::one());
@@ -44,6 +44,6 @@ fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: U256) {
 
 impl DaoWorld {
     fn balance_of(&self, account: &Account) -> U256 {
-        U256(self.kyc_token.balance_of(account.get_address(self)))
+        U256(self.kyc_token.balance_of(self.get_address(account)))
     }
 }

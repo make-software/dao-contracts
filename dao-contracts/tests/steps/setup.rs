@@ -20,7 +20,7 @@ fn users_setup(world: &mut DaoWorld, step: &Step, contract: Contract) {
         }
 
         // TODO: world should accept an Account.
-        let user_address = config.account().get_address(world);
+        let user_address = world.get_address(config.account());
         if config.is_kyced() {
             world.kyc(user_address);
         }

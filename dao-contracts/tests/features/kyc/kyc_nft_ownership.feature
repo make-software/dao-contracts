@@ -7,12 +7,14 @@ Feature: KYC Token ownership management
 
   Scenario: Deploy a new instance
     Then Deployer is the owner of KycToken contract
+    And Deployer is whitelisted in KycToken contract
   
   Rule: Only the current owner can change ownership
     Scenario: The current owner changes ownership
       When Deployer sets Alice as a new owner of KycToken contract
       Then Alice is the owner of KycToken contract
       And Alice is whitelisted in KycToken contract
+      And Deployer is whitelisted in KycToken contract
 
     Scenario: A user out of the whitelist claims ownership
       When Alice sets Alice as a new owner of KycToken contract

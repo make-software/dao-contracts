@@ -28,10 +28,15 @@ Feature: KYC Token
       And Token with id 1 belongs to Bob
       And total supply is 2 tokens
       
+    Scenario: If a not whitelisted user KYC Token to Bob, he's balance remains the same
+      When Alice mints a KYC Token to Bob
+      Then the Bob's balance is 0
+      And total supply is 1 token
+
     Scenario: If Owner mints the second KYC Token to Holder, he's balance remains the same
       When Owner mints a KYC Token to Holder
       Then the Holder's balance is 1
-      And total supply is 1 token
+      And total supply is 1 token  
       
     Scenario: If a whitelisted user burns token, Holder's balance and total supply remain the same
       When Bob burns Holder's token

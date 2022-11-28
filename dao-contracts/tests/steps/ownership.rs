@@ -32,7 +32,7 @@ fn assert_whitelisted(world: &mut DaoWorld, account: Account, contract: Contract
 
 #[then(expr = "{account} is the owner of {contract} contract")]
 fn assert_ownership(world: &mut DaoWorld, user: Account, contract: Contract) {
-    let user_address = user.get_address(world);
+    let user_address = world.get_address(&user);
     let owner = world.get_owner(&contract);
 
     assert_eq!(owner, Some(user_address));

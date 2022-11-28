@@ -13,8 +13,8 @@ impl DaoWorld {
         caller: &Account,
         user: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
-        let user = user.get_address(self);
-        let caller = caller.get_address(self);
+        let user = self.get_address(user);
+        let caller = self.get_address(caller);
 
         match contract {
             Contract::KycToken => self.kyc_token.as_account(caller).add_to_whitelist(user),
@@ -36,8 +36,8 @@ impl DaoWorld {
         caller: &Account,
         user: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
-        let user = user.get_address(self);
-        let caller = caller.get_address(self);
+        let user = self.get_address(user);
+        let caller = self.get_address(caller);
 
         match contract {
             Contract::KycToken => self
@@ -73,8 +73,8 @@ impl DaoWorld {
         caller: &Account,
         new_owner: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
-        let new_owner = new_owner.get_address(self);
-        let caller = caller.get_address(self);
+        let new_owner = self.get_address(new_owner);
+        let caller = self.get_address(caller);
 
         match contract {
             Contract::KycToken => self
@@ -95,7 +95,7 @@ impl DaoWorld {
     }
 
     pub fn is_whitelisted(&mut self, contract: &Contract, account: &Account) -> bool {
-        let account = account.get_address(self);
+        let account = self.get_address(account);
 
         match contract {
             Contract::KycToken => self.kyc_token.is_whitelisted(account),

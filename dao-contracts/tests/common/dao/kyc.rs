@@ -12,8 +12,8 @@ impl DaoWorld {
         minter: &Account,
         recipient: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
-        let minter = minter.get_address(self);
-        let recipient = recipient.get_address(self);
+        let minter = self.get_address(minter);
+        let recipient = self.get_address(recipient);
 
         let result = self.kyc_token.as_account(minter).mint(recipient);
 
@@ -34,7 +34,7 @@ impl DaoWorld {
         holder: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
         let token_id = self.get_kyc_token_id(holder);
-        let burner = burner.get_address(self);
+        let burner = self.get_address(burner);
 
         let result = self.kyc_token.as_account(burner).burn(*token_id);
 
@@ -50,7 +50,7 @@ impl DaoWorld {
     }
 
     pub fn get_kyc_token_id(&self, holder: &Account) -> U256 {
-        let holder = holder.get_address(self);
+        let holder = self.get_address(holder);
         let id = self
             .kyc_token
             .token_id(holder)

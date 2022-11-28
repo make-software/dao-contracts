@@ -12,24 +12,9 @@ pub enum Account {
 
 use std::str::FromStr;
 
-use casper_dao_utils::Address;
 use cucumber::Parameter;
 
-use crate::common::{helpers, DaoWorld};
-
-impl Account {
-    pub fn get_address(&self, world: &DaoWorld) -> Address {
-        let idx = match self {
-            Account::Owner => 0,
-            Account::Deployer => 0,
-            Account::Alice => 1,
-            Account::Bob => 2,
-            Account::Holder => 3,
-            Account::Any => 4,
-        };
-        world.env.get_account(idx)
-    }
-}
+use crate::common::helpers;
 
 impl FromStr for Account {
     type Err = String;
