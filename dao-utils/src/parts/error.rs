@@ -65,6 +65,7 @@ dao_errors!(
     CannotVoteTwice => 2105,
     NotEnoughReputation => 2106,
     ContractToCallNotSet => 2107,
+    VotingDuringTimeBetweenVotingsNotAllowed => 2108,
     VaOnboardedAlready => 2201,
     OnboardingAlreadyInProgress => 2202,
     VaNotOnboarded => 2203,

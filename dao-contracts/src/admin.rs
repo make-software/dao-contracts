@@ -88,15 +88,18 @@ impl AdminContractInterface for AdminContract {
         address: Address,
         stake: U256,
     ) {
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
-            .contract_call(ContractCall {
-                address: contract_to_update,
-                entry_point: action.get_entry_point(),
-                runtime_args: runtime_args! {
-                    action.get_arg() => address,
-                },
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: contract_to_update,
+            entry_point: action.get_entry_point(),
+            runtime_args: runtime_args! {
+                action.get_arg() => address,
+            },
+        })
+        .build();
 
         self.voting
             .create_voting(caller(), stake, voting_configuration);

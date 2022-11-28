@@ -23,18 +23,28 @@ use casper_dao_utils::{
 use casper_types::{URef, U256, U512};
 use delegate::delegate;
 
-use crate::{bid::{
-    job::{Job, WorkerType},
-    types::BidId,
-}, voting::{
-    kyc_info::KycInfo,
-    onboarding_info::OnboardingInfo,
-    voting::{Voting, VotingResult},
-    Ballot,
-    Choice,
-    GovernanceVoting,
-    VotingId,
-}, ReputationContractCaller, ReputationContractInterface, VaNftContractCaller, VaNftContractInterface, VariableRepositoryContractCaller, DaoConfigurationBuilder, DaoConfiguration};
+use crate::{
+    bid::{
+        job::{Job, WorkerType},
+        types::BidId,
+    },
+    voting::{
+        kyc_info::KycInfo,
+        onboarding_info::OnboardingInfo,
+        voting::{Voting, VotingResult},
+        Ballot,
+        Choice,
+        GovernanceVoting,
+        VotingId,
+    },
+    DaoConfiguration,
+    DaoConfigurationBuilder,
+    ReputationContractCaller,
+    ReputationContractInterface,
+    VaNftContractCaller,
+    VaNftContractInterface,
+    VariableRepositoryContractCaller,
+};
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -200,7 +210,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let dos_fee = self.deposit_dos_fee(purse);
 
         let job_offer_id = self.next_job_offer_id();
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address());
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        );
         let job_offer = JobOffer::new(
             job_offer_id,
             caller(),
@@ -208,7 +221,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             max_budget,
             dos_fee,
             get_block_time(),
-            voting_configuration.build()
+            voting_configuration.build(),
         );
 
         self.job_offers.set(&job_offer_id, job_offer);
@@ -363,9 +376,12 @@ impl BidEscrowContractInterface for BidEscrowContract {
             self.reputation_token().unstake_bid(worker, job.bid_id());
         }
 
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
-            .only_va_can_create(false)
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .only_va_can_create(false)
+        .build();
 
         let stake = if job.external_worker_cspr_stake().is_zero() {
             job.stake()

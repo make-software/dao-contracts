@@ -22,7 +22,14 @@ use self::{
     voting::{Voting, VotingResult, VotingSummary, VotingType},
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
-use crate::{ReputationContractCaller, ReputationContractInterface, VaNftContractCaller, VaNftContractInterface, DaoConfiguration};
+use crate::{
+    DaoConfiguration,
+    DaoConfigurationTrait,
+    ReputationContractCaller,
+    ReputationContractInterface,
+    VaNftContractCaller,
+    VaNftContractInterface,
+};
 
 pub trait GovernanceVotingTrait {
     fn init(&mut self, variable_repo: Address, reputation_token: Address);
@@ -238,7 +245,7 @@ impl GovernanceVoting {
                 let formal_voting_id = self.next_voting_id();
 
                 // Formal voting is created.
-                self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
+                self.set_voting(voting.create_formal_voting(formal_voting_id));
 
                 VotingCreated::new(
                     voting.creator(),
@@ -346,9 +353,10 @@ impl GovernanceVoting {
     pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
 
-        // We cannot vote on a completed voting
-        if voting.completed() {
-            revert(Error::VoteOnCompletedVotingNotAllowed)
+        let validation_result = voting.validate_vote(get_block_time());
+
+        if let Err(error) = validation_result {
+            revert(error)
         }
 
         let vote = self.ballots.get(&(voting_id, voter));

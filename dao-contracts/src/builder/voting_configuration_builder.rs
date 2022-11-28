@@ -1,18 +1,27 @@
 use casper_dao_utils::{Address, ContractCall};
 
-use crate::{voting::{GovernanceVoting}, KycNftContractCaller, KycNftContractInterface, VariableRepositoryContractCaller, DaoConfiguration, VariableRepositoryContractInterface, VaNftContractCaller, VaNftContractInterface};
+use crate::{
+    voting::GovernanceVoting,
+    DaoConfiguration,
+    KycNftContractCaller,
+    KycNftContractInterface,
+    VaNftContractCaller,
+    VaNftContractInterface,
+    VariableRepositoryContractCaller,
+    VariableRepositoryContractInterface,
+};
 
 pub struct DaoConfigurationBuilder {
     configuration: DaoConfiguration,
 }
 
 impl DaoConfigurationBuilder {
-    pub fn defaults(variable_repo_address: Address, va_token_address: Address) -> DaoConfigurationBuilder {
-        let total_onboarded =
-            VaNftContractCaller::at(va_token_address).total_supply();
-        let variables = VariableRepositoryContractCaller::at(
-            variable_repo_address,
-        ).all_variables();
+    pub fn defaults(
+        variable_repo_address: Address,
+        va_token_address: Address,
+    ) -> DaoConfigurationBuilder {
+        let total_onboarded = VaNftContractCaller::at(va_token_address).total_supply();
+        let variables = VariableRepositoryContractCaller::at(variable_repo_address).all_variables();
 
         DaoConfigurationBuilder {
             configuration: DaoConfiguration {
@@ -20,7 +29,7 @@ impl DaoConfigurationBuilder {
                 only_va_can_create: true,
                 unbounded_tokens_for_creator: false,
                 onboard_creator: false,
-            }
+            },
         }
     }
 

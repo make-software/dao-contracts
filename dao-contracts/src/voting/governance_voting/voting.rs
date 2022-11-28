@@ -1,13 +1,19 @@
 //! Voting struct with logic for governance voting
 use casper_dao_utils::{
+    casper_contract::contract_api::runtime::print,
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
+    BlockTime,
     ContractCall,
+    Error,
 };
 use casper_types::U256;
 
-use crate::voting::{ballot::Choice, types::VotingId};
-use crate::{DaoConfiguration, DaoConfigurationTrait};
+use crate::{
+    voting::{ballot::Choice, types::VotingId},
+    DaoConfiguration,
+    DaoConfigurationTrait,
+};
 
 /// Result of a Voting
 #[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
@@ -22,6 +28,15 @@ pub enum VotingResult {
 pub enum VotingType {
     Informal,
     Formal,
+}
+
+/// State of Voting
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
+pub enum VotingState {
+    Informal,
+    BetweenVotings,
+    Formal,
+    Finished,
 }
 
 /// Finished Voting summary
@@ -126,8 +141,12 @@ impl Voting {
         }
     }
 
+    pub fn start_time(&self) -> u64 {
+        self.start_time
+    }
+
     /// Creates new formal voting from self, cloning existing VotingConfiguration
-    pub fn create_formal_voting(&self, new_voting_id: VotingId, start_time: u64) -> Self {
+    pub fn create_formal_voting(&self, new_voting_id: VotingId) -> Self {
         Voting {
             voting_id: new_voting_id,
             completed: false,
@@ -135,7 +154,7 @@ impl Voting {
             stake_against: U256::zero(),
             unbounded_stake_in_favor: U256::zero(),
             unbounded_stake_against: U256::zero(),
-            start_time,
+            start_time: self.start_time,
             informal_voting_id: self.informal_voting_id,
             formal_voting_id: Some(new_voting_id),
             creator: self.creator,
@@ -144,7 +163,7 @@ impl Voting {
     }
 
     pub fn can_be_completed(&self, block_time: u64) -> bool {
-        !self.completed && !self.is_in_time(block_time)
+        !self.completed && self.state(block_time) == VotingState::Finished
     }
 
     /// Sets voting as completed, optionally saves id of newly created formal voting
@@ -247,6 +266,19 @@ impl Voting {
         self.completed
     }
 
+    pub fn validate_vote(&self, block_time: u64) -> Result<(), Error> {
+        // Is in time?
+        if self.state(block_time) == VotingState::BetweenVotings {
+            return Err(Error::VotingDuringTimeBetweenVotingsNotAllowed);
+        }
+
+        if self.state(block_time) == VotingState::Finished {
+            return Err(Error::VoteOnCompletedVotingNotAllowed);
+        }
+
+        Ok(())
+    }
+
     /// Get the voting's stake in favor.
     pub fn stake_in_favor(&self) -> U256 {
         self.stake_in_favor
@@ -299,6 +331,33 @@ impl Voting {
 
     pub fn creator(&self) -> &Address {
         &self.creator
+    }
+
+    pub fn state(&self, block_time: BlockTime) -> VotingState {
+        print(format!("Blocktime: {}", block_time).as_str());
+        let informal_voting_end = self.start_time + self.informal_voting_time();
+        print(format!("Informal voting end: {}", informal_voting_end).as_str());
+        let between_voting_end = informal_voting_end
+            + self
+                .voting_configuration
+                .TimeBetweenInformalAndFormalVoting();
+        print(format!("Between voting end: {}", between_voting_end).as_str());
+        let voting_end = between_voting_end + self.formal_voting_time();
+        print(format!("Voting end: {}", voting_end).as_str());
+
+        if block_time <= informal_voting_end {
+            print("VotingState::InformalVoting");
+            VotingState::Informal
+        } else if block_time > informal_voting_end && block_time <= between_voting_end {
+            print("VotingState::BetweenVotings");
+            VotingState::BetweenVotings
+        } else if block_time > between_voting_end && block_time <= voting_end {
+            print("VotingState::FormalVoting");
+            VotingState::Formal
+        } else {
+            print("VotingState::Finished");
+            VotingState::Finished
+        }
     }
 }
 

@@ -3,8 +3,11 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{casper_dao_macros::Event, Address};
 use casper_types::U256;
 
-use crate::voting::{ballot::Choice, types::VotingId, Ballot};
-use crate::{DaoConfiguration, DaoConfigurationTrait};
+use crate::{
+    voting::{ballot::Choice, types::VotingId, Ballot},
+    DaoConfiguration,
+    DaoConfigurationTrait,
+};
 
 /// Event thrown after voting contract is created
 #[derive(Debug, PartialEq, Eq, Event)]

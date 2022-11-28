@@ -139,13 +139,16 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         document_hash: DocumentHash,
         stake: U256,
     ) {
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
-            .contract_call(ContractCall {
-                address: self.voting.reputation_token_address(),
-                entry_point: action.entrypoint(),
-                runtime_args: action.runtime_args(account, amount),
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: self.voting.reputation_token_address(),
+            entry_point: action.entrypoint(),
+            runtime_args: action.runtime_args(account, amount),
+        })
+        .build();
 
         let voting_id = self
             .voting

@@ -51,15 +51,18 @@ impl MockVoterContractInterface for MockVoterContract {
     }
 
     fn create_voting(&mut self, value: String, stake: U256) {
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
-            .contract_call(ContractCall {
-                address: self_address(),
-                entry_point: "set_variable".into(),
-                runtime_args: runtime_args! {
-                    "variable" => value,
-                },
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: self_address(),
+            entry_point: "set_variable".into(),
+            runtime_args: runtime_args! {
+                "variable" => value,
+            },
+        })
+        .build();
 
         self.voting
             .create_voting(caller(), stake, voting_configuration);

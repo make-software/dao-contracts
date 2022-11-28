@@ -89,7 +89,11 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U256) {
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address()).build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .build();
 
         let voting_id = self
             .voting

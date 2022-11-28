@@ -1,7 +1,11 @@
-use std::collections::HashMap;
-use std::io::Bytes;
+use std::{collections::HashMap, io::Bytes};
+
+use casper_dao_utils::{
+    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
+    BlockTime,
+    ContractCall,
+};
 use casper_types::U256;
-use casper_dao_utils::{casper_dao_macros::{CLTyped, FromBytes, ToBytes}, BlockTime, ContractCall};
 
 pub trait DaoConfigurationTrait {
     fn ReputationConversionRate(&self) -> u32;
@@ -28,7 +32,7 @@ pub trait DaoConfigurationTrait {
     fn PublicAuctionTime(&self) -> BlockTime;
     fn DefaultPolicingRate(&self) -> u32;
     fn VABidAcceptanceTimeout(&self) -> u32;
-    fn VACanBidOnPublicAuction(&self) -> u32;
+    fn VACanBidOnPublicAuction(&self) -> bool;
     fn DistributePaymentToNonVoters(&self) -> u32;
 }
 
@@ -41,33 +45,15 @@ pub struct DaoConfiguration {
 }
 
 impl DaoConfigurationTrait for DaoConfiguration {
-    fn PostJobDOSFee(&self) -> u32 {
+    fn ReputationConversionRate(&self) -> u32 {
         todo!()
     }
 
-    fn InternalAuctionTime(&self) -> BlockTime {
-        // TODO: implement
-        604800
-    }
-
-    fn PublicAuctionTime(&self) -> BlockTime {
-        // TODO: implement
-        864000
-    }
-
-    fn DefaultPolicingRate(&self) -> u32 {
-        300
-    }
-
-    fn VABidAcceptanceTimeout(&self) -> u32 {
+    fn FiatConversionRateAddress(&self) -> u32 {
         todo!()
     }
 
-    fn VACanBidOnPublicAuction(&self) -> u32 {
-        todo!()
-    }
-
-    fn DistributePaymentToNonVoters(&self) -> u32 {
+    fn ForumKYCRequired(&self) -> u32 {
         todo!()
     }
 
@@ -138,15 +124,33 @@ impl DaoConfigurationTrait for DaoConfiguration {
         todo!()
     }
 
-    fn ReputationConversionRate(&self) -> u32 {
+    fn PostJobDOSFee(&self) -> u32 {
         todo!()
     }
 
-    fn FiatConversionRateAddress(&self) -> u32 {
+    fn InternalAuctionTime(&self) -> BlockTime {
+        // TODO: implement
+        604800
+    }
+
+    fn PublicAuctionTime(&self) -> BlockTime {
+        // TODO: implement
+        864000
+    }
+
+    fn DefaultPolicingRate(&self) -> u32 {
+        300
+    }
+
+    fn VABidAcceptanceTimeout(&self) -> u32 {
         todo!()
     }
 
-    fn ForumKYCRequired(&self) -> u32 {
+    fn VACanBidOnPublicAuction(&self) -> bool {
+        true
+    }
+
+    fn DistributePaymentToNonVoters(&self) -> u32 {
         todo!()
     }
 }

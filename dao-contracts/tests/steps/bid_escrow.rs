@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U256;
@@ -78,7 +80,7 @@ fn submit_job_proof(w: &mut DaoWorld, worker_name: String) {
 
 #[when(expr = "Formal/Informal voting ends")]
 fn voting_ends(w: &mut DaoWorld) {
-    w.bid_escrow.advance_block_time_by(432000000u64);
+    w.env.advance_block_time_by(Duration::from_secs(432005u64));
     w.bid_escrow.finish_voting(0).unwrap();
 }
 

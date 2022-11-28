@@ -124,16 +124,19 @@ impl KycVoterContractInterface for KycVoterContract {
         let creator = caller();
         let token_id = self.sequence.next_value();
 
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
-            .contract_call(ContractCall {
-                address: self.get_kyc_token_address(),
-                entry_point: consts::EP_MINT.to_string(),
-                runtime_args: runtime_args! {
-                    consts::ARG_TO => subject_address,
-                    consts::ARG_TOKEN_ID => token_id,
-                },
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: self.get_kyc_token_address(),
+            entry_point: consts::EP_MINT.to_string(),
+            runtime_args: runtime_args! {
+                consts::ARG_TO => subject_address,
+                consts::ARG_TOKEN_ID => token_id,
+            },
+        })
+        .build();
 
         self.voting
             .create_voting(creator, stake, voting_configuration);

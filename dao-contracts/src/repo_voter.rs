@@ -86,17 +86,20 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U256,
     ) {
-        let voting_configuration = DaoConfigurationBuilder::defaults(self.voting.variable_repo_address(), self.voting.va_token_address())
-            .contract_call(ContractCall {
-                address: variable_repo_to_edit,
-                entry_point: "update_at".into(),
-                runtime_args: runtime_args! {
-                    "key" => key,
-                    "value" => value,
-                    "activation_time" => activation_time,
-                },
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: variable_repo_to_edit,
+            entry_point: "update_at".into(),
+            runtime_args: runtime_args! {
+                "key" => key,
+                "value" => value,
+                "activation_time" => activation_time,
+            },
+        })
+        .build();
 
         self.voting
             .create_voting(caller(), stake, voting_configuration);

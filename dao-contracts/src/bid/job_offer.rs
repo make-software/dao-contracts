@@ -100,7 +100,7 @@ impl JobOffer {
         }
 
         // PublicAuction time
-        if !worker_onboarded
+        if (!worker_onboarded && !self.dao_configuration.VACanBidOnPublicAuction())
             && block_time < self.start_time + self.dao_configuration.InternalAuctionTime()
             && block_time
                 > self.start_time
