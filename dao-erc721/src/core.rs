@@ -133,6 +133,10 @@ impl ERC721Token {
         self.total_supply.set(self.total_supply() + 1);
     }
 
+    pub fn decrement_total_supply(&mut self) {
+        self.total_supply.set(self.total_supply() - 1);
+    }
+
     pub fn exists(&self, token_id: &TokenId) -> bool {
         self.owners.get(token_id).is_some()
     }

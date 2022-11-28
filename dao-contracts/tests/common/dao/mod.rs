@@ -8,6 +8,11 @@ use casper_dao_contracts::{
 };
 use casper_dao_utils::{TestContract, TestEnv};
 
+mod account;
+mod events;
+mod kyc;
+mod ownership;
+
 #[allow(dead_code)]
 pub fn setup_dao() -> (
     TestEnv,

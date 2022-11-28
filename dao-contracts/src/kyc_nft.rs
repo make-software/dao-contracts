@@ -14,6 +14,7 @@ use casper_dao_utils::{
     Address,
     Error,
     Mapping,
+    SequenceGenerator,
 };
 use casper_types::U256;
 use delegate::delegate;
@@ -27,7 +28,7 @@ pub trait KycNftContractInterface {
     /// See [MetadataERC721](MetadataERC721::init()), [AccessControl](AccessControl::init())
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri);
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
-    /// is permited to call this method.
+    /// is permitted to call this method.
     ///
     /// See [AccessControl](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
@@ -63,25 +64,23 @@ pub trait KycNftContractInterface {
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
     /// Returns a URI prefix that is used by all the assets.
     fn base_uri(&self) -> TokenUri;
-    /// Creates a new token with the given id and transfers it to a new owner.
+    /// Creates a new token with the next id and transfers it to a new owner.
     /// Increments the total supply and the balance of the `to` address.
     ///
     /// # Note
-    /// Only whitelisted addresses are permited to call this
+    /// Only whitelisted addresses are permitted to call this
     /// method.
     ///
     /// Each user is entitled to own only one token.
     ///
     /// # Errors
-    /// Throws [`TokenAlreadyExists`](Error::TokenAlreadyExists) if a token with
-    /// the `token_id` has been minted already.
     ///
     /// Throws [`UserAlreadyOwnsToken`](Error::UserAlreadyOwnsToken) if the `to` address
     /// already owns a token.
     ///
     /// # Events
     /// Emits [`Transfer`](casper_dao_erc721::events::Transfer) event when minted successfully.
-    fn mint(&mut self, to: Address, token_id: TokenId);
+    fn mint(&mut self, to: Address);
     /// Burns a token with the given id. Decrements the balance of the token owner
     /// and decrements the total supply.
     ///
@@ -106,6 +105,7 @@ pub struct KycNftContract {
     metadata: MetadataERC721,
     access_control: AccessControl,
     tokens: Mapping<Address, Option<TokenId>>,
+    id_gen: SequenceGenerator<TokenId>,
 }
 
 impl KycNftContractInterface for KycNftContract {
@@ -145,10 +145,11 @@ impl KycNftContractInterface for KycNftContract {
         self.metadata.token_uri(&self.token, token_id)
     }
 
-    fn mint(&mut self, to: Address, token_id: TokenId) {
+    fn mint(&mut self, to: Address) {
         self.access_control.ensure_whitelisted();
         self.assert_does_not_own_token(&to);
 
+        let token_id = self.id_gen.next_value();
         MintableERC721::mint(&mut self.token, to, token_id);
         self.tokens.set(&to, Some(token_id));
     }
@@ -159,7 +160,7 @@ impl KycNftContractInterface for KycNftContract {
             .token
             .owner_of(token_id)
             .unwrap_or_revert_with(Error::InvalidTokenOwner);
-        BurnableERC721::burn(&mut self.token, token_id);
+        BurnableERC721::burn_unchecked(&mut self.token, token_id);
         self.tokens.set(&owner, None);
     }
 }

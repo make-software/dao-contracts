@@ -13,7 +13,6 @@ mod va_nft;
 
 #[doc(hidden)]
 pub mod mocks;
-pub mod onboarding_voter;
 pub mod repo_voter;
 pub mod reputation;
 pub mod reputation_voter;
@@ -42,13 +41,6 @@ pub use mocks::mock_voter::{
     MockVoterContract,
     MockVoterContractCaller,
     MockVoterContractInterface,
-};
-#[cfg(feature = "test-support")]
-pub use onboarding_voter::OnboardingVoterContractTest;
-pub use onboarding_voter::{
-    OnboardingVoterContract,
-    OnboardingVoterContractCaller,
-    OnboardingVoterContractInterface,
 };
 #[cfg(feature = "test-support")]
 pub use repo_voter::RepoVoterContractTest;
