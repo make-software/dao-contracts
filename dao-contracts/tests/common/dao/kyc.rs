@@ -1,6 +1,9 @@
 use casper_dao_utils::TestContract;
 
-use crate::common::{DaoWorld, params::{Account, U256}};
+use crate::common::{
+    params::{Account, U256},
+    DaoWorld,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {

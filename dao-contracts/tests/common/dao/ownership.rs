@@ -1,6 +1,9 @@
-use casper_dao_utils::{TestContract, Address};
+use casper_dao_utils::{Address, TestContract};
 
-use crate::common::{DaoWorld, params::{Contract, Account}};
+use crate::common::{
+    params::{Account, Contract},
+    DaoWorld,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {
