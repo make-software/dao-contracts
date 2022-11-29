@@ -470,6 +470,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.mint_and_redistribute_reputation_for_external_worker(&job);
                             self.redistribute_cspr_external_worker(&job);
                             self.return_job_poster_dos_fee(&job);
+                            self.return_external_worker_cspr_stake(&job);
                         }
                     },
                     VotingResult::Against => match job.worker_type() {
@@ -615,7 +616,7 @@ impl BidEscrowContract {
         // 10% for Mutlisig
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.payment() + job.external_worker_cspr_stake();
+        let payment = job.payment();
         let governance_wallet_payment = repo.payment_for_governance(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
@@ -690,12 +691,10 @@ impl BidEscrowContract {
         let var_repo = self.variable_repository();
 
         let payment_reputation_to_mint = var_repo.reputation_to_mint(job.payment());
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_mint(job.external_worker_cspr_stake());
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_redistribute(stake_reputation_to_mint);
-
-        let total = payment_reputation_to_mint + stake_reputation_to_mint;
+        
+        let total =
+            VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
+                .reputation_to_redistribute(payment_reputation_to_mint);
         self.mint_reputation_for_voters(job, total);
     }
 
@@ -719,10 +718,10 @@ impl BidEscrowContract {
 
         for i in 0..self.voting.voters().len(voting.voting_id()) {
             let ballot = self.voting.get_ballot_at(voting.voting_id(), i);
-            // if ballot.unbounded {
-            //     continue;
-            // }
-            let to_transfer = ballot.stake * amount / voting.total_stake();
+            if ballot.unbounded {
+                continue;
+            }
+            let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
             ReputationContractCaller::at(self.voting.get_reputation_token_address())
                 .mint(ballot.voter, to_transfer);
         }

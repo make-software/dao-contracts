@@ -64,11 +64,12 @@ Feature: External Worker who doesn't want to become a VA submits job
     And Formal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | MultisigWallet   | 100          | 0            | 0          |
+      | MultisigWallet   | 50           | 0            | 0          |
       | JobPoster        | 500          | 0            | 0          |
-      | InternalWorker   | 88.09        | 1000         | 0          |
-      | ExternalWorker   | 630          | 0            | 0          |
-      | VA1              | 135          | 1532.5       | 0          |
-      | VA2              | 46.91        | 532.5        | 0          |
+      | InternalWorker   | 44.77        | 1000         | 0          |
+      | ExternalWorker   | 815          | 0            | 0          |
+      | VA1              | 67.5         | 1507.5       | 0          |
+      | VA2              | 22.72        | 507.5        | 0          |
       | BidEscrow        | 0            | 0            | 0          |
+    And total reputation is 3015
     And ExternalWorker is not a VA
