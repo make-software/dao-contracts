@@ -5,31 +5,31 @@ use casper_types::{U256, U512};
 
 pub trait DaoConfigurationTrait {
     fn reputation_conversion_rate(&self) -> u32;
-    fn FiatConversionRateAddress(&self) -> u32;
-    fn ForumKYCRequired(&self) -> u32;
-    fn GovernanceInformalQuorumRatio(&self) -> u32;
-    fn GovernanceFormalQuorumRatio(&self) -> u32;
-    fn GovernanceInformalVotingTime(&self) -> BlockTime;
-    fn GovernanceFormalVotingTime(&self) -> BlockTime;
-    fn InformalQuorumRatio(&self) -> u32;
-    fn FormalQuorumRatio(&self) -> u32;
-    fn formalVotingQuorum(&self) -> U256;
-    fn informalVotingQuorum(&self) -> U256;
-    fn InformalVotingTime(&self) -> BlockTime;
-    fn FormalVotingTime(&self) -> BlockTime;
-    fn TimeBetweenInformalAndFormalVoting(&self) -> BlockTime;
-    fn GovernanceWalletAddress(&self) -> u32;
-    fn DefaultReputationSlash(&self) -> u32;
-    fn VotingClearnessDelta(&self) -> u32;
-    fn VotingStartAfterJobSubmition(&self) -> u32;
-    fn GovernancePaymentRatio(&self) -> u32;
-    fn PostJobDOSFee(&self) -> u32;
-    fn InternalAuctionTime(&self) -> BlockTime;
-    fn PublicAuctionTime(&self) -> BlockTime;
-    fn DefaultPolicingRate(&self) -> u32;
-    fn VABidAcceptanceTimeout(&self) -> u32;
-    fn VACanBidOnPublicAuction(&self) -> bool;
-    fn DistributePaymentToNonVoters(&self) -> u32;
+    fn fiat_conversion_rate_address(&self) -> u32;
+    fn forum_kyc_required(&self) -> u32;
+    fn governance_informal_quorum_ratio(&self) -> u32;
+    fn governance_formal_quorum_ratio(&self) -> u32;
+    fn governance_informal_voting_time(&self) -> BlockTime;
+    fn governance_formal_voting_time(&self) -> BlockTime;
+    fn informal_quorum_ratio(&self) -> u32;
+    fn formal_quorum_ratio(&self) -> u32;
+    fn formal_voting_quorum(&self) -> U256;
+    fn informal_voting_quorum(&self) -> U256;
+    fn informal_voting_time(&self) -> BlockTime;
+    fn formal_voting_time(&self) -> BlockTime;
+    fn time_between_informal_and_formal_voting(&self) -> BlockTime;
+    fn governance_wallet_address(&self) -> u32;
+    fn default_reputation_slash(&self) -> u32;
+    fn voting_clearness_delta(&self) -> u32;
+    fn voting_start_after_job_submition(&self) -> u32;
+    fn governance_payment_ratio(&self) -> u32;
+    fn post_job_dosfee(&self) -> u32;
+    fn internal_auction_time(&self) -> BlockTime;
+    fn public_auction_time(&self) -> BlockTime;
+    fn default_policing_rate(&self) -> u32;
+    fn vabid_acceptance_timeout(&self) -> u32;
+    fn vacan_bid_on_public_auction(&self) -> bool;
+    fn distribute_payment_to_non_voters(&self) -> u32;
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
@@ -71,107 +71,107 @@ impl DaoConfigurationTrait for DaoConfiguration {
         todo!()
     }
 
-    fn FiatConversionRateAddress(&self) -> u32 {
+    fn fiat_conversion_rate_address(&self) -> u32 {
         todo!()
     }
 
-    fn ForumKYCRequired(&self) -> u32 {
+    fn forum_kyc_required(&self) -> u32 {
         todo!()
     }
 
-    fn GovernanceInformalQuorumRatio(&self) -> u32 {
+    fn governance_informal_quorum_ratio(&self) -> u32 {
         todo!()
     }
 
-    fn GovernanceFormalQuorumRatio(&self) -> u32 {
+    fn governance_formal_quorum_ratio(&self) -> u32 {
         todo!()
     }
 
-    fn GovernanceInformalVotingTime(&self) -> BlockTime {
+    fn governance_informal_voting_time(&self) -> BlockTime {
         // TODO: implement
         432000
     }
 
-    fn GovernanceFormalVotingTime(&self) -> BlockTime {
+    fn governance_formal_voting_time(&self) -> BlockTime {
         todo!()
     }
 
-    fn InformalQuorumRatio(&self) -> u32 {
+    fn informal_quorum_ratio(&self) -> u32 {
         500
     }
 
-    fn FormalQuorumRatio(&self) -> u32 {
+    fn formal_quorum_ratio(&self) -> u32 {
         500
     }
 
-    fn formalVotingQuorum(&self) -> U256 {
+    fn formal_voting_quorum(&self) -> U256 {
         U256::from(3)
     }
 
-    fn informalVotingQuorum(&self) -> U256 {
+    fn informal_voting_quorum(&self) -> U256 {
         U256::from(3)
     }
 
-    fn InformalVotingTime(&self) -> BlockTime {
+    fn informal_voting_time(&self) -> BlockTime {
         // TODO: implement
         432000
     }
 
-    fn FormalVotingTime(&self) -> BlockTime {
+    fn formal_voting_time(&self) -> BlockTime {
         432000
     }
 
-    fn TimeBetweenInformalAndFormalVoting(&self) -> BlockTime {
+    fn time_between_informal_and_formal_voting(&self) -> BlockTime {
         self.time_between_informal_and_formal_voting
     }
 
-    fn GovernanceWalletAddress(&self) -> u32 {
+    fn governance_wallet_address(&self) -> u32 {
         todo!()
     }
 
-    fn DefaultReputationSlash(&self) -> u32 {
+    fn default_reputation_slash(&self) -> u32 {
         todo!()
     }
 
-    fn VotingClearnessDelta(&self) -> u32 {
+    fn voting_clearness_delta(&self) -> u32 {
         todo!()
     }
 
-    fn VotingStartAfterJobSubmition(&self) -> u32 {
+    fn voting_start_after_job_submition(&self) -> u32 {
         todo!()
     }
 
-    fn GovernancePaymentRatio(&self) -> u32 {
+    fn governance_payment_ratio(&self) -> u32 {
         todo!()
     }
 
-    fn PostJobDOSFee(&self) -> u32 {
+    fn post_job_dosfee(&self) -> u32 {
         todo!()
     }
 
-    fn InternalAuctionTime(&self) -> BlockTime {
+    fn internal_auction_time(&self) -> BlockTime {
         // TODO: implement
         604800
     }
 
-    fn PublicAuctionTime(&self) -> BlockTime {
+    fn public_auction_time(&self) -> BlockTime {
         // TODO: implement
         864000
     }
 
-    fn DefaultPolicingRate(&self) -> u32 {
+    fn default_policing_rate(&self) -> u32 {
         300
     }
 
-    fn VABidAcceptanceTimeout(&self) -> u32 {
+    fn vabid_acceptance_timeout(&self) -> u32 {
         todo!()
     }
 
-    fn VACanBidOnPublicAuction(&self) -> bool {
+    fn vacan_bid_on_public_auction(&self) -> bool {
         true
     }
 
-    fn DistributePaymentToNonVoters(&self) -> u32 {
+    fn distribute_payment_to_non_voters(&self) -> u32 {
         todo!()
     }
 }

@@ -80,7 +80,7 @@ impl JobOffer {
 
         // InternalAuction time
         if worker_onboarded
-            && block_time > self.start_time + self.dao_configuration.InternalAuctionTime()
+            && block_time > self.start_time + self.dao_configuration.internal_auction_time()
         {
             return Err(InternalAuctionTimeExpired);
         }
@@ -88,24 +88,24 @@ impl JobOffer {
         if !worker_onboarded {
             if block_time
                 > self.start_time
-                    + self.dao_configuration.PublicAuctionTime()
-                    + self.dao_configuration.InternalAuctionTime()
+                    + self.dao_configuration.public_auction_time()
+                    + self.dao_configuration.internal_auction_time()
             {
                 return Err(PublicAuctionTimeExpired);
             }
 
-            if block_time < self.start_time + self.dao_configuration.InternalAuctionTime() {
+            if block_time < self.start_time + self.dao_configuration.internal_auction_time() {
                 return Err(PublicAuctionNotStarted);
             }
         }
 
         // PublicAuction time
-        if (!worker_onboarded && !self.dao_configuration.VACanBidOnPublicAuction())
-            && block_time < self.start_time + self.dao_configuration.InternalAuctionTime()
+        if (!worker_onboarded && !self.dao_configuration.vacan_bid_on_public_auction())
+            && block_time < self.start_time + self.dao_configuration.internal_auction_time()
             && block_time
                 > self.start_time
-                    + self.dao_configuration.InternalAuctionTime()
-                    + self.dao_configuration.PublicAuctionTime()
+                    + self.dao_configuration.internal_auction_time()
+                    + self.dao_configuration.public_auction_time()
         {
             return Err(PublicAuctionTimeExpired);
         }

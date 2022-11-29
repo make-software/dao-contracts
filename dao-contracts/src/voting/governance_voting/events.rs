@@ -63,10 +63,10 @@ impl VotingCreated {
             voting_id,
             informal_voting_id,
             formal_voting_id,
-            config_formal_voting_quorum: config.formalVotingQuorum(),
-            config_formal_voting_time: config.FormalVotingTime(),
-            config_informal_voting_quorum: config.informalVotingQuorum(),
-            config_informal_voting_time: config.InformalVotingTime(),
+            config_formal_voting_quorum: config.formal_voting_quorum(),
+            config_formal_voting_time: config.formal_voting_time(),
+            config_informal_voting_quorum: config.informal_voting_quorum(),
+            config_informal_voting_time: config.informal_voting_time(),
         }
     }
 }

@@ -179,11 +179,11 @@ impl Voting {
         match self.get_voting_type() {
             VotingType::Informal => {
                 let start_time = self.start_time;
-                let voting_time = self.voting_configuration.InformalVotingTime();
+                let voting_time = self.voting_configuration.informal_voting_time();
                 start_time + voting_time <= block_time
             }
             VotingType::Formal => {
-                self.start_time + self.voting_configuration.FormalVotingTime() <= block_time
+                self.start_time + self.voting_configuration.formal_voting_time() <= block_time
             }
         }
     }
@@ -202,8 +202,8 @@ impl Voting {
 
     pub fn get_quorum(&self) -> U256 {
         match self.get_voting_type() {
-            VotingType::Informal => self.voting_configuration.informalVotingQuorum(),
-            VotingType::Formal => self.voting_configuration.formalVotingQuorum(),
+            VotingType::Informal => self.voting_configuration.informal_voting_quorum(),
+            VotingType::Formal => self.voting_configuration.formal_voting_quorum(),
         }
     }
 
@@ -301,22 +301,22 @@ impl Voting {
 
     /// Get the voting's formal voting quorum.
     pub fn formal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.formalVotingQuorum()
+        self.voting_configuration.formal_voting_quorum()
     }
 
     /// Get the voting's informal voting quorum.
     pub fn informal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.informalVotingQuorum()
+        self.voting_configuration.informal_voting_quorum()
     }
 
     /// Get the voting's formal voting time.
     pub fn formal_voting_time(&self) -> u64 {
-        self.voting_configuration.FormalVotingTime()
+        self.voting_configuration.formal_voting_time()
     }
 
     /// Get the voting's informal voting time.
     pub fn informal_voting_time(&self) -> u64 {
-        self.voting_configuration.InformalVotingTime()
+        self.voting_configuration.informal_voting_time()
     }
 
     /// Get the voting's contract call reference.
@@ -338,7 +338,7 @@ impl Voting {
         let between_voting_end = informal_voting_end
             + self
                 .voting_configuration
-                .TimeBetweenInformalAndFormalVoting();
+                .time_between_informal_and_formal_voting();
         let voting_end = between_voting_end + self.formal_voting_time();
 
         if block_time <= informal_voting_end {
