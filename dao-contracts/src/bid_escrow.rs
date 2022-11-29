@@ -479,18 +479,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.voting.redistribute_reputation_of_yes_voters(voting_id);
                             self.return_job_poster_payment_and_dos_fee(&job);
                         }
-                        WorkerType::ExternalToVA => {
+                        WorkerType::ExternalToVA | WorkerType::External => {
                             self.voting.return_reputation_of_no_voters(voting_id);
                             self.voting.redistribute_reputation_of_yes_voters(voting_id);
                             self.return_job_poster_payment_and_dos_fee(&job);
-                            self.mint_and_redistribute_reputation_for_external_worker_failed(&job);
-                            self.redistribute_cspr_external_worker_failed(&job);
-                        }
-                        WorkerType::External => {
-                            self.voting.return_reputation_of_no_voters(voting_id);
-                            self.voting.redistribute_reputation_of_yes_voters(voting_id);
-                            self.return_job_poster_payment_and_dos_fee(&job);
-                            self.mint_and_redistribute_reputation_for_external_worker_failed(&job);
                             self.redistribute_cspr_external_worker_failed(&job);
                         }
                     },
@@ -650,6 +642,7 @@ impl BidEscrowContract {
         let (total_supply, balances) = self.reputation_token().all_balances();
         let total_supply = U512::from(total_supply.as_u128());
         for (address, balance) in balances.balances {
+            // TODO: better conversions.
             let amount = total_left * U512::from(balance.as_u128()) / total_supply;
             self.withdraw(address, amount);
         }
@@ -695,18 +688,6 @@ impl BidEscrowContract {
         let total =
             VariableRepositoryContractCaller::at(self.voting.get_variable_repo_address())
                 .reputation_to_redistribute(payment_reputation_to_mint);
-        self.mint_reputation_for_voters(job, total);
-    }
-
-    fn mint_and_redistribute_reputation_for_external_worker_failed(&mut self, job: &Job) {
-        let var_repo = self.variable_repository();
-
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_mint(job.external_worker_cspr_stake());
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_redistribute(stake_reputation_to_mint);
-
-        let total = stake_reputation_to_mint;
         self.mint_reputation_for_voters(job, total);
     }
 
