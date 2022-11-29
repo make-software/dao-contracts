@@ -534,15 +534,15 @@ impl GovernanceVoting {
 
     pub fn redistribute_reputation_of_no_voters(&self, voting_id: VotingId) {
         let voting = self.get_voting_or_revert(voting_id);
-        let total_stake_in_favor = voting.stake_in_favor() + voting.unbounded_stake_in_favor();
+        let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U256> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
-            // if ballot.unbounded {
-            //     continue;
-            // }
+            if ballot.unbounded {
+                continue;
+            }
             if ballot.choice.is_against() {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);

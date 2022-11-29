@@ -455,11 +455,12 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             
                             self.return_external_worker_cspr_stake(&job);
                             // Bound ballot for worker.
-                            // self.voting.bound_ballot(voting_id, job.worker());
+                            self.voting.bound_ballot(voting_id, job.worker());
 
                             self.voting.return_reputation_of_yes_voters(voting_id);
                             self.voting.redistribute_reputation_of_no_voters(voting_id);
                             self.mint_and_redistribute_reputation_for_internal_worker(&job);
+                            self.burn_external_worker_reputation(&job);
                             self.redistribute_cspr_internal_worker(&job);
                             self.return_job_poster_dos_fee(&job);
                         }
@@ -771,6 +772,13 @@ impl BidEscrowContract {
         self.voting.unstake_all_reputation(voting_id);
         self.voting
             .recast_creators_ballot_from_informal_to_formal(formal_voting_id);
+    }
+
+    fn burn_external_worker_reputation(&self, job: &Job) {
+        // TODO: remove 10
+        let stake = job.external_worker_cspr_stake() / U512::from(10);
+        let stake = U256::from(stake.as_u128());
+        self.reputation_token().burn(job.worker(), stake);
     }
 }
 
