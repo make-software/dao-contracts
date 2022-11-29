@@ -2,7 +2,8 @@ use casper_types::U256;
 use cucumber::{gherkin::Step, given, then};
 
 use crate::common::{
-    helpers::{is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep},
+    helpers::{self, is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep},
+    params::{Account, U256 as pU256},
     DaoWorld,
 };
 
@@ -85,5 +86,19 @@ fn balances(w: &mut DaoWorld, step: &Step) {
             expected_rep_stake,
             real_rep_stake
         );
+    }
+}
+
+#[then(expr = "users balances are")]
+fn assert_balances(world: &mut DaoWorld, step: &Step) {
+    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
+    for row in table {
+        let account = helpers::parse::<Account>(row.get(0), "Could't parse account");
+        let expected_balance = helpers::parse_or_default::<pU256>(row.get(1));
+        let expected_stake = helpers::parse_or_default::<pU256>(row.get(2));
+
+        assert_eq!(world.reputation_balance(&account), expected_balance);
+
+        assert_eq!(world.staked_reputation(&account), expected_stake);
     }
 }

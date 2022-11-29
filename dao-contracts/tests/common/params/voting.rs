@@ -139,7 +139,7 @@ impl From<&Vec<String>> for Ballot {
         let voter = helpers::parse(value.get(0), "Couldn't parse voter");
         let stake = helpers::parse_or_default(value.get(1));
         let choice = helpers::parse_or_default(value.get(2));
-        
+
         Self {
             voter,
             stake,

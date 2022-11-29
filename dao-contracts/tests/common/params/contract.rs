@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use cucumber::Parameter;
 
-#[derive(Debug, Parameter)]
+#[derive(Debug, Parameter, PartialEq, Eq, PartialOrd, Ord)]
 #[param(name = "contract", regex = ".+")]
 pub enum Contract {
     KycToken,

@@ -5,12 +5,12 @@ Feature: KYC Token
   
   Rule: A contract is set up
     Background:
-      Given users in KycToken contract
-        | user    | is_whitelisted | is_kyced |
-        | Alice   | false          | false    |
-        | Bob     | true           | false    |
-        | Holder  | false          | true     |
-        | Account | false          | false    |
+      Given users
+        | user    | whitelisted_in | is_kyced |
+        | Alice   |                | false    |
+        | Bob     | KycToken       | false    |
+        | Holder  |                | true     |
+        | Account |                | false    |
 
     Scenario Outline: If <minter> mints a KYC Token, the balance is updated
       When <minter> mints a KYC Token to Account

@@ -786,7 +786,12 @@ use crate::{
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {
-    pub fn pick_bid_with_cspr_amount(&mut self, job_offer_id: u32, bid_id: u32, cspr_amount: U512) -> Result<(), Error> {
+    pub fn pick_bid_with_cspr_amount(
+        &mut self,
+        job_offer_id: u32,
+        bid_id: u32,
+        cspr_amount: U512,
+    ) -> Result<(), Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "pick_bid.wasm",

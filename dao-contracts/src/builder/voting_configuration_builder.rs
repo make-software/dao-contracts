@@ -2,8 +2,8 @@ use casper_dao_utils::ContractCall;
 
 use crate::{
     voting::{voting::VotingConfiguration, GovernanceVoting},
-    KycNftContractCaller,
-    KycNftContractInterface,
+    VaNftContractCaller,
+    VaNftContractInterface,
     VariableRepositoryContractCaller,
 };
 
@@ -13,8 +13,7 @@ pub struct VotingConfigurationBuilder {
 
 impl VotingConfigurationBuilder {
     pub fn defaults(voting: &GovernanceVoting) -> VotingConfigurationBuilder {
-        let total_onboarded =
-            KycNftContractCaller::at(voting.get_va_token_address()).total_supply();
+        let total_onboarded = VaNftContractCaller::at(voting.get_va_token_address()).total_supply();
         VotingConfigurationBuilder {
             voting_configuration: VariableRepositoryContractCaller::at(
                 voting.get_variable_repo_address(),

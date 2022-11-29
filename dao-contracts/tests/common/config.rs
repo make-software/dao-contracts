@@ -1,12 +1,12 @@
 use super::{
     helpers,
-    params::{Account, U256},
+    params::{Account, Contract, U256},
 };
 
 #[allow(dead_code)]
 pub struct UserConfiguration {
     account: Account,
-    is_whitelisted: bool,
+    whitelisted_in: Vec<Contract>,
     is_kyced: bool,
     is_va: bool,
     reputation_balance: U256,
@@ -15,7 +15,7 @@ pub struct UserConfiguration {
 #[allow(dead_code)]
 impl UserConfiguration {
     pub fn from_labeled_data(labels: &Vec<String>, data: &Vec<String>) -> Self {
-        let mut is_whitelisted = false;
+        let mut whitelisted_in = vec![];
         let mut is_kyced = false;
         let mut is_va = false;
         let mut reputation_balance = U256::zero();
@@ -23,8 +23,18 @@ impl UserConfiguration {
 
         for (idx, label) in labels.iter().enumerate() {
             match label.as_str() {
-                "is_whitelisted" => {
-                    is_whitelisted = helpers::parse_or_default(data.get(idx));
+                "whitelisted_in" => {
+                    let contracts_string = data.get(idx).map(|s| s.to_owned()).unwrap_or_default();
+                    let contracts_names = contracts_string.split(",");
+                    whitelisted_in = contracts_names
+                        .filter(|s| !s.is_empty())
+                        .map(|name| {
+                            helpers::parse::<Contract>(
+                                Some(&name.to_owned()),
+                                "Couldn't parse contract",
+                            )
+                        })
+                        .collect();
                 }
                 "is_kyced" => {
                     is_kyced = helpers::parse_or_default(data.get(idx));
@@ -46,7 +56,7 @@ impl UserConfiguration {
 
         Self {
             account: account.expect("Invalid config - `user` label is missing"),
-            is_whitelisted,
+            whitelisted_in,
             is_kyced,
             is_va,
             reputation_balance,
@@ -57,8 +67,8 @@ impl UserConfiguration {
         &self.account
     }
 
-    pub fn is_whitelisted(&self) -> bool {
-        self.is_whitelisted
+    pub fn get_contracts_to_be_whitelisted_in(&self) -> &Vec<Contract> {
+        &self.whitelisted_in
     }
 
     pub fn is_kyced(&self) -> bool {

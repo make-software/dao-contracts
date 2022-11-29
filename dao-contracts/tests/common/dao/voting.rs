@@ -2,7 +2,7 @@ use casper_dao_utils::{DocumentHash, TestContract};
 
 use crate::common::{
     params::{
-        voting::{Ballot, Voting},
+        voting::{Ballot, Voting, VotingType},
         Account,
         Contract,
     },
@@ -19,7 +19,6 @@ impl DaoWorld {
             Contract::KycVoter => {
                 let subject_address = voting.get_parsed_arg::<Account>(0);
                 let subject_address = self.get_address(&subject_address);
-
                 self.kyc_voter
                     .as_account(creator)
                     .create_voting(subject_address, DocumentHash::default(), stake)
@@ -68,6 +67,55 @@ impl DaoWorld {
                 .vote(voting_id, voting_type, choice, stake)
                 .expect("Slashing voting error"),
             contract => panic!("{:?} is not a voting contract", contract),
+        }
+    }
+
+    pub fn finish_voting(
+        &mut self,
+        contract: &Contract,
+        voting_id: u32,
+        voting_type: Option<VotingType>,
+    ) {
+        let voting_type = voting_type.map(|vt| vt.into());
+
+        match contract {
+            Contract::KycVoter => self
+                .kyc_voter
+                .finish_voting(voting_id, voting_type.unwrap())
+                .expect("Couldn't finish KycVoter voting"),
+            Contract::BidEscrow => self
+                .bid_escrow
+                .finish_voting(voting_id)
+                .expect("Couldn't finish BidEscrow voting"),
+            Contract::SlashingVoter => self
+                .slashing_voter
+                .finish_voting(voting_id, voting_type.unwrap())
+                .expect("Couldn't finish SlashingVoting voting"),
+            invalid => panic!("{:?} is not a voting contract", invalid),
+        };
+    }
+
+    pub fn get_voting(
+        &self,
+        contract: &Contract,
+        voting_id: u32,
+        voting_type: VotingType,
+    ) -> casper_dao_contracts::voting::voting::Voting {
+        let voting_type = voting_type.into();
+        match contract {
+            Contract::KycVoter => self
+                .kyc_voter
+                .get_voting(voting_id, voting_type)
+                .expect("Couldn't get KycVoter voting"),
+            Contract::BidEscrow => self
+                .bid_escrow
+                .get_voting(voting_id, voting_type)
+                .expect("Couldn't get BidEscrow voting"),
+            Contract::SlashingVoter => self
+                .slashing_voter
+                .get_voting(voting_id, voting_type)
+                .expect("Couldn't get SlashingVoting voting"),
+            invalid => panic!("{:?} is not a voting contract", invalid),
         }
     }
 }

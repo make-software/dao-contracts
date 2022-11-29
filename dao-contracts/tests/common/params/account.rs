@@ -1,4 +1,4 @@
-#[derive(Debug, Default, Parameter, Clone)]
+#[derive(Debug, Default, Parameter, Clone, Copy)]
 #[param(name = "account", regex = ".+")]
 pub enum Account {
     Alice,

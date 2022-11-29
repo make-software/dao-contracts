@@ -1,9 +1,9 @@
 Feature: KYC Token ownership management
   Background:
-    Given users in KycToken contract
-      | user    | is_whitelisted |
-      | Alice   | false          |
-      | Bob     | true           |
+    Given users
+      | user    | whitelisted_in |
+      | Alice   |                |
+      | Bob     | KycToken       |
 
   Scenario: Deploy a new instance
     Then Deployer is the owner of KycToken contract

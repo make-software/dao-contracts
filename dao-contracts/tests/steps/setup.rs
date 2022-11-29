@@ -2,12 +2,12 @@ use cucumber::{gherkin::Step, given};
 
 use crate::common::{
     config::UserConfiguration,
-    params::{Account, Contract, U256},
+    params::{Account, U256},
     DaoWorld,
 };
 
-#[given(expr = "users in {contract} contract")]
-fn users_setup(world: &mut DaoWorld, step: &Step, contract: Contract) {
+#[given(expr = "users")]
+fn users_setup(world: &mut DaoWorld, step: &Step) {
     let labels = step
         .table
         .as_ref()
@@ -21,20 +21,19 @@ fn users_setup(world: &mut DaoWorld, step: &Step, contract: Contract) {
         let config = UserConfiguration::from_labeled_data(labels, row);
 
         let account = config.account();
+        let owner = Account::Owner;
         let reputation_balance = config.reputation_balance();
 
-        if config.is_whitelisted() {
-            world
-                .whitelist(&contract, &Account::Owner, account)
-                .unwrap();
+        for contract in config.get_contracts_to_be_whitelisted_in() {
+            world.whitelist_account(contract, &owner, account).unwrap();
+        }
+
+        let user_address = world.get_address(account);
+        if config.is_kyced() {
+            world.mint_kyc_token(&owner, account).unwrap();
         }
 
         // TODO: world should accept an Account.
-        let user_address = world.get_address(account);
-        if config.is_kyced() {
-            world.kyc(user_address);
-        }
-
         if config.is_va() {
             world.make_va(user_address);
         }
