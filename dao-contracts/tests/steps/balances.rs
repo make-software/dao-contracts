@@ -36,9 +36,15 @@ fn is_not_va(w: &mut DaoWorld, va_name: String) {
 #[then(expr = "total reputation is {int}")]
 fn total_reputation(w: &mut DaoWorld, total_reputation_expected: u64) {
     let total_reputation = w.reputation_token.total_supply();
-    assert_eq!(
-        total_reputation,
-        U256::from(total_reputation_expected * 1_000_000_000)
+    let expected = U256::from(total_reputation_expected) * 1_000_000_000;
+    assert!(
+        is_rep_close_enough(
+            total_reputation, 
+            expected
+        ),
+        "REP total supply should be {:?} but is {:?}",
+            expected,
+            total_reputation
     );
 }
 

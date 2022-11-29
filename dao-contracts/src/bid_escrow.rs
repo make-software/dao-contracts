@@ -449,11 +449,13 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.return_job_poster_dos_fee(&job);
                         }
                         WorkerType::ExternalToVA => {
+                            
                             // Make user VA.
                             self.va_token().mint(job.worker());
-
+                            
+                            self.return_external_worker_cspr_stake(&job);
                             // Bound ballot for worker.
-                            self.voting.bound_ballot(voting_id, job.worker());
+                            // self.voting.bound_ballot(voting_id, job.worker());
 
                             self.voting.return_reputation_of_yes_voters(voting_id);
                             self.voting.redistribute_reputation_of_no_voters(voting_id);
@@ -594,7 +596,7 @@ impl BidEscrowContract {
         // 10% for Mutlisig
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.payment() + job.external_worker_cspr_stake();
+        let payment = job.payment();
         let governance_wallet_payment = repo.payment_for_governance(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
@@ -716,10 +718,10 @@ impl BidEscrowContract {
 
         for i in 0..self.voting.voters().len(voting.voting_id()) {
             let ballot = self.voting.get_ballot_at(voting.voting_id(), i);
-            if ballot.unbounded {
-                continue;
-            }
-            let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
+            // if ballot.unbounded {
+            //     continue;
+            // }
+            let to_transfer = ballot.stake * amount / voting.total_stake();
             ReputationContractCaller::at(self.voting.get_reputation_token_address())
                 .mint(ballot.voter, to_transfer);
         }
