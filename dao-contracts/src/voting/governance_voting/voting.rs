@@ -276,6 +276,14 @@ impl Voting {
         self.stake_against
     }
 
+    pub fn unbounded_stake_in_favor(&self) -> U256 {
+        self.unbounded_stake_in_favor
+    }
+
+    pub fn unbounded_stake_against(&self) -> U256 {
+        self.unbounded_stake_against
+    }
+
     /// Get the voting's informal voting id.
     pub fn informal_voting_id(&self) -> VotingId {
         self.informal_voting_id

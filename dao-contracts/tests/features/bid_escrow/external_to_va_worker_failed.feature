@@ -59,16 +59,17 @@ Feature: External Worker who wants to become a VA submits job
     When votes are
       | account          | vote | stake |
      #| ExternalWorker   | Yes  | 50    | - automatically voted by the system
-      | VA1              | No  | 500   |
+      | VA1              | No   | 500   |
       | VA2              | No   | 500   |
     And Formal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | MultisigWallet   | 50            | 0            | 0          |
+      | MultisigWallet   | 50           | 0            | 0          |
       | JobPoster        | 1000         | 0            | 0          |
-      | InternalWorker   | 149.25       | 1000         | 0          |
+      | InternalWorker   | 150          | 1000         | 0          |
       | ExternalWorker   | 0            | 0            | 0          |
-      | VA1              | 150.37       | 1007.5       | 0          |
-      | VA2              | 150.37       | 1007.5       | 0          |
+      | VA1              | 150          | 1000         | 0          |
+      | VA2              | 150          | 1000         | 0          |
       | BidEscrow        | 0            | 0            | 0          |
+    And total reputation is 3000
     And ExternalWorker is not a VA
