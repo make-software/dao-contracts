@@ -59,3 +59,4 @@ Feature: Internal Flow
       | InternalWorker   | 0            | 1000         | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
+    And total reputation is 6000

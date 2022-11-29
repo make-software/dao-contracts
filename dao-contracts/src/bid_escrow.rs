@@ -469,15 +469,18 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.return_job_poster_dos_fee(&job);
                         }
                         WorkerType::ExternalToVA => {
+                            
                             // Make user VA.
-                            self.va_token().mint(job.worker(), U256::from(18));
-
+                            self.va_token().mint(job.worker());
+                            
+                            self.return_external_worker_cspr_stake(&job);
                             // Bound ballot for worker.
                             self.voting.bound_ballot(voting_id, job.worker());
 
                             self.voting.return_reputation_of_yes_voters(voting_id);
                             self.voting.redistribute_reputation_of_no_voters(voting_id);
                             self.mint_and_redistribute_reputation_for_internal_worker(&job);
+                            self.burn_external_worker_reputation(&job);
                             self.redistribute_cspr_internal_worker(&job);
                             self.return_job_poster_dos_fee(&job);
                         }
@@ -487,6 +490,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.mint_and_redistribute_reputation_for_external_worker(&job);
                             self.redistribute_cspr_external_worker(&job);
                             self.return_job_poster_dos_fee(&job);
+                            self.return_external_worker_cspr_stake(&job);
                         }
                     },
                     VotingResult::Against => match job.worker_type() {
@@ -495,18 +499,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.voting.redistribute_reputation_of_yes_voters(voting_id);
                             self.return_job_poster_payment_and_dos_fee(&job);
                         }
-                        WorkerType::ExternalToVA => {
+                        WorkerType::ExternalToVA | WorkerType::External => {
                             self.voting.return_reputation_of_no_voters(voting_id);
                             self.voting.redistribute_reputation_of_yes_voters(voting_id);
                             self.return_job_poster_payment_and_dos_fee(&job);
-                            self.mint_and_redistribute_reputation_for_external_worker_failed(&job);
-                            self.redistribute_cspr_external_worker_failed(&job);
-                        }
-                        WorkerType::External => {
-                            self.voting.return_reputation_of_no_voters(voting_id);
-                            self.voting.redistribute_reputation_of_yes_voters(voting_id);
-                            self.return_job_poster_payment_and_dos_fee(&job);
-                            self.mint_and_redistribute_reputation_for_external_worker_failed(&job);
                             self.redistribute_cspr_external_worker_failed(&job);
                         }
                     },
@@ -614,7 +610,7 @@ impl BidEscrowContract {
         // 10% for Mutlisig
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.payment() + job.external_worker_cspr_stake();
+        let payment = job.payment();
         let governance_wallet_payment = repo.payment_for_governance(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
@@ -632,7 +628,7 @@ impl BidEscrowContract {
         // 10% for Mutlisig
         let repo = self.variable_repository();
         let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.payment() + job.external_worker_cspr_stake();
+        let payment = job.payment();
         let governance_wallet_payment = repo.payment_for_governance(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
@@ -666,6 +662,7 @@ impl BidEscrowContract {
         let (total_supply, balances) = self.reputation_token().all_balances();
         let total_supply = U512::from(total_supply.as_u128());
         for (address, balance) in balances.balances {
+            // TODO: better conversions.
             let amount = total_left * U512::from(balance.as_u128()) / total_supply;
             self.withdraw(address, amount);
         }
@@ -707,24 +704,10 @@ impl BidEscrowContract {
         let var_repo = self.variable_repository();
 
         let payment_reputation_to_mint = var_repo.reputation_to_mint(job.payment());
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_mint(job.external_worker_cspr_stake());
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_redistribute(stake_reputation_to_mint);
-
-        let total = payment_reputation_to_mint + stake_reputation_to_mint;
-        self.mint_reputation_for_voters(job, total);
-    }
-
-    fn mint_and_redistribute_reputation_for_external_worker_failed(&mut self, job: &Job) {
-        let var_repo = self.variable_repository();
-
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_mint(job.external_worker_cspr_stake());
-        let stake_reputation_to_mint =
-            var_repo.reputation_to_redistribute(stake_reputation_to_mint);
-
-        let total = stake_reputation_to_mint;
+        
+        let total =
+            VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
+                .reputation_to_redistribute(payment_reputation_to_mint);
         self.mint_reputation_for_voters(job, total);
     }
 
@@ -789,6 +772,13 @@ impl BidEscrowContract {
         self.voting.unstake_all_reputation(voting_id);
         self.voting
             .recast_creators_ballot_from_informal_to_formal(formal_voting_id);
+    }
+
+    fn burn_external_worker_reputation(&self, job: &Job) {
+        // TODO: remove 10
+        let stake = job.external_worker_cspr_stake() / U512::from(10);
+        let stake = U256::from(stake.as_u128());
+        self.reputation_token().burn(job.worker(), stake);
     }
 }
 

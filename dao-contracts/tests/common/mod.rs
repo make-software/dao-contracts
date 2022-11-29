@@ -1,5 +1,7 @@
+pub mod config;
 pub mod dao;
 pub mod helpers;
+pub mod params;
 pub mod setup;
 
 use std::{
@@ -169,13 +171,13 @@ impl DaoWorld {
 
     // performs kyc for an address
     pub fn kyc(&mut self, account: Address) {
-        self.kyc_token.mint(account, self.kyc_count).unwrap();
+        self.kyc_token.mint(account).unwrap();
         self.kyc_count += U256::one();
     }
 
     // makes an address a va
     pub fn make_va(&mut self, account: Address) {
-        self.va_token.mint(account, self.va_count).unwrap();
+        self.va_token.mint(account).unwrap();
         self.va_count += U256::one();
     }
 
@@ -200,7 +202,7 @@ impl DaoWorld {
                         address
                     }
                     _ => {
-                        let address = self.bid_escrow.get_env().get_account(self.accounts_count);
+                        let address = self.env.get_account(self.accounts_count);
                         self.addresses.insert(name.clone(), address);
                         self.accounts_count += 1;
 

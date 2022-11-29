@@ -15,6 +15,7 @@ cucumber = "0.15.0"
 speculate = "0.1.2"
 test-case = "2.0.2"
 futures = "0.3.5"
+derive_more = "0.99.17"
 
 [[test]]
 name = "test_bid_escrow"
@@ -28,6 +29,11 @@ required-features = ["test-support"]
 
 [[test]]
 name = "test_variables"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
+[[test]]
+name = "test_kyc"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
 
@@ -87,13 +93,6 @@ test = false
 [[bin]]
 name = "kyc_nft_contract"
 path = "bin/kyc_nft_contract.rs"
-bench = false
-doctest = false
-test = false
-
-[[bin]]
-name = "onboarding_voter_contract"
-path = "bin/onboarding_voter_contract.rs"
 bench = false
 doctest = false
 test = false

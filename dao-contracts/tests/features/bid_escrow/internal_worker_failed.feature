@@ -55,3 +55,4 @@ Feature: Internal Flow
       | VA1              | 0            | 1050         | 0          |
       | VA2              | 0            | 1050         | 0          |
       | BidEscrow        | 0            | 0            | 0          |
+    And total reputation is 3000

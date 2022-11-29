@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+use std::str::FromStr;
 use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
@@ -85,5 +87,33 @@ pub fn match_result(result: String) -> bool {
         _ => {
             panic!("Unknown result option");
         }
+    }
+}
+
+pub fn parse<T>(item: Option<&String>, err_msg: &str) -> T
+where
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
+    item.expect(err_msg).parse::<T>().expect("Parsing failed.")
+}
+
+pub fn parse_or_default<T: FromStr + Default>(item: Option<&String>) -> T {
+    match item {
+        Some(value) => value.parse::<T>().unwrap_or_default(),
+        None => T::default(),
+    }
+}
+
+pub fn parse_or_none<T: FromStr>(item: Option<&String>) -> Option<T> {
+    match item {
+        Some(value) => {
+            if value.is_empty() {
+                None
+            } else {
+                value.parse::<T>().ok()
+            }
+        }
+        None => None,
     }
 }

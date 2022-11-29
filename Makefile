@@ -17,7 +17,6 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/repo_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/admin_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/mock_voter_contract.wasm 2>/dev/null | true
-	@wasm-strip $(OUTPUT_DIR)/onboarding_voter_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/dao_owned_nft_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_20.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_721.wasm 2>/dev/null | true
@@ -82,3 +81,7 @@ test-slashing: build-dao-contracts
 test-variables: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_variables
+
+test-kyc: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_kyc

@@ -19,8 +19,9 @@ impl BurnableERC721 {
     pub fn burn_unchecked(erc721: &mut ERC721Token, token_id: TokenId) {
         let owner = erc721.owner_of_or_revert(token_id);
 
-        erc721.approve_owner(None, None, token_id);
+        erc721.approve_owner(Some(owner), Some(casper_env::caller()), token_id);
         erc721.decrement_balance(owner);
+        erc721.decrement_total_supply();
         erc721.set_owner_of(token_id, None);
 
         emit(Transfer {

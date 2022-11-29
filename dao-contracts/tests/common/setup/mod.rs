@@ -9,7 +9,6 @@ use casper_dao_contracts::{
     VaNftContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_erc721::TokenId;
 use casper_dao_utils::{Error, TestContract, TestEnv};
 use casper_types::U256;
 
@@ -431,7 +430,7 @@ pub fn setup_va_token(env: &TestEnv, total_onboarded: usize) -> VaNftContractTes
         "".to_string(),
     );
     for i in 0..total_onboarded {
-        va_token.mint(env.get_account(i), TokenId::from(i)).unwrap();
+        va_token.mint(env.get_account(i)).unwrap();
     }
     va_token
 }
