@@ -1,4 +1,4 @@
-use casper_types::bytesrepr::ToBytes;
+
 use cucumber::{gherkin::Step, given, when};
 
 use crate::common::{

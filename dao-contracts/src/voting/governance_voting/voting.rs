@@ -1,6 +1,5 @@
 //! Voting struct with logic for governance voting
 use casper_dao_utils::{
-    casper_contract::contract_api::runtime::print,
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
     BlockTime,

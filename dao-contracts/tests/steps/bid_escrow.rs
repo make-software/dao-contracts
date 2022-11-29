@@ -6,7 +6,7 @@ use casper_types::U256;
 use cucumber::{gherkin::Step, given, then, when};
 
 use crate::common::{
-    helpers::{match_choice, match_result, to_rep, to_voting_type, value_to_bytes},
+    helpers::{match_choice, match_result, to_rep, to_voting_type},
     DaoWorld,
 };
 

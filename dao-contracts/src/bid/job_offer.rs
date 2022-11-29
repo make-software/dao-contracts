@@ -3,14 +3,13 @@ use casper_dao_utils::{
     Address,
     BlockTime,
     Error::{
-        BytesConversionError,
         InternalAuctionTimeExpired,
         PaymentExceedsMaxBudget,
         PublicAuctionNotStarted,
         PublicAuctionTimeExpired,
     },
 };
-use casper_types::{Error, U512};
+use casper_types::{U512};
 
 use crate::{bid::types::JobOfferId, DaoConfiguration, DaoConfigurationTrait};
 

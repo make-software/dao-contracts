@@ -1,4 +1,4 @@
-use casper_dao_contracts::bid::bid::Bid;
+
 use cucumber::then;
 
 use crate::common::DaoWorld;

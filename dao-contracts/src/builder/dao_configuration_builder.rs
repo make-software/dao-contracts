@@ -1,16 +1,13 @@
 use std::collections::BTreeMap;
 use casper_types::bytesrepr::{Bytes, FromBytes};
-use casper_types::U512;
+
 use casper_dao_utils::{Address, consts, ContractCall, Error};
-use casper_dao_utils::casper_contract::contract_api::runtime::print;
-use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
+
+
 use casper_dao_utils::casper_env::revert;
 
 use crate::{
-    voting::GovernanceVoting,
     DaoConfiguration,
-    KycNftContractCaller,
-    KycNftContractInterface,
     VaNftContractCaller,
     VaNftContractInterface,
     VariableRepositoryContractCaller,
@@ -77,7 +74,7 @@ impl DaoConfigurationBuilder {
         };
 
 
-        let (result, bytes) = <T>::from_bytes(&bytes).unwrap_or_else(|_| {
+        let (result, bytes) = <T>::from_bytes(bytes).unwrap_or_else(|_| {
             revert(Error::ValueNotAvailable);
         });
         if !bytes.is_empty() {

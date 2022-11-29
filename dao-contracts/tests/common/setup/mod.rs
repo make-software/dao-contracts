@@ -1,20 +1,17 @@
 use casper_dao_contracts::{
-    // action::Action,
     simple_voter::SimpleVoterContractTest,
     voting::{types::VotingId, voting::Voting, Choice},
-    // AdminContractTest,
     BidEscrowContractTest,
     KycNftContractTest,
     MockVoterContractTest,
-    // RepoVoterContractTest,
     ReputationContractTest,
     ReputationVoterContractTest,
     VaNftContractTest,
     VariableRepositoryContractTest,
 };
 use casper_dao_erc721::TokenId;
-use casper_dao_utils::{consts, Error, TestContract, TestEnv};
-use casper_types::{bytesrepr::ToBytes, U256};
+use casper_dao_utils::{Error, TestContract, TestEnv};
+use casper_types::U256;
 
 #[allow(dead_code)]
 pub fn setup_bid_escrow_gherkin() -> (
@@ -69,8 +66,8 @@ pub fn setup_bid_escrow_gherkin() -> (
 }
 
 fn setup_repository_and_reputation_contracts_gherkin(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    _informal_quorum: U256,
+    _formal_quorum: U256,
     total_onboarded: usize,
 ) -> (
     VariableRepositoryContractTest,
@@ -334,8 +331,8 @@ pub fn setup_voting_contract(
 }
 
 fn setup_repository_and_reputation_contracts(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    _informal_quorum: U256,
+    _formal_quorum: U256,
     total_onboarded: usize,
 ) -> (
     VariableRepositoryContractTest,
@@ -343,7 +340,7 @@ fn setup_repository_and_reputation_contracts(
     VaNftContractTest,
 ) {
     let reputation_to_mint = 10_000;
-    let informal_voting_time: u64 = 3_600;
+    let _informal_voting_time: u64 = 3_600;
     let env = TestEnv::new();
     let variable_repo_contract = setup_variable_repo_contract(
         &env,
@@ -406,8 +403,8 @@ pub fn setup_voting_contract_with_formal_voting(
 pub fn setup_variable_repo_contract(
     env: &TestEnv,
 ) -> VariableRepositoryContractTest {
-    let mut variable_repo_contract = VariableRepositoryContractTest::new(env);
-    variable_repo_contract
+    
+    VariableRepositoryContractTest::new(env)
 }
 
 pub fn setup_reputation_token_contract(
@@ -497,10 +494,4 @@ pub fn assert_voting_completed(voter_contract: &mut MockVoterContractTest, votin
         voter_contract.finish_voting(voting.voting_id()),
         Err(Error::FinishingCompletedVotingNotAllowed)
     );
-}
-
-fn update<T: ToBytes>(contract: &mut VariableRepositoryContractTest, name: &str, value: T) {
-    contract
-        .update_at(name.into(), value.to_bytes().unwrap().into(), None)
-        .unwrap();
 }

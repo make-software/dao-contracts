@@ -60,9 +60,7 @@ impl DaoWorld {
     pub fn get_bid(&self, offer_id: JobOfferId, poster: Address) -> Option<Bid> {
         let bid_id = self.bids.get(&(offer_id, poster));
 
-        if bid_id.is_none() {
-            return None;
-        }
+        bid_id?;
 
         self.bid_escrow.get_bid(*bid_id.unwrap())
     }
@@ -77,7 +75,7 @@ impl DaoWorld {
         onboarding: bool,
         cspr_stake: Option<u64>,
     ) {
-        let bids_count = self.bid_escrow.bids_count();
+        let _bids_count = self.bid_escrow.bids_count();
 
         let result = match cspr_stake {
             None => self.bid_escrow.as_account(bidder).submit_bid(
@@ -165,7 +163,7 @@ impl DaoWorld {
     }
 
     // gets variable value
-    pub fn get_variable(&self, name: String) -> Bytes {
+    pub fn _get_variable(&self, name: String) -> Bytes {
         self.variable_repo.get(name).unwrap()
     }
 
