@@ -1,5 +1,5 @@
-Feature: AuctionTime Variables
-  InternalAuctionTime and ExternalAuctionTime variables tests
+Feature: VA Bid
+  VA can bid during external auction
 
   Background:
     Given following balances
@@ -25,5 +25,6 @@ Feature: AuctionTime Variables
     When 8 days passed
     Given ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
-    Then InternalWorker Bid is posted
-    And ExternalWorker Bid is posted
+# TODO: finish this feature
+#    Then InternalWorker Bid is posted
+#    And ExternalWorker Bid is posted

@@ -44,9 +44,9 @@ pub struct VotingCreated {
     pub voting_id: VotingId,
     pub informal_voting_id: VotingId,
     pub formal_voting_id: Option<VotingId>,
-    pub config_formal_voting_quorum: U256,
+    pub config_formal_voting_quorum: u32,
     pub config_formal_voting_time: u64,
-    pub config_informal_voting_quorum: U256,
+    pub config_informal_voting_quorum: u32,
     pub config_informal_voting_time: u64,
 }
 
@@ -63,9 +63,9 @@ impl VotingCreated {
             voting_id,
             informal_voting_id,
             formal_voting_id,
-            config_formal_voting_quorum: config.formal_voting_quorum(),
+            config_formal_voting_quorum: config.governance_formal_voting_quorum(),
             config_formal_voting_time: config.formal_voting_time(),
-            config_informal_voting_quorum: config.informal_voting_quorum(),
+            config_informal_voting_quorum: config.governance_informal_voting_quorum(),
             config_informal_voting_time: config.informal_voting_time(),
         }
     }

@@ -199,15 +199,15 @@ impl Voting {
         }
     }
 
-    pub fn get_quorum(&self) -> U256 {
+    pub fn get_quorum(&self) -> u32 {
         match self.get_voting_type() {
-            VotingType::Informal => self.voting_configuration.informal_voting_quorum(),
-            VotingType::Formal => self.voting_configuration.formal_voting_quorum(),
+            VotingType::Informal => self.voting_configuration.governance_informal_voting_quorum(),
+            VotingType::Formal => self.voting_configuration.governance_formal_voting_quorum(),
         }
     }
 
     pub fn get_result(&self, voters_number: u32) -> VotingResult {
-        if self.get_quorum().as_u32() > voters_number {
+        if self.get_quorum() > voters_number {
             VotingResult::QuorumNotReached
         } else if self.is_in_favor() {
             VotingResult::InFavor
@@ -307,13 +307,13 @@ impl Voting {
     }
 
     /// Get the voting's formal voting quorum.
-    pub fn formal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.formal_voting_quorum()
+    pub fn formal_voting_quorum(&self) -> u32 {
+        self.voting_configuration.governance_formal_voting_quorum()
     }
 
     /// Get the voting's informal voting quorum.
-    pub fn informal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.informal_voting_quorum()
+    pub fn informal_voting_quorum(&self) -> u32 {
+        self.voting_configuration.governance_informal_voting_quorum()
     }
 
     /// Get the voting's formal voting time.
