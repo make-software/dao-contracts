@@ -113,26 +113,3 @@ impl JobOffer {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use casper_types::{account::AccountHash, bytesrepr::FromBytes};
-
-    use super::*;
-
-    #[test]
-    fn test_validate_bid() {
-        let mut job_offer = JobOffer::new(
-            0,
-            Address::Account(AccountHash::new([1; 32])),
-            100,
-            U512::from(100),
-            U512::from(100),
-            0,
-            BidEscrowConfiguration {},
-        );
-
-        assert!(job_offer.validate_bid(0, true, U512::from(100)).is_ok());
-        assert!(job_offer.validate_bid(0, false, U512::from(100)).is_err());
-    }
-}

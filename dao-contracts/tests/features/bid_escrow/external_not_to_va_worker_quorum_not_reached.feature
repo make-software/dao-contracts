@@ -15,6 +15,9 @@ Feature: External Worker who does not want to become a va - Quorum not reached
       | VA3              | 0            | 1000         | 0          |
       | VA4              | 0            | 1000         | 0          |
       | VA5              | 0            | 1000         | 0          |
+    And following configuration
+      | key                                    | value         |
+      | TimeBetweenInformalAndFormalVoting     | 0             |
     And JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And 8 days passed

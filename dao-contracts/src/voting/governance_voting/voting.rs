@@ -334,28 +334,20 @@ impl Voting {
     }
 
     pub fn state(&self, block_time: BlockTime) -> VotingState {
-        print(format!("Blocktime: {}", block_time).as_str());
         let informal_voting_end = self.start_time + self.informal_voting_time();
-        print(format!("Informal voting end: {}", informal_voting_end).as_str());
         let between_voting_end = informal_voting_end
             + self
                 .voting_configuration
                 .TimeBetweenInformalAndFormalVoting();
-        print(format!("Between voting end: {}", between_voting_end).as_str());
         let voting_end = between_voting_end + self.formal_voting_time();
-        print(format!("Voting end: {}", voting_end).as_str());
 
         if block_time <= informal_voting_end {
-            print("VotingState::InformalVoting");
             VotingState::Informal
         } else if block_time > informal_voting_end && block_time <= between_voting_end {
-            print("VotingState::BetweenVotings");
             VotingState::BetweenVotings
         } else if block_time > between_voting_end && block_time <= voting_end {
-            print("VotingState::FormalVoting");
             VotingState::Formal
         } else {
-            print("VotingState::Finished");
             VotingState::Finished
         }
     }

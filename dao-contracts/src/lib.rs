@@ -29,7 +29,7 @@ pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 #[cfg(feature = "test-support")]
 pub use bid_escrow::BidEscrowContractTest;
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
-pub use builder::voting_configuration_builder::DaoConfigurationBuilder;
+pub use builder::dao_configuration_builder::DaoConfigurationBuilder;
 pub use dao::configuration::*;
 #[cfg(feature = "test-support")]
 pub use kyc_nft::KycNftContractTest;

@@ -207,7 +207,7 @@ impl VariableRepositoryContractCaller {
     pub fn informal_voting_quorum(&self, total_onboarded: U256) -> U256 {
         math::promils_of(
             total_onboarded,
-            self.get_variable(dao_consts::INFORMAL_VOTING_QUORUM),
+            self.get_variable(dao_consts::GOVERNANCE_INFORMAL_QUORUM_RATIO),
         )
         .unwrap_or_revert()
     }
@@ -216,7 +216,7 @@ impl VariableRepositoryContractCaller {
     pub fn formal_voting_quorum(&self, total_onboarded: U256) -> U256 {
         math::promils_of(
             total_onboarded,
-            self.get_variable(dao_consts::FORMAL_VOTING_QUORUM),
+            self.get_variable(dao_consts::GOVERNANCE_FORMAL_QUORUM_RATIO),
         )
         .unwrap_or_revert()
     }

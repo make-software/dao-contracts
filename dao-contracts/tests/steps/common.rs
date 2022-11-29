@@ -1,3 +1,4 @@
+use casper_types::bytesrepr::ToBytes;
 use cucumber::{gherkin::Step, given, when};
 
 use crate::common::{
@@ -23,11 +24,6 @@ fn configuration(w: &mut DaoWorld, step: &Step) {
     for row in table {
         let variable = row[0].as_str();
         let value = row[1].as_str();
-        w.set_variable(variable.to_string(), value_to_bytes(value));
-        assert_eq!(
-            w.get_variable(variable.to_string()),
-            value_to_bytes(value),
-            "variable mismatch"
-        );
+        w.set_variable(variable.to_string(), value_to_bytes(value, variable));
     }
 }

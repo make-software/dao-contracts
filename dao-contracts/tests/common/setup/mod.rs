@@ -77,18 +77,10 @@ fn setup_repository_and_reputation_contracts_gherkin(
     ReputationContractTest,
     VaNftContractTest,
 ) {
-    let minimum_reputation = 500.into();
     let reputation_to_mint = 0;
-    let informal_voting_time: u64 = 3_600;
-    let formal_voting_time: u64 = 2 * informal_voting_time;
     let env = TestEnv::new();
     let variable_repo_contract = setup_variable_repo_contract(
         &env,
-        informal_quorum,
-        formal_quorum,
-        informal_voting_time,
-        formal_voting_time,
-        minimum_reputation,
     );
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
@@ -350,18 +342,11 @@ fn setup_repository_and_reputation_contracts(
     ReputationContractTest,
     VaNftContractTest,
 ) {
-    let minimum_reputation = 500.into();
     let reputation_to_mint = 10_000;
     let informal_voting_time: u64 = 3_600;
-    let formal_voting_time: u64 = 2 * informal_voting_time;
     let env = TestEnv::new();
     let variable_repo_contract = setup_variable_repo_contract(
         &env,
-        informal_quorum,
-        formal_quorum,
-        informal_voting_time,
-        formal_voting_time,
-        minimum_reputation,
     );
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
@@ -420,40 +405,8 @@ pub fn setup_voting_contract_with_formal_voting(
 
 pub fn setup_variable_repo_contract(
     env: &TestEnv,
-    informal_voting_quorum: U256,
-    formal_voting_quorum: U256,
-    informal_voting_time: u64,
-    formal_voting_time: u64,
-    minimum_reputation: U256,
 ) -> VariableRepositoryContractTest {
     let mut variable_repo_contract = VariableRepositoryContractTest::new(env);
-
-    update(
-        &mut variable_repo_contract,
-        consts::INFORMAL_VOTING_QUORUM,
-        informal_voting_quorum,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::FORMAL_VOTING_QUORUM,
-        formal_voting_quorum,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::MINIMUM_GOVERNANCE_REPUTATION,
-        minimum_reputation,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::FORMAL_VOTING_TIME,
-        formal_voting_time,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::INFORMAL_VOTING_TIME,
-        informal_voting_time,
-    );
-
     variable_repo_contract
 }
 

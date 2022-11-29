@@ -48,6 +48,7 @@ dao_errors!(
     Unknown => 1100,
     NoSuchMethod(String) => 1101,
     VariableValueNotSet => 1102,
+    BytesDeserializationError => 1103,
     TokenDoesNotExist => 1700,
     TokenAlreadyExists => 1701,
     ApprovalToCurrentOwner => 1702,
