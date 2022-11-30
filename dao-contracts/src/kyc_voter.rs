@@ -21,7 +21,7 @@ use crate::{
         Choice,
         GovernanceVoting,
     },
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -58,9 +58,9 @@ pub trait KycVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
     fn get_dust_amount(&self) -> U256;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
-    fn get_variable_repo_address(&self) -> Address;
+    fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
-    fn get_reputation_token_address(&self) -> Address;
+    fn reputation_token_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_voting())
     fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
     /// see [GovernanceVoting](GovernanceVoting::get_ballot())
@@ -95,8 +95,8 @@ impl KycVoterContractInterface for KycVoterContract {
         }
 
         to self.voting {
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
+            fn variable_repo_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
             fn get_dust_amount(&self) -> U256;
         }
     }
@@ -124,16 +124,19 @@ impl KycVoterContractInterface for KycVoterContract {
         let creator = caller();
         let token_id = self.sequence.next_value();
 
-        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
-            .contract_call(ContractCall {
-                address: self.get_kyc_token_address(),
-                entry_point: consts::EP_MINT.to_string(),
-                runtime_args: runtime_args! {
-                    consts::ARG_TO => subject_address,
-                    consts::ARG_TOKEN_ID => token_id,
-                },
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: self.get_kyc_token_address(),
+            entry_point: consts::EP_MINT.to_string(),
+            runtime_args: runtime_args! {
+                consts::ARG_TO => subject_address,
+                consts::ARG_TOKEN_ID => token_id,
+            },
+        })
+        .build();
 
         self.voting
             .create_voting(creator, stake, voting_configuration);

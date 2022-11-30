@@ -1,1 +1,1 @@
-pub mod voting_configuration_builder;
+pub mod dao_configuration_builder;

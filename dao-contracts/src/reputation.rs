@@ -340,7 +340,7 @@ impl AccountStakeInfo {
         let key = (operator, voting_id);
         match self.stakes_from_voting.remove(&key) {
             Some((_, amount)) => amount,
-            None => revert(Error::StakeDoesntExists),
+            None => revert(Error::VotingStakeDoesntExists),
         }
     }
 
@@ -348,7 +348,7 @@ impl AccountStakeInfo {
         let key = (operator, bid_id);
         match self.stakes_from_bid.remove(&key) {
             Some(amount) => amount,
-            None => revert(Error::StakeDoesntExists),
+            None => revert(Error::BidStakeDoesntExists),
         }
     }
 }

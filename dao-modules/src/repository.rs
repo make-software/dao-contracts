@@ -1,17 +1,5 @@
-use casper_dao_utils::{
-    casper_dao_macros::Instance,
-    casper_env::{self, emit, get_block_time},
-    consts,
-    Error,
-    Mapping,
-    OrderedCollection,
-    Set,
-};
-use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
-    U256,
-    U512,
-};
+use casper_dao_utils::{Address, casper_dao_macros::Instance, casper_env::{self, emit, get_block_time}, consts, Error, Mapping, OrderedCollection, Set};
+use casper_types::{bytesrepr::{Bytes, ToBytes}, ContractPackageHash, U256, U512};
 
 use self::events::ValueUpdated;
 
@@ -128,29 +116,30 @@ impl RepositoryDefaults {
 impl Default for RepositoryDefaults {
     fn default() -> Self {
         let mut items = RepositoryDefaults { items: vec![] };
-        items.push(consts::POST_JOB_DOS_FEE, U256::from(10000));
-        items.push(consts::INTERNAL_AUCTION_TIME, U256::from(604800));
-        items.push(consts::PUBLIC_AUCTION_TIME, U256::from(864000));
+        items.push(consts::POST_JOB_DOS_FEE, U512::from(10000));
+        items.push(consts::INTERNAL_AUCTION_TIME, 604800u64);
+        items.push(consts::PUBLIC_AUCTION_TIME, 864000u64);
         items.push(consts::DEFAULT_POLICING_RATE, U256::from(300));
         items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(100));
+        items.push(consts::FIAT_CONVERSION_RATE_ADDRESS, Address::from(ContractPackageHash::from([0u8; 32])));
         items.push(consts::FORUM_KYC_REQUIRED, true);
-        items.push(consts::FORMAL_VOTING_QUORUM, U256::from(500));
-        items.push(consts::INFORMAL_VOTING_QUORUM, U256::from(500));
-        items.push(consts::VOTING_QUORUM, U256::from(200));
-        items.push(consts::FORMAL_VOTING_TIME, 432000000u64);
-        items.push(consts::INFORMAL_VOTING_TIME, 86400000u64);
-        items.push(consts::VOTING_TIME, 172800000u64);
-        // TODO: Remove
-        items.push(consts::MINIMUM_GOVERNANCE_REPUTATION, U256::from(100));
-        // TODO: Remove
-        items.push(consts::MINIMUM_VOTING_REPUTATION, U256::from(10));
-        // TODO: Add TimeBetweenInformalAndFormalVoting
-        items.push(consts::VA_BID_ACCEPTANCE_TIMEOUT, U256::from(172800));
+        items.push(consts::GOVERNANCE_INFORMAL_QUORUM_RATIO, U256::from(500));
+        items.push(consts::GOVERNANCE_FORMAL_QUORUM_RATIO, U256::from(500));
+        items.push(consts::INFORMAL_QUORUM_RATIO, U256::from(500));
+        items.push(consts::FORMAL_QUORUM_RATIO, U256::from(500));
+        items.push(consts::GOVERNANCE_INFORMAL_VOTING_TIME, 432000u64);
+        items.push(consts::GOVERNANCE_FORMAL_VOTING_TIME, 432000u64);
+        items.push(consts::INFORMAL_VOTING_TIME, 432000u64);
+        items.push(consts::FORMAL_VOTING_TIME, 432000u64);
+        items.push(consts::INFORMAL_STAKE_REPUTATION, true);
+        items.push(consts::TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING, 86400u64);
+        items.push(consts::VA_BID_ACCEPTANCE_TIMEOUT, 172800u64);
         items.push(consts::VA_CAN_BID_ON_PUBLIC_AUCTION, false);
-        // TODO: Confirm value
-        items.push(consts::JOB_SUBMIT_GRACE_PERIOD, U256::from(86400));
-        // TODO: Confirm value
+        items.push(consts::DISTRIBUTE_PAYMENT_TO_NON_VOTERS, true);
+        items.push(consts::GOVERNANCE_WALLET_ADDRESS, Address::from(ContractPackageHash::from([0u8; 32])));
         items.push(consts::DEFAULT_REPUTATION_SLASH, U256::from(100));
+        items.push(consts::VOTING_CLEARNESS_DELTA, U256::from(8));
+        items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);
         items.push(consts::GOVERNANCE_PAYMENT_RATIO, U512::from(100));
         items
     }

@@ -2,11 +2,17 @@
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
+    BlockTime,
     ContractCall,
+    Error,
 };
 use casper_types::U256;
 
-use crate::voting::{ballot::Choice, types::VotingId};
+use crate::{
+    voting::{ballot::Choice, types::VotingId},
+    DaoConfiguration,
+    DaoConfigurationTrait,
+};
 
 /// Result of a Voting
 #[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
@@ -21,6 +27,15 @@ pub enum VotingResult {
 pub enum VotingType {
     Informal,
     Formal,
+}
+
+/// State of Voting
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
+pub enum VotingState {
+    Informal,
+    BetweenVotings,
+    Formal,
+    Finished,
 }
 
 /// Finished Voting summary
@@ -77,23 +92,8 @@ impl VotingSummary {
     }
 }
 
-/// Voting configuration, created and persisted since voting start
-#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq, Eq)]
-pub struct VotingConfiguration {
-    pub formal_voting_quorum: U256,
-    pub formal_voting_time: u64,
-    pub informal_voting_quorum: U256,
-    pub informal_voting_time: u64,
-    pub cast_first_vote: bool,
-    pub cast_minimum_reputation: U256,
-    pub contract_call: Option<ContractCall>,
-    pub only_va_can_create: bool,
-    pub unbounded_tokens_for_creator: bool,
-    pub onboard_creator: bool,
-}
-
 /// Voting struct
-#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes, PartialEq, Eq)]
+#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
 pub struct Voting {
     voting_id: VotingId,
     completed: bool,
@@ -105,7 +105,7 @@ pub struct Voting {
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
     creator: Address,
-    voting_configuration: VotingConfiguration,
+    voting_configuration: DaoConfiguration,
 }
 
 impl Voting {
@@ -114,7 +114,7 @@ impl Voting {
         voting_id: VotingId,
         start_time: u64,
         creator: Address,
-        voting_configuration: VotingConfiguration,
+        voting_configuration: DaoConfiguration,
     ) -> Self {
         Voting {
             voting_id,
@@ -140,13 +140,12 @@ impl Voting {
         }
     }
 
-    pub fn skip_first_vote(&self) -> bool {
-        self.voting_configuration.cast_first_vote
-            && self.voting_configuration.unbounded_tokens_for_creator
+    pub fn start_time(&self) -> u64 {
+        self.start_time
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
-    pub fn create_formal_voting(&self, new_voting_id: VotingId, start_time: u64) -> Self {
+    pub fn create_formal_voting(&self, new_voting_id: VotingId) -> Self {
         Voting {
             voting_id: new_voting_id,
             completed: false,
@@ -154,7 +153,7 @@ impl Voting {
             stake_against: U256::zero(),
             unbounded_stake_in_favor: U256::zero(),
             unbounded_stake_against: U256::zero(),
-            start_time,
+            start_time: self.start_time,
             informal_voting_id: self.informal_voting_id,
             formal_voting_id: Some(new_voting_id),
             creator: self.creator,
@@ -163,7 +162,7 @@ impl Voting {
     }
 
     pub fn can_be_completed(&self, block_time: u64) -> bool {
-        !self.completed && !self.is_in_time(block_time)
+        !self.completed && self.state(block_time) == VotingState::Finished
     }
 
     /// Sets voting as completed, optionally saves id of newly created formal voting
@@ -179,11 +178,11 @@ impl Voting {
         match self.get_voting_type() {
             VotingType::Informal => {
                 let start_time = self.start_time;
-                let voting_time = self.voting_configuration.informal_voting_time;
+                let voting_time = self.voting_configuration.informal_voting_time();
                 start_time + voting_time <= block_time
             }
             VotingType::Formal => {
-                self.start_time + self.voting_configuration.formal_voting_time <= block_time
+                self.start_time + self.voting_configuration.formal_voting_time() <= block_time
             }
         }
     }
@@ -200,15 +199,15 @@ impl Voting {
         }
     }
 
-    pub fn get_quorum(&self) -> U256 {
+    pub fn get_quorum(&self) -> u32 {
         match self.get_voting_type() {
-            VotingType::Informal => self.voting_configuration.informal_voting_quorum,
-            VotingType::Formal => self.voting_configuration.formal_voting_quorum,
+            VotingType::Informal => self.voting_configuration.governance_informal_voting_quorum(),
+            VotingType::Formal => self.voting_configuration.governance_formal_voting_quorum(),
         }
     }
 
     pub fn get_result(&self, voters_number: u32) -> VotingResult {
-        if self.get_quorum().as_u32() > voters_number {
+        if self.get_quorum() > voters_number {
             VotingResult::QuorumNotReached
         } else if self.is_in_favor() {
             VotingResult::InFavor
@@ -266,6 +265,19 @@ impl Voting {
         self.completed
     }
 
+    pub fn validate_vote(&self, block_time: u64) -> Result<(), Error> {
+        // Is in time?
+        if self.state(block_time) == VotingState::BetweenVotings {
+            return Err(Error::VotingDuringTimeBetweenVotingsNotAllowed);
+        }
+
+        if self.state(block_time) == VotingState::Finished {
+            return Err(Error::VoteOnCompletedVotingNotAllowed);
+        }
+
+        Ok(())
+    }
+
     /// Get the voting's stake in favor.
     pub fn stake_in_favor(&self) -> U256 {
         self.stake_in_favor
@@ -295,23 +307,23 @@ impl Voting {
     }
 
     /// Get the voting's formal voting quorum.
-    pub fn formal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.formal_voting_quorum
+    pub fn formal_voting_quorum(&self) -> u32 {
+        self.voting_configuration.governance_formal_voting_quorum()
     }
 
     /// Get the voting's informal voting quorum.
-    pub fn informal_voting_quorum(&self) -> U256 {
-        self.voting_configuration.informal_voting_quorum
+    pub fn informal_voting_quorum(&self) -> u32 {
+        self.voting_configuration.governance_informal_voting_quorum()
     }
 
     /// Get the voting's formal voting time.
     pub fn formal_voting_time(&self) -> u64 {
-        self.voting_configuration.formal_voting_time
+        self.voting_configuration.formal_voting_time()
     }
 
     /// Get the voting's informal voting time.
     pub fn informal_voting_time(&self) -> u64 {
-        self.voting_configuration.informal_voting_time
+        self.voting_configuration.informal_voting_time()
     }
 
     /// Get the voting's contract call reference.
@@ -320,12 +332,31 @@ impl Voting {
     }
 
     /// Get a reference to the voting's voting configuration.
-    pub fn voting_configuration(&self) -> &VotingConfiguration {
+    pub fn voting_configuration(&self) -> &DaoConfiguration {
         &self.voting_configuration
     }
 
     pub fn creator(&self) -> &Address {
         &self.creator
+    }
+
+    pub fn state(&self, block_time: BlockTime) -> VotingState {
+        let informal_voting_end = self.start_time + self.informal_voting_time();
+        let between_voting_end = informal_voting_end
+            + self
+                .voting_configuration
+                .time_between_informal_and_formal_voting();
+        let voting_end = between_voting_end + self.formal_voting_time();
+
+        if block_time <= informal_voting_end {
+            VotingState::Informal
+        } else if block_time > informal_voting_end && block_time <= between_voting_end {
+            VotingState::BetweenVotings
+        } else if block_time > between_voting_end && block_time <= voting_end {
+            VotingState::Formal
+        } else {
+            VotingState::Finished
+        }
     }
 }
 

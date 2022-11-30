@@ -1,3 +1,5 @@
+extern crate core;
+
 mod common;
 mod steps;
 

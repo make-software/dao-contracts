@@ -61,7 +61,11 @@ impl TestEnv {
     }
 
     /// Deploy new wasm file.
-    pub fn deploy_wasm_file(&self, session_code: &str, session_args: RuntimeArgs) -> Result<(), Error> {
+    pub fn deploy_wasm_file(
+        &self,
+        session_code: &str,
+        session_args: RuntimeArgs,
+    ) -> Result<(), Error> {
         self.state
             .lock()
             .unwrap()

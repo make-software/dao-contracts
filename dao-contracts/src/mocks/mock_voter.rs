@@ -10,7 +10,7 @@ use delegate::delegate;
 
 use crate::{
     voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting},
-    VotingConfigurationBuilder,
+    DaoConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -20,8 +20,8 @@ pub trait MockVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
     fn finish_voting(&mut self, voting_id: VotingId);
     fn get_dust_amount(&self) -> U256;
-    fn get_variable_repo_address(&self) -> Address;
-    fn get_reputation_token_address(&self) -> Address;
+    fn variable_repo_address(&self) -> Address;
+    fn reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
     fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
     fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
@@ -42,8 +42,8 @@ impl MockVoterContractInterface for MockVoterContract {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
             fn get_dust_amount(&self) -> U256;
-            fn get_variable_repo_address(&self) -> Address;
-            fn get_reputation_token_address(&self) -> Address;
+            fn variable_repo_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
             fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
             fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
@@ -51,15 +51,18 @@ impl MockVoterContractInterface for MockVoterContract {
     }
 
     fn create_voting(&mut self, value: String, stake: U256) {
-        let voting_configuration = VotingConfigurationBuilder::defaults(&self.voting)
-            .contract_call(ContractCall {
-                address: self_address(),
-                entry_point: "set_variable".into(),
-                runtime_args: runtime_args! {
-                    "variable" => value,
-                },
-            })
-            .build();
+        let voting_configuration = DaoConfigurationBuilder::defaults(
+            self.voting.variable_repo_address(),
+            self.voting.va_token_address(),
+        )
+        .contract_call(ContractCall {
+            address: self_address(),
+            entry_point: "set_variable".into(),
+            runtime_args: runtime_args! {
+                "variable" => value,
+            },
+        })
+        .build();
 
         self.voting
             .create_voting(caller(), stake, voting_configuration);

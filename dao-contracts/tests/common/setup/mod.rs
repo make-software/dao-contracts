@@ -1,19 +1,16 @@
 use casper_dao_contracts::{
-    // action::Action,
     simple_voter::SimpleVoterContractTest,
     voting::{types::VotingId, voting::Voting, Choice},
-    // AdminContractTest,
     BidEscrowContractTest,
     KycNftContractTest,
     MockVoterContractTest,
-    // RepoVoterContractTest,
     ReputationContractTest,
     ReputationVoterContractTest,
     VaNftContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{consts, Error, TestContract, TestEnv};
-use casper_types::{bytesrepr::ToBytes, U256};
+use casper_dao_utils::{Error, TestContract, TestEnv};
+use casper_types::U256;
 
 #[allow(dead_code)]
 pub fn setup_bid_escrow_gherkin() -> (
@@ -68,26 +65,18 @@ pub fn setup_bid_escrow_gherkin() -> (
 }
 
 fn setup_repository_and_reputation_contracts_gherkin(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    _informal_quorum: U256,
+    _formal_quorum: U256,
     total_onboarded: usize,
 ) -> (
     VariableRepositoryContractTest,
     ReputationContractTest,
     VaNftContractTest,
 ) {
-    let minimum_reputation = 500.into();
     let reputation_to_mint = 0;
-    let informal_voting_time: u64 = 3_600;
-    let formal_voting_time: u64 = 2 * informal_voting_time;
     let env = TestEnv::new();
     let variable_repo_contract = setup_variable_repo_contract(
         &env,
-        informal_quorum,
-        formal_quorum,
-        informal_voting_time,
-        formal_voting_time,
-        minimum_reputation,
     );
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
@@ -341,26 +330,19 @@ pub fn setup_voting_contract(
 }
 
 fn setup_repository_and_reputation_contracts(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    _informal_quorum: U256,
+    _formal_quorum: U256,
     total_onboarded: usize,
 ) -> (
     VariableRepositoryContractTest,
     ReputationContractTest,
     VaNftContractTest,
 ) {
-    let minimum_reputation = 500.into();
     let reputation_to_mint = 10_000;
-    let informal_voting_time: u64 = 3_600;
-    let formal_voting_time: u64 = 2 * informal_voting_time;
+    let _informal_voting_time: u64 = 3_600;
     let env = TestEnv::new();
     let variable_repo_contract = setup_variable_repo_contract(
         &env,
-        informal_quorum,
-        formal_quorum,
-        informal_voting_time,
-        formal_voting_time,
-        minimum_reputation,
     );
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
@@ -419,41 +401,9 @@ pub fn setup_voting_contract_with_formal_voting(
 
 pub fn setup_variable_repo_contract(
     env: &TestEnv,
-    informal_voting_quorum: U256,
-    formal_voting_quorum: U256,
-    informal_voting_time: u64,
-    formal_voting_time: u64,
-    minimum_reputation: U256,
 ) -> VariableRepositoryContractTest {
-    let mut variable_repo_contract = VariableRepositoryContractTest::new(env);
-
-    update(
-        &mut variable_repo_contract,
-        consts::INFORMAL_VOTING_QUORUM,
-        informal_voting_quorum,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::FORMAL_VOTING_QUORUM,
-        formal_voting_quorum,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::MINIMUM_GOVERNANCE_REPUTATION,
-        minimum_reputation,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::FORMAL_VOTING_TIME,
-        formal_voting_time,
-    );
-    update(
-        &mut variable_repo_contract,
-        consts::INFORMAL_VOTING_TIME,
-        informal_voting_time,
-    );
-
-    variable_repo_contract
+    
+    VariableRepositoryContractTest::new(env)
 }
 
 pub fn setup_reputation_token_contract(
@@ -543,10 +493,4 @@ pub fn assert_voting_completed(voter_contract: &mut MockVoterContractTest, votin
         voter_contract.finish_voting(voting.voting_id()),
         Err(Error::FinishingCompletedVotingNotAllowed)
     );
-}
-
-fn update<T: ToBytes>(contract: &mut VariableRepositoryContractTest, name: &str, value: T) {
-    contract
-        .update_at(name.into(), value.to_bytes().unwrap().into(), None)
-        .unwrap();
 }

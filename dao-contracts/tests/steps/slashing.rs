@@ -46,7 +46,7 @@ fn informal_voting(w: &mut DaoWorld, voting_type: String, voting_id: u32, step: 
 #[when(expr = "slashing {word} voting {int} ends")]
 fn voting_ends(w: &mut DaoWorld, voting_type: String, voting_id: u32) {
     let voting_type = to_voting_type(&voting_type);
-    w.slashing_voter.advance_block_time_by(432000000u64);
+    w.slashing_voter.advance_block_time_by(432000u64);
     w.slashing_voter
         .finish_voting(voting_id, voting_type)
         .unwrap();
