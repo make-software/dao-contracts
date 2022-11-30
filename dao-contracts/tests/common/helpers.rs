@@ -1,5 +1,5 @@
-use std::fmt::Debug;
-use std::str::FromStr;
+use std::{fmt::Debug, str::FromStr};
+
 use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
@@ -12,24 +12,28 @@ pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
     match value {
         "true" => true.to_bytes().unwrap().into(),
         "false" => false.to_bytes().unwrap().into(),
-        _ => {
-            match key {
-                "post_job_dos_fee" | "governance_payment_ratio" => {
-                    let value = U512::from_dec_str(value).unwrap();
-                    Bytes::from(value.to_bytes().unwrap())
-                }
-                "default_policing_rate" | "reputation_conversion_rate" | "governance_informal_quorum_ratio"
-                | "governance_formal_quorum_ratio" | "informal_quorum_ratio" | "formal_quorum_ratio"
-                | "default_reputation_slash" | "voting_clearness_delta" | "total_onboarded" => {
-                    let value = U256::from_dec_str(value).unwrap();
-                    Bytes::from(value.to_bytes().unwrap())
-                }
-                _ => {
-                    let value: u64 = value.parse().unwrap();
-                    Bytes::from(value.to_bytes().unwrap())
-                }
+        _ => match key {
+            "post_job_dos_fee" | "governance_payment_ratio" => {
+                let value = U512::from_dec_str(value).unwrap();
+                Bytes::from(value.to_bytes().unwrap())
             }
-        }
+            "default_policing_rate"
+            | "reputation_conversion_rate"
+            | "governance_informal_quorum_ratio"
+            | "governance_formal_quorum_ratio"
+            | "informal_quorum_ratio"
+            | "formal_quorum_ratio"
+            | "default_reputation_slash"
+            | "voting_clearness_delta"
+            | "total_onboarded" => {
+                let value = U256::from_dec_str(value).unwrap();
+                Bytes::from(value.to_bytes().unwrap())
+            }
+            _ => {
+                let value: u64 = value.parse().unwrap();
+                Bytes::from(value.to_bytes().unwrap())
+            }
+        },
     }
 }
 

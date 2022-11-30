@@ -1,5 +1,19 @@
-use casper_dao_utils::{Address, casper_dao_macros::Instance, casper_env::{self, emit, get_block_time}, consts, Error, Mapping, OrderedCollection, Set};
-use casper_types::{bytesrepr::{Bytes, ToBytes}, ContractPackageHash, U256, U512};
+use casper_dao_utils::{
+    casper_dao_macros::Instance,
+    casper_env::{self, emit, get_block_time},
+    consts,
+    Address,
+    Error,
+    Mapping,
+    OrderedCollection,
+    Set,
+};
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    ContractPackageHash,
+    U256,
+    U512,
+};
 
 use self::events::ValueUpdated;
 
@@ -121,7 +135,10 @@ impl Default for RepositoryDefaults {
         items.push(consts::PUBLIC_AUCTION_TIME, 864000u64);
         items.push(consts::DEFAULT_POLICING_RATE, U256::from(300));
         items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(100));
-        items.push(consts::FIAT_CONVERSION_RATE_ADDRESS, Address::from(ContractPackageHash::from([0u8; 32])));
+        items.push(
+            consts::FIAT_CONVERSION_RATE_ADDRESS,
+            Address::from(ContractPackageHash::from([0u8; 32])),
+        );
         items.push(consts::FORUM_KYC_REQUIRED, true);
         items.push(consts::GOVERNANCE_INFORMAL_QUORUM_RATIO, U256::from(500));
         items.push(consts::GOVERNANCE_FORMAL_QUORUM_RATIO, U256::from(500));
@@ -136,7 +153,10 @@ impl Default for RepositoryDefaults {
         items.push(consts::VA_BID_ACCEPTANCE_TIMEOUT, 172800u64);
         items.push(consts::VA_CAN_BID_ON_PUBLIC_AUCTION, false);
         items.push(consts::DISTRIBUTE_PAYMENT_TO_NON_VOTERS, true);
-        items.push(consts::GOVERNANCE_WALLET_ADDRESS, Address::from(ContractPackageHash::from([0u8; 32])));
+        items.push(
+            consts::GOVERNANCE_WALLET_ADDRESS,
+            Address::from(ContractPackageHash::from([0u8; 32])),
+        );
         items.push(consts::DEFAULT_REPUTATION_SLASH, U256::from(100));
         items.push(consts::VOTING_CLEARNESS_DELTA, U256::from(8));
         items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);

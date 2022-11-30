@@ -7,6 +7,6 @@ use cucumber::World as _;
 fn main() {
     let runner = DaoWorld::cucumber().run_and_exit("tests/features/variables/");
     // let runner = DaoWorld::cucumber()
-        // .run_and_exit("tests/features/variables/va_bid.feature");
+    //     .run_and_exit("tests/features/variables/va_bid.feature");
     futures::executor::block_on(runner);
 }

@@ -1,4 +1,3 @@
-
 use cucumber::{gherkin::Step, given, when};
 
 use crate::common::{

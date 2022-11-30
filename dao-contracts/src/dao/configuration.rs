@@ -1,6 +1,9 @@
-
-
-use casper_dao_utils::{casper_dao_macros::{CLTyped, FromBytes, ToBytes}, BlockTime, ContractCall, Address};
+use casper_dao_utils::{
+    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
+    Address,
+    BlockTime,
+    ContractCall,
+};
 use casper_types::{U256, U512};
 
 pub trait DaoConfigurationTrait {

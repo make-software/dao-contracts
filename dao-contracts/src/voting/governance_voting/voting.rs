@@ -201,7 +201,9 @@ impl Voting {
 
     pub fn get_quorum(&self) -> u32 {
         match self.get_voting_type() {
-            VotingType::Informal => self.voting_configuration.governance_informal_voting_quorum(),
+            VotingType::Informal => self
+                .voting_configuration
+                .governance_informal_voting_quorum(),
             VotingType::Formal => self.voting_configuration.governance_formal_voting_quorum(),
         }
     }
@@ -313,7 +315,8 @@ impl Voting {
 
     /// Get the voting's informal voting quorum.
     pub fn informal_voting_quorum(&self) -> u32 {
-        self.voting_configuration.governance_informal_voting_quorum()
+        self.voting_configuration
+            .governance_informal_voting_quorum()
     }
 
     /// Get the voting's formal voting time.
