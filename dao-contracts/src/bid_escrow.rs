@@ -1,9 +1,13 @@
+
+
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::system::{
-            get_purse_balance,
-            transfer_from_purse_to_account,
-            transfer_from_purse_to_purse,
+        contract_api::{
+            system::{
+                get_purse_balance,
+                transfer_from_purse_to_account,
+                transfer_from_purse_to_purse,
+            },
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
@@ -35,6 +39,7 @@ use crate::{
         VotingId,
     },
     DaoConfigurationBuilder,
+    DaoConfigurationTrait,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
@@ -66,7 +71,6 @@ pub trait BidEscrowContractInterface {
     /// # Events
     /// Emits [`JobOfferCreated`](crate::bid::events::JobOfferCreated)
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
-
     /// Worker submits a Bid for a Job
     /// Parameters:
     /// time - proposed timeframe for completing a Job
@@ -80,13 +84,19 @@ pub trait BidEscrowContractInterface {
     /// Emits [`BidSubmitted`](crate::bid::events::BidSubmitted)
     fn submit_bid(
         &mut self,
-        job_id: BidId,
+        job_offer_id: JobOfferId,
         time: BlockTime,
         payment: U512,
         reputation_stake: U256,
         onboard: bool,
         purse: Option<URef>,
     );
+    /// Worker cancels a Bid for a Job
+    /// Parameters:
+    /// bid_id - Bid Id
+    ///
+    /// Bid can be cancelled only after VABidAcceptanceTimeout time has passed after submitting a Bid
+    fn cancel_bid(&mut self, bid_id: BidId);
     /// Job poster picks a bid. This creates a new Job object and saves it in a storage.
     /// If worker is not onboarded, the job is accepted automatically.
     /// Otherwise, worker needs to accept job (see [accept_job](accept_job))
@@ -206,7 +216,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let dos_fee = self.deposit_dos_fee(purse);
 
         let job_offer_id = self.next_job_offer_id();
-        let voting_configuration = DaoConfigurationBuilder::defaults(
+        let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         );
@@ -278,6 +288,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let bid = Bid::new(
             bid_id,
+            get_block_time(),
             job_offer_id,
             time,
             payment,
@@ -294,6 +305,45 @@ impl BidEscrowContractInterface for BidEscrowContract {
         // BidCreated::new(&bid).emit();
     }
 
+    fn cancel_bid(&mut self, bid_id: BidId) {
+        let worker = caller();
+        let mut bid = self
+            .get_bid(bid_id)
+            .unwrap_or_revert_with(Error::BidNotFound);
+
+        if bid.worker != worker {
+            revert(Error::CannotCancelNotOwnedBid);
+        }
+
+        let job_offer = self
+            .get_job_offer(bid.job_offer_id)
+            .unwrap_or_revert_with(Error::JobOfferNotFound);
+
+        if job_offer.status != JobOfferStatus::Created {
+            revert(Error::CannotCancelBidOnCompletedJobOffer);
+        }
+
+        if get_block_time()
+            < bid.timestamp + job_offer.dao_configuration.va_bid_acceptance_timeout()
+        {
+            revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
+        }
+
+        bid.cancel();
+
+        match bid.cspr_stake {
+            None => {
+                self.reputation_token().unstake_bid(bid.worker, bid_id);
+            }
+            Some(cspr_stake) => {
+                self.withdraw(bid.worker, cspr_stake);
+            }
+        }
+
+        // TODO: Implement Event
+        self.bids.set(&bid_id, bid);
+    }
+
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef) {
         let job_offer = self
             .get_job_offer(job_offer_id)
@@ -304,7 +354,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::OnlyJobPosterCanPickABid);
         }
 
-        let bid = self
+        let mut bid = self
             .get_bid(bid_id)
             .unwrap_or_revert_with(Error::BidNotFound);
 
@@ -343,6 +393,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         self.jobs.set(&job_id, job);
 
+        bid.pick();
+        self.bids.set(&bid_id, bid);
+
         // TODO: Emit event.
     }
 
@@ -371,7 +424,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             self.reputation_token().unstake_bid(worker, job.bid_id());
         }
 
-        let voting_configuration = DaoConfigurationBuilder::defaults(
+        let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )
@@ -747,12 +800,14 @@ impl BidEscrowContract {
                 .job_offers_bids
                 .get(job_offer_id, i)
                 .unwrap_or_revert_with(Error::BidNotFound);
-            let bid = self
+            let mut bid = self
                 .get_bid(unstake_bid_id)
                 .unwrap_or_revert_with(Error::BidNotFound);
-            if unstake_bid_id != bid_id {
+            if unstake_bid_id != bid_id && bid.status == BidStatus::Created {
                 self.reputation_token()
                     .unstake_bid(bid.worker, unstake_bid_id);
+                bid.reject();
+                self.bids.set(&unstake_bid_id, bid);
             }
         }
     }
@@ -783,8 +838,8 @@ use casper_dao_utils::TestContract;
 
 use crate::{
     bid::{
-        bid::Bid,
-        job_offer::JobOffer,
+        bid::{Bid, BidStatus},
+        job_offer::{JobOffer, JobOfferStatus},
         types::{JobId, JobOfferId},
     },
     voting::voting::{VotingSummary, VotingType},

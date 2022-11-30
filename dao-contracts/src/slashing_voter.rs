@@ -98,7 +98,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             }
         };
 
-        let voting_configuration = DaoConfigurationBuilder::defaults(
+        let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )

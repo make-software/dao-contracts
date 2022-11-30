@@ -3,14 +3,14 @@ use std::time::Duration;
 use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U256;
-use cucumber::{gherkin::Step, given, then, when};
+use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
     helpers::{match_choice, match_result, to_rep, to_voting_type},
     DaoWorld,
 };
 
-#[given(
+#[when(
     expr = "{word} posted a JobOffer with expected timeframe of {int} days, maximum budget of {int} CSPR and {int} CSPR DOS Fee"
 )]
 fn post_job_offer(
@@ -24,7 +24,7 @@ fn post_job_offer(
     w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
-#[given(
+#[when(
     expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} REP stake"
 )]
 fn submit_bid_internal(
@@ -38,7 +38,7 @@ fn submit_bid_internal(
     w.post_bid(0, worker, timeframe, budget, stake, false, None);
 }
 
-#[given(
+#[when(
     expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} CSPR stake {word} onboarding"
 )]
 fn submit_bid_external(
@@ -61,7 +61,7 @@ fn submit_bid_external(
     w.post_bid(0, worker, timeframe, budget, 0, onboarding, Some(stake));
 }
 
-#[given(expr = "{word} picked the Bid of {word}")]
+#[when(expr = "{word} picked the Bid of {word}")]
 fn bid_picked(w: &mut DaoWorld, job_poster_name: String, worker_name: String) {
     let job_poster = w.named_address(job_poster_name);
     let worker = w.named_address(worker_name);
@@ -103,6 +103,16 @@ fn informal_voting(w: &mut DaoWorld, step: &Step) {
             .vote(0, choice, stake)
             .unwrap();
     }
+}
+
+#[when(expr = "{word} cancels the Bid for {word}")]
+fn cancel_bid(w: &mut DaoWorld, worker_name: String, job_poster_name: String) {
+    let worker = w.named_address(worker_name);
+    let job_poster = w.named_address(job_poster_name);
+    let job_offer_id = w.get_job_offer_id(&job_poster).unwrap();
+    let bid = w.get_bid(*job_offer_id, worker).unwrap();
+
+    w.cancel_bid(worker, *job_offer_id, bid.bid_id);
 }
 
 #[then(expr = "Formal voting does not start")]

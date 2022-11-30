@@ -17,7 +17,7 @@ Feature: Internal Flow
     And following configuration
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |
-    And JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
+    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And JobPoster picked the Bid of InternalWorker
 

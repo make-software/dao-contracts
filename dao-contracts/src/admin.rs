@@ -88,7 +88,7 @@ impl AdminContractInterface for AdminContract {
         address: Address,
         stake: U256,
     ) {
-        let voting_configuration = DaoConfigurationBuilder::defaults(
+        let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )

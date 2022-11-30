@@ -16,7 +16,7 @@ pub struct DaoConfigurationBuilder {
 }
 
 impl DaoConfigurationBuilder {
-    pub fn defaults(
+    pub fn new(
         variable_repo_address: Address,
         va_token_address: Address,
     ) -> DaoConfigurationBuilder {

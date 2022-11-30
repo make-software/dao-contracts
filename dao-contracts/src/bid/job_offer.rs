@@ -13,7 +13,7 @@ use casper_types::U512;
 
 use crate::{bid::types::JobOfferId, DaoConfiguration, DaoConfigurationTrait};
 
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
+#[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
 pub enum JobOfferStatus {
     Created,
     Selected,
