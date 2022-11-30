@@ -103,6 +103,9 @@ dao_errors!(
     InternalAuctionTimeExpired => 4019,
     PublicAuctionTimeExpired => 4020,
     PublicAuctionNotStarted => 4021,
+    AuctionNotRunning => 4022,
+    OnlyOnboardedWorkerCanBid => 4023,
+    OnboardedWorkerCannotBid => 4024,
 
     // Reputation Token Errors.
     CannotStakeTwice => 4500,

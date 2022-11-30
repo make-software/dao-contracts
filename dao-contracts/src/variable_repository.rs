@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 
 use casper_dao_modules::{AccessControl, Record, Repository};
 use casper_dao_utils::{
@@ -17,8 +17,6 @@ use casper_types::{
     U512,
 };
 use delegate::delegate;
-
-
 
 // Interface of the Variable Repository Contract.
 //

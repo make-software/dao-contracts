@@ -1,11 +1,9 @@
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::{
-            system::{
-                get_purse_balance,
-                transfer_from_purse_to_account,
-                transfer_from_purse_to_purse,
-            },
+        contract_api::system::{
+            get_purse_balance,
+            transfer_from_purse_to_account,
+            transfer_from_purse_to_purse,
         },
         unwrap_or_revert::UnwrapOrRevert,
     },
@@ -469,10 +467,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.return_job_poster_dos_fee(&job);
                         }
                         WorkerType::ExternalToVA => {
-                            
                             // Make user VA.
                             self.va_token().mint(job.worker());
-                            
+
                             self.return_external_worker_cspr_stake(&job);
                             // Bound ballot for worker.
                             self.voting.bound_ballot(voting_id, job.worker());
@@ -704,10 +701,9 @@ impl BidEscrowContract {
         let var_repo = self.variable_repository();
 
         let payment_reputation_to_mint = var_repo.reputation_to_mint(job.payment());
-        
-        let total =
-            VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
-                .reputation_to_redistribute(payment_reputation_to_mint);
+
+        let total = VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
+            .reputation_to_redistribute(payment_reputation_to_mint);
         self.mint_reputation_for_voters(job, total);
     }
 

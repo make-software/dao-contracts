@@ -8,6 +8,12 @@ use casper_types::{U256, U512};
 use crate::bid::types::{BidId, JobOfferId};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
+pub enum BidAuctionTime {
+    InternalAuction,
+    PublicAuction,
+}
+
+#[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct Bid {
     pub bid_id: BidId,
     pub job_offer_id: JobOfferId,

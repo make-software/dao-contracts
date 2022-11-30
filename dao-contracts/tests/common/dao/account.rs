@@ -1,6 +1,6 @@
 use casper_dao_utils::Address;
 
-use crate::common::{DaoWorld, params::Account};
+use crate::common::{params::Account, DaoWorld};
 
 impl DaoWorld {
     pub fn get_address(&self, account: &Account) -> Address {

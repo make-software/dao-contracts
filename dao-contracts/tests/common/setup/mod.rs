@@ -75,9 +75,7 @@ fn setup_repository_and_reputation_contracts_gherkin(
 ) {
     let reputation_to_mint = 0;
     let env = TestEnv::new();
-    let variable_repo_contract = setup_variable_repo_contract(
-        &env,
-    );
+    let variable_repo_contract = setup_variable_repo_contract(&env);
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
     let va_token = setup_va_token(&env, total_onboarded);
@@ -341,9 +339,7 @@ fn setup_repository_and_reputation_contracts(
     let reputation_to_mint = 10_000;
     let _informal_voting_time: u64 = 3_600;
     let env = TestEnv::new();
-    let variable_repo_contract = setup_variable_repo_contract(
-        &env,
-    );
+    let variable_repo_contract = setup_variable_repo_contract(&env);
     let reputation_token_contract =
         setup_reputation_token_contract(&env, reputation_to_mint, total_onboarded);
     let va_token = setup_va_token(&env, total_onboarded);
@@ -399,10 +395,7 @@ pub fn setup_voting_contract_with_formal_voting(
     )
 }
 
-pub fn setup_variable_repo_contract(
-    env: &TestEnv,
-) -> VariableRepositoryContractTest {
-    
+pub fn setup_variable_repo_contract(env: &TestEnv) -> VariableRepositoryContractTest {
     VariableRepositoryContractTest::new(env)
 }
 

@@ -3,13 +3,13 @@ use casper_dao_utils::{
     Address,
     BlockTime,
     Error::{
-        InternalAuctionTimeExpired,
+        AuctionNotRunning,
+        OnboardedWorkerCannotBid,
+        OnlyOnboardedWorkerCanBid,
         PaymentExceedsMaxBudget,
-        PublicAuctionNotStarted,
-        PublicAuctionTimeExpired,
     },
 };
-use casper_types::{U512};
+use casper_types::U512;
 
 use crate::{bid::types::JobOfferId, DaoConfiguration, DaoConfigurationTrait};
 
@@ -23,7 +23,7 @@ pub enum JobOfferStatus {
 pub enum AuctionState {
     None,
     Internal,
-    External,
+    Public,
 }
 
 pub struct JobOfferConfiguration {}
@@ -62,8 +62,18 @@ impl JobOffer {
         }
     }
 
-    pub fn auction_state(&self) -> AuctionState {
-        todo!()
+    pub fn auction_state(&self, block_time: BlockTime) -> AuctionState {
+        let public_auction_start_time =
+            self.start_time + self.dao_configuration.internal_auction_time();
+        let public_auction_end_time =
+            public_auction_start_time + self.dao_configuration.public_auction_time();
+        if block_time >= self.start_time && block_time < public_auction_start_time {
+            AuctionState::Internal
+        } else if block_time >= public_auction_start_time && block_time < public_auction_end_time {
+            AuctionState::Public
+        } else {
+            AuctionState::None
+        }
     }
 
     pub fn validate_bid(
@@ -77,36 +87,20 @@ impl JobOffer {
             return Err(PaymentExceedsMaxBudget);
         }
 
-        // InternalAuction time
-        if worker_onboarded
-            && block_time > self.start_time + self.dao_configuration.internal_auction_time()
-        {
-            return Err(InternalAuctionTimeExpired);
-        }
-
-        if !worker_onboarded {
-            if block_time
-                > self.start_time
-                    + self.dao_configuration.public_auction_time()
-                    + self.dao_configuration.internal_auction_time()
-            {
-                return Err(PublicAuctionTimeExpired);
+        match self.auction_state(block_time) {
+            AuctionState::None => {
+                return Err(AuctionNotRunning);
             }
-
-            if block_time < self.start_time + self.dao_configuration.internal_auction_time() {
-                return Err(PublicAuctionNotStarted);
+            AuctionState::Internal => {
+                if !worker_onboarded {
+                    return Err(OnlyOnboardedWorkerCanBid);
+                }
             }
-        }
-
-        // PublicAuction time
-        if (!worker_onboarded && !self.dao_configuration.va_can_bid_on_public_auction())
-            && block_time < self.start_time + self.dao_configuration.internal_auction_time()
-            && block_time
-                > self.start_time
-                    + self.dao_configuration.internal_auction_time()
-                    + self.dao_configuration.public_auction_time()
-        {
-            return Err(PublicAuctionTimeExpired);
+            AuctionState::Public => {
+                if worker_onboarded && !self.dao_configuration.va_can_bid_on_public_auction() {
+                    return Err(OnboardedWorkerCannotBid);
+                }
+            }
         }
 
         Ok(())

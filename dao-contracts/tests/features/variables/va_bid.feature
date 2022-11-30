@@ -25,6 +25,5 @@ Feature: VA Bid
     When 8 days passed
     Given ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
-# TODO: finish this feature
-#    Then InternalWorker Bid is posted
-#    And ExternalWorker Bid is posted
+    Then ExternalWorker Bid is posted
+    And InternalWorker Bid is posted
