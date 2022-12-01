@@ -1,13 +1,9 @@
-
-
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::{
-            system::{
-                get_purse_balance,
-                transfer_from_purse_to_account,
-                transfer_from_purse_to_purse,
-            },
+        contract_api::system::{
+            get_purse_balance,
+            transfer_from_purse_to_account,
+            transfer_from_purse_to_purse,
         },
         unwrap_or_revert::UnwrapOrRevert,
     },

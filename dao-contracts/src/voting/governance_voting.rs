@@ -24,7 +24,6 @@ use self::{
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
     DaoConfiguration,
-    DaoConfigurationTrait,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
