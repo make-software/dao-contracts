@@ -124,7 +124,7 @@ impl KycVoterContractInterface for KycVoterContract {
         let creator = caller();
         let token_id = self.sequence.next_value();
 
-        let voting_configuration = DaoConfigurationBuilder::defaults(
+        let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )

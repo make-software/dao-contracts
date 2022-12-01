@@ -106,6 +106,9 @@ dao_errors!(
     AuctionNotRunning => 4022,
     OnlyOnboardedWorkerCanBid => 4023,
     OnboardedWorkerCannotBid => 4024,
+    CannotCancelBidBeforeAcceptanceTimeout => 4025,
+    CannotCancelBidOnCompletedJobOffer => 4026,
+    CannotCancelNotOwnedBid => 4027,
 
     // Reputation Token Errors.
     CannotStakeTwice => 4500,

@@ -11,12 +11,6 @@ fn advance_time(w: &mut DaoWorld, amount: u32, unit: String) {
     w.advance_time(amount * multiplier);
 }
 
-#[given(expr = "{int} {word} passed")]
-fn gadvance_time(w: &mut DaoWorld, amount: u32, unit: String) {
-    let multiplier = multiplier(unit);
-    w.advance_time(amount * multiplier);
-}
-
 #[given(expr = "following configuration")]
 fn configuration(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);

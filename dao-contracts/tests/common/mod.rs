@@ -67,6 +67,10 @@ impl DaoWorld {
         self.bid_escrow.get_bid(*bid_id.unwrap())
     }
 
+    pub fn get_job_offer_id(&self, job_poster: &Address) -> Option<&JobOfferId> {
+        self.offers.get(job_poster)
+    }
+
     pub fn post_bid(
         &mut self,
         offer_id: JobOfferId,
@@ -104,6 +108,13 @@ impl DaoWorld {
         if result.is_ok() {
             let bid_id = self.bid_escrow.bids_count();
             self.bids.insert((offer_id, bidder), bid_id);
+        }
+    }
+
+    pub fn cancel_bid(&mut self, worker: Address, job_offer_id: JobOfferId, bid_id: BidId) {
+        let result = self.bid_escrow.as_account(worker).cancel_bid(bid_id);
+        if result.is_ok() {
+            self.bids.remove(&(job_offer_id, worker));
         }
     }
 
