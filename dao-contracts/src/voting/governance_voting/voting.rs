@@ -146,6 +146,11 @@ impl Voting {
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
     pub fn create_formal_voting(&self, new_voting_id: VotingId) -> Self {
+        let mut voting_configuration = self.voting_configuration.clone();
+        if self.is_result_close() {
+            voting_configuration.time_between_informal_and_formal_voting *= 2;
+        }
+
         Voting {
             voting_id: new_voting_id,
             completed: false,
@@ -157,7 +162,7 @@ impl Voting {
             informal_voting_id: self.informal_voting_id,
             formal_voting_id: Some(new_voting_id),
             creator: self.creator,
-            voting_configuration: self.voting_configuration.clone(),
+            voting_configuration,
         }
     }
 
@@ -197,6 +202,14 @@ impl Voting {
             true => self.stake_in_favor,
             false => self.stake_against,
         }
+    }
+
+    pub fn is_result_close(&self) -> bool {
+        let stake_in_favor = self.stake_in_favor() + self.unbounded_stake_in_favor();
+        let stake_against = self.stake_against() + self.unbounded_stake_against();
+        let stake_diff = stake_in_favor.abs_diff(stake_against);
+        let stake_diff_percent = stake_diff.saturating_mul(U256::from(100)) / self.total_stake();
+        stake_diff_percent <= self.voting_configuration.voting_clearness_delta
     }
 
     pub fn get_quorum(&self) -> u32 {

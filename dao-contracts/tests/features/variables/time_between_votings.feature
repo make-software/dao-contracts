@@ -25,7 +25,7 @@ Feature: TimeBetweenInformalAndFormalVoting Variable
         | VA1              | Yes  | 500   |
         | VA2              | Yes  | 500   |
       And Informal voting ends
-      And VA1 yes vote of 500 REP fails
+      Then VA1 yes vote of 500 REP fails
 
     Scenario: Voting for formal voting is possible before 24 hours after informal voting
       When InternalWorker submits the JobProof
@@ -36,4 +36,4 @@ Feature: TimeBetweenInformalAndFormalVoting Variable
         | VA2              | Yes  | 500   |
       And Informal voting ends
       And 2 days passed
-      And VA1 yes vote of 500 REP succeeds
+      Then VA1 yes vote of 500 REP succeeds

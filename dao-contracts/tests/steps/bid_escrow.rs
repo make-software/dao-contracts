@@ -163,7 +163,7 @@ fn total_unbounded_stake_is(w: &mut DaoWorld, voting_type: String, voting_id: u3
     );
 }
 
-#[when(expr = "{word} {word} vote of {int} REP {word}")]
+#[then(expr = "{word} {word} vote of {int} REP {word}")]
 fn cannot_vote(w: &mut DaoWorld, voter: String, choice: String, stake: u64, result: String) {
     let voter = w.named_address(voter);
     let stake = U256::from(stake * 1_000_000_000);

@@ -13,19 +13,18 @@ pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
         "true" => true.to_bytes().unwrap().into(),
         "false" => false.to_bytes().unwrap().into(),
         _ => match key {
-            "post_job_dos_fee" | "governance_payment_ratio" => {
+            "PostJobDosFee" | "GovernancePaymentRatio" => {
                 let value = U512::from_dec_str(value).unwrap();
                 Bytes::from(value.to_bytes().unwrap())
             }
-            "default_policing_rate"
-            | "reputation_conversion_rate"
-            | "governance_informal_quorum_ratio"
-            | "governance_formal_quorum_ratio"
-            | "informal_quorum_ratio"
-            | "formal_quorum_ratio"
-            | "default_reputation_slash"
-            | "voting_clearness_delta"
-            | "total_onboarded" => {
+            "DefaultPolicingRate"
+            | "ReputationConversionRate"
+            | "GovernanceInformalQuorumRatio"
+            | "GovernanceFormalQuorumRatio"
+            | "InformalQuorumRatio"
+            | "FormalQuorumRatio"
+            | "DefaultReputationSlash"
+            | "VotingClearnessDelta" => {
                 let value = U256::from_dec_str(value).unwrap();
                 Bytes::from(value.to_bytes().unwrap())
             }
@@ -65,10 +64,10 @@ pub fn to_voting_type(value: &str) -> VotingType {
 
 pub fn multiplier(unit: String) -> u32 {
     let multiplier = match unit.as_str() {
-        "seconds" => 1,
-        "minutes" => 60,
-        "hours" => 60 * 60,
-        "days" => 60 * 60 * 24,
+        "seconds" | "second" => 1,
+        "minutes" | "minute" => 60,
+        "hours" | "hour" => 60 * 60,
+        "days" | "day" => 60 * 60 * 24,
         _ => panic!("Unknown unit option - it should be either seconds, minutes, hours or days"),
     };
     multiplier
