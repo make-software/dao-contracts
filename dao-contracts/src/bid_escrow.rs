@@ -662,13 +662,11 @@ impl BidEscrowContract {
 
         let to_redistribute = payment - governance_wallet_payment;
 
-        // Todo: Maybe copy configuration to Job to avoid querying job offer?
         let redistribute_to_all_vas = self
-            .job_offers
-            .get(&job.job_offer_id())
-            .unwrap_or_revert_with(Error::JobOfferNotFound)
+            .job_offer(job.job_offer_id())
             .dao_configuration
             .distribute_payment_to_non_voters;
+        
         // For VA's
         if redistribute_to_all_vas {
             self.redistribute_cspr_to_all_vas(to_redistribute);
@@ -692,11 +690,8 @@ impl BidEscrowContract {
         // For External Worker
         self.withdraw(job.worker(), to_worker);
 
-        // Todo: Maybe copy configuration to Job to avoid querying job offer?
         let redistribute_to_all_vas = self
-            .job_offers
-            .get(&job.job_offer_id())
-            .unwrap_or_revert_with(Error::JobOfferNotFound)
+            .job_offer(job.job_offer_id())
             .dao_configuration
             .distribute_payment_to_non_voters;
 
@@ -706,6 +701,13 @@ impl BidEscrowContract {
         } else {
             self.redistribute_cspr_to_voters(job, to_redistribute);
         }
+    }
+
+    fn job_offer(&self, job_offer_id: JobOfferId) -> JobOffer {
+        self
+            .job_offers
+            .get(&job_offer_id)
+            .unwrap_or_revert_with(Error::JobOfferNotFound)
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
