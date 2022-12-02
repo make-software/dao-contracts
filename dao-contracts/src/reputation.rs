@@ -96,6 +96,8 @@ pub trait ReputationContractInterface {
 
     fn all_balances(&self) -> (U256, Balances);
 
+    fn partial_balances(&self, addresses: Vec<Address>) -> (U256, Balances);
+
     // Redistributes the reputation based on the voting summary
     fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>);
 }
@@ -245,6 +247,17 @@ impl ReputationContractInterface for ReputationContract {
 
     fn all_balances(&self) -> (U256, Balances) {
         (self.total_supply(), self.balances.get_or_revert())
+    }
+
+    fn partial_balances(&self, addresses: Vec<Address>) -> (U256, Balances) {
+        let mut balances = Balances::default();
+        let mut partial_supply = U256::zero();
+        for address in addresses {
+            let balance = self.balance_of(address);
+            balances.set(address, balance);
+            partial_supply += balance;
+        }
+        (partial_supply, balances)
     }
 
     fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U256>, burns: BTreeMap<Address, U256>) {

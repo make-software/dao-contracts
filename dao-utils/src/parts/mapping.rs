@@ -167,7 +167,9 @@ pub struct VecMapping<K, V> {
     lengths: Mapping<K, u32>,
 }
 
-impl<K: CLTyped + FromBytes + ToBytes + Hash, V: ToBytes + FromBytes + CLTyped> VecMapping<K, V> {
+impl<K: CLTyped + FromBytes + ToBytes + Hash + Clone, V: ToBytes + FromBytes + CLTyped>
+    VecMapping<K, V>
+{
     pub fn new(name: String) -> Self {
         VecMapping {
             mapping: Mapping::new(name.clone()),
@@ -186,6 +188,18 @@ impl<K: CLTyped + FromBytes + ToBytes + Hash, V: ToBytes + FromBytes + CLTyped> 
 
     pub fn get(&self, key: K, at: u32) -> Option<V> {
         self.mapping.get(&(key, at))
+    }
+
+    pub fn get_all(&self, key: K) -> Vec<V> {
+        let length = self.lengths.get(&key).unwrap_or(0);
+        let mut result = Vec::new();
+        for i in 0..length {
+            if let Some(value) = self.get(key.clone(), i) {
+                result.push(value);
+            }
+        }
+
+        result
     }
 
     pub fn get_or_none(&self, key: K, at: u32) -> Option<V> {

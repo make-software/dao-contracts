@@ -660,13 +660,20 @@ impl BidEscrowContract {
         let governance_wallet_payment = repo.payment_for_governance(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
+        let to_redistribute = payment - governance_wallet_payment;
+
+        // Todo: Maybe copy configuration to Job to avoid querying job offer?
+        let redistribute_to_all_vas = self
+            .job_offers
+            .get(&job.job_offer_id())
+            .unwrap_or_revert_with(Error::JobOfferNotFound)
+            .dao_configuration
+            .distribute_payment_to_non_voters;
         // For VA's
-        let cspr_pool = payment - governance_wallet_payment;
-        let (total_supply, balances) = self.reputation_token().all_balances();
-        let total_supply = U512::from(total_supply.as_u128());
-        for (address, balance) in balances.balances {
-            let amount = cspr_pool * U512::from(balance.as_u128()) / total_supply;
-            self.withdraw(address, amount);
+        if redistribute_to_all_vas {
+            self.redistribute_cspr_to_all_vas(to_redistribute);
+        } else {
+            self.redistribute_cspr_to_voters(job, to_redistribute);
         }
     }
 
@@ -685,11 +692,40 @@ impl BidEscrowContract {
         // For External Worker
         self.withdraw(job.worker(), to_worker);
 
+        // Todo: Maybe copy configuration to Job to avoid querying job offer?
+        let redistribute_to_all_vas = self
+            .job_offers
+            .get(&job.job_offer_id())
+            .unwrap_or_revert_with(Error::JobOfferNotFound)
+            .dao_configuration
+            .distribute_payment_to_non_voters;
+
         // For VA's
+        if redistribute_to_all_vas {
+            self.redistribute_cspr_to_all_vas(to_redistribute);
+        } else {
+            self.redistribute_cspr_to_voters(job, to_redistribute);
+        }
+    }
+
+    fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
         let (total_supply, balances) = self.reputation_token().all_balances();
         let total_supply = U512::from(total_supply.as_u128());
         for (address, balance) in balances.balances {
             let amount = to_redistribute * U512::from(balance.as_u128()) / total_supply;
+            self.withdraw(address, amount);
+        }
+    }
+
+    fn redistribute_cspr_to_voters(&mut self, job: &Job, to_redistribute: U512) {
+        let voting_id = job
+            .formal_voting_id()
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
+        let all_voters = self.voting.all_voters(voting_id);
+        let (partial_supply, balances) = self.reputation_token().partial_balances(all_voters);
+        let partial_supply = U512::from(partial_supply.as_u128());
+        for (address, balance) in balances.balances {
+            let amount = to_redistribute * U512::from(balance.as_u128()) / partial_supply;
             self.withdraw(address, amount);
         }
     }
