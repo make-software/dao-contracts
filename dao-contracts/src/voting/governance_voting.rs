@@ -430,6 +430,10 @@ impl GovernanceVoting {
         self.va_token.get().unwrap_or_revert()
     }
 
+    pub fn all_voters(&self, voting_id: VotingId) -> Vec<Address> {
+        self.voters.get_all(voting_id)
+    }
+
     /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
     pub fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot> {
         self.ballots.get_or_none(&(voting_id, address))
