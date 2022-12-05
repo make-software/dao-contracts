@@ -5,7 +5,6 @@ Feature: Creating voting for a va
         | Alice   | false        | true     | 0           |
         | VA1     | true         | true     | 1000        |
         | VA2     | true         | true     | 1000        |
-      And Owner added VA1 to whitelist in KycVoter contract
 
     Scenario: Cannot create a voting for a user who already is a va
       When VA1 starts voting with the following config

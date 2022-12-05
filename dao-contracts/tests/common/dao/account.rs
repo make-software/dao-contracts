@@ -1,6 +1,9 @@
-use casper_dao_utils::Address;
+use casper_dao_utils::{Address, TestContract};
 
-use crate::common::{params::Account, DaoWorld};
+use crate::common::{
+    params::{Account, Contract},
+    DaoWorld,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -15,5 +18,17 @@ impl DaoWorld {
             Account::VA(n) => 4 + n,
         };
         self.env.get_account(idx)
+    }
+
+    pub fn get_contract_address(&self, contract: &Contract) -> Address {
+        match contract {
+            Contract::KycToken => self.kyc_token.address(),
+            Contract::KycVoter => self.kyc_voter.address(),
+            Contract::VaToken => self.va_token.address(),
+            Contract::ReputationToken => self.reputation_token.address(),
+            Contract::BidEscrow => self.bid_escrow.address(),
+            Contract::VariableRepository => self.variable_repo.address(),
+            Contract::SlashingVoter => self.slashing_voter.address(),
+        }
     }
 }

@@ -9,7 +9,6 @@ Feature: Kyc Voter
         | VA4     | true  | 1000        |
         | VA5     | true  | 1000        |
         | VA6     | true  | 1000        |
-      And Owner added VA1 to whitelist in KycVoter contract
       And VA1 starts voting with the following config
         | voting_contract | stake | arg1  |
         | KycVoter        | 100   | Alice |

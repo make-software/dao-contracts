@@ -30,7 +30,7 @@ pub struct DaoWorld {
     pub kyc_token: casper_dao_contracts::KycNftContractTest,
     pub slashing_voter: casper_dao_contracts::SlashingVoterContractTest,
     pub kyc_voter: casper_dao_contracts::KycVoterContractTest,
-    variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
+    pub variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
     addresses: HashMap<String, Address>,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
