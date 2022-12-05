@@ -1,10 +1,4 @@
 Feature: KYC Token events emission
-  Scenario: Deploy emits 2 events
-    Then KycToken contract emits events
-      | event            | arg1     |
-      | OwnerChanged     | Deployer |
-      | AddedToWhitelist | Deployer |
-
   Scenario: Mint and Burn
     When Owner mints a KYC Token to Bob
     And Owner burns Bob's token
