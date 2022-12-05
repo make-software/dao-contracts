@@ -21,12 +21,12 @@ Feature: Kyc Voter
         | VA3     | 200        | in favor |
         | VA4     | 250        | against  |
       And informal voting with id 0 ends in KycVoter contract
-      And voters vote in KycVoter's formal voting with id 0
+      And voters vote in KycVoter's formal voting with id 1
         | user    | REP stake  | choice   | 
         | VA2     | 100        | in favor |
         | VA3     | 200        | in favor |
         | VA4     | 250        | against  |
-      And formal voting with id 0 ends in KycVoter contract
+      And formal voting with id 1 ends in KycVoter contract
       Then users balances are
         | account | REP balance  | REP stake  |
         | VA1     | 1062         | 0          |

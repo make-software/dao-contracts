@@ -58,7 +58,7 @@ fn assert_formal_voting_does_not_start(world: &mut DaoWorld, voting_id: u32, con
 fn assert_informal_voting_does_not_start(world: &mut DaoWorld, voting_id: u32, contract: Contract) {
     let voting = world.checked_get_voting(&contract, voting_id, VotingType::Informal);
 
-    assert_eq!(voting, None);
+    assert!(voting.is_none());
 }
 
 #[then(expr = "formal voting with id {int} in {contract} contract starts")]
