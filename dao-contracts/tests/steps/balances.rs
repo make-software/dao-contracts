@@ -102,7 +102,6 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
 }
 
 #[then(expr = "{account} is a VA account")]
-fn account_is_va(world: &mut DaoWorld, account: Account) {
-    dbg!(account);
+fn assert_account_is_va(world: &mut DaoWorld, account: Account) {
     assert!(world.is_va_account(&account));
 }
