@@ -140,6 +140,11 @@ impl Voting {
         }
     }
 
+    pub fn is_informal_without_stake(&self) -> bool {
+        !self.voting_configuration().informal_stake_reputation()
+            && self.get_voting_type() == VotingType::Informal
+    }
+
     pub fn start_time(&self) -> u64 {
         self.start_time
     }

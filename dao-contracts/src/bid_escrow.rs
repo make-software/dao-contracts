@@ -416,7 +416,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
         job.submit_proof(proof);
         // TODO: Emit event.
 
-        if job.stake() != U256::zero() {
+        let job_offer = self.job_offer(job.job_offer_id());
+
+        if job.stake() != U256::zero() && job_offer.dao_configuration.informal_stake_reputation {
             self.reputation_token().unstake_bid(worker, job.bid_id());
         }
 
@@ -484,6 +486,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn finish_voting(&mut self, job_id: JobId) {
         let mut job = self.jobs.get_or_revert(&job_id);
+        let job_offer = self.job_offer(job.job_offer_id());
         let voting_id = job
             .current_voting_id()
             .unwrap_or_revert_with(Error::VotingNotStarted);
@@ -493,14 +496,24 @@ impl BidEscrowContractInterface for BidEscrowContract {
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor => {
+                    if !job_offer.dao_configuration.informal_stake_reputation {
+                        self.reputation_token()
+                            .unstake_bid(job.worker(), job.bid_id());
+                    }
                     self.create_formal_voting(&mut job, voting_id, &voting_summary);
                 }
                 VotingResult::Against => {
+                    if !job_offer.dao_configuration.informal_stake_reputation {
+                        self.reputation_token()
+                            .unstake_bid(job.worker(), job.bid_id());
+                    }
                     self.create_formal_voting(&mut job, voting_id, &voting_summary);
                 }
                 VotingResult::QuorumNotReached => {
-                    self.voting.return_reputation_of_yes_voters(voting_id);
-                    self.voting.return_reputation_of_no_voters(voting_id);
+                    if job_offer.dao_configuration.informal_stake_reputation {
+                        self.voting.return_reputation_of_yes_voters(voting_id);
+                        self.voting.return_reputation_of_no_voters(voting_id);
+                    }
                     self.return_job_poster_payment_and_dos_fee(&job);
                     self.return_external_worker_cspr_stake(&job);
                 }
@@ -666,7 +679,7 @@ impl BidEscrowContract {
             .job_offer(job.job_offer_id())
             .dao_configuration
             .distribute_payment_to_non_voters;
-        
+
         // For VA's
         if redistribute_to_all_vas {
             self.redistribute_cspr_to_all_vas(to_redistribute);
@@ -704,8 +717,7 @@ impl BidEscrowContract {
     }
 
     fn job_offer(&self, job_offer_id: JobOfferId) -> JobOffer {
-        self
-            .job_offers
+        self.job_offers
             .get(&job_offer_id)
             .unwrap_or_revert_with(Error::JobOfferNotFound)
     }
@@ -854,7 +866,13 @@ impl BidEscrowContract {
     ) {
         let formal_voting_id = voting_summary.formal_voting_id().unwrap_or_revert();
         job.set_formal_voting_id(Some(formal_voting_id));
-        self.voting.unstake_all_reputation(voting_id);
+        let voting = self
+            .voting
+            .get_voting(voting_id)
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
+        if voting.voting_configuration().informal_stake_reputation() {
+            self.voting.unstake_all_reputation(voting_id);
+        }
         self.voting
             .recast_creators_ballot_from_informal_to_formal(formal_voting_id);
     }
