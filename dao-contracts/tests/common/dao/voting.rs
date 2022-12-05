@@ -109,39 +109,12 @@ impl DaoWorld {
         voting_id: u32,
         voting_type: VotingType,
     ) -> bool {
+        let voting_type = voting_type.into();
         match contract {
-            Contract::KycToken => todo!(),
             Contract::KycVoter => self.kyc_voter.voting_exists(voting_id, voting_type),
-            Contract::VaToken => todo!(),
-            Contract::ReputationToken => todo!(),
             Contract::BidEscrow => todo!(),
-            Contract::VariableRepository => todo!(),
             Contract::SlashingVoter => todo!(),
+            invalid => panic!("{:?} is not a voting contract", invalid),
         }
     }
-
-    // pub fn checked_get_voting(
-    //     &self,
-    //     contract: &Contract,
-    //     voting_id: u32,
-    //     voting_type: VotingType,
-    // ) -> Option<casper_dao_contracts::voting::voting::Voting> {
-    //     let voting_type = voting_type.into();
-    //     match contract {
-    //         Contract::KycVoter => self.kyc_voter.get_voting(voting_id, voting_type),
-    //         Contract::BidEscrow => self.bid_escrow.get_voting(voting_id, voting_type),
-    //         Contract::SlashingVoter => self.slashing_voter.get_voting(voting_id, voting_type),
-    //         invalid => panic!("{:?} is not a voting contract", invalid),
-    //     }
-    // }
-
-    // pub fn get_voting(
-    //     &self,
-    //     contract: &Contract,
-    //     voting_id: u32,
-    //     voting_type: VotingType,
-    // ) -> casper_dao_contracts::voting::voting::Voting {
-    //     self.checked_get_voting(contract, voting_id, voting_type)
-    //         .expect(&format!("Couldn't get {:?} voting", contract))
-    // }
 }

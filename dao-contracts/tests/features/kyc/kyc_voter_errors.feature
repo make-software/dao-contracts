@@ -33,6 +33,7 @@ Feature: Kyc Voter errors
       When voters vote in KycVoter's informal voting with id 0
         | user    | REP stake  | choice   | 
         | VA2     | 100        | in favor |
+      And 5 days passed
       And informal voting with id 0 ends in KycVoter contract
       Then formal voting with id 0 in KycVoter contract does not start
       And users balances are

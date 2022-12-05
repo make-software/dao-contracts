@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use casper_dao_utils::Error;
 use cucumber::{gherkin::Step, given, then, when};
 
@@ -47,23 +45,20 @@ fn end_voting(world: &mut DaoWorld, voting_type: VotingType, voting_id: u32, con
 
 #[then(expr = "formal voting with id {int} in {contract} contract does not start")]
 fn assert_formal_voting_does_not_start(world: &mut DaoWorld, voting_id: u32, contract: Contract) {
-    let voting = world.voting_exists(&contract, voting_id, VotingType::Form);
-
-    assert!(voting);
+    let voting_exists = world.voting_exists(&contract, voting_id, VotingType::Formal);
+    assert!(!voting_exists);
 }
 
 #[then(expr = "informal voting with id {int} in {contract} contract does not start")]
 fn assert_informal_voting_does_not_start(world: &mut DaoWorld, voting_id: u32, contract: Contract) {
-    let voting = world.checked_get_voting(&contract, voting_id, VotingType::Informal);
-
-    assert!(voting.is_none());
+    let voting_exists = world.voting_exists(&contract, voting_id, VotingType::Informal);
+    assert!(!voting_exists);
 }
 
 #[then(expr = "formal voting with id {int} in {contract} contract starts")]
 fn assert_formal_voting_starts(world: &mut DaoWorld, voting_id: u32, contract: Contract) {
-    let voting = world.get_voting(&contract, voting_id, VotingType::Informal);
-
-    assert_eq!(voting.formal_voting_id(), Some(1));
+    let voting_exists = world.voting_exists(&contract, voting_id, VotingType::Formal);
+    assert!(voting_exists);
 }
 
 #[then(expr = "votes in {contract}'s {voting_type} voting with id {int} fail")]

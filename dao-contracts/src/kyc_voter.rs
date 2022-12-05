@@ -162,9 +162,8 @@ impl KycVoterContractInterface for KycVoterContract {
         }
     }
 
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voting(voting_id)
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
+        self.voting.voting_exists(voting_id, voting_type)
     }
 
     fn get_ballot(
@@ -177,8 +176,9 @@ impl KycVoterContractInterface for KycVoterContract {
         self.voting.get_ballot(voting_id, address)
     }
 
-    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
-        self.voting.voting_exists(voting_id, voting_type)
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
+        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
+        self.voting.get_voter(voting_id, at)
     }
 }
 

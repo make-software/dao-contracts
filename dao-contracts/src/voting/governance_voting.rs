@@ -640,16 +640,12 @@ impl GovernanceVoting {
         let voting = self.get_voting(voting_id);
         match voting {
             None => false,
-            Some(voting) => {
-                match voting.get_voting_type() {
-                    VotingType::Informal => {
-                        match voting_type {
-                            VotingType::Informal => true,
-                            VotingType::Formal => voting.formal_voting_id().is_some(),
-                        }
-                    },
-                    VotingType::Formal => false,
-                }
+            Some(voting) => match voting.get_voting_type() {
+                VotingType::Informal => match voting_type {
+                    VotingType::Informal => true,
+                    VotingType::Formal => voting.formal_voting_id().is_some(),
+                },
+                VotingType::Formal => false,
             },
         }
     }

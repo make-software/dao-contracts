@@ -3,16 +3,7 @@ use std::str::FromStr;
 use cucumber::Parameter;
 
 #[derive(
-    Copy,
-    Clone,
-    Debug,
-    Default,
-    derive_more::Deref,
-    Parameter,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
+    Copy, Clone, Debug, Default, derive_more::Deref, Parameter, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[param(name = "u256", regex = r"\d+")]
 pub struct U256(pub casper_types::U256);
