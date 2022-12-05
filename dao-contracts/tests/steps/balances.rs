@@ -3,7 +3,7 @@ use cucumber::{gherkin::Step, given, then};
 
 use crate::common::{
     helpers::{self, is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep},
-    params::{Account, U256 as pU256},
+    params::{Account, Balance},
     DaoWorld,
 };
 
@@ -94,11 +94,16 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
         let account = helpers::parse::<Account>(row.get(0), "Could't parse account");
-        let expected_balance = helpers::parse_or_default::<pU256>(row.get(1));
-        let expected_stake = helpers::parse_or_default::<pU256>(row.get(2));
+        let expected_balance = helpers::parse_or_default::<Balance>(row.get(1));
+        let expected_stake = helpers::parse_or_default::<Balance>(row.get(2));
 
         assert_eq!(world.reputation_balance(&account), expected_balance);
-
         assert_eq!(world.staked_reputation(&account), expected_stake);
     }
+}
+
+#[then(expr = "{account} is a VA account")]
+fn account_is_va(world: &mut DaoWorld, account: Account) {
+    dbg!(account);
+    assert!(world.is_va_account(&account));
 }

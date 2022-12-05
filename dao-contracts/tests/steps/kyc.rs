@@ -42,6 +42,11 @@ fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: U256) {
     assert_eq!(total_supply, expected_total_supply.0);
 }
 
+#[then(expr = "{account} is kyced")]
+fn assert_kyced(world: &mut DaoWorld, account: Account) {
+    assert!(world.is_account_kyced(&account));
+}
+
 impl DaoWorld {
     fn balance_of(&self, account: &Account) -> U256 {
         U256(self.kyc_token.balance_of(self.get_address(account)))

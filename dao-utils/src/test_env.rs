@@ -61,7 +61,11 @@ impl TestEnv {
     }
 
     /// Deploy new wasm file.
-    pub fn deploy_wasm_file(&self, session_code: &str, session_args: RuntimeArgs) -> Result<(), Error> {
+    pub fn deploy_wasm_file(
+        &self,
+        session_code: &str,
+        session_args: RuntimeArgs,
+    ) -> Result<(), Error> {
         self.state
             .lock()
             .unwrap()
@@ -218,7 +222,7 @@ impl TestEnvState {
         args: RuntimeArgs,
         has_return: bool,
     ) -> Result<Option<T>, Error> {
-        dbg!(entry_point);
+        // dbg!(entry_point);
         let session_code = PathBuf::from("getter_proxy.wasm");
 
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();

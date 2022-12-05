@@ -68,7 +68,7 @@ impl Into<casper_dao_contracts::voting::voting::VotingType> for VotingType {
     }
 }
 
-#[derive(Debug, Default, Parameter)]
+#[derive(Debug, Default, Clone, Parameter)]
 #[param(name = "choice", regex = "in favor|against|yes|no")]
 pub enum Choice {
     InFavor,
@@ -99,6 +99,7 @@ impl Into<casper_dao_contracts::voting::Choice> for Choice {
     }
 }
 
+#[derive(Clone)]
 pub struct Ballot {
     pub voter: Account,
     pub stake: U256,

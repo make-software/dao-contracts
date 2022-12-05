@@ -14,6 +14,7 @@ mod events;
 mod kyc;
 mod ownership;
 mod reputation;
+mod va;
 mod voting;
 
 #[allow(dead_code)]
@@ -76,9 +77,9 @@ pub fn setup_dao() -> (
         .add_to_whitelist(slashing_voter.address())
         .unwrap();
 
-    // reputation_token
-    //     .add_to_whitelist(kyc_voter.address())
-    //     .unwrap();
+    reputation_token
+        .add_to_whitelist(kyc_voter.address())
+        .unwrap();
 
     kyc_token.add_to_whitelist(kyc_voter.address()).unwrap();
 
