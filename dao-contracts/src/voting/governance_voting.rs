@@ -19,10 +19,11 @@ use casper_types::U256;
 
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
-    voting::{Voting, VotingConfiguration, VotingResult, VotingSummary, VotingType},
+    voting::{Voting, VotingResult, VotingSummary, VotingType},
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
+    DaoConfiguration,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
@@ -91,7 +92,7 @@ impl GovernanceVoting {
         &mut self,
         creator: Address,
         stake: U256,
-        voting_configuration: VotingConfiguration,
+        voting_configuration: DaoConfiguration,
     ) -> VotingId {
         if voting_configuration.only_va_can_create && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
@@ -110,7 +111,7 @@ impl GovernanceVoting {
     pub fn create_voting_without_first_vote(
         &mut self,
         creator: Address,
-        voting_configuration: VotingConfiguration,
+        voting_configuration: DaoConfiguration,
     ) -> VotingId {
         if voting_configuration.only_va_can_create && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
@@ -243,7 +244,7 @@ impl GovernanceVoting {
                 let formal_voting_id = self.next_voting_id();
 
                 // Formal voting is created.
-                self.set_voting(voting.create_formal_voting(formal_voting_id, get_block_time()));
+                self.set_voting(voting.create_formal_voting(formal_voting_id));
 
                 VotingCreated::new(
                     voting.creator(),
@@ -351,9 +352,10 @@ impl GovernanceVoting {
     pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
 
-        // We cannot vote on a completed voting
-        if voting.completed() {
-            revert(Error::VoteOnCompletedVotingNotAllowed)
+        let validation_result = voting.validate_vote(get_block_time());
+
+        if let Err(error) = validation_result {
+            revert(error)
         }
 
         let vote = self.ballots.get(&(voting_id, voter));
@@ -377,7 +379,7 @@ impl GovernanceVoting {
     ) {
         if !unbounded {
             // Stake the reputation
-            ReputationContractCaller::at(self.get_reputation_token_address())
+            ReputationContractCaller::at(self.reputation_token_address())
                 .stake_voting(voter, voting_id, choice, stake);
         }
 
@@ -415,17 +417,21 @@ impl GovernanceVoting {
     }
 
     /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
-    pub fn get_variable_repo_address(&self) -> Address {
+    pub fn variable_repo_address(&self) -> Address {
         self.variable_repo.get().unwrap_or_revert()
     }
 
     /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
-    pub fn get_reputation_token_address(&self) -> Address {
+    pub fn reputation_token_address(&self) -> Address {
         self.reputation_token.get().unwrap_or_revert()
     }
 
-    pub fn get_va_token_address(&self) -> Address {
+    pub fn va_token_address(&self) -> Address {
         self.va_token.get().unwrap_or_revert()
+    }
+
+    pub fn all_voters(&self, voting_id: VotingId) -> Vec<Address> {
+        self.voters.get_all(voting_id)
     }
 
     /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
@@ -487,7 +493,7 @@ impl GovernanceVoting {
                 continue;
             }
             transfers.insert(ballot.voter, ballot.stake);
-            ReputationContractCaller::at(self.get_reputation_token_address())
+            ReputationContractCaller::at(self.reputation_token_address())
                 .unstake_voting(ballot.voter, ballot.voting_id);
         }
 
@@ -583,11 +589,11 @@ impl GovernanceVoting {
     }
 
     fn va_token(&self) -> VaNftContractCaller {
-        VaNftContractCaller::at(self.get_va_token_address())
+        VaNftContractCaller::at(self.va_token_address())
     }
 
     pub fn reputation_token(&self) -> ReputationContractCaller {
-        ReputationContractCaller::at(self.get_reputation_token_address())
+        ReputationContractCaller::at(self.reputation_token_address())
     }
 
     /// Get a reference to the governance voting's voters.

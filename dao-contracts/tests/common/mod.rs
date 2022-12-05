@@ -7,6 +7,7 @@ pub mod setup;
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
+    time::Duration,
 };
 
 use casper_dao_contracts::bid::{
@@ -41,6 +42,11 @@ pub struct DaoWorld {
 }
 
 impl DaoWorld {
+    pub fn advance_time(&mut self, seconds: u32) {
+        self.env
+            .advance_block_time_by(Duration::from_secs(seconds as u64));
+    }
+
     // sets relative amount of motes to the account
     pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
         assert!(
@@ -55,8 +61,15 @@ impl DaoWorld {
     }
 
     pub fn get_bid(&self, offer_id: JobOfferId, poster: Address) -> Option<Bid> {
-        let bid_id = self.bids.get(&(offer_id, poster)).unwrap();
-        self.bid_escrow.get_bid(*bid_id)
+        let bid_id = self.bids.get(&(offer_id, poster));
+
+        bid_id?;
+
+        self.bid_escrow.get_bid(*bid_id.unwrap())
+    }
+
+    pub fn get_job_offer_id(&self, job_poster: &Address) -> Option<&JobOfferId> {
+        self.offers.get(job_poster)
     }
 
     pub fn post_bid(
@@ -68,21 +81,18 @@ impl DaoWorld {
         stake: u64,
         onboarding: bool,
         cspr_stake: Option<u64>,
-    ) -> BidId {
-        match cspr_stake {
-            None => {
-                self.bid_escrow
-                    .as_account(bidder)
-                    .submit_bid(
-                        0,
-                        timeframe,
-                        U512::from(budget * 1_000_000_000),
-                        U256::from(stake * 1_000_000_000),
-                        onboarding,
-                        None,
-                    )
-                    .unwrap();
-            }
+    ) {
+        let _bids_count = self.bid_escrow.bids_count();
+
+        let result = match cspr_stake {
+            None => self.bid_escrow.as_account(bidder).submit_bid(
+                0,
+                timeframe,
+                U512::from(budget * 1_000_000_000),
+                U256::from(stake * 1_000_000_000),
+                onboarding,
+                None,
+            ),
             Some(cspr_stake) => self
                 .bid_escrow
                 .as_account(bidder)
@@ -93,13 +103,20 @@ impl DaoWorld {
                     U256::from(stake * 1_000_000_000),
                     onboarding,
                     U512::from(cspr_stake * 1_000_000_000),
-                )
-                .unwrap(),
-        }
+                ),
+        };
 
-        let bid_id = self.bid_escrow.bids_count();
-        self.bids.insert((offer_id, bidder), bid_id);
-        bid_id
+        if result.is_ok() {
+            let bid_id = self.bid_escrow.bids_count();
+            self.bids.insert((offer_id, bidder), bid_id);
+        }
+    }
+
+    pub fn cancel_bid(&mut self, worker: Address, job_offer_id: JobOfferId, bid_id: BidId) {
+        let result = self.bid_escrow.as_account(worker).cancel_bid(bid_id);
+        if result.is_ok() {
+            self.bids.remove(&(job_offer_id, worker));
+        }
     }
 
     pub fn post_offer(
@@ -121,6 +138,17 @@ impl DaoWorld {
         let offer_id = self.bid_escrow.job_offers_count();
         self.offers.insert(poster, offer_id);
         offer_id
+    }
+
+    pub fn pick_bid(&mut self, job_poster: Address, worker: Address) {
+        let job_offer_id = self.offers.get(&job_poster).unwrap();
+        let bid_id = self.bids.get(&(*job_offer_id, worker)).unwrap();
+        let bid = self.bid_escrow.get_bid(*bid_id).unwrap();
+
+        self.bid_escrow
+            .as_account(job_poster)
+            .pick_bid_with_cspr_amount(*job_offer_id, *bid_id, bid.proposed_payment)
+            .unwrap();
     }
 
     // gets relative amount of motes of the account
@@ -149,7 +177,7 @@ impl DaoWorld {
     }
 
     // gets variable value
-    pub fn get_variable(&self, name: String) -> Bytes {
+    pub fn _get_variable(&self, name: String) -> Bytes {
         self.variable_repo.get(name).unwrap()
     }
 

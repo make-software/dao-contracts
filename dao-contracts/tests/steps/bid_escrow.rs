@@ -1,29 +1,16 @@
+use std::time::Duration;
+
 use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U256;
-use cucumber::{gherkin::Step, given, then, when};
+use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
-    helpers::{to_rep, to_voting_type, value_to_bytes},
+    helpers::{match_choice, match_result, to_rep, to_voting_type},
     DaoWorld,
 };
 
-#[given(expr = "following configuration")]
-fn configuration(w: &mut DaoWorld, step: &Step) {
-    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
-    for row in table {
-        let variable = row[0].as_str();
-        let value = row[1].as_str();
-        w.set_variable(variable.to_string(), value_to_bytes(value));
-        assert_eq!(
-            w.get_variable(variable.to_string()),
-            value_to_bytes(value),
-            "variable mismatch"
-        );
-    }
-}
-
-#[given(
+#[when(
     expr = "{word} posted a JobOffer with expected timeframe of {int} days, maximum budget of {int} CSPR and {int} CSPR DOS Fee"
 )]
 fn post_job_offer(
@@ -37,7 +24,7 @@ fn post_job_offer(
     w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
-#[given(
+#[when(
     expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} REP stake"
 )]
 fn submit_bid_internal(
@@ -51,7 +38,7 @@ fn submit_bid_internal(
     w.post_bid(0, worker, timeframe, budget, stake, false, None);
 }
 
-#[given(
+#[when(
     expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} CSPR stake {word} onboarding"
 )]
 fn submit_bid_external(
@@ -74,16 +61,11 @@ fn submit_bid_external(
     w.post_bid(0, worker, timeframe, budget, 0, onboarding, Some(stake));
 }
 
-#[given(expr = "{word} picked the Bid of {word}")]
+#[when(expr = "{word} picked the Bid of {word}")]
 fn bid_picked(w: &mut DaoWorld, job_poster_name: String, worker_name: String) {
     let job_poster = w.named_address(job_poster_name);
-    let _worker = w.named_address(worker_name);
-    let required_budget = w.bid_escrow.get_bid(0).unwrap().proposed_payment;
-    // TODO: Use bid_ids from the storage.
-    w.bid_escrow
-        .as_account(job_poster)
-        .pick_bid_with_cspr_amount(0, 0, required_budget)
-        .unwrap();
+    let worker = w.named_address(worker_name);
+    w.pick_bid(job_poster, worker);
 }
 
 #[when(expr = "{word} submits the JobProof")]
@@ -98,7 +80,7 @@ fn submit_job_proof(w: &mut DaoWorld, worker_name: String) {
 
 #[when(expr = "Formal/Informal voting ends")]
 fn voting_ends(w: &mut DaoWorld) {
-    w.bid_escrow.advance_block_time_by(432000000u64);
+    w.env.advance_block_time_by(Duration::from_secs(432005u64));
     w.bid_escrow.finish_voting(0).unwrap();
 }
 
@@ -121,6 +103,16 @@ fn informal_voting(w: &mut DaoWorld, step: &Step) {
             .vote(0, choice, stake)
             .unwrap();
     }
+}
+
+#[when(expr = "{word} cancels the Bid for {word}")]
+fn cancel_bid(w: &mut DaoWorld, worker_name: String, job_poster_name: String) {
+    let worker = w.named_address(worker_name);
+    let job_poster = w.named_address(job_poster_name);
+    let job_offer_id = w.get_job_offer_id(&job_poster).unwrap();
+    let bid = w.get_bid(*job_offer_id, worker).unwrap();
+
+    w.cancel_bid(worker, *job_offer_id, bid.bid_id);
 }
 
 #[then(expr = "Formal voting does not start")]
@@ -169,4 +161,16 @@ fn total_unbounded_stake_is(w: &mut DaoWorld, voting_type: String, voting_id: u3
         "Total unbounded stake is {:?}, but should be {:?}",
         total_unbounded_stake, amount
     );
+}
+
+#[then(expr = "{word} {word} vote of {int} REP {word}")]
+fn cannot_vote(w: &mut DaoWorld, voter: String, choice: String, stake: u64, result: String) {
+    let voter = w.named_address(voter);
+    let stake = U256::from(stake * 1_000_000_000);
+    let choice = match_choice(choice);
+    let expected_result = match_result(result);
+
+    let vote_result = w.bid_escrow.as_account(voter).vote(0, choice, stake);
+
+    assert_eq!(expected_result, vote_result.is_ok());
 }

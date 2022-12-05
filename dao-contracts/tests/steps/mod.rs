@@ -1,5 +1,6 @@
 mod balances;
 mod bid_escrow;
+mod common;
 mod events;
 mod kyc;
 mod ownership;

@@ -13,7 +13,7 @@ Feature: PostJobDosFee Variable
 
   Scenario: Post a job with insufficient dos fee
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 200 CSPR DOS Fee
-    Then the JobOffer is not posted
+    Then the JobOffer isn't posted
 
   Scenario: Post a job with sufficient dos fee
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 220 CSPR DOS Fee

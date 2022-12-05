@@ -13,9 +13,13 @@ Feature: External Worker who wants to become a VA submits job
       | ExternalWorker   | 500          | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    And JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
-    And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
+    And following configuration
+      | key                                    | value         |
+      | TimeBetweenInformalAndFormalVoting     | 0             |
+    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
+    And 8 days passed
+    And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
     And JobPoster picked the Bid of ExternalWorker
 
   Scenario: JobPoster picked the Bid of External Worker
@@ -59,16 +63,17 @@ Feature: External Worker who wants to become a VA submits job
     When votes are
       | account          | vote | stake |
      #| ExternalWorker   | Yes  | 50    | - automatically voted by the system
-      | VA1              | No  | 500   |
+      | VA1              | No   | 500   |
       | VA2              | No   | 500   |
     And Formal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | MultisigWallet   | 50            | 0            | 0          |
+      | MultisigWallet   | 50           | 0            | 0          |
       | JobPoster        | 1000         | 0            | 0          |
-      | InternalWorker   | 149.25       | 1000         | 0          |
+      | InternalWorker   | 150          | 1000         | 0          |
       | ExternalWorker   | 0            | 0            | 0          |
-      | VA1              | 150.37       | 1007.5       | 0          |
-      | VA2              | 150.37       | 1007.5       | 0          |
+      | VA1              | 150          | 1000         | 0          |
+      | VA2              | 150          | 1000         | 0          |
       | BidEscrow        | 0            | 0            | 0          |
+    And total reputation is 3000
     And ExternalWorker is not a VA

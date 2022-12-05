@@ -37,18 +37,17 @@ fn is_not_va(w: &mut DaoWorld, va_name: String) {
 #[then(expr = "total reputation is {int}")]
 fn total_reputation(w: &mut DaoWorld, total_reputation_expected: u64) {
     let total_reputation = w.reputation_token.total_supply();
-    assert_eq!(
-        total_reputation,
-        U256::from(total_reputation_expected * 1_000_000_000)
+    let expected = U256::from(total_reputation_expected) * 1_000_000_000;
+    assert!(
+        is_rep_close_enough(total_reputation, expected),
+        "REP total supply should be {:?} but is {:?}",
+        expected,
+        total_reputation
     );
 }
 
 #[then(expr = "balances are")]
 fn balances(w: &mut DaoWorld, step: &Step) {
-    // let (total_rep_supply, all_rep_balances) = w.reputation_token.all_balances();
-    // dbg!(total_rep_supply);
-    // dbg!(all_rep_balances.balances);
-
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
         let name = row.get(0).unwrap();
@@ -65,17 +64,6 @@ fn balances(w: &mut DaoWorld, step: &Step) {
             real_rep_balance
         );
 
-        // Check CSPR balance
-        let expected_cspr_balance = to_cspr(&row[1]);
-        let real_cspr_balance = w.get_cspr_balance(address);
-        assert!(
-            is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
-            "For account {} CSPR balance should be {:?} but is {:?}",
-            name,
-            expected_cspr_balance,
-            real_cspr_balance
-        );
-
         // Check staked REP balance.
         let expected_rep_stake = to_rep(&row[3]);
         let real_rep_stake = w.reputation_token.get_stake(address);
@@ -85,6 +73,17 @@ fn balances(w: &mut DaoWorld, step: &Step) {
             name,
             expected_rep_stake,
             real_rep_stake
+        );
+
+        // Check CSPR balance
+        let expected_cspr_balance = to_cspr(&row[1]);
+        let real_cspr_balance = w.get_cspr_balance(address);
+        assert!(
+            is_cspr_close_enough(expected_cspr_balance, real_cspr_balance),
+            "For account {} CSPR balance should be {:?} but is {:?}",
+            name,
+            expected_cspr_balance,
+            real_cspr_balance
         );
     }
 }
