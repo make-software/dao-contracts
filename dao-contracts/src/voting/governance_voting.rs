@@ -635,4 +635,22 @@ impl GovernanceVoting {
             },
         }
     }
+
+    pub fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
+        let voting = self.get_voting(voting_id);
+        match voting {
+            None => false,
+            Some(voting) => {
+                match voting.get_voting_type() {
+                    VotingType::Informal => {
+                        match voting_type {
+                            VotingType::Informal => true,
+                            VotingType::Formal => voting.formal_voting_id().is_some(),
+                        }
+                    },
+                    VotingType::Formal => false,
+                }
+            },
+        }
+    }
 }

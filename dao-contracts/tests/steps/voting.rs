@@ -42,16 +42,14 @@ fn voting(
 
 #[when(expr = "{voting_type} voting with id {int} ends in {contract} contract")]
 fn end_voting(world: &mut DaoWorld, voting_type: VotingType, voting_id: u32, contract: Contract) {
-    let voting_duration = Duration::from_secs(432000000u64);
-    world.env.advance_block_time_by(voting_duration);
     world.finish_voting(&contract, voting_id, Some(voting_type));
 }
 
 #[then(expr = "formal voting with id {int} in {contract} contract does not start")]
 fn assert_formal_voting_does_not_start(world: &mut DaoWorld, voting_id: u32, contract: Contract) {
-    let voting = world.get_voting(&contract, voting_id, VotingType::Informal);
+    let voting = world.voting_exists(&contract, voting_id, VotingType::Form);
 
-    assert_eq!(voting.formal_voting_id(), None);
+    assert!(voting);
 }
 
 #[then(expr = "informal voting with id {int} in {contract} contract does not start")]
