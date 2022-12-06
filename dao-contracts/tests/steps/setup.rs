@@ -2,7 +2,7 @@ use cucumber::{gherkin::Step, given};
 
 use crate::common::{
     config::UserConfiguration,
-    params::{Account, U256, U512},
+    params::Account,
     DaoWorld,
 };
 
@@ -39,10 +39,10 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
             world.mint_va_token(&owner, account);
         }
 
-        if reputation_balance > U256::zero() {
+        if !reputation_balance.is_zero() {
             world.mint_reputation(&Account::Owner, account, reputation_balance);
         }
 
-        world.set_cspr_balance(account, cspr_balance.0);
+        world.set_cspr_balance(account, cspr_balance);
     }
 }

@@ -42,7 +42,12 @@ fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: U256) {
     assert_eq!(total_supply, expected_total_supply.0);
 }
 
-#[then(expr = "{account} is va")]
-fn assert_is_va(world: &mut DaoWorld, account: Account) {
-    assert!(world.va_token_balance_of(&account) > U256::zero());
+#[then(expr = "{account} is a VA")]
+fn assert_is_va(world: &mut DaoWorld, va: Account) {
+    assert!(world.is_va(&va));
+}
+
+#[then(expr = "{account} is not a VA")]
+fn is_not_va(world: &mut DaoWorld, va: Account) {
+    assert!(!world.is_va(&va));
 }

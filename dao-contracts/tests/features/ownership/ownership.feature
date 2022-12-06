@@ -88,7 +88,7 @@ Feature: KYC Token ownership management
         | ReputationToken    |
 
     Scenario Outline: A user adds to the whitelist
-      When Bob adds Alive to whitelist in <contract> contract
+      When Bob adds Alice to whitelist in <contract> contract
       Then Alice is not whitelisted in <contract> contract
 
       Examples: 

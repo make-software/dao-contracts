@@ -2,8 +2,7 @@ use casper_dao_contracts::bid::{
     bid::Bid,
     types::{BidId, JobOfferId},
 };
-use casper_dao_utils::{Address, BlockTime, TestContract};
-use casper_types::{U256, U512};
+use casper_dao_utils::{BlockTime, TestContract};
 
 use crate::common::{
     params::{Account, Balance, CsprBalance},

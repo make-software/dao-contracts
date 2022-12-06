@@ -14,12 +14,12 @@ fn setup_user_with_token(world: &mut DaoWorld, user: Account) {
 
 #[when(expr = "{account} mints a KYC Token to {account}")]
 fn mint(world: &mut DaoWorld, minter: Account, recipient: Account) {
-    world.mint_kyc_token(&minter, &recipient);
+    let _ = world.checked_mint_kyc_token(&minter, &recipient);
 }
 
 #[when(expr = "{account} burns {account}'s KYC token")]
 fn burn(world: &mut DaoWorld, burner: Account, holder: Account) {
-    world.burn_kyc_token(&burner, &holder);
+    let _ = world.checked_burn_kyc_token(&burner, &holder);
 }
 
 #[then(expr = "the {account}'s balance of KYC Token is {u256}")]

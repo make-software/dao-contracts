@@ -1,7 +1,7 @@
 Feature: KYC Token
   Rule: A new instance has the default state
     Scenario: Deploy a new instance
-      Then total supply is 0 tokens
+      Then total supply of KYC Token is 0 tokens
   
   Rule: A contract is set up
     Background:

@@ -20,13 +20,7 @@ impl DaoWorld {
         let minter = self.get_address(minter);
         let recipient = self.get_address(&recipient);
 
-        let result = self.va_token.as_account(minter).mint(recipient);
-
-        // TODO: remove once the code is unified
-        if result.is_ok() {
-            self.va_count += casper_types::U256::one();
-        }
-        result
+        self.va_token.as_account(minter).mint(recipient)
     }
 
     pub fn mint_va_token(&mut self, minter: &Account, recipient: &Account) {
@@ -42,13 +36,7 @@ impl DaoWorld {
         let token_id = self.get_va_token_id(holder);
         let burner = self.get_address(burner);
 
-        let result = self.va_token.as_account(burner).burn(*token_id);
-
-        // TODO: remove once the code is unified
-        if result.is_ok() {
-            self.va_count -= casper_types::U256::one();
-        }
-        result
+        self.va_token.as_account(burner).burn(*token_id)
     }
 
     pub fn burn_va_token(&mut self, burner: &Account, holder: &Account) {
@@ -69,5 +57,10 @@ impl DaoWorld {
             .token_id(holder)
             .expect("Holder should own a token");
         U256(id)
+    }
+
+    pub fn is_va(&self, account: &Account) -> bool {
+        let address = self.get_address(account);
+        !self.va_token.balance_of(address).is_zero()
     }
 }

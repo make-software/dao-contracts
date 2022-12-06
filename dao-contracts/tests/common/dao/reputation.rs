@@ -1,8 +1,8 @@
 use casper_dao_utils::TestContract;
 
 use crate::common::{
-    params::{Account, Balance, U256},
-    DaoWorld,
+    params::{Account, Balance},
+    DaoWorld, helpers::is_rep_close_enough,
 };
 
 #[allow(dead_code)]
@@ -19,14 +19,48 @@ impl DaoWorld {
         Balance(self.reputation_token.get_stake(address))
     }
 
-    pub fn mint_reputation(&mut self, minter: &Account, recipient: &Account, amount: U256) {
+    pub fn mint_reputation(&mut self, minter: &Account, recipient: &Account, amount: Balance) {
         let minter = self.get_address(minter);
         let recipient = self.get_address(recipient);
-        let amount: Balance = amount.into();
 
         self.reputation_token
             .as_account(minter)
             .mint(recipient, amount.0)
             .expect("Mint failed");
+    }
+
+    pub fn assert_staked_reputation(&self, account: &Account, expected_balance: Balance) {
+        let real_reputation_stake = self.staked_reputation(account);
+
+        assert!(
+            is_rep_close_enough(*expected_balance, *real_reputation_stake),
+            "For account {:?} CSPR balance should be {:?} but is {:?}",
+            account,
+            expected_balance,
+            real_reputation_stake
+        );
+    }
+
+    pub fn assert_reputation(&self, account: &Account, expected_balance: Balance) {
+        let real_reputation_balance = self.reputation_balance(&account);
+
+        assert!(
+            is_rep_close_enough(*expected_balance, *real_reputation_balance),
+            "For account {:?} CSPR balance should be {:?} but is {:?}",
+            account,
+            expected_balance,
+            real_reputation_balance
+        );
+    }
+
+    pub fn assert_total_supply(&self, expected_balance: Balance) {
+        let total_reputation = self.reputation_token.total_supply();
+
+        assert!(
+            is_rep_close_enough(total_reputation, *expected_balance),
+            "REP total supply should be {:?} but is {:?}",
+            expected_balance,
+            total_reputation
+        );
     }
 }
