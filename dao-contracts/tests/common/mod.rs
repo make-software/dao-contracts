@@ -21,6 +21,8 @@ use casper_types::{
     U512,
 };
 
+use self::params::Account;
+
 #[derive(cucumber::World)]
 pub struct DaoWorld {
     pub env: TestEnv,
@@ -109,6 +111,8 @@ impl DaoWorld {
         if result.is_ok() {
             let bid_id = self.bid_escrow.bids_count();
             self.bids.insert((offer_id, bidder), bid_id);
+        } else {
+            dbg!(result.err());
         }
     }
 
@@ -154,11 +158,16 @@ impl DaoWorld {
     // gets relative amount of motes of the account
     pub fn get_cspr_balance(&self, account: Address) -> U512 {
         let balance = self.balances.get(&account).unwrap()
-            + self.test_env().get_address_cspr_balance(account);
+          + self.test_env().get_address_cspr_balance(account);
         let result = balance
             .checked_sub(*self.starting_balances.get(&account).unwrap())
             .unwrap();
         result
+    }
+
+    pub fn get_cspr_balance2(&self, account: &Account) -> U512 {
+        let account = self.get_address(account);
+        self.get_cspr_balance(account)
     }
 
     // sets amount of reputation on the account
@@ -200,54 +209,6 @@ impl DaoWorld {
     pub fn test_env(&self) -> &TestEnv {
         self.bid_escrow.get_env()
     }
-
-    // returns address of the account with the given name
-    pub fn named_address<T: AsRef<str>>(&mut self, name: T) -> Address {
-        let name = String::from(name.as_ref());
-        match self.addresses.get(&*name) {
-            None => {
-                // add new address, but match the name
-                match name.as_str() {
-                    "BidEscrow" => {
-                        let address = self.bid_escrow.address();
-                        self.addresses.insert(name, address);
-                        address
-                    }
-                    _ => {
-                        let address = self.env.get_account(self.accounts_count);
-                        self.addresses.insert(name.clone(), address);
-                        self.accounts_count += 1;
-
-                        if name.contains("JobPoster") {
-                            self.kyc(address);
-                        }
-
-                        if name.contains("Worker") {
-                            self.kyc(address);
-                        }
-
-                        if name.contains("VA") {
-                            self.make_va(address);
-                        }
-
-                        if name.contains("Internal") {
-                            self.make_va(address);
-                        }
-
-                        address
-                    }
-                }
-            }
-            Some(address) => *address,
-        }
-    }
-
-    pub fn _named_address2(&self, name: String) -> Address {
-        match name.as_ref() {
-            "Owner" => self.env.get_account(0),
-            _ => panic!("Unknown address {:?}", name),
-        }
-    }
 }
 
 impl Debug for DaoWorld {
@@ -288,7 +249,8 @@ impl Default for DaoWorld {
         };
 
         // Set multisig account.
-        let multisig_address = Bytes::from(dao.named_address("MultisigWallet").to_bytes().unwrap());
+        
+        let multisig_address = Bytes::from(dao.get_address(&Account::MultisigWallet).to_bytes().unwrap());
         let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
         dao.variable_repo
             .update_at(key, multisig_address, None)

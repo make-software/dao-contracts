@@ -2,11 +2,11 @@ Feature: Slashing a percentage of the Reputation of a VA who has some Repuation 
 
   Background:
     Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | VA1              | 0            | 1000         | 0          |
-      | VA2              | 0            | 2000         | 0          |
-      | VA3              | 0            | 2000         | 0          |
-      | VA4              | 0            | 2000         | 0          |
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | VA1              | 0            | 1000         | 0          | true     | true  |
+      | VA2              | 0            | 2000         | 0          | true     | true  |
+      | VA3              | 0            | 2000         | 0          | true     | true  |
+      | VA4              | 0            | 2000         | 0          | true     | true  |
 
   Scenario: VA1 gets his reputation slashed in half while he has no reputation staked
     When VA1 starts slashing vote for VA4 with 500 REP stake and 50% slashing rate

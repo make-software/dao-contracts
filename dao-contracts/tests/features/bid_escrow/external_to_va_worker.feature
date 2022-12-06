@@ -5,14 +5,14 @@ Feature: External Worker who wants to become a VA submits job
 
   Background:
     Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 0            | 0            | 0          |
-      | MultisigWallet   | 0            | 0            | 0          |
-      | JobPoster        | 1000         | 0            | 0          |
-      | InternalWorker   | 0            | 1000         | 0          |
-      | ExternalWorker   | 500          | 0            | 0          |
-      | VA1              | 0            | 1000         | 0          |
-      | VA2              | 0            | 1000         | 0          |
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | BidEscrow        | 0            | 0            | 0          | false    | false |
+      | MultisigWallet   | 0            | 0            | 0          | false    | false |
+      | JobPoster        | 1000         | 0            | 0          | true     | false |
+      | InternalWorker   | 0            | 1000         | 0          | true     | true  |
+      | ExternalWorker   | 500          | 0            | 0          | true     | false |
+      | VA1              | 0            | 1000         | 0          | true     | true  |
+      | VA2              | 0            | 1000         | 0          | true     | true  |
     And following configuration
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |

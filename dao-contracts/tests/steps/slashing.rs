@@ -4,17 +4,17 @@ use casper_types::U256;
 use cucumber::{gherkin::Step, when};
 
 use crate::common::{
-    helpers::{to_rep, to_voting_type},
-    DaoWorld,
+    helpers::{to_rep, to_voting_type, self},
+    DaoWorld, params::Account,
 };
 
 #[when(
-    expr = "{word} starts slashing vote for {word} with {int} REP stake and {int}% slashing rate"
+    expr = "{account} starts slashing vote for {account} with {int} REP stake and {int}% slashing rate"
 )]
-fn start_vote(w: &mut DaoWorld, creator: String, va_name: String, stake: u64, slashing_rate: u32) {
+fn start_vote(w: &mut DaoWorld, creator: Account, va: Account, stake: u64, slashing_rate: u32) {
     let slashing_rate = slashing_rate * 10;
-    let creator = w.named_address(creator);
-    let va = w.named_address(va_name);
+    let creator = w.get_address(&creator);
+    let va = w.get_address(&va);
     w.slashing_voter
         .as_account(creator)
         .create_voting(va, slashing_rate, U256::from(stake * 1_000_000_000))
@@ -26,7 +26,7 @@ fn informal_voting(w: &mut DaoWorld, voting_type: String, voting_id: u32, step: 
     let voting_type = to_voting_type(&voting_type);
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
-        let name = row.get(0).unwrap();
+        let voter = helpers::parse(row.first(), "Couldn't parse account");
         let choice = match row.get(1).unwrap().as_str() {
             "Yes" => Choice::InFavor,
             "No" => Choice::Against,
@@ -34,7 +34,7 @@ fn informal_voting(w: &mut DaoWorld, voting_type: String, voting_id: u32, step: 
         };
         let stake = to_rep(&row[2]);
 
-        let voter = w.named_address(name.clone());
+        let voter = w.get_address(&voter);
 
         w.slashing_voter
             .as_account(voter)

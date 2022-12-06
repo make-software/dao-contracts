@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use cucumber::Parameter;
 
-use crate::common::helpers::to_rep;
+use crate::common::helpers::{to_rep, to_cspr};
 
 #[derive(
     Copy, Clone, Debug, Default, derive_more::Deref, Parameter, PartialEq, Eq, PartialOrd, Ord,
@@ -28,6 +28,30 @@ impl FromStr for U256 {
         casper_types::U256::from_dec_str(s)
             .map_err(|_| "Err".to_string())
             .map(|v| U256(v))
+    }
+}
+#[derive(
+    Copy, Clone, Debug, Default, derive_more::Deref, Parameter, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[param(name = "u512", regex = r"\d+")]
+pub struct U512(pub casper_types::U512);
+
+#[allow(dead_code)]
+impl U512 {
+    pub fn zero() -> Self {
+        U512(casper_types::U512::zero())
+    }
+
+    pub fn one() -> Self {
+        U512(casper_types::U512::one())
+    }
+}
+
+impl FromStr for U512 {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(U512(to_cspr(s)))
     }
 }
 

@@ -2,12 +2,11 @@ Feature: VA Bid
   VA can bid during external auction
 
   Background:
-    Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 0            | 0            | 0          |
-      | JobPoster        | 1000         | 0            | 0          |
-      | ExternalWorker   | 1000         | 0            | 0          |
-      | InternalWorker   | 0            | 1000         | 0          |
+    Given accounts
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | JobPoster        | 1000         | 0            | 0          | true     | false |
+      | ExternalWorker   | 1000         | 0            | 0          | true     | false |
+      | InternalWorker   | 0            | 1000         | 0          | true     | true  |
     And following configuration
       | key                     | value        |
       | InternalAuctionTime     | 604800       |

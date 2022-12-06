@@ -8,16 +8,20 @@ use crate::common::{
 #[allow(dead_code)]
 impl DaoWorld {
     pub fn get_address(&self, account: &Account) -> Address {
-        let idx = match account {
-            Account::Owner => 0,
-            Account::Deployer => 0,
-            Account::Alice => 1,
-            Account::Bob => 2,
-            Account::Holder => 3,
-            Account::Any => 4,
-            Account::VA(n) => 4 + n,
-        };
-        self.env.get_account(idx)
+         match account {
+            Account::Owner => self.env.get_account(0),
+            Account::Deployer => self.env.get_account(0),
+            Account::Alice => self.env.get_account(1),
+            Account::Bob => self.env.get_account(2),
+            Account::Holder => self.env.get_account(3),
+            Account::Any => self.env.get_account(4),
+            Account::JobPoster => self.env.get_account(5),
+            Account::ExternalWorker => self.env.get_account(6),
+            Account::InternalWorker => self.env.get_account(7),
+            Account::MultisigWallet => self.env.get_account(8),
+            Account::VA(n) => self.env.get_account(8 + n),
+            Account::Contract(contract) => self.get_contract_address(contract),
+        }
     }
 
     pub fn get_contract_address(&self, contract: &Contract) -> Address {

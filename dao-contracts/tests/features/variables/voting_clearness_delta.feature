@@ -4,11 +4,11 @@ Feature: Voting clearness delta
 
   Background:
     Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | JobPoster        | 1000         | 0            | 0          |
-      | InternalWorker   | 0            | 1000         | 0          |
-      | VA1              | 0            | 1000         | 0          |
-      | VA2              | 0            | 1000         | 0          |
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | JobPoster        | 1000         | 0            | 0          | true     | false |
+      | InternalWorker   | 0            | 1000         | 0          | true     | true  |
+      | VA1              | 0            | 1000         | 0          | true     | true  |
+      | VA2              | 0            | 1000         | 0          | true     | true  |
     And following configuration
       | key                                    | value         |
       | VotingClearnessDelta                   | 8             |

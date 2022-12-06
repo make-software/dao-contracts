@@ -3,11 +3,11 @@ Feature: AuctionTime Variables
 
   Background:
     Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 0            | 0            | 0          |
-      | JobPoster        | 1000         | 0            | 0          |
-      | ExternalWorker   | 1000         | 0            | 0          |
-      | InternalWorker   | 0            | 1000         | 0          |
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | BidEscrow        | 0            | 0            | 0          | false    | false |
+      | JobPoster        | 1000         | 0            | 0          | true     | false |
+      | ExternalWorker   | 1000         | 0            | 0          | true     | false |
+      | InternalWorker   | 0            | 1000         | 0          | true     | true  |
     And following configuration
       | key                     | value        |
       | InternalAuctionTime     | 604800       |

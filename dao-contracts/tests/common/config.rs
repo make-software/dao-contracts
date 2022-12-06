@@ -1,6 +1,6 @@
 use super::{
     helpers,
-    params::{Account, Contract, U256},
+    params::{Account, Contract, U256, U512},
 };
 
 #[allow(dead_code)]
@@ -10,6 +10,8 @@ pub struct UserConfiguration {
     is_kyced: bool,
     is_va: bool,
     reputation_balance: U256,
+    reputation_staked: U256,
+    cspr_balance: U512,
 }
 
 #[allow(dead_code)]
@@ -19,6 +21,8 @@ impl UserConfiguration {
         let mut is_kyced = false;
         let mut is_va = false;
         let mut reputation_balance = U256::zero();
+        let mut reputation_staked = U256::zero();
+        let mut cspr_balance = U512::zero();
         let mut account = None::<Account>;
 
         for (idx, label) in labels.iter().enumerate() {
@@ -45,7 +49,16 @@ impl UserConfiguration {
                 "REP balance" => {
                     reputation_balance = helpers::parse_or_default(data.get(idx));
                 }
+                "REP stake" => {
+                    reputation_staked = helpers::parse_or_default(data.get(idx));
+                }
+                "CSPR balance" => {
+                    cspr_balance = helpers::parse_or_default(data.get(idx));
+                }
                 "user" => {
+                    account = helpers::parse_or_none(data.get(idx));
+                }
+                "account" => {
                     account = helpers::parse_or_none(data.get(idx));
                 }
                 unknown => {
@@ -60,6 +73,8 @@ impl UserConfiguration {
             is_kyced,
             is_va,
             reputation_balance,
+            reputation_staked,
+            cspr_balance,
         }
     }
 
@@ -81,5 +96,9 @@ impl UserConfiguration {
 
     pub fn reputation_balance(&self) -> U256 {
         self.reputation_balance
+    }
+
+    pub fn cspr_balance(&self) -> U512 {
+        self.cspr_balance
     }
 }
