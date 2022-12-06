@@ -1,6 +1,5 @@
 use std::{fmt::Debug, str::FromStr};
 
-use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
@@ -54,14 +53,6 @@ pub fn is_rep_close_enough(a: U256, b: U256) -> bool {
     diff < U256::from(10_000_000)
 }
 
-pub fn to_voting_type(value: &str) -> VotingType {
-    match value {
-        "formal" => VotingType::Formal,
-        "informal" => VotingType::Informal,
-        _ => panic!("Unexpected voting type {}", value),
-    }
-}
-
 pub fn multiplier(unit: String) -> u32 {
     let multiplier = match unit.as_str() {
         "seconds" | "second" => 1,
@@ -71,16 +62,6 @@ pub fn multiplier(unit: String) -> u32 {
         _ => panic!("Unknown unit option - it should be either seconds, minutes, hours or days"),
     };
     multiplier
-}
-
-pub fn match_choice(choice: String) -> Choice {
-    match choice.as_str() {
-        "yes" => Choice::InFavor,
-        "no" => Choice::Against,
-        _ => {
-            panic!("Unknown choice");
-        }
-    }
 }
 
 pub fn match_result(result: String) -> bool {

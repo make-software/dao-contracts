@@ -4,7 +4,8 @@ use crate::common::{
     params::{
         voting::{Ballot, Voting, VotingType},
         Account,
-        Contract, Balance,
+        Balance,
+        Contract,
     },
     DaoWorld,
 };
@@ -25,15 +26,14 @@ impl DaoWorld {
                     stake.0,
                 )
             }
-            Contract::BidEscrow => todo!(),
             Contract::SlashingVoter => {
                 let address_to_slash = voting.get_parsed_arg::<Account>(0);
                 let address_to_slash = self.get_address(&address_to_slash);
-                let slash_ratio = voting.get_parsed_arg::<u32>(1);
+                let slash_ratio = voting.get_parsed_arg::<f32>(1);
 
                 self.slashing_voter.as_account(creator).create_voting(
                     address_to_slash,
-                    slash_ratio,
+                    (slash_ratio * 1000.0) as u32,
                     stake.0,
                 )
             }

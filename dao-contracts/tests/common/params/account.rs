@@ -13,16 +13,15 @@ pub enum Account {
     ExternalWorker,
     InternalWorker,
     Contract(Contract),
-    MultisigWallet
+    MultisigWallet,
 }
 
 use std::str::FromStr;
 
 use cucumber::Parameter;
 
-use crate::common::helpers;
-
 use super::Contract;
+use crate::common::helpers;
 
 impl FromStr for Account {
     type Err = String;

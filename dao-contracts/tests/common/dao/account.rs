@@ -8,7 +8,7 @@ use crate::common::{
 #[allow(dead_code)]
 impl DaoWorld {
     pub fn get_address(&self, account: &Account) -> Address {
-         match account {
+        match account {
             Account::Owner => self.env.get_account(0),
             Account::Deployer => self.env.get_account(0),
             Account::Alice => self.env.get_account(1),

@@ -10,11 +10,8 @@ use std::{
     time::Duration,
 };
 
-use casper_dao_contracts::bid::{
-    bid::Bid,
-    types::{BidId, JobOfferId},
-};
-use casper_dao_utils::{Address, BlockTime, TestContract, TestEnv};
+use casper_dao_contracts::bid::types::{BidId, JobOfferId};
+use casper_dao_utils::{Address, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
@@ -33,151 +30,16 @@ pub struct DaoWorld {
     pub slashing_voter: casper_dao_contracts::SlashingVoterContractTest,
     pub kyc_voter: casper_dao_contracts::KycVoterContractTest,
     pub variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
-    addresses: HashMap<String, Address>,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
     offers: HashMap<Address, JobOfferId>,
-    accounts_count: usize,
-    kyc_count: U256,
-    va_count: U256,
 }
 
 impl DaoWorld {
     pub fn advance_time(&mut self, seconds: u32) {
         self.env
             .advance_block_time_by(Duration::from_secs(seconds as u64));
-    }
-
-    // sets relative amount of motes to the account
-    pub fn set_cspr_balance(&mut self, account: Address, amount: U512) {
-        assert!(
-            !self.balances.contains_key(&account),
-            "Cannot set cspr balance twice"
-        );
-
-        self.balances.insert(account, amount);
-
-        self.starting_balances
-            .insert(account, self.test_env().get_address_cspr_balance(account));
-    }
-
-    pub fn get_bid(&self, offer_id: JobOfferId, poster: Address) -> Option<Bid> {
-        let bid_id = self.bids.get(&(offer_id, poster));
-
-        bid_id?;
-
-        self.bid_escrow.get_bid(*bid_id.unwrap())
-    }
-
-    pub fn get_job_offer_id(&self, job_poster: &Address) -> Option<&JobOfferId> {
-        self.offers.get(job_poster)
-    }
-
-    pub fn post_bid(
-        &mut self,
-        offer_id: JobOfferId,
-        bidder: Address,
-        timeframe: BlockTime,
-        budget: u64,
-        stake: u64,
-        onboarding: bool,
-        cspr_stake: Option<u64>,
-    ) {
-        let _bids_count = self.bid_escrow.bids_count();
-
-        let result = match cspr_stake {
-            None => self.bid_escrow.as_account(bidder).submit_bid(
-                0,
-                timeframe,
-                U512::from(budget * 1_000_000_000),
-                U256::from(stake * 1_000_000_000),
-                onboarding,
-                None,
-            ),
-            Some(cspr_stake) => self
-                .bid_escrow
-                .as_account(bidder)
-                .submit_bid_with_cspr_amount(
-                    0,
-                    timeframe,
-                    U512::from(budget * 1_000_000_000),
-                    U256::from(stake * 1_000_000_000),
-                    onboarding,
-                    U512::from(cspr_stake * 1_000_000_000),
-                ),
-        };
-
-        if result.is_ok() {
-            let bid_id = self.bid_escrow.bids_count();
-            self.bids.insert((offer_id, bidder), bid_id);
-        } else {
-            dbg!(result.err());
-        }
-    }
-
-    pub fn cancel_bid(&mut self, worker: Address, job_offer_id: JobOfferId, bid_id: BidId) {
-        let result = self.bid_escrow.as_account(worker).cancel_bid(bid_id);
-        if result.is_ok() {
-            self.bids.remove(&(job_offer_id, worker));
-        }
-    }
-
-    pub fn post_offer(
-        &mut self,
-        poster: Address,
-        timeframe: BlockTime,
-        maximum_budget: u64,
-        dos_fee: u64,
-    ) -> JobOfferId {
-        self.bid_escrow
-            .as_account(poster)
-            .post_job_offer_with_cspr_amount(
-                timeframe,
-                U512::from(maximum_budget * 1_000_000_000),
-                U512::from(dos_fee * 1_000_000_000),
-            )
-            .unwrap();
-
-        let offer_id = self.bid_escrow.job_offers_count();
-        self.offers.insert(poster, offer_id);
-        offer_id
-    }
-
-    pub fn pick_bid(&mut self, job_poster: Address, worker: Address) {
-        let job_offer_id = self.offers.get(&job_poster).unwrap();
-        let bid_id = self.bids.get(&(*job_offer_id, worker)).unwrap();
-        let bid = self.bid_escrow.get_bid(*bid_id).unwrap();
-
-        self.bid_escrow
-            .as_account(job_poster)
-            .pick_bid_with_cspr_amount(*job_offer_id, *bid_id, bid.proposed_payment)
-            .unwrap();
-    }
-
-    // gets relative amount of motes of the account
-    pub fn get_cspr_balance(&self, account: Address) -> U512 {
-        let balance = self.balances.get(&account).unwrap()
-          + self.test_env().get_address_cspr_balance(account);
-        let result = balance
-            .checked_sub(*self.starting_balances.get(&account).unwrap())
-            .unwrap();
-        result
-    }
-
-    pub fn get_cspr_balance2(&self, account: &Account) -> U512 {
-        let account = self.get_address(account);
-        self.get_cspr_balance(account)
-    }
-
-    // sets amount of reputation on the account
-    pub fn set_rep_balance(&mut self, account: Address, amount: U256) {
-        self.reputation_token.mint(account, amount).unwrap();
-    }
-
-    // gets amount of reputation on the account
-    pub fn get_rep_balance(&self, account: Address) -> U256 {
-        self.reputation_token.balance_of(account)
     }
 
     // sets variable value
@@ -190,24 +52,15 @@ impl DaoWorld {
         self.variable_repo.get(name).unwrap()
     }
 
-    // performs kyc for an address
-    pub fn kyc(&mut self, account: Address) {
-        self.kyc_token.mint(account).unwrap();
-        self.kyc_count += U256::one();
-    }
-
+    // TODO: to remove
     // makes an address a va
     pub fn make_va(&mut self, account: Address) {
         self.va_token.mint(account).unwrap();
-        self.va_count += U256::one();
     }
 
+    // TODO: to remove
     pub fn is_va(&self, account: Address) -> bool {
         self.va_token.balance_of(account) > U256::zero()
-    }
-
-    pub fn test_env(&self) -> &TestEnv {
-        self.bid_escrow.get_env()
     }
 }
 
@@ -238,19 +91,18 @@ impl Default for DaoWorld {
             variable_repo,
             slashing_voter,
             kyc_voter,
-            addresses: Default::default(),
             balances: Default::default(),
             starting_balances: Default::default(),
             bids: Default::default(),
             offers: Default::default(),
-            accounts_count: 0,
-            kyc_count: 0.into(),
-            va_count: 0.into(),
         };
 
         // Set multisig account.
-        
-        let multisig_address = Bytes::from(dao.get_address(&Account::MultisigWallet).to_bytes().unwrap());
+        let multisig_address = Bytes::from(
+            dao.get_address(&Account::MultisigWallet)
+                .to_bytes()
+                .unwrap(),
+        );
         let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
         dao.variable_repo
             .update_at(key, multisig_address, None)

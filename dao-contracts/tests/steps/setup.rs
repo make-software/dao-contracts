@@ -45,7 +45,6 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
             world.mint_reputation(&Account::Owner, account, reputation_balance);
         }
 
-        let address = world.get_address(account);
-        world.set_cspr_balance(address, cspr_balance.0);
+        world.set_cspr_balance(account, cspr_balance.0);
     }
 }

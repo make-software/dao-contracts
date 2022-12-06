@@ -10,6 +10,8 @@ use casper_dao_contracts::{
 use casper_dao_utils::{TestContract, TestEnv};
 
 mod account;
+mod bid_escrow;
+mod cspr;
 mod events;
 mod kyc;
 mod ownership;

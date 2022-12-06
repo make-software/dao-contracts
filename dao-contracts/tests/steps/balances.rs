@@ -1,8 +1,8 @@
 use casper_types::U256;
-use cucumber::{gherkin::Step, given, then};
+use cucumber::{gherkin::Step, then};
 
 use crate::common::{
-    helpers::{self, is_cspr_close_enough, is_rep_close_enough, to_cspr, to_rep},
+    helpers::{self, is_cspr_close_enough, is_rep_close_enough},
     params::{Account, Balance, U512},
     DaoWorld,
 };
@@ -48,7 +48,8 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
         for (idx, label) in labels.iter().enumerate() {
             match label.as_str() {
                 "REP balance" => {
-                    let expected_reputation_balance = helpers::parse_or_default::<Balance>(row.get(idx));
+                    let expected_reputation_balance =
+                        helpers::parse_or_default::<Balance>(row.get(idx));
                     let real_reputation_balance = world.reputation_balance(&account);
 
                     assert!(
@@ -60,7 +61,8 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
                     );
                 }
                 "REP stake" => {
-                    let expected_reputation_stake = helpers::parse_or_default::<Balance>(row.get(idx));
+                    let expected_reputation_stake =
+                        helpers::parse_or_default::<Balance>(row.get(idx));
                     let real_reputation_stake = world.staked_reputation(&account);
 
                     assert!(
@@ -73,7 +75,7 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
                 }
                 "CSPR balance" => {
                     let expected_cspr_balance = helpers::parse_or_default::<U512>(row.get(idx));
-                    let real_cspr_balance = world.get_cspr_balance2(&account);
+                    let real_cspr_balance = world.get_cspr_balance(&account);
 
                     assert!(
                         is_cspr_close_enough(*expected_cspr_balance, real_cspr_balance),

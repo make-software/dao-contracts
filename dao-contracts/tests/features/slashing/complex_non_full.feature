@@ -9,7 +9,10 @@ Feature: Slashing a percentage of the Reputation of a VA who has some Repuation 
       | VA4              | 0            | 2000         | 0          | true     | true  |
 
   Scenario: VA1 gets his reputation slashed in half while he has no reputation staked
-    When VA1 starts slashing vote for VA4 with 500 REP stake and 50% slashing rate
+    # When VA1 starts slashing vote for VA4 with 500 REP stake and 50% slashing rate
+    When VA1 starts voting with the following config
+        | voting_contract       | stake | arg1  | arg2 |
+        | SlashingVoter         | 500   | VA4   | 0.5  |
     And VA1 starts slashing vote for VA3 with 250 REP stake and 50% slashing rate
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
