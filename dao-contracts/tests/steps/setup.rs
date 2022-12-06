@@ -31,14 +31,12 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
             world.whitelist_account(contract, &owner, account).unwrap();
         }
 
-        let user_address = world.get_address(account);
         if config.is_kyced() {
-            world.mint_kyc_token(&owner, account).unwrap();
+            world.mint_kyc_token(&owner, account);
         }
 
-        // TODO: world should accept an Account.
         if config.is_va() {
-            world.make_va(user_address);
+            world.mint_va_token(&owner, account);
         }
 
         if reputation_balance > U256::zero() {
