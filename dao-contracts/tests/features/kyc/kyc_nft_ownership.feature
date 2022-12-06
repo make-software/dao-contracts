@@ -39,7 +39,7 @@ Feature: KYC Token ownership management
       Then Alice is whitelisted in KycToken contract
 
     Scenario: A user adds to the whitelist
-      When Bob adds Alive to whitelist in KycToken contract
+      When Bob adds Alice to whitelist in KycToken contract
       Then Alice is not whitelisted in KycToken contract
 
   

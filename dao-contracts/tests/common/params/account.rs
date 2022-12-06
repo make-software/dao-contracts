@@ -34,6 +34,7 @@ impl FromStr for Account {
             "Owner" => Self::Owner,
             "Deployer" => Self::Deployer,
             "Holder" => Self::Holder,
+            "Account" => Self::Any,
             "VA1" => Self::VA(1),
             "VA2" => Self::VA(2),
             "VA3" => Self::VA(3),
