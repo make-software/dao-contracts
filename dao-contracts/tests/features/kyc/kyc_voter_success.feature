@@ -31,9 +31,9 @@ Feature: Kyc Voter
       And formal voting with id 0 ends in KycVoter contract
       Then users balances are
         | account | REP balance  | REP stake  |
-        | VA1     | 1031         | 0          |
-        | VA2     | 1156         | 0          |
-        | VA3     | 1062         | 0          |
+        | VA1     | 1031.25      | 0          |
+        | VA2     | 1156.25      | 0          |
+        | VA3     | 1062.5       | 0          |
         | VA4     | 750          | 0          |
         | VA5     | 1000         | 0          |
         | VA6     | 1000         | 0          |

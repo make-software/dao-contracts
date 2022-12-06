@@ -2,7 +2,7 @@ use std::{fmt::Debug, str::FromStr};
 
 use cucumber::Parameter;
 
-use super::{Account, Contract, U256};
+use super::{Account, Contract, U256, Balance};
 use crate::common::helpers;
 
 pub struct Voting {
@@ -20,8 +20,8 @@ impl Voting {
         helpers::parse::<T>(self.raw_args.get(n), "Couldn't parse voting arg")
     }
 
-    pub fn get_stake(&self) -> casper_types::U256 {
-        self.stake.0
+    pub fn get_stake(&self) -> Balance {
+        self.stake.into()
     }
 }
 
@@ -102,7 +102,7 @@ impl Into<casper_dao_contracts::voting::Choice> for Choice {
 #[derive(Clone)]
 pub struct Ballot {
     pub voter: Account,
-    pub stake: U256,
+    pub stake: Balance,
     pub choice: Choice,
     pub voting_id: u32,
     pub voting_type: VotingType,

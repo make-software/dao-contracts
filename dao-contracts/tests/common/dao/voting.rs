@@ -4,7 +4,7 @@ use crate::common::{
     params::{
         voting::{Ballot, Voting, VotingType},
         Account,
-        Contract,
+        Contract, Balance,
     },
     DaoWorld,
 };
@@ -13,7 +13,7 @@ use crate::common::{
 impl DaoWorld {
     pub fn checked_create_voting(&mut self, creator: Account, voting: Voting) -> Result<(), Error> {
         let creator = self.get_address(&creator);
-        let stake = voting.get_stake();
+        let stake: Balance = voting.get_stake().into();
 
         match voting.contract {
             Contract::KycVoter => {
@@ -22,7 +22,7 @@ impl DaoWorld {
                 self.kyc_voter.as_account(creator).create_voting(
                     subject_address,
                     DocumentHash::default(),
-                    stake,
+                    stake.0,
                 )
             }
             Contract::BidEscrow => todo!(),
@@ -34,7 +34,7 @@ impl DaoWorld {
                 self.slashing_voter.as_account(creator).create_voting(
                     address_to_slash,
                     slash_ratio,
-                    stake,
+                    stake.0,
                 )
             }
             contract => panic!("{:?} is not a voting contract", contract),
