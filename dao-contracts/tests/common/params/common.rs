@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use cucumber::Parameter;
 
-use crate::common::helpers::to_rep;
+use crate::common::helpers::{to_cspr, to_rep};
 
 #[derive(
     Copy, Clone, Debug, Default, derive_more::Deref, Parameter, PartialEq, Eq, PartialOrd, Ord,
@@ -30,8 +30,35 @@ impl FromStr for U256 {
             .map(|v| U256(v))
     }
 }
+#[derive(
+    Copy, Clone, Debug, Default, derive_more::Deref, Parameter, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[param(name = "u512", regex = r"\d+")]
+pub struct U512(pub casper_types::U512);
 
-#[derive(Copy, Clone, Debug, Default, derive_more::Deref, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(dead_code)]
+impl U512 {
+    pub fn zero() -> Self {
+        U512(casper_types::U512::zero())
+    }
+
+    pub fn one() -> Self {
+        U512(casper_types::U512::one())
+    }
+}
+
+impl FromStr for U512 {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(U512(to_cspr(s)))
+    }
+}
+
+#[derive(
+    Copy, Clone, Debug, Default, derive_more::Deref, PartialEq, Eq, PartialOrd, Ord, Parameter,
+)]
+#[param(name = "balance", regex = r"\d+")]
 pub struct Balance(pub casper_types::U256);
 
 impl FromStr for Balance {
@@ -45,6 +72,26 @@ impl FromStr for Balance {
 impl From<U256> for Balance {
     fn from(value: U256) -> Self {
         Balance(value.0 * 1_000_000_000)
+    }
+}
+
+#[derive(
+    Copy, Clone, Debug, Default, derive_more::Deref, PartialEq, Eq, PartialOrd, Ord, Parameter,
+)]
+#[param(name = "cspr", regex = r"\d+")]
+pub struct CsprBalance(pub casper_types::U512);
+
+impl FromStr for CsprBalance {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(CsprBalance(to_cspr(s)))
+    }
+}
+
+impl From<U512> for CsprBalance {
+    fn from(value: U512) -> Self {
+        CsprBalance(value.0 * 1_000_000_000)
     }
 }
 

@@ -2,7 +2,7 @@ use std::{fmt::Debug, str::FromStr};
 
 use cucumber::Parameter;
 
-use super::{Account, Contract, U256, Balance};
+use super::{Account, Balance, Contract, U256};
 use crate::common::helpers;
 
 pub struct Voting {
@@ -69,7 +69,7 @@ impl Into<casper_dao_contracts::voting::voting::VotingType> for VotingType {
 }
 
 #[derive(Debug, Default, Clone, Parameter)]
-#[param(name = "choice", regex = "in favor|against|yes|no")]
+#[param(name = "choice", regex = "in favor|against|yes|no|Yes|No")]
 pub enum Choice {
     InFavor,
     #[default]
@@ -80,7 +80,7 @@ impl FromStr for Choice {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
+        Ok(match s.to_lowercase().as_str() {
             "yes" => Self::InFavor,
             "in favor" => Self::InFavor,
             "against" => Self::Against,

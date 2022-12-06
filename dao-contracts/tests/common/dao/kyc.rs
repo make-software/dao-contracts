@@ -15,12 +15,7 @@ impl DaoWorld {
         let minter = self.get_address(minter);
         let recipient = self.get_address(recipient);
 
-        let result = self.kyc_token.as_account(minter).mint(recipient);
-
-        if result.is_ok() {
-            self.kyc_count += casper_types::U256::one();
-        }
-        result
+        self.kyc_token.as_account(minter).mint(recipient)
     }
 
     pub fn checked_mint_kyc_token(&mut self, minter: &Account, recipient: &Account) {
@@ -36,12 +31,7 @@ impl DaoWorld {
         let token_id = self.get_kyc_token_id(holder);
         let burner = self.get_address(burner);
 
-        let result = self.kyc_token.as_account(burner).burn(*token_id);
-
-        if result.is_ok() {
-            self.kyc_count -= casper_types::U256::one();
-        }
-        result
+        self.kyc_token.as_account(burner).burn(*token_id)
     }
 
     pub fn checked_burn_kyc_token(&mut self, minter: &Account, recipient: &Account) {

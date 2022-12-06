@@ -3,11 +3,10 @@ Feature: VA Bid
 
   Background:
     Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 0            | 0            | 0          |
-      | JobPoster        | 1000         | 0            | 0          |
-      | ExternalWorker   | 1000         | 0            | 0          |
-      | InternalWorker   | 0            | 1000         | 0          |
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | JobPoster        | 1000         | 0            | 0          | true     | false |
+      | ExternalWorker   | 1000         | 0            | 0          | true     | false |
+      | InternalWorker   | 0            | 1000         | 0          | true     | true  |
     And following configuration
       | key                     | value        |
       | InternalAuctionTime     | 604800       |
@@ -25,5 +24,5 @@ Feature: VA Bid
     When 8 days passed
     And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake with onboarding
     And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
-    Then ExternalWorker Bid is posted
-    And InternalWorker Bid is posted
+    Then InternalWorker Bid is posted
+    And ExternalWorker Bid is posted

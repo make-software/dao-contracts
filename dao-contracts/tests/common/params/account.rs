@@ -9,12 +9,18 @@ pub enum Account {
     #[default]
     Any,
     VA(usize),
+    JobPoster,
+    ExternalWorker,
+    InternalWorker,
+    Contract(Contract),
+    MultisigWallet,
 }
 
 use std::str::FromStr;
 
 use cucumber::Parameter;
 
+use super::Contract;
 use crate::common::helpers;
 
 impl FromStr for Account {
@@ -27,6 +33,7 @@ impl FromStr for Account {
             "Owner" => Self::Owner,
             "Deployer" => Self::Deployer,
             "Holder" => Self::Holder,
+            "Account" => Self::Any,
             "VA1" => Self::VA(1),
             "VA2" => Self::VA(2),
             "VA3" => Self::VA(3),
@@ -35,7 +42,11 @@ impl FromStr for Account {
             "VA6" => Self::VA(6),
             "VA7" => Self::VA(7),
             "VA8" => Self::VA(8),
-            _ => Self::Any,
+            "JobPoster" => Self::JobPoster,
+            "ExternalWorker" => Self::ExternalWorker,
+            "InternalWorker" => Self::InternalWorker,
+            "MultisigWallet" => Self::MultisigWallet,
+            other => Self::Contract(other.parse().unwrap()),
         })
     }
 }

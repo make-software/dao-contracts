@@ -1,55 +1,59 @@
 use std::time::Duration;
 
-use casper_dao_contracts::voting::{voting::VotingType, Choice};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U256;
 use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
-    helpers::{match_choice, match_result, to_rep, to_voting_type},
+    helpers::{self, match_result, to_rep},
+    params::{
+        voting::{Choice, VotingType},
+        Account,
+        Balance,
+        CsprBalance,
+    },
     DaoWorld,
 };
 
 #[when(
-    expr = "{word} posted a JobOffer with expected timeframe of {int} days, maximum budget of {int} CSPR and {int} CSPR DOS Fee"
+    expr = "{account} posted a JobOffer with expected timeframe of {int} days, maximum budget of {cspr} CSPR and {cspr} CSPR DOS Fee"
 )]
 fn post_job_offer(
     w: &mut DaoWorld,
-    job_poster_name: String,
+    job_poster: Account,
     timeframe: BlockTime,
-    maximum_budget: u64,
-    dos_fee: u64,
+    maximum_budget: CsprBalance,
+    dos_fee: CsprBalance,
 ) {
-    let job_poster = w.named_address(job_poster_name);
+    let timeframe = timeframe * 60 * 60 * 24;
     w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
 #[when(
-    expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} REP stake"
+    expr = "{account} posted the Bid with proposed timeframe of {int} days and {cspr} CSPR price and {balance} REP stake"
 )]
 fn submit_bid_internal(
     w: &mut DaoWorld,
-    worker_name: String,
+    worker: Account,
     timeframe: BlockTime,
-    budget: u64,
-    stake: u64,
+    budget: CsprBalance,
+    stake: Balance,
 ) {
-    let worker = w.named_address(worker_name);
+    let timeframe = timeframe * 60 * 60 * 24;
     w.post_bid(0, worker, timeframe, budget, stake, false, None);
 }
 
 #[when(
-    expr = "{word} posted the Bid with proposed timeframe of {int} days and {int} CSPR price and {int} CSPR stake {word} onboarding"
+    expr = "{account} posted the Bid with proposed timeframe of {int} days and {cspr} CSPR price and {cspr} CSPR stake {word} onboarding"
 )]
 fn submit_bid_external(
     w: &mut DaoWorld,
-    worker_name: String,
+    worker: Account,
     timeframe: BlockTime,
-    budget: u64,
-    stake: u64,
+    budget: CsprBalance,
+    stake: CsprBalance,
     onboarding: String,
 ) {
-    let worker = w.named_address(worker_name);
     let onboarding = match onboarding.as_str() {
         "with" => true,
         "without" => false,
@@ -57,21 +61,27 @@ fn submit_bid_external(
             panic!("Unknown onboarding option");
         }
     };
-
-    w.post_bid(0, worker, timeframe, budget, 0, onboarding, Some(stake));
+    let timeframe = timeframe * 60 * 60 * 24;
+    w.post_bid(
+        0,
+        worker,
+        timeframe,
+        budget,
+        Balance(U256::zero()),
+        onboarding,
+        Some(stake),
+    );
 }
 
-#[when(expr = "{word} picked the Bid of {word}")]
-fn bid_picked(w: &mut DaoWorld, job_poster_name: String, worker_name: String) {
-    let job_poster = w.named_address(job_poster_name);
-    let worker = w.named_address(worker_name);
+#[when(expr = "{account} picked the Bid of {account}")]
+fn bid_picked(w: &mut DaoWorld, job_poster: Account, worker: Account) {
     w.pick_bid(job_poster, worker);
 }
 
-#[when(expr = "{word} submits the JobProof")]
-fn submit_job_proof(w: &mut DaoWorld, worker_name: String) {
+#[when(expr = "{account} submits the JobProof")]
+fn submit_job_proof(w: &mut DaoWorld, worker: Account) {
     // TODO: Use bid_ids from the storage.
-    let worker = w.named_address(worker_name);
+    let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
         .submit_job_proof(0, DocumentHash::from(b"Job Proof".to_vec()))
@@ -88,27 +98,21 @@ fn voting_ends(w: &mut DaoWorld) {
 fn informal_voting(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in table {
-        let name = row.get(0).unwrap();
-        let choice = match row.get(1).unwrap().as_str() {
-            "Yes" => Choice::InFavor,
-            "No" => Choice::Against,
-            _ => panic!("Unknown choice"),
-        };
+        let voter = helpers::parse(row.get(0), "Couldn't parse account");
+        let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
         let stake = to_rep(&row[2]);
 
-        let voter = w.named_address(name.clone());
+        let voter = w.get_address(&voter);
 
         w.bid_escrow
             .as_account(voter)
-            .vote(0, choice, stake)
+            .vote(0, choice.into(), stake)
             .unwrap();
     }
 }
 
-#[when(expr = "{word} cancels the Bid for {word}")]
-fn cancel_bid(w: &mut DaoWorld, worker_name: String, job_poster_name: String) {
-    let worker = w.named_address(worker_name);
-    let job_poster = w.named_address(job_poster_name);
+#[when(expr = "{account} cancels the Bid for {account}")]
+fn cancel_bid(w: &mut DaoWorld, worker: Account, job_poster: Account) {
     let job_offer_id = w.get_job_offer_id(&job_poster).unwrap();
     let bid = w.get_bid(*job_offer_id, worker).unwrap();
 
@@ -117,60 +121,67 @@ fn cancel_bid(w: &mut DaoWorld, worker_name: String, job_poster_name: String) {
 
 #[then(expr = "Formal voting does not start")]
 fn formal_does_not_start(w: &mut DaoWorld) {
-    let voting = w.bid_escrow.get_voting(0, VotingType::Informal).unwrap();
+    let voting = w
+        .bid_escrow
+        .get_voting(0, VotingType::Informal.into())
+        .unwrap();
     assert_eq!(voting.formal_voting_id(), None);
 }
 
-#[then(expr = "ballot for {word} voting {int} for {word} has {int} unbounded tokens")]
+#[then(expr = "ballot for {voting_type} voting {int} for {account} has {balance} unbounded tokens")]
 fn ballot_is_unbounded(
     w: &mut DaoWorld,
-    voting_type: String,
+    voting_type: VotingType,
     voting_id: u32,
-    account: String,
-    amount: u32,
+    account: Account,
+    amount: Balance,
 ) {
-    let account = w.named_address(account);
-    let voting_type = to_voting_type(&voting_type);
-    let ballot = w.bid_escrow.get_ballot(voting_id, voting_type, account);
+    let account = w.get_address(&account);
+    let ballot = w
+        .bid_escrow
+        .get_ballot(voting_id, voting_type.into(), account);
     let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
-    let amount = U256::from(amount) * 1_000_000_000;
     assert_eq!(
         ballot.choice,
-        Choice::InFavor,
+        Choice::InFavor.into(),
         "Ballot choice not in favour"
     );
     assert!(ballot.unbounded, "Ballot is not unbounded");
     assert_eq!(
-        ballot.stake, amount,
+        ballot.stake, *amount,
         "Ballot has stake {:?}, but should be {:?}",
         ballot.stake, amount
     );
 }
 
-#[then(expr = "total unbounded stake for {word} voting {int} is {int} tokens")]
-fn total_unbounded_stake_is(w: &mut DaoWorld, voting_type: String, voting_id: u32, amount: u32) {
-    let voting_type = to_voting_type(&voting_type);
+#[then(expr = "total unbounded stake for {voting_type} voting {int} is {balance} tokens")]
+fn total_unbounded_stake_is(
+    w: &mut DaoWorld,
+    voting_type: VotingType,
+    voting_id: u32,
+    amount: Balance,
+) {
     let total_unbounded_stake = w
         .bid_escrow
-        .get_voting(voting_id, voting_type)
+        .get_voting(voting_id, voting_type.into())
         .unwrap()
         .total_unbounded_stake();
-    let amount = U256::from(amount) * 1_000_000_000;
     assert_eq!(
-        total_unbounded_stake, amount,
+        total_unbounded_stake, *amount,
         "Total unbounded stake is {:?}, but should be {:?}",
         total_unbounded_stake, amount
     );
 }
 
-#[then(expr = "{word} {word} vote of {int} REP {word}")]
-fn cannot_vote(w: &mut DaoWorld, voter: String, choice: String, stake: u64, result: String) {
-    let voter = w.named_address(voter);
-    let stake = U256::from(stake * 1_000_000_000);
-    let choice = match_choice(choice);
+#[then(expr = "{account} {choice} vote of {balance} REP {word}")]
+fn cannot_vote(w: &mut DaoWorld, voter: Account, choice: Choice, stake: Balance, result: String) {
+    let voter = w.get_address(&voter);
     let expected_result = match_result(result);
 
-    let vote_result = w.bid_escrow.as_account(voter).vote(0, choice, stake);
+    let vote_result = w
+        .bid_escrow
+        .as_account(voter)
+        .vote(0, choice.into(), *stake);
 
     assert_eq!(expected_result, vote_result.is_ok());
 }

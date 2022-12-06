@@ -3,9 +3,9 @@ Feature: PostJobDosFee Variable
 
   Background:
     Given following balances
-      | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 0            | 0            | 0          |
-      | JobPoster        | 1000         | 0            | 0          |
+      | account          | CSPR balance | REP balance  | REP stake  | is_kyced | is_va |
+      | BidEscrow        | 0            | 0            | 0          | false    | false |
+      | JobPoster        | 1000         | 0            | 0          | true     | false |
     And following configuration
       | key              | value        |
       | PostJobDOSFee    | 10           |

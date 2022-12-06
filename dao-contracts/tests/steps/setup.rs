@@ -2,11 +2,13 @@ use cucumber::{gherkin::Step, given};
 
 use crate::common::{
     config::UserConfiguration,
-    params::{Account, U256},
+    params::{Account, U256, U512},
     DaoWorld,
 };
 
 #[given(expr = "users")]
+#[given(expr = "accounts")]
+#[given(expr = "following balances")]
 fn users_setup(world: &mut DaoWorld, step: &Step) {
     let labels = step
         .table
@@ -23,6 +25,7 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
         let account = config.account();
         let owner = Account::Owner;
         let reputation_balance = config.reputation_balance();
+        let cspr_balance = config.cspr_balance();
 
         for contract in config.get_contracts_to_be_whitelisted_in() {
             world.whitelist_account(contract, &owner, account).unwrap();
@@ -41,5 +44,7 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
         if reputation_balance > U256::zero() {
             world.mint_reputation(&Account::Owner, account, reputation_balance);
         }
+
+        world.set_cspr_balance(account, cspr_balance.0);
     }
 }
