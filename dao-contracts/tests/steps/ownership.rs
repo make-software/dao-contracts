@@ -1,4 +1,4 @@
-use cucumber::{then, when};
+use cucumber::{given, then, when};
 
 use crate::common::{
     params::{Account, Contract},
@@ -10,9 +10,16 @@ fn change_ownership(world: &mut DaoWorld, caller: Account, new_owner: Account, c
     let _ = world.change_ownership(&contract, &caller, &new_owner);
 }
 
-#[when(expr = "{account} adds {account} to whitelist in {contract} contract")]
-fn whitelist(world: &mut DaoWorld, caller: Account, user: Account, contract: Contract) {
-    let _ = world.whitelist(&contract, &caller, &user);
+#[when(expr = "{account} adds {word} to whitelist in {contract} contract")]
+#[given(expr = "{account} added {word} to whitelist in {contract} contract")]
+fn whitelist(world: &mut DaoWorld, caller: Account, target: String, contract: Contract) {
+    if let Ok(contract_to_whitelist) = target.parse::<Contract>() {
+        let _ = world.whitelist_contract(&contract, &caller, &contract_to_whitelist);
+    } else if let Ok(account) = target.parse::<Account>() {
+        let _ = world.whitelist_account(&contract, &caller, &account);
+    } else {
+        panic!("Target {} is neither an account nor a contract", target);
+    }
 }
 
 #[when(expr = "{account} removes {account} from whitelist in {contract} contract")]

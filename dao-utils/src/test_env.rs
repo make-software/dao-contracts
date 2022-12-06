@@ -222,7 +222,7 @@ impl TestEnvState {
         args: RuntimeArgs,
         has_return: bool,
     ) -> Result<Option<T>, Error> {
-        dbg!(entry_point);
+        // dbg!(entry_point);
         let session_code = PathBuf::from("getter_proxy.wasm");
 
         let args_bytes: Vec<u8> = args.to_bytes().unwrap();

@@ -2,10 +2,11 @@ use std::str::FromStr;
 
 use cucumber::Parameter;
 
-#[derive(Debug, Parameter)]
+#[derive(Clone, Debug, Parameter, PartialEq, Eq, PartialOrd, Ord)]
 #[param(name = "contract", regex = ".+")]
 pub enum Contract {
     KycToken,
+    KycVoter,
     VaToken,
     ReputationToken,
     BidEscrow,
@@ -19,6 +20,7 @@ impl FromStr for Contract {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let contract = match s {
             "KycToken" => Self::KycToken,
+            "KycVoter" => Self::KycVoter,
             "VaToken" => Self::VaToken,
             "ReputationToken" => Self::ReputationToken,
             "BidEscrow" => Self::BidEscrow,

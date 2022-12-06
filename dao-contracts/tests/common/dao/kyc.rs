@@ -57,4 +57,10 @@ impl DaoWorld {
             .expect("Holder should own a token");
         U256(id)
     }
+
+    pub fn is_account_kyced(&self, account: &Account) -> bool {
+        let address = self.get_address(account);
+
+        !self.kyc_token.balance_of(address).is_zero()
+    }
 }

@@ -1,6 +1,7 @@
 use casper_dao_contracts::{
     BidEscrowContractTest,
     KycNftContractTest,
+    KycVoterContractTest,
     ReputationContractTest,
     SlashingVoterContractTest,
     VaNftContractTest,
@@ -12,6 +13,9 @@ mod account;
 mod events;
 mod kyc;
 mod ownership;
+mod reputation;
+mod va;
+mod voting;
 
 #[allow(dead_code)]
 pub fn setup_dao() -> (
@@ -22,6 +26,7 @@ pub fn setup_dao() -> (
     KycNftContractTest,
     VariableRepositoryContractTest,
     SlashingVoterContractTest,
+    KycVoterContractTest,
 ) {
     let env = TestEnv::new();
     let variable_repo = VariableRepositoryContractTest::new(&env);
@@ -34,7 +39,7 @@ pub fn setup_dao() -> (
         "".to_string(),
     );
 
-    let kyc_token = KycNftContractTest::new(
+    let mut kyc_token = KycNftContractTest::new(
         variable_repo.get_env(),
         "kyc token".to_string(),
         "kyt".to_string(),
@@ -56,6 +61,14 @@ pub fn setup_dao() -> (
         va_token.address(),
     );
 
+    let kyc_voter = KycVoterContractTest::new(
+        &env,
+        variable_repo.address(),
+        reputation_token.address(),
+        va_token.address(),
+        kyc_token.address(),
+    );
+
     reputation_token
         .add_to_whitelist(bid_escrow.address())
         .unwrap();
@@ -63,6 +76,12 @@ pub fn setup_dao() -> (
     reputation_token
         .add_to_whitelist(slashing_voter.address())
         .unwrap();
+
+    reputation_token
+        .add_to_whitelist(kyc_voter.address())
+        .unwrap();
+
+    kyc_token.add_to_whitelist(kyc_voter.address()).unwrap();
 
     va_token.add_to_whitelist(bid_escrow.address()).unwrap();
     (
@@ -73,5 +92,6 @@ pub fn setup_dao() -> (
         kyc_token,
         variable_repo,
         slashing_voter,
+        kyc_voter,
     )
 }

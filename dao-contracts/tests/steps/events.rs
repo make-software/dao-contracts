@@ -10,7 +10,15 @@ use crate::common::{
 fn assert_event(world: &mut DaoWorld, step: &Step, contract: Contract) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
 
-    let total_events = world.kyc_token.events_count();
+    let total_events = match contract {
+        Contract::KycToken => world.kyc_token.events_count(),
+        Contract::KycVoter => world.kyc_voter.events_count(),
+        Contract::VaToken => world.va_token.events_count(),
+        Contract::ReputationToken => world.reputation_token.events_count(),
+        Contract::BidEscrow => world.bid_escrow.events_count(),
+        Contract::VariableRepository => world.variable_repo.events_count(),
+        Contract::SlashingVoter => world.slashing_voter.events_count(),
+    };
     let expected_events_count = table.len() as i32;
     // In a scenario are given last n events, so we need to skip first #events-n events.
     let skipped_events = total_events - expected_events_count;
