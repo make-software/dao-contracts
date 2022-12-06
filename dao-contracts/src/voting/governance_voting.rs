@@ -24,6 +24,7 @@ use self::{
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
     DaoConfiguration,
+    DaoConfigurationTrait,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
@@ -160,11 +161,14 @@ impl GovernanceVoting {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
+        let informal_without_stake = voting.is_informal_without_stake();
         match voting.get_voting_type() {
             VotingType::Informal => {
                 let voting_result = self.finish_informal_voting(voting);
-                self.return_reputation_of_yes_voters(voting_id);
-                self.return_reputation_of_no_voters(voting_id);
+                if !informal_without_stake {
+                    self.return_reputation_of_yes_voters(voting_id);
+                    self.return_reputation_of_no_voters(voting_id);
+                }
 
                 match voting_result.result() {
                     VotingResult::InFavor | VotingResult::Against => {
@@ -377,7 +381,7 @@ impl GovernanceVoting {
         unbounded: bool,
         mut voting: Voting,
     ) {
-        if !unbounded {
+        if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
             ReputationContractCaller::at(self.reputation_token_address())
                 .stake_voting(voter, voting_id, choice, stake);

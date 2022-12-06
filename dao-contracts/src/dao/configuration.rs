@@ -22,6 +22,7 @@ pub trait DaoConfigurationTrait {
     fn informal_voting_quorum(&self) -> u32;
     fn informal_voting_time(&self) -> BlockTime;
     fn formal_voting_time(&self) -> BlockTime;
+    fn informal_stake_reputation(&self) -> bool;
     fn time_between_informal_and_formal_voting(&self) -> BlockTime;
     fn governance_wallet_address(&self) -> Address;
     fn default_reputation_slash(&self) -> U256;
@@ -155,6 +156,10 @@ impl DaoConfigurationTrait for DaoConfiguration {
 
     fn formal_voting_time(&self) -> BlockTime {
         self.formal_voting_time
+    }
+
+    fn informal_stake_reputation(&self) -> bool {
+        self.informal_stake_reputation
     }
 
     fn time_between_informal_and_formal_voting(&self) -> BlockTime {
