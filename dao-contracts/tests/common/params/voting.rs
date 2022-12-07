@@ -59,9 +59,9 @@ impl FromStr for VotingType {
     }
 }
 
-impl Into<casper_dao_contracts::voting::voting::VotingType> for VotingType {
-    fn into(self) -> casper_dao_contracts::voting::voting::VotingType {
-        match self {
+impl From<VotingType> for casper_dao_contracts::voting::voting::VotingType {
+    fn from(value: VotingType) -> Self {
+        match value {
             VotingType::Formal => casper_dao_contracts::voting::voting::VotingType::Formal,
             VotingType::Informal => casper_dao_contracts::voting::voting::VotingType::Informal,
         }
@@ -90,9 +90,9 @@ impl FromStr for Choice {
     }
 }
 
-impl Into<casper_dao_contracts::voting::Choice> for Choice {
-    fn into(self) -> casper_dao_contracts::voting::Choice {
-        match self {
+impl From<Choice> for casper_dao_contracts::voting::Choice {
+    fn from(value: Choice) -> Self {
+        match value {
             Choice::InFavor => casper_dao_contracts::voting::Choice::InFavor,
             Choice::Against => casper_dao_contracts::voting::Choice::Against,
         }

@@ -1,10 +1,6 @@
 use cucumber::{gherkin::Step, given};
 
-use crate::common::{
-    config::UserConfiguration,
-    params::{Account, U256, U512},
-    DaoWorld,
-};
+use crate::common::{config::UserConfiguration, params::Account, DaoWorld};
 
 #[given(expr = "users")]
 #[given(expr = "accounts")]
@@ -31,20 +27,18 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
             world.whitelist_account(contract, &owner, account).unwrap();
         }
 
-        let user_address = world.get_address(account);
         if config.is_kyced() {
-            world.mint_kyc_token(&owner, account).unwrap();
+            world.mint_kyc_token(&owner, account);
         }
 
-        // TODO: world should accept an Account.
         if config.is_va() {
-            world.make_va(user_address);
+            world.mint_va_token(&owner, account);
         }
 
-        if reputation_balance > U256::zero() {
+        if !reputation_balance.is_zero() {
             world.mint_reputation(&Account::Owner, account, reputation_balance);
         }
 
-        world.set_cspr_balance(account, cspr_balance.0);
+        world.set_cspr_balance(account, cspr_balance);
     }
 }

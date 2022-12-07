@@ -37,6 +37,16 @@ name = "test_kyc"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
 
+[[test]]
+name = "test_va"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
+[[test]]
+name = "test_ownership"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
 #[[test]]
 #name = "test_gherkin_reputation_token"
 #harness = false  # allows Cucumber to print output instead of libtest

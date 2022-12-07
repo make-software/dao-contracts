@@ -2,8 +2,7 @@ use casper_dao_contracts::bid::{
     bid::Bid,
     types::{BidId, JobOfferId},
 };
-use casper_dao_utils::{Address, BlockTime, TestContract};
-use casper_types::{U256, U512};
+use casper_dao_utils::{BlockTime, TestContract};
 
 use crate::common::{
     params::{Account, Balance, CsprBalance},
@@ -19,7 +18,7 @@ impl DaoWorld {
     }
 
     pub fn get_job_offer_id(&self, job_poster: &Account) -> Option<&JobOfferId> {
-        let job_poster = self.get_address(&job_poster);
+        let job_poster = self.get_address(job_poster);
         self.offers.get(&job_poster)
     }
 

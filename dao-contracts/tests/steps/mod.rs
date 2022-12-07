@@ -6,5 +6,6 @@ mod kyc;
 mod ownership;
 mod setup;
 mod slashing;
+mod va;
 mod variables;
 mod voting;

@@ -14,7 +14,6 @@ use casper_dao_contracts::bid::types::{BidId, JobOfferId};
 use casper_dao_utils::{Address, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    U256,
     U512,
 };
 
@@ -37,9 +36,8 @@ pub struct DaoWorld {
 }
 
 impl DaoWorld {
-    pub fn advance_time(&mut self, seconds: u32) {
-        self.env
-            .advance_block_time_by(Duration::from_secs(seconds as u64));
+    pub fn advance_time(&mut self, seconds: u64) {
+        self.env.advance_block_time_by(Duration::from_secs(seconds));
     }
 
     // sets variable value
@@ -50,17 +48,6 @@ impl DaoWorld {
     // gets variable value
     pub fn _get_variable(&self, name: String) -> Bytes {
         self.variable_repo.get(name).unwrap()
-    }
-
-    // TODO: to remove
-    // makes an address a va
-    pub fn make_va(&mut self, account: Address) {
-        self.va_token.mint(account).unwrap();
-    }
-
-    // TODO: to remove
-    pub fn is_va(&self, account: Address) -> bool {
-        self.va_token.balance_of(account) > U256::zero()
     }
 }
 

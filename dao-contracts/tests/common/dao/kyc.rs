@@ -7,7 +7,7 @@ use crate::common::{
 
 #[allow(dead_code)]
 impl DaoWorld {
-    pub fn mint_kyc_token(
+    pub fn checked_mint_kyc_token(
         &mut self,
         minter: &Account,
         recipient: &Account,
@@ -18,12 +18,12 @@ impl DaoWorld {
         self.kyc_token.as_account(minter).mint(recipient)
     }
 
-    pub fn checked_mint_kyc_token(&mut self, minter: &Account, recipient: &Account) {
-        self.mint_kyc_token(minter, recipient)
-            .expect("A token should be minted");
+    pub fn mint_kyc_token(&mut self, minter: &Account, recipient: &Account) {
+        self.checked_mint_kyc_token(minter, recipient)
+            .expect("A KYC Token should be minted successfully");
     }
 
-    pub fn burn_kyc_token(
+    pub fn checked_burn_kyc_token(
         &mut self,
         burner: &Account,
         holder: &Account,
@@ -34,8 +34,8 @@ impl DaoWorld {
         self.kyc_token.as_account(burner).burn(*token_id)
     }
 
-    pub fn checked_burn_kyc_token(&mut self, minter: &Account, recipient: &Account) {
-        self.burn_kyc_token(minter, recipient)
+    pub fn burn_kyc_token(&mut self, minter: &Account, recipient: &Account) {
+        self.checked_burn_kyc_token(minter, recipient)
             .expect("A token should be burned");
     }
 
