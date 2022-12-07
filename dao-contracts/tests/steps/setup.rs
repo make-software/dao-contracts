@@ -1,10 +1,6 @@
 use cucumber::{gherkin::Step, given};
 
-use crate::common::{
-    config::UserConfiguration,
-    params::Account,
-    DaoWorld,
-};
+use crate::common::{config::UserConfiguration, params::Account, DaoWorld};
 
 #[given(expr = "users")]
 #[given(expr = "accounts")]

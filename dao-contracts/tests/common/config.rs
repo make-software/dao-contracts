@@ -2,7 +2,7 @@ use casper_types::{U256, U512};
 
 use super::{
     helpers,
-    params::{Account, Contract, CsprBalance, Balance},
+    params::{Account, Balance, Contract, CsprBalance},
 };
 
 #[allow(dead_code)]

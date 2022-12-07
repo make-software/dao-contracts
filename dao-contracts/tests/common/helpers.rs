@@ -1,10 +1,13 @@
 use std::{fmt::Debug, str::FromStr};
 
+use casper_dao_utils::BlockTime;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U256,
     U512,
 };
+
+use super::params::TimeUnit;
 
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
@@ -53,24 +56,12 @@ pub fn is_rep_close_enough(a: U256, b: U256) -> bool {
     diff < U256::from(10_000_000)
 }
 
-pub fn multiplier(unit: String) -> u32 {
-    let multiplier = match unit.as_str() {
-        "seconds" | "second" => 1,
-        "minutes" | "minute" => 60,
-        "hours" | "hour" => 60 * 60,
-        "days" | "day" => 60 * 60 * 24,
-        _ => panic!("Unknown unit option - it should be either seconds, minutes, hours or days"),
-    };
-    multiplier
-}
-
-pub fn match_result(result: String) -> bool {
-    match result.as_str() {
-        "succeeds" => true,
-        "fails" => false,
-        _ => {
-            panic!("Unknown result option");
-        }
+pub fn to_seconds(value: BlockTime, unit: TimeUnit) -> BlockTime {
+    match unit {
+        TimeUnit::Seconds => value,
+        TimeUnit::Minutes => value * 60,
+        TimeUnit::Hours => value * 60 * 60,
+        TimeUnit::Days => value * 60 * 60 * 24,
     }
 }
 

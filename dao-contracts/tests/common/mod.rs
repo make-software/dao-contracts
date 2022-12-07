@@ -36,9 +36,8 @@ pub struct DaoWorld {
 }
 
 impl DaoWorld {
-    pub fn advance_time(&mut self, seconds: u32) {
-        self.env
-            .advance_block_time_by(Duration::from_secs(seconds as u64));
+    pub fn advance_time(&mut self, seconds: u64) {
+        self.env.advance_block_time_by(Duration::from_secs(seconds));
     }
 
     // sets variable value

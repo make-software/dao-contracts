@@ -5,51 +5,56 @@ use casper_types::U256;
 use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
-    helpers::{self, match_result, to_rep},
+    helpers::{self, to_rep},
     params::{
         voting::{Choice, VotingType},
         Account,
         Balance,
         CsprBalance,
+        Result,
+        TimeUnit,
     },
     DaoWorld,
 };
 
 #[when(
-    expr = "{account} posted a JobOffer with expected timeframe of {int} days, maximum budget of {cspr} CSPR and {cspr} CSPR DOS Fee"
+    expr = "{account} posted a JobOffer with expected timeframe of {int} {time_unit}, maximum budget of {cspr} CSPR and {cspr} CSPR DOS Fee"
 )]
 fn post_job_offer(
     w: &mut DaoWorld,
     job_poster: Account,
     timeframe: BlockTime,
+    time_unit: TimeUnit,
     maximum_budget: CsprBalance,
     dos_fee: CsprBalance,
 ) {
-    let timeframe = timeframe * 60 * 60 * 24;
+    let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
 #[when(
-    expr = "{account} posted the Bid with proposed timeframe of {int} days and {cspr} CSPR price and {balance} REP stake"
+    expr = "{account} posted the Bid with proposed timeframe of {int} {time_unit} and {cspr} CSPR price and {balance} REP stake"
 )]
 fn submit_bid_internal(
     w: &mut DaoWorld,
     worker: Account,
     timeframe: BlockTime,
+    time_unit: TimeUnit,
     budget: CsprBalance,
     stake: Balance,
 ) {
-    let timeframe = timeframe * 60 * 60 * 24;
+    let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_bid(0, worker, timeframe, budget, stake, false, None);
 }
 
 #[when(
-    expr = "{account} posted the Bid with proposed timeframe of {int} days and {cspr} CSPR price and {cspr} CSPR stake {word} onboarding"
+    expr = "{account} posted the Bid with proposed timeframe of {int} {time_unit} and {cspr} CSPR price and {cspr} CSPR stake {word} onboarding"
 )]
 fn submit_bid_external(
     w: &mut DaoWorld,
     worker: Account,
     timeframe: BlockTime,
+    time_unit: TimeUnit,
     budget: CsprBalance,
     stake: CsprBalance,
     onboarding: String,
@@ -61,7 +66,7 @@ fn submit_bid_external(
             panic!("Unknown onboarding option");
         }
     };
-    let timeframe = timeframe * 60 * 60 * 24;
+    let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_bid(
         0,
         worker,
@@ -173,15 +178,20 @@ fn total_unbounded_stake_is(
     );
 }
 
-#[then(expr = "{account} {choice} vote of {balance} REP {word}")]
-fn cannot_vote(w: &mut DaoWorld, voter: Account, choice: Choice, stake: Balance, result: String) {
+#[then(expr = "{account} {choice} vote of {balance} REP {result}")]
+fn cannot_vote(
+    w: &mut DaoWorld,
+    voter: Account,
+    choice: Choice,
+    stake: Balance,
+    expected_result: Result,
+) {
     let voter = w.get_address(&voter);
-    let expected_result = match_result(result);
 
     let vote_result = w
         .bid_escrow
         .as_account(voter)
         .vote(0, choice.into(), *stake);
 
-    assert_eq!(expected_result, vote_result.is_ok());
+    assert_eq!(*expected_result, vote_result.is_ok());
 }

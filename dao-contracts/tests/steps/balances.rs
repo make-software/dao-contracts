@@ -28,15 +28,18 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
         for (idx, label) in labels.iter().enumerate() {
             match label.as_str() {
                 "REP balance" => {
-                    let expected_reputation_balance = helpers::parse_or_default::<Balance>(row.get(idx));
+                    let expected_reputation_balance =
+                        helpers::parse_or_default::<Balance>(row.get(idx));
                     world.assert_reputation(&account, expected_reputation_balance);
                 }
                 "REP stake" => {
-                    let expected_reputation_stake = helpers::parse_or_default::<Balance>(row.get(idx));
+                    let expected_reputation_stake =
+                        helpers::parse_or_default::<Balance>(row.get(idx));
                     world.assert_staked_reputation(&account, expected_reputation_stake)
                 }
                 "CSPR balance" => {
-                    let expected_cspr_balance = helpers::parse_or_default::<CsprBalance>(row.get(idx));
+                    let expected_cspr_balance =
+                        helpers::parse_or_default::<CsprBalance>(row.get(idx));
                     world.assert_cspr_balance(&account, expected_cspr_balance);
                 }
                 _ => {}

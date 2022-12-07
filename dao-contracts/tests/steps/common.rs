@@ -1,14 +1,15 @@
+use casper_dao_utils::BlockTime;
 use cucumber::{gherkin::Step, given, when};
 
 use crate::common::{
-    helpers::{multiplier, value_to_bytes},
+    helpers::{to_seconds, value_to_bytes},
+    params::TimeUnit,
     DaoWorld,
 };
 
-#[when(expr = "{int} {word} passed")]
-fn advance_time(w: &mut DaoWorld, amount: u32, unit: String) {
-    let multiplier = multiplier(unit);
-    w.advance_time(amount * multiplier);
+#[when(expr = "{int} {time_unit} passed")]
+fn advance_time(w: &mut DaoWorld, amount: BlockTime, unit: TimeUnit) {
+    w.advance_time(to_seconds(amount, unit));
 }
 
 #[given(expr = "following configuration")]

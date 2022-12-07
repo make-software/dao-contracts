@@ -3,10 +3,7 @@ use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhit
 use casper_dao_utils::TestContract;
 
 use crate::common::{
-    params::{
-        events::Event,
-        Contract,
-    },
+    params::{events::Event, Contract},
     DaoWorld,
 };
 
@@ -26,7 +23,7 @@ impl DaoWorld {
                 let address = self.get_address(&account);
                 self.assert_dao_event(contract, idx, RemovedFromWhitelist { address })
             }
-            
+
             Event::NftTransfer(from, to, token_id) => {
                 let from = from.map(|account| self.get_address(&account));
                 let to = to.map(|account| self.get_address(&account));

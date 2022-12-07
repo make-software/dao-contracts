@@ -1,6 +1,10 @@
 use casper_types::U512;
 
-use crate::common::{params::{Account, CsprBalance}, DaoWorld, helpers::is_cspr_close_enough};
+use crate::common::{
+    helpers::is_cspr_close_enough,
+    params::{Account, CsprBalance},
+    DaoWorld,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {
