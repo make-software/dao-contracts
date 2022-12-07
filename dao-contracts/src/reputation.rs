@@ -100,6 +100,8 @@ pub trait ReputationContractInterface {
 
     // Redistributes the reputation based on the voting summary
     fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U512>, burns: BTreeMap<Address, U512>);
+
+    fn burn_all(&mut self, owner: Address);
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -279,6 +281,18 @@ impl ReputationContractInterface for ReputationContract {
         self.balances.set(balances);
         self.total_supply.set(total_supply);
     }
+
+    fn burn_all(&mut self, owner: Address) {
+        // Clear balance.
+        let mut balances = self.balances.get_or_revert();
+        let balance = balances.get(&owner);
+        balances.rem(owner);
+        self.balances.set(balances);
+        self.total_supply.set(self.total_supply() - balance);
+
+        // Remove VA Token.
+        
+    }
 }
 
 impl ReputationContract {
@@ -390,6 +404,10 @@ impl Balances {
 
     pub fn dec(&mut self, address: Address, amount: U512) {
         self.set(address, self.get(&address) - amount);
+    }
+
+    pub fn rem(&mut self, address: Address) {
+        self.balances.remove(&address);
     }
 }
 

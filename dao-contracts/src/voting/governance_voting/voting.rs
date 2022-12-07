@@ -348,8 +348,8 @@ impl Voting {
     }
 
     /// Get the voting's contract call reference.
-    pub fn contract_call(&self) -> &Option<ContractCall> {
-        &self.voting_configuration.contract_call
+    pub fn contract_calls(&self) -> &Vec<ContractCall> {
+        &self.voting_configuration.contract_calls
     }
 
     /// Get a reference to the voting's voting configuration.

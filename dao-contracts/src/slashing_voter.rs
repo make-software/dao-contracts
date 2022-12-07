@@ -73,25 +73,36 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         // TODO: contraints
         let current_reputation = self.voting.reputation_token().balance_of(address_to_slash);
 
-        let contract_call = match slash_ratio {
+        let contract_calls = match slash_ratio {
             1000 => {
+                vec![
+                    ContractCall {
+                        address: self.voting.va_token_address(),
+                        entry_point: "burn".to_string(),
+                        runtime_args: runtime_args! {
+                            "owner" => address_to_slash,
+                        },
+                    },
+
+                    ContractCall {
+                        address: self.voting.reputation_token_address(),
+                        entry_point: "burn_all".to_string(),
+                        runtime_args: runtime_args! {
+                            "owner" => address_to_slash,
+                        },
+                    }
+                ]
+            }
+            slash_ratio if slash_ratio < 1000 => vec![
                 ContractCall {
                     address: self.voting.reputation_token_address(),
-                    // TODO: Should we also delete va_token?
-                    entry_point: "burn_all".to_string(),
+                    entry_point: "burn".to_string(),
                     runtime_args: runtime_args! {
                         "owner" => address_to_slash,
+                        "amount" => current_reputation * slash_ratio / 1000,
                     },
                 }
-            }
-            slash_ratio if slash_ratio < 1000 => ContractCall {
-                address: self.voting.reputation_token_address(),
-                entry_point: "burn".to_string(),
-                runtime_args: runtime_args! {
-                    "owner" => address_to_slash,
-                    "amount" => current_reputation * slash_ratio / 1000,
-                },
-            },
+            ],
             _ => {
                 // TODO: come up with clever error
                 revert(666);
@@ -102,7 +113,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )
-        .contract_call(contract_call)
+        .contract_calls(contract_calls)
         .build();
 
         let creator = caller();

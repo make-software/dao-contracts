@@ -67,7 +67,7 @@ pub struct DaoConfiguration {
     pub voting_start_after_job_worker_submission: BlockTime,
     pub governance_payment_ratio: U512,
     pub total_onboarded: U512,
-    pub contract_call: Option<ContractCall>,
+    pub contract_calls: Vec<ContractCall>,
     pub only_va_can_create: bool,
     pub unbounded_tokens_for_creator: bool,
     pub onboard_creator: bool,

@@ -86,6 +86,8 @@ pub fn setup_dao() -> (
     kyc_token.add_to_whitelist(kyc_voter.address()).unwrap();
 
     va_token.add_to_whitelist(bid_escrow.address()).unwrap();
+
+    va_token.add_to_whitelist(slashing_voter.address()).unwrap();
     (
         env,
         bid_escrow,

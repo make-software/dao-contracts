@@ -6,6 +6,6 @@ use cucumber::World as _;
 
 fn main() {
     // let runner = DaoWorld::cucumber().run_and_exit("tests/features/slashing/");
-    let runner = DaoWorld::cucumber().run_and_exit("tests/features/slashing/");
+    let runner = DaoWorld::cucumber().run_and_exit("tests/features/slashing/simple_full.feature");
     futures::executor::block_on(runner);
 }

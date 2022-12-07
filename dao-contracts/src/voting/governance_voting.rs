@@ -478,11 +478,8 @@ impl GovernanceVoting {
 
     fn perform_action(&self, voting_id: VotingId) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
-        match voting.contract_call() {
-            Some(contract_call) => {
-                contract_call.call();
-            }
-            None => {}
+        for contract_call in voting.contract_calls() {
+            contract_call.call();
         }
     }
 

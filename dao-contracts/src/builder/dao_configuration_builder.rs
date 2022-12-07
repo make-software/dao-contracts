@@ -90,7 +90,7 @@ impl DaoConfigurationBuilder {
                 formal_quorum_ratio: Self::get_variable(FORMAL_QUORUM_RATIO, &variables),
                 governance_payment_ratio: Self::get_variable(GOVERNANCE_PAYMENT_RATIO, &variables),
                 total_onboarded,
-                contract_call: None,
+                contract_calls: Vec::new(),
                 only_va_can_create: true,
                 unbounded_tokens_for_creator: false,
                 onboard_creator: false,
@@ -115,8 +115,12 @@ impl DaoConfigurationBuilder {
         result
     }
 
-    pub fn contract_call(mut self, contract_call: ContractCall) -> DaoConfigurationBuilder {
-        self.configuration.contract_call = Some(contract_call);
+    pub fn contract_call(self, contract_call: ContractCall) -> DaoConfigurationBuilder {
+        self.contract_calls(vec![contract_call])
+    }
+
+    pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> DaoConfigurationBuilder {
+        self.configuration.contract_calls = contract_calls;
         self
     }
 

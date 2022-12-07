@@ -186,7 +186,8 @@ impl KycVoterContractInterface for KycVoterContract {
 impl KycVoterContract {
     fn extract_address_from_args(&self, voting: &Voting) -> Address {
         let runtime_args = voting
-            .contract_call()
+            .contract_calls()
+            .first()
             .clone()
             .unwrap_or_revert()
             .runtime_args();
