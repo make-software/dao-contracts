@@ -138,7 +138,7 @@ impl FromStr for Result {
         Ok(match s {
             "succeeds" => Self::Success,
             "fails" => Self::Failure,
-            _ => panic!("Unknown unit option - it should be either succeeds or fails"),
+            _ => panic!("Unknown result option - it should be either succeeds or fails"),
         })
     }
 }
