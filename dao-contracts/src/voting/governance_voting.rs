@@ -23,7 +23,7 @@ use self::{
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
-    DaoConfiguration,
+    Configuration,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
@@ -92,9 +92,9 @@ impl GovernanceVoting {
         &mut self,
         creator: Address,
         stake: U512,
-        voting_configuration: DaoConfiguration,
+        voting_configuration: Configuration,
     ) -> VotingId {
-        if voting_configuration.only_va_can_create && !self.is_va(creator) {
+        if voting_configuration.only_va_can_create() && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
         }
 
@@ -111,9 +111,9 @@ impl GovernanceVoting {
     pub fn create_voting_without_first_vote(
         &mut self,
         creator: Address,
-        voting_configuration: DaoConfiguration,
+        voting_configuration: Configuration,
     ) -> VotingId {
-        if voting_configuration.only_va_can_create && !self.is_va(creator) {
+        if voting_configuration.only_va_can_create() && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
         }
 

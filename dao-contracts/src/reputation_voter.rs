@@ -17,7 +17,7 @@ use crate::{
         Choice,
         GovernanceVoting,
     },
-    DaoConfigurationBuilder,
+    ConfigurationBuilder,
 };
 
 /// Action to perform against reputation
@@ -139,7 +139,7 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         document_hash: DocumentHash,
         stake: U512,
     ) {
-        let voting_configuration = DaoConfigurationBuilder::new(
+        let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )
