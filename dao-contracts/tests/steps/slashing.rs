@@ -1,8 +1,10 @@
+use std::str::FromStr;
+
 use casper_dao_utils::TestContract;
 use cucumber::{gherkin::Step, when};
 
 use crate::common::{
-    helpers::{self, to_rep},
+    helpers,
     params::{
         voting::{Choice, VotingType},
         Account,
@@ -30,13 +32,13 @@ fn informal_voting(w: &mut DaoWorld, voting_type: VotingType, voting_id: u32, st
     for row in table {
         let voter = helpers::parse(row.first(), "Couldn't parse account");
         let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
-        let stake = to_rep(&row[2]);
+        let stake = Balance::from_str(&row[2]).unwrap();
 
         let voter = w.get_address(&voter);
 
         w.slashing_voter
             .as_account(voter)
-            .vote(voting_id, voting_type.into(), choice.into(), stake)
+            .vote(voting_id, voting_type.into(), choice.into(), *stake)
             .unwrap();
     }
 }

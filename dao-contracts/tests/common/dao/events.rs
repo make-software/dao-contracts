@@ -90,7 +90,7 @@ impl DaoWorld {
                     voter: self.get_address(&voter),
                     voting_id,
                     choice: choice.into(),
-                    stake: stake.0,
+                    stake: *stake,
                 },
             ),
         };

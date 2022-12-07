@@ -94,7 +94,7 @@ export class ReputationContractJSClient extends CasperContractClient {
     const runtimeArgs = RuntimeArgs.fromMap({
       owner: createRecipientAddress(owner),
       recipient: createRecipientAddress(recipient),
-      amount: CLValueBuilder.u256(transferAmount),
+      amount: CLValueBuilder.u512(transferAmount),
     });
 
     const deployHash = this.contractClient.callEntrypoint(
@@ -127,7 +127,7 @@ export class ReputationContractJSClient extends CasperContractClient {
   ) {
     const runtimeArgs = RuntimeArgs.fromMap({
       recipient: createRecipientAddress(recipient),
-      amount: CLValueBuilder.u256(amount),
+      amount: CLValueBuilder.u512(amount),
     });
 
     const deployHash = this.contractClient.callEntrypoint(
@@ -160,7 +160,7 @@ export class ReputationContractJSClient extends CasperContractClient {
   ) {
     const runtimeArgs = RuntimeArgs.fromMap({
       owner: createRecipientAddress(owner),
-      amount: CLValueBuilder.u256(amount),
+      amount: CLValueBuilder.u512(amount),
     });
 
     const deployHash = this.contractClient.callEntrypoint(
@@ -283,7 +283,7 @@ export class ReputationContractJSClient extends CasperContractClient {
   ) {
     const runtimeArgs = RuntimeArgs.fromMap({
       address: createRecipientAddress(address),
-      amount: CLValueBuilder.u256(amount),
+      amount: CLValueBuilder.u512(amount),
     });
 
     const deployHash = this.contractClient.callEntrypoint(
@@ -316,7 +316,7 @@ export class ReputationContractJSClient extends CasperContractClient {
   ) {
     const runtimeArgs = RuntimeArgs.fromMap({
       address: createRecipientAddress(address),
-      amount: CLValueBuilder.u256(amount),
+      amount: CLValueBuilder.u512(amount),
     });
 
     const deploy = this.contractClient.callEntrypoint(

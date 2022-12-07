@@ -4,7 +4,7 @@ use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     Address,
 };
-use casper_types::{bytesrepr::Bytes, U256};
+use casper_types::{bytesrepr::Bytes, U512};
 use delegate::delegate;
 
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
     extensions::{BurnableERC721, MetadataERC721, MintableERC721},
 };
 
-pub type TokenId = U256;
+pub type TokenId = U512;
 pub type TokenUri = String;
 
 #[casper_contract_interface]
@@ -21,8 +21,8 @@ pub trait ERC721Interface {
     fn name(&self) -> String;
     fn symbol(&self) -> String;
     fn owner_of(&self, token_id: TokenId) -> Option<Address>;
-    fn balance_of(&self, owner: Address) -> U256;
-    fn total_supply(&self) -> U256;
+    fn balance_of(&self, owner: Address) -> U512;
+    fn total_supply(&self) -> U512;
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
     fn base_uri(&self) -> TokenUri;
     fn approve(&mut self, to: Option<Address>, token_id: TokenId);
@@ -58,8 +58,8 @@ impl ERC721Interface for ERC721 {
 
         to self.core {
             fn owner_of(&self, token_id: TokenId) -> Option<Address>;
-            fn balance_of(&self, owner: Address) -> U256;
-            fn total_supply(&self) -> U256;
+            fn balance_of(&self, owner: Address) -> U512;
+            fn total_supply(&self) -> U512;
             fn approve(&mut self, to: Option<Address>, token_id: TokenId);
             fn get_approved(&self, token_id: TokenId) -> Option<Address>;
             fn set_approval_for_all(&mut self, operator: Address, approved: bool);

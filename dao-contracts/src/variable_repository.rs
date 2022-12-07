@@ -6,14 +6,12 @@ use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{caller, revert},
     consts as dao_consts,
-    conversions::{u256_to_512, u512_to_u256},
     math,
     Address,
     Error,
 };
 use casper_types::{
     bytesrepr::{Bytes, FromBytes},
-    U256,
     U512,
 };
 use delegate::delegate;
@@ -192,17 +190,17 @@ impl VariableRepositoryContractCaller {
     }
 
     /// Retrieves the value stored under the [REPUTATION_CONVERSION_RATE](dao_consts::REPUTATION_CONVERSION_RATE) key.
-    pub fn reputation_conversion_rate(&self) -> U256 {
+    pub fn reputation_conversion_rate(&self) -> U512 {
         self.get_variable(dao_consts::REPUTATION_CONVERSION_RATE)
     }
 
     /// Retrieves the value stored under the [DEFAULT_POLICING_RATE](dao_consts::DEFAULT_POLICING_RATE) key.
-    pub fn default_policing_rate(&self) -> U256 {
+    pub fn default_policing_rate(&self) -> U512 {
         self.get_variable(dao_consts::DEFAULT_POLICING_RATE)
     }
 
     /// Retrieves a normalized value stored under the [INFORMAL_VOTING_QUORUM](dao_consts::INFORMAL_VOTING_QUORUM) key.
-    pub fn informal_voting_quorum(&self, total_onboarded: U256) -> U256 {
+    pub fn informal_voting_quorum(&self, total_onboarded: U512) -> U512 {
         math::promils_of(
             total_onboarded,
             self.get_variable(dao_consts::GOVERNANCE_INFORMAL_QUORUM_RATIO),
@@ -211,7 +209,7 @@ impl VariableRepositoryContractCaller {
     }
 
     /// Retrieves a normalized value stored under the [FORMAL_VOTING_QUORUM](dao_consts::FORMAL_VOTING_QUORUM) key.
-    pub fn formal_voting_quorum(&self, total_onboarded: U256) -> U256 {
+    pub fn formal_voting_quorum(&self, total_onboarded: U512) -> U512 {
         math::promils_of(
             total_onboarded,
             self.get_variable(dao_consts::GOVERNANCE_FORMAL_QUORUM_RATIO),
@@ -220,16 +218,16 @@ impl VariableRepositoryContractCaller {
     }
 
     /// Calculates amount of reputation to be minted
-    pub fn reputation_to_mint(&self, cspr_amount: U512) -> U256 {
+    pub fn reputation_to_mint(&self, cspr_amount: U512) -> U512 {
         math::promils_of(
-            u512_to_u256(cspr_amount).unwrap_or_revert(),
+            cspr_amount,
             self.reputation_conversion_rate(),
         )
         .unwrap_or_revert()
     }
 
     /// Calculates amount of reputation to be redistributed
-    pub fn reputation_to_redistribute(&self, reputation_amount: U256) -> U256 {
+    pub fn reputation_to_redistribute(&self, reputation_amount: U512) -> U512 {
         math::promils_of(reputation_amount, self.default_policing_rate()).unwrap_or_revert()
     }
 
@@ -237,7 +235,7 @@ impl VariableRepositoryContractCaller {
     pub fn cspr_to_redistribute(&self, cspr_amount: U512) -> U512 {
         math::promils_of_u512(
             cspr_amount,
-            u256_to_512(self.default_policing_rate()).unwrap_or_revert(),
+            self.default_policing_rate(),
         )
         .unwrap_or_revert()
     }

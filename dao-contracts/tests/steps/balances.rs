@@ -2,7 +2,7 @@ use cucumber::{gherkin::Step, then};
 
 use crate::common::{
     helpers,
-    params::{Account, Balance, CsprBalance},
+    params::{Account, Balance},
     DaoWorld,
 };
 
@@ -39,7 +39,7 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
                 }
                 "CSPR balance" => {
                     let expected_cspr_balance =
-                        helpers::parse_or_default::<CsprBalance>(row.get(idx));
+                        helpers::parse_or_default::<Balance>(row.get(idx));
                     world.assert_cspr_balance(&account, expected_cspr_balance);
                 }
                 _ => {}

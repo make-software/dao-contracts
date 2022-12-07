@@ -6,7 +6,7 @@ use casper_dao_utils::{
     ContractCall,
     Error,
 };
-use casper_types::U256;
+use casper_types::U512;
 
 use crate::{
     voting::{ballot::Choice, types::VotingId},
@@ -97,10 +97,10 @@ impl VotingSummary {
 pub struct Voting {
     voting_id: VotingId,
     completed: bool,
-    stake_in_favor: U256,
-    stake_against: U256,
-    unbounded_stake_in_favor: U256,
-    unbounded_stake_against: U256,
+    stake_in_favor: U512,
+    stake_against: U512,
+    unbounded_stake_in_favor: U512,
+    unbounded_stake_against: U512,
     start_time: u64,
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
@@ -119,10 +119,10 @@ impl Voting {
         Voting {
             voting_id,
             completed: false,
-            stake_in_favor: U256::zero(),
-            stake_against: U256::zero(),
-            unbounded_stake_in_favor: U256::zero(),
-            unbounded_stake_against: U256::zero(),
+            stake_in_favor: U512::zero(),
+            stake_against: U512::zero(),
+            unbounded_stake_in_favor: U512::zero(),
+            unbounded_stake_against: U512::zero(),
             start_time,
             informal_voting_id: voting_id,
             formal_voting_id: None,
@@ -159,10 +159,10 @@ impl Voting {
         Voting {
             voting_id: new_voting_id,
             completed: false,
-            stake_in_favor: U256::zero(),
-            stake_against: U256::zero(),
-            unbounded_stake_in_favor: U256::zero(),
-            unbounded_stake_against: U256::zero(),
+            stake_in_favor: U512::zero(),
+            stake_against: U512::zero(),
+            unbounded_stake_in_favor: U512::zero(),
+            unbounded_stake_against: U512::zero(),
             start_time: self.start_time,
             informal_voting_id: self.informal_voting_id,
             formal_voting_id: Some(new_voting_id),
@@ -202,7 +202,7 @@ impl Voting {
     }
 
     /// Depending on the result of the voting, returns the amount of reputation staked on the winning side
-    pub fn get_winning_stake(&self) -> U256 {
+    pub fn get_winning_stake(&self) -> U512 {
         match self.is_in_favor() {
             true => self.stake_in_favor,
             false => self.stake_against,
@@ -213,7 +213,7 @@ impl Voting {
         let stake_in_favor = self.stake_in_favor() + self.unbounded_stake_in_favor();
         let stake_against = self.stake_against() + self.unbounded_stake_against();
         let stake_diff = stake_in_favor.abs_diff(stake_against);
-        let stake_diff_percent = stake_diff.saturating_mul(U256::from(100)) / self.total_stake();
+        let stake_diff_percent = stake_diff.saturating_mul(U512::from(100)) / self.total_stake();
         stake_diff_percent <= self.voting_configuration.voting_clearness_delta
     }
 
@@ -236,23 +236,23 @@ impl Voting {
         }
     }
 
-    pub fn add_stake(&mut self, stake: U256, choice: Choice) {
-        // overflow is not possible due to reputation token having U256 as max
+    pub fn add_stake(&mut self, stake: U512, choice: Choice) {
+        // overflow is not possible due to reputation token having U512 as max
         match choice {
             Choice::InFavor => self.stake_in_favor += stake,
             Choice::Against => self.stake_against += stake,
         }
     }
 
-    pub fn add_unbounded_stake(&mut self, stake: U256, choice: Choice) {
-        // overflow is not possible due to reputation token having U256 as max
+    pub fn add_unbounded_stake(&mut self, stake: U512, choice: Choice) {
+        // overflow is not possible due to reputation token having U512 as max
         match choice {
             Choice::InFavor => self.unbounded_stake_in_favor += stake,
             Choice::Against => self.unbounded_stake_against += stake,
         }
     }
 
-    pub fn bound_stake(&mut self, stake: U256, choice: Choice) {
+    pub fn bound_stake(&mut self, stake: U512, choice: Choice) {
         match choice {
             Choice::InFavor => self.unbounded_stake_in_favor -= stake,
             Choice::Against => self.unbounded_stake_against -= stake,
@@ -260,18 +260,18 @@ impl Voting {
         self.add_stake(stake, choice);
     }
 
-    pub fn total_stake(&self) -> U256 {
-        // overflow is not possible due to reputation token having U256 as max
+    pub fn total_stake(&self) -> U512 {
+        // overflow is not possible due to reputation token having U512 as max
         self.total_bounded_stake() + self.total_unbounded_stake()
     }
 
-    pub fn total_bounded_stake(&self) -> U256 {
-        // overflow is not possible due to reputation token having U256 as max
+    pub fn total_bounded_stake(&self) -> U512 {
+        // overflow is not possible due to reputation token having U512 as max
         self.stake_in_favor + self.stake_against
     }
 
-    pub fn total_unbounded_stake(&self) -> U256 {
-        // overflow is not possible due to reputation token having U256 as max
+    pub fn total_unbounded_stake(&self) -> U512 {
+        // overflow is not possible due to reputation token having U512 as max
         self.unbounded_stake_in_favor + self.unbounded_stake_against
     }
 
@@ -299,20 +299,20 @@ impl Voting {
     }
 
     /// Get the voting's stake in favor.
-    pub fn stake_in_favor(&self) -> U256 {
+    pub fn stake_in_favor(&self) -> U512 {
         self.stake_in_favor
     }
 
     /// Get the voting's stake against.
-    pub fn stake_against(&self) -> U256 {
+    pub fn stake_against(&self) -> U512 {
         self.stake_against
     }
 
-    pub fn unbounded_stake_in_favor(&self) -> U256 {
+    pub fn unbounded_stake_in_favor(&self) -> U512 {
         self.unbounded_stake_in_favor
     }
 
-    pub fn unbounded_stake_against(&self) -> U256 {
+    pub fn unbounded_stake_against(&self) -> U512 {
         self.unbounded_stake_against
     }
 
@@ -389,20 +389,20 @@ impl Voting {
 //     let voting = Voting {
 //         voting_id: 1,
 //         completed: false,
-//         stake_in_favor: U256::zero(),
-//         stake_against: U256::zero(),
+//         stake_in_favor: U512::zero(),
+//         stake_against: U512::zero(),
 //         start_time: 123,
 //         informal_voting_id: 1,
 //         formal_voting_id: None,
 //         voting_configuration: VotingConfiguration {
-//             formal_voting_quorum: U256::from(2),
+//             formal_voting_quorum: U512::from(2),
 //             formal_voting_time: 2,
-//             informal_voting_quorum: U256::from(2),
+//             informal_voting_quorum: U512::from(2),
 //             informal_voting_time: 2,
-//             create_minimum_reputation: U256::from(2),
+//             create_minimum_reputation: U512::from(2),
 //             contract_call: None,
 //             cast_first_vote: true,
-//             cast_minimum_reputation: U256::from(2),
+//             cast_minimum_reputation: U512::from(2),
 //             only_va_can_create: true,
 //         },
 //     };

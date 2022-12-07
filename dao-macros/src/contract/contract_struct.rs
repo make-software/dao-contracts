@@ -231,7 +231,7 @@ mod tests {
                             stringify!(do_something),
                             {
                                 let mut params: Vec<casper_types::Parameter> = Vec::new();
-                                params.push(casper_types::Parameter::new(stringify!(amount), <U256 as casper_types::CLTyped>::cl_type()));
+                                params.push(casper_types::Parameter::new(stringify!(amount), <U512 as casper_types::CLTyped>::cl_type()));
                                 params
                             },
                             <() as casper_types::CLTyped>::cl_type(),

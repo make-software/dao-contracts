@@ -12,19 +12,19 @@ entry_points:
   - name: burn
     arguments:
       - name: token_id
-        cl_type: U256
+        cl_type: U512
   - name: mint
     arguments:
       - name: to
         cl_type: Address
       - name: token_id
-        cl_type: U256
+        cl_type: U512
   - name: approve
     arguments:
       - name: approved
         cl_type: Option<Address>
       - name: token_id
-        cl_type: U256
+        cl_type: U512
   - name: set_approval_for_all
     arguments:
       - name: operator
@@ -51,7 +51,7 @@ events:
       - name: to
         cl_type: Option<Address>
       - name: token_id
-        cl_type: U256
+        cl_type: U512
   - name: Approval
     fields:
       - name: owner
@@ -59,7 +59,7 @@ events:
       - name: approved
         cl_type: Option<Address>
       - name: token_id
-        cl_type: U256
+        cl_type: U512
   - name: ApprovalForAll
     fields:
       - name: owner

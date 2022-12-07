@@ -3,7 +3,7 @@ import { utils } from "casper-js-client-helper";
 import { createRecipientAddress } from "casper-js-client-helper/dist/helpers/lib";
 import {
   CLKey,
-  CLU256,
+  CLU512,
   CLValue,
   CLValueBuilder,
   EventName,
@@ -129,7 +129,7 @@ const test = async () => {
     ownerKeys.publicKey,
     DEPLOY_PAYMENT_AMOUNT,
     createRecipientAddress(ownerKeys.publicKey),
-    CLValueBuilder.u256(mintAmount)
+    CLValueBuilder.u512(mintAmount)
   );
 
   if (mintDeployResult.ok) {
@@ -147,7 +147,7 @@ const test = async () => {
 
     const total_supply_after_mint = (await reputationContractClient.getNamedKey(
       "total_supply"
-    )) as BigNumber; // should be CLU256 but sdk returns BigNumber, need to fix in casper-js-sdk
+    )) as BigNumber; // should be CLU512 but sdk returns BigNumber, need to fix in casper-js-sdk
     console.log(` - Requested Mint Amount: `, mintAmount);
     console.log(
       ` - Total Supply After Mint: `,

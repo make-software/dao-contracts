@@ -16,7 +16,7 @@ use casper_dao_utils::{
     Mapping,
     SequenceGenerator,
 };
-use casper_types::U256;
+use casper_types::U512;
 use delegate::delegate;
 
 #[casper_contract_interface]
@@ -57,9 +57,9 @@ pub trait VaNftContractInterface {
     /// If the `owner` does not own any token the None value is returned.
     fn token_id(&self, address: Address) -> Option<TokenId>;
     /// Returns the number of tokens owned by `owner`.
-    fn balance_of(&self, owner: Address) -> U256;
+    fn balance_of(&self, owner: Address) -> U512;
     /// Returns the total number of tokens.
-    fn total_supply(&self) -> U256;
+    fn total_supply(&self) -> U512;
     /// Returns a distinct Uniform Resource Identifier (URI) for a given asset.
     fn token_uri(&self, token_id: TokenId) -> TokenUri;
     /// Returns a URI prefix that is used by all the assets.
@@ -125,8 +125,8 @@ impl VaNftContractInterface for VaNftContract {
 
         to self.token {
             fn owner_of(&self, token_id: TokenId) -> Option<Address>;
-            fn balance_of(&self, owner: Address) -> U256;
-            fn total_supply(&self) -> U256;
+            fn balance_of(&self, owner: Address) -> U512;
+            fn total_supply(&self) -> U512;
         }
     }
 

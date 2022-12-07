@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use casper_dao_utils::{casper_dao_macros::Event, Address};
-use casper_types::U256;
+use casper_types::U512;
 
 use crate::{
     voting::{ballot::Choice, types::VotingId, Ballot},
@@ -23,7 +23,7 @@ pub struct BallotCast {
     pub voter: Address,
     pub voting_id: VotingId,
     pub choice: Choice,
-    pub stake: U256,
+    pub stake: U512,
 }
 
 impl BallotCast {
@@ -78,10 +78,10 @@ pub struct VotingEnded {
     pub informal_voting_id: VotingId,
     pub formal_voting_id: Option<VotingId>,
     pub result: String,
-    pub votes_count: U256,
-    pub stake_in_favor: U256,
-    pub stake_against: U256,
-    pub transfers: BTreeMap<Address, U256>,
-    pub burns: BTreeMap<Address, U256>,
-    pub mints: BTreeMap<Address, U256>,
+    pub votes_count: U512,
+    pub stake_in_favor: U512,
+    pub stake_against: U512,
+    pub transfers: BTreeMap<Address, U512>,
+    pub burns: BTreeMap<Address, U512>,
+    pub mints: BTreeMap<Address, U512>,
 }

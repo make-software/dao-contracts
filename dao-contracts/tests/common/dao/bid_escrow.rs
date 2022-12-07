@@ -5,7 +5,7 @@ use casper_dao_contracts::bid::{
 use casper_dao_utils::{BlockTime, TestContract};
 
 use crate::common::{
-    params::{Account, Balance, CsprBalance},
+    params::{Account, Balance},
     DaoWorld,
 };
 
@@ -27,10 +27,10 @@ impl DaoWorld {
         offer_id: JobOfferId,
         bidder: Account,
         timeframe: BlockTime,
-        budget: CsprBalance,
+        budget: Balance,
         stake: Balance,
         onboarding: bool,
-        cspr_stake: Option<CsprBalance>,
+        cspr_stake: Option<Balance>,
     ) {
         let _bids_count = self.bid_escrow.bids_count();
         let bidder = self.get_address(&bidder);
@@ -71,8 +71,8 @@ impl DaoWorld {
         &mut self,
         poster: Account,
         timeframe: BlockTime,
-        maximum_budget: CsprBalance,
-        dos_fee: CsprBalance,
+        maximum_budget: Balance,
+        dos_fee: Balance,
     ) -> JobOfferId {
         let poster = self.get_address(&poster);
 

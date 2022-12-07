@@ -4,7 +4,7 @@ use casper_dao_utils::{
     Address,
     ContractCall,
 };
-use casper_types::{runtime_args, RuntimeArgs, U256};
+use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
@@ -36,14 +36,14 @@ pub trait AdminContractInterface {
         contract_to_update: Address,
         action: Action,
         address: Address,
-        stake: U256,
+        stake: U512,
     );
     /// see [GovernanceVoting](GovernanceVoting::vote())
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U256;
+    fn get_dust_amount(&self) -> U512;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
@@ -75,7 +75,7 @@ impl AdminContractInterface for AdminContract {
     delegate! {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn get_dust_amount(&self) -> U256;
+            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
@@ -86,7 +86,7 @@ impl AdminContractInterface for AdminContract {
         contract_to_update: Address,
         action: Action,
         address: Address,
-        stake: U256,
+        stake: U512,
     ) {
         let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
@@ -105,7 +105,7 @@ impl AdminContractInterface for AdminContract {
             .create_voting(caller(), stake, voting_configuration);
     }
 
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.vote(caller(), voting_id, choice, stake);
     }

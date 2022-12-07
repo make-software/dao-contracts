@@ -1,7 +1,5 @@
 use casper_types::{
     bytesrepr::{Bytes, FromBytes, ToBytes},
-    U256,
-    U512,
 };
 
 use crate::Error;
@@ -32,14 +30,6 @@ impl<T: ToBytes + FromBytes> BytesConversion for T {
             Err(_) => Err(Error::BytesConversionError),
         }
     }
-}
-
-pub fn u512_to_u256(u512: U512) -> Result<U256, Error> {
-    U256::convert_from_bytes(u512.convert_to_bytes()?)
-}
-
-pub fn u256_to_512(u256: U256) -> Result<U512, Error> {
-    U512::convert_from_bytes(u256.convert_to_bytes()?)
 }
 
 #[cfg(test)]

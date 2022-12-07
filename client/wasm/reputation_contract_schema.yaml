@@ -6,14 +6,14 @@ entry_points:
       - name: "recipient"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "burn"
     arguments:
       - name: "owner"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "transfer_from"
     arguments:
@@ -22,7 +22,7 @@ entry_points:
       - name: "recipient"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "change_ownership"
     arguments:
@@ -44,14 +44,14 @@ entry_points:
       - name: "address"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "unstake"
     arguments:
       - name: "address"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
 events:
   - name: "Transfer"
@@ -61,21 +61,21 @@ events:
       - name: "to"
         cl_type: "Address"
       - name: "value"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "Mint"
     fields:
       - name: "recipient"
         cl_type: "Address"
       - name: "value"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "Burn"
     fields:
       - name: "owner"
         cl_type: "Address"
       - name: "value"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "OwnerChanged"
     fields:
@@ -97,14 +97,14 @@ events:
       - name: "address"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
   - name: "TokensUnstaked"
     fields:
       - name: "address"
         cl_type: "Address"
       - name: "amount"
-        cl_type: "U256"
+        cl_type: "U512"
 
 named_keys:
   - name: "owner"
@@ -115,14 +115,14 @@ named_keys:
 
   - name: "total_supply"
     named_key: "total_supply"
-    cl_type: "U256"
+    cl_type: "U512"
 
   - name: "balance"
     named_key: "balances"
     cl_type:
       - name: "Mapping"
         key: "Address"
-        value: "U256"
+        value: "U512"
 
   - name: "whitelist"
     named_key: "whitelist"
@@ -136,5 +136,5 @@ named_keys:
     cl_type:
       - name: "Mapping"
         key: "Address"
-        value: "U256"
+        value: "U512"
 

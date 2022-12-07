@@ -8,7 +8,7 @@ use casper_dao_utils::{
     DocumentHash,
     Error,
 };
-use casper_types::{runtime_args, RuntimeArgs, U256};
+use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
@@ -49,13 +49,13 @@ pub trait KycVoterContractInterface {
     /// `subject_address` - [address](Address) of a user to be verified.
     /// `document_hash` - a hash of a document that verify the user. The hash is used as an id of a freshly minted  kyc token.
     /// `subject_address` - an [Address](Address) to be on/offboarded.
-    fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U256);
+    fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U512);
     /// see [GovernanceVoting](GovernanceVoting::vote())
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U256;
+    fn get_dust_amount(&self) -> U512;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
@@ -95,7 +95,7 @@ impl KycVoterContractInterface for KycVoterContract {
         to self.voting {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
-            fn get_dust_amount(&self) -> U256;
+            fn get_dust_amount(&self) -> U512;
         }
     }
 
@@ -114,7 +114,7 @@ impl KycVoterContractInterface for KycVoterContract {
         &mut self,
         subject_address: Address,
         _document_hash: DocumentHash,
-        stake: U256,
+        stake: U512,
     ) {
         self.assert_no_ongoing_voting(&subject_address);
         self.assert_not_kyced(&subject_address);
@@ -140,7 +140,7 @@ impl KycVoterContractInterface for KycVoterContract {
         self.kyc.set_voting(&subject_address);
     }
 
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         let voter = caller();
         self.voting.vote(voter, voting_id, choice, stake);

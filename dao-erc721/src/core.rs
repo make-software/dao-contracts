@@ -7,7 +7,7 @@ use casper_dao_utils::{
     Mapping,
     Variable,
 };
-use casper_types::{bytesrepr::Bytes, U256};
+use casper_types::{bytesrepr::Bytes, U512};
 
 use crate::{
     events::{Approval, ApprovalForAll, Transfer},
@@ -17,13 +17,13 @@ use crate::{
 
 #[derive(Instance)]
 pub struct ERC721Token {
-    total_supply: Variable<U256>,
+    total_supply: Variable<U512>,
     // Mapping owner address to token count
-    balances: Mapping<Address, U256>,
+    balances: Mapping<Address, U512>,
     // Mapping from token ID to owner address
-    owners: Mapping<U256, Option<Address>>,
+    owners: Mapping<U512, Option<Address>>,
     // Mapping from token ID to approved address
-    token_approvals: Mapping<U256, Option<Address>>,
+    token_approvals: Mapping<U512, Option<Address>>,
     // Mapping from owner to operator approvals
     operator_approvals: Mapping<(Address, Address), bool>,
 }
@@ -36,11 +36,11 @@ impl ERC721Token {
         self.owners.get(&token_id).unwrap_or(None)
     }
 
-    pub fn balance_of(&self, owner: Address) -> U256 {
+    pub fn balance_of(&self, owner: Address) -> U512 {
         self.balances.get(&owner).unwrap_or_default()
     }
 
-    pub fn total_supply(&self) -> U256 {
+    pub fn total_supply(&self) -> U512 {
         self.total_supply.get().unwrap_or_default()
     }
 

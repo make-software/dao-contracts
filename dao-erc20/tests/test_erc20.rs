@@ -3,7 +3,7 @@ use casper_dao_erc20::{
     ERC20Test,
 };
 use casper_dao_utils::{Error, TestContract, TestEnv};
-use casper_types::U256;
+use casper_types::U512;
 
 static NAME: &str = "Plascoin";
 static SYMBOL: &str = "PLS";
@@ -17,7 +17,7 @@ fn setup() -> (TestEnv, ERC20Test) {
         String::from(NAME),
         String::from(SYMBOL),
         DECIMALS,
-        U256::from(INITIAL_SUPPLY),
+        U512::from(INITIAL_SUPPLY),
     );
     (env, token)
 }
@@ -28,17 +28,17 @@ fn test_erc20_initial_state() {
     assert_eq!(token.name(), NAME);
     assert_eq!(token.symbol(), SYMBOL);
     assert_eq!(token.decimals(), DECIMALS);
-    assert_eq!(token.total_supply(), U256::from(INITIAL_SUPPLY));
+    assert_eq!(token.total_supply(), U512::from(INITIAL_SUPPLY));
     assert_eq!(
         token.balance_of(env.get_account(0)),
-        U256::from(INITIAL_SUPPLY)
+        U512::from(INITIAL_SUPPLY)
     );
     token.assert_event_at(
         0,
         Transfer {
             from: None,
             to: Some(env.get_account(0)),
-            value: U256::from(INITIAL_SUPPLY),
+            value: U512::from(INITIAL_SUPPLY),
         },
     );
 }
@@ -49,8 +49,8 @@ fn test_erc20_transfer() {
     let (env, mut token) = setup();
     let owner = env.get_account(0);
     let recipient = env.get_account(1);
-    let amount = U256::one();
-    let initial_supply = U256::from(INITIAL_SUPPLY);
+    let amount = U512::one();
+    let initial_supply = U512::from(INITIAL_SUPPLY);
 
     // When transfer more then owned.
     let result = token.transfer(recipient, initial_supply + amount);
@@ -88,8 +88,8 @@ fn test_erc20_transfer_from() {
     let owner = env.get_account(0);
     let recipient = env.get_account(1);
     let spender = env.get_account(2);
-    let amount = U256::one();
-    let initial_supply = U256::from(INITIAL_SUPPLY);
+    let amount = U512::one();
+    let initial_supply = U512::from(INITIAL_SUPPLY);
 
     // When spender is approved by the owner.
     token.approve(spender, amount).unwrap();
@@ -129,7 +129,7 @@ fn test_erc20_transfer_from() {
     assert_eq!(token.balance_of(recipient), amount);
 
     // Then allowance is decremented.
-    assert_eq!(token.allowance(owner, spender), U256::zero());
+    assert_eq!(token.allowance(owner, spender), U512::zero());
 
     // Then Transfer event is emited.
     token.assert_event_at(
@@ -147,7 +147,7 @@ fn test_erc20_transfer_from() {
         Approval {
             owner,
             spender,
-            value: U256::zero(),
+            value: U512::zero(),
         },
     );
 }

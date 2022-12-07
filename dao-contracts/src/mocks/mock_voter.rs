@@ -5,7 +5,7 @@ use casper_dao_utils::{
     ContractCall,
     Variable,
 };
-use casper_types::{runtime_args, RuntimeArgs, U256};
+use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
@@ -16,10 +16,10 @@ use crate::{
 #[casper_contract_interface]
 pub trait MockVoterContractInterface {
     fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-    fn create_voting(&mut self, value: String, stake: U256);
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256);
+    fn create_voting(&mut self, value: String, stake: U512);
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U512);
     fn finish_voting(&mut self, voting_id: VotingId);
-    fn get_dust_amount(&self) -> U256;
+    fn get_dust_amount(&self) -> U512;
     fn variable_repo_address(&self) -> Address;
     fn reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
@@ -41,7 +41,7 @@ impl MockVoterContractInterface for MockVoterContract {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
-            fn get_dust_amount(&self) -> U256;
+            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
@@ -50,7 +50,7 @@ impl MockVoterContractInterface for MockVoterContract {
         }
     }
 
-    fn create_voting(&mut self, value: String, stake: U256) {
+    fn create_voting(&mut self, value: String, stake: U512) {
         let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
@@ -68,7 +68,7 @@ impl MockVoterContractInterface for MockVoterContract {
             .create_voting(caller(), stake, voting_configuration);
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U512) {
         self.voting.vote(caller(), voting_id, choice, stake);
     }
 

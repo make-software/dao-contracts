@@ -107,7 +107,7 @@ pub mod tests {
             ident: format_ident!("{}", "ContractTrait"),
             trait_methods: vec![
                 parse_quote! { fn init(&mut self); },
-                parse_quote! { fn do_something(&mut self, amount: U256); },
+                parse_quote! { fn do_something(&mut self, amount: U512); },
             ],
             caller_ident: format_ident!("{}", "ContractCaller"),
             contract_ident: format_ident!("{}", "Contract"),
@@ -121,7 +121,7 @@ pub mod tests {
         CasperContractItem {
             trait_methods: vec![
                 parse_quote! { fn contrustor(&mut self); },
-                parse_quote! { fn do_something(&mut self, amount: U256); },
+                parse_quote! { fn do_something(&mut self, amount: U512); },
             ],
             ..mock_valid_item()
         }
@@ -131,7 +131,7 @@ pub mod tests {
         CasperContractItem {
             trait_methods: vec![
                 parse_quote! { fn init(&mut self, arg1: String, arg2: String); },
-                parse_quote! { fn do_something(&mut self, amount: U256); },
+                parse_quote! { fn do_something(&mut self, amount: U512); },
             ],
             ..mock_valid_item()
         }
