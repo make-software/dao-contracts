@@ -178,6 +178,7 @@ impl GovernanceVoting {
                     VotingResult::QuorumNotReached => {
                         // TODO: Emit events
                     }
+                    VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
                 }
                 voting_result
             }
@@ -196,6 +197,7 @@ impl GovernanceVoting {
                         self.return_reputation_of_yes_voters(voting_id);
                         self.return_reputation_of_no_voters(voting_id);
                     }
+                    VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
                 }
                 voting_result
             }
@@ -261,7 +263,8 @@ impl GovernanceVoting {
             }
             VotingResult::QuorumNotReached => {
                 voting.complete(None);
-            }
+            },
+            VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
         };
 
         let informal_voting_id = voting.voting_id();
@@ -306,6 +309,7 @@ impl GovernanceVoting {
             }
             VotingResult::Against => {}
             VotingResult::QuorumNotReached => {}
+            VotingResult::Canceled => {},
         };
 
         // ReputationContractCaller::at(self.get_reputation_token_address()).redistribute(
@@ -646,5 +650,18 @@ impl GovernanceVoting {
                 VotingType::Formal => false,
             },
         }
+    }
+
+    pub fn cancel(&mut self, account: Address, voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(voting_id);
+        if &account == voting.creator() {
+            self.cancel_voting(voting);    
+        }
+    }
+
+    fn cancel_voting(&mut self, mut voting: Voting) {
+        voting.cancel();
+        self.unstake_all_reputation(voting.voting_id());
+        self.set_voting(voting);
     }
 }

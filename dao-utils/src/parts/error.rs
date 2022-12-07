@@ -80,6 +80,8 @@ dao_errors!(
     VoterDoesNotExist => 3406,
     VotingDoesNotExist => 3407,
     ZeroStake => 3408,
+    VotingAlreadyCanceled => 3409,
+    
     // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,
     JobPosterNotKycd => 4001,

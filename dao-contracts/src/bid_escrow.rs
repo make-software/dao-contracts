@@ -517,6 +517,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                     self.return_job_poster_payment_and_dos_fee(&job);
                     self.return_external_worker_cspr_stake(&job);
                 }
+                VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
             },
             VotingType::Formal => {
                 match voting_summary.result() {
@@ -570,7 +571,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
                         self.voting.return_reputation_of_no_voters(voting_id);
                         self.return_job_poster_payment_and_dos_fee(&job);
                         self.return_external_worker_cspr_stake(&job);
-                    }
+                    },
+                    VotingResult::Canceled => revert(Error::VotingAlreadyCanceled)
                 }
             }
         }

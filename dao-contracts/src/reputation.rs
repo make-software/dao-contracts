@@ -7,9 +7,9 @@ use casper_dao_utils::{
     Address,
     Error,
     Mapping,
-    Variable,
+    Variable, ContractCall,
 };
-use casper_types::{URef, U512};
+use casper_types::{URef, U512, runtime_args, RuntimeArgs};
 use delegate::delegate;
 
 use self::events::{Burn, Mint};
@@ -290,8 +290,19 @@ impl ReputationContractInterface for ReputationContract {
         self.balances.set(balances);
         self.total_supply.set(self.total_supply() - balance);
 
-        // Remove VA Token.
-        
+        // Call voter contracts.
+        let stakes_origins = self.stake_info(&owner).get_stakes_origins();
+        for (address, voting_id) in stakes_origins {
+            let contract_call = ContractCall {
+                address,
+                entry_point: String::from("cancel"),
+                runtime_args: runtime_args! {
+                    "account" => owner,
+                    "voting_id" => voting_id
+                },
+            };
+            contract_call.call();
+        }
     }
 }
 
@@ -377,6 +388,10 @@ impl AccountStakeInfo {
             Some(amount) => amount,
             None => revert(Error::BidStakeDoesntExists),
         }
+    }
+
+    fn get_stakes_origins(&self) -> Vec<(Address, VotingId)> {
+        self.stakes_from_voting.keys().cloned().collect()
     }
 }
 

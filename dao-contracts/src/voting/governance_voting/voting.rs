@@ -20,6 +20,7 @@ pub enum VotingResult {
     InFavor,
     Against,
     QuorumNotReached,
+    Canceled
 }
 
 /// Type of Voting (Formal or Informal)
@@ -106,6 +107,7 @@ pub struct Voting {
     formal_voting_id: Option<VotingId>,
     creator: Address,
     voting_configuration: DaoConfiguration,
+    is_canceled: bool
 }
 
 impl Voting {
@@ -128,6 +130,7 @@ impl Voting {
             formal_voting_id: None,
             creator,
             voting_configuration,
+            is_canceled: false
         }
     }
 
@@ -168,6 +171,8 @@ impl Voting {
             formal_voting_id: Some(new_voting_id),
             creator: self.creator,
             voting_configuration,
+            // TODO: Shoudn't be false.
+            is_canceled: self.is_canceled
         }
     }
 
@@ -378,6 +383,10 @@ impl Voting {
         } else {
             VotingState::Finished
         }
+    }
+
+    pub fn cancel(&mut self) {
+        self.is_canceled = true;
     }
 }
 
