@@ -11,7 +11,6 @@ use casper_dao_utils::{
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     ContractPackageHash,
-    U256,
     U512,
 };
 
@@ -133,17 +132,17 @@ impl Default for RepositoryDefaults {
         items.push(consts::POST_JOB_DOS_FEE, U512::from(10000));
         items.push(consts::INTERNAL_AUCTION_TIME, 604800u64);
         items.push(consts::PUBLIC_AUCTION_TIME, 864000u64);
-        items.push(consts::DEFAULT_POLICING_RATE, U256::from(300));
-        items.push(consts::REPUTATION_CONVERSION_RATE, U256::from(100));
+        items.push(consts::DEFAULT_POLICING_RATE, U512::from(300));
+        items.push(consts::REPUTATION_CONVERSION_RATE, U512::from(100));
         items.push(
             consts::FIAT_CONVERSION_RATE_ADDRESS,
             Address::from(ContractPackageHash::from([0u8; 32])),
         );
         items.push(consts::FORUM_KYC_REQUIRED, true);
-        items.push(consts::GOVERNANCE_INFORMAL_QUORUM_RATIO, U256::from(500));
-        items.push(consts::GOVERNANCE_FORMAL_QUORUM_RATIO, U256::from(500));
-        items.push(consts::INFORMAL_QUORUM_RATIO, U256::from(500));
-        items.push(consts::FORMAL_QUORUM_RATIO, U256::from(500));
+        items.push(consts::GOVERNANCE_INFORMAL_QUORUM_RATIO, U512::from(500));
+        items.push(consts::GOVERNANCE_FORMAL_QUORUM_RATIO, U512::from(500));
+        items.push(consts::INFORMAL_QUORUM_RATIO, U512::from(500));
+        items.push(consts::FORMAL_QUORUM_RATIO, U512::from(500));
         items.push(consts::GOVERNANCE_INFORMAL_VOTING_TIME, 432000u64);
         items.push(consts::GOVERNANCE_FORMAL_VOTING_TIME, 432000u64);
         items.push(consts::INFORMAL_VOTING_TIME, 432000u64);
@@ -157,8 +156,8 @@ impl Default for RepositoryDefaults {
             consts::GOVERNANCE_WALLET_ADDRESS,
             Address::from(ContractPackageHash::from([0u8; 32])),
         );
-        items.push(consts::DEFAULT_REPUTATION_SLASH, U256::from(100));
-        items.push(consts::VOTING_CLEARNESS_DELTA, U256::from(8));
+        items.push(consts::DEFAULT_REPUTATION_SLASH, U512::from(100));
+        items.push(consts::VOTING_CLEARNESS_DELTA, U512::from(8));
         items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);
         items.push(consts::GOVERNANCE_PAYMENT_RATIO, U512::from(100));
         items

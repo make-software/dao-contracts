@@ -1,6 +1,6 @@
 use cucumber::Parameter;
 
-use super::{account::Account, common::U256, voting::Choice, Contract};
+use super::{account::Account, voting::Choice, Contract, Balance, TokenId};
 use crate::common::helpers;
 
 #[derive(Debug, Parameter)]
@@ -11,9 +11,9 @@ pub enum Event {
     RemovedFromWhitelist(Account),
     VotingContractCreated(Contract, Contract, Contract),
     VotingCreated(Account, u32, u32, Option<u32>, u32, u64, u32, u64),
-    BallotCast(Account, u32, Choice, U256),
-    NftTransfer(Option<Account>, Option<Account>, U256),
-    NftApproval(Option<Account>, Option<Account>, U256),
+    BallotCast(Account, u32, Choice, Balance),
+    NftTransfer(Option<Account>, Option<Account>, TokenId),
+    NftApproval(Option<Account>, Option<Account>, TokenId),
 }
 
 impl From<&Vec<String>> for Event {
@@ -72,9 +72,9 @@ impl From<&Vec<String>> for Event {
             }
             "BallotCast" => {
                 let voter = helpers::parse(value.get(1), "Couldn't parse contract");
-                let voting_id = helpers::parse_or_default(value.get(2));
+                let voting_id = helpers::parse(value.get(2), "Couldn't parse voting id");
                 let choice = helpers::parse(value.get(3), "Couldn't parse choice");
-                let stake = helpers::parse_or_default(value.get(4));
+                let stake = helpers::parse(value.get(4), "Couldn't parse stake");
                 Self::BallotCast(voter, voting_id, choice, stake)
             }
             invalid => panic!("Unknown event {}", invalid),

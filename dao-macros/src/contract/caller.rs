@@ -131,7 +131,7 @@ mod tests {
               );
             }
 
-            fn do_something(&mut self, amount: U256) {
+            fn do_something(&mut self, amount: U512) {
               casper_dao_utils::casper_contract::contract_api::runtime::call_versioned_contract(
                 self.contract_package_hash,
                 std::option::Option::None,

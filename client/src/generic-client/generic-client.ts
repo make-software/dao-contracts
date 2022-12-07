@@ -5,7 +5,7 @@ import {
   CLKey,
   CLPublicKey,
   CLU128,
-  CLU256,
+  CLU512,
   CLU32,
   CLU512,
   CLU64,
@@ -55,8 +55,7 @@ const CLTypeDict = {
   U32: CLU32,
   U64: CLU64,
   U128: CLU128,
-  U256: CLU256,
-  U512: CLU512,
+  U512: CLU512,: CLU512,
   Bool: CLBool,
 };
 

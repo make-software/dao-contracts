@@ -2,12 +2,12 @@ use std::{fmt::Debug, str::FromStr};
 
 use cucumber::Parameter;
 
-use super::{Account, Balance, Contract, U256};
+use super::{Account, Balance, Contract};
 use crate::common::helpers;
 
 pub struct Voting {
     pub contract: Contract,
-    stake: U256,
+    stake: Balance,
     raw_args: Vec<String>,
 }
 

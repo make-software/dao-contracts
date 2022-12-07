@@ -33,9 +33,9 @@ Feature: External Worker who does not want to become a va - Quorum not reached
     And Informal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
+      | JobPoster        | 1000         | 0            | 0          |
       | BidEscrow        | 0            | 0            | 0          |
       | MultisigWallet   | 0            | 0            | 0          |
-      | JobPoster        | 1000         | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 0          |
       | ExternalWorker   | 500          | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |

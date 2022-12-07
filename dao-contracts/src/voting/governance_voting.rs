@@ -15,7 +15,7 @@ use casper_dao_utils::{
     Variable,
     VecMapping,
 };
-use casper_types::U256;
+use casper_types::U512;
 
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
@@ -55,7 +55,7 @@ pub struct GovernanceVoting {
     ballots: Mapping<(VotingId, Address), Ballot>,
     voters: VecMapping<VotingId, Address>,
     votings_count: Variable<VotingId>,
-    dust_amount: Variable<U256>,
+    dust_amount: Variable<U512>,
 }
 
 impl GovernanceVoting {
@@ -91,7 +91,7 @@ impl GovernanceVoting {
     pub fn create_voting(
         &mut self,
         creator: Address,
-        stake: U256,
+        stake: U512,
         voting_configuration: DaoConfiguration,
     ) -> VotingId {
         if voting_configuration.only_va_can_create && !self.is_va(creator) {
@@ -176,7 +176,6 @@ impl GovernanceVoting {
                         );
                     }
                     VotingResult::QuorumNotReached => {
-                        // TODO: Burn reputation of creator?
                         // TODO: Emit events
                     }
                 }
@@ -196,7 +195,6 @@ impl GovernanceVoting {
                     VotingResult::QuorumNotReached => {
                         self.return_reputation_of_yes_voters(voting_id);
                         self.return_reputation_of_no_voters(voting_id);
-                        // TODO: Should we burn the reputation of the creator?
                     }
                 }
                 voting_result
@@ -352,7 +350,7 @@ impl GovernanceVoting {
     /// Throws [`VoteOnCompletedVotingNotAllowed`](casper_dao_utils::Error::VoteOnCompletedVotingNotAllowed) if voting is completed
     ///
     /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
-    pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U256) {
+    pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U512) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
 
         let validation_result = voting.validate_vote(get_block_time());
@@ -376,7 +374,7 @@ impl GovernanceVoting {
         voter: Address,
         voting_id: VotingId,
         choice: Choice,
-        stake: U256,
+        stake: U512,
         unbounded: bool,
         mut voting: Voting,
     ) {
@@ -415,7 +413,7 @@ impl GovernanceVoting {
     ///
     /// Those are leftovers from redistribution of reputation tokens. For example, when 10 tokens needs to be redistributed between 3 voters,
     /// each will recieve 3 reputation, with 1 reputation left in the contract's balance.
-    pub fn get_dust_amount(&self) -> U256 {
+    pub fn get_dust_amount(&self) -> U512 {
         self.dust_amount.get().unwrap_or_default()
     }
 
@@ -488,7 +486,7 @@ impl GovernanceVoting {
         }
     }
 
-    pub fn unstake_all_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U256> {
+    pub fn unstake_all_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U512> {
         let mut transfers = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
@@ -545,8 +543,8 @@ impl GovernanceVoting {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
-        let mut burns: BTreeMap<Address, U256> = BTreeMap::new();
-        let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
+        let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
+        let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
             if ballot.unbounded {
@@ -568,8 +566,8 @@ impl GovernanceVoting {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
-        let mut burns: BTreeMap<Address, U256> = BTreeMap::new();
-        let mut mints: BTreeMap<Address, U256> = BTreeMap::new();
+        let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
+        let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
             if ballot.unbounded {

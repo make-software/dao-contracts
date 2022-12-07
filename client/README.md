@@ -104,7 +104,7 @@ const mintDeployResult = await reputationContract.createDeploy(
   ownerKeys.publicKey,
   DEPLOY_PAYMENT_AMOUNT,
   createRecipientAddress(ownerKeys.publicKey), // import { createRecipientAddress } from "casper-js-client-helper/dist/helpers/lib";
-  CLValueBuilder.u256(mintAmount)
+  CLValueBuilder.u512(mintAmount)
 );
 
 // check the result

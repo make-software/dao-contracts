@@ -1,8 +1,6 @@
-use casper_types::{U256, U512};
-
 use super::{
     helpers,
-    params::{Account, Balance, Contract, CsprBalance},
+    params::{Account, Contract, Balance},
 };
 
 #[allow(dead_code)]
@@ -13,7 +11,7 @@ pub struct UserConfiguration {
     is_va: bool,
     reputation_balance: Balance,
     reputation_staked: Balance,
-    cspr_balance: CsprBalance,
+    cspr_balance: Balance,
 }
 
 #[allow(dead_code)]
@@ -22,9 +20,9 @@ impl UserConfiguration {
         let mut whitelisted_in = vec![];
         let mut is_kyced = false;
         let mut is_va = false;
-        let mut reputation_balance = Balance(U256::zero());
-        let mut reputation_staked = Balance(U256::zero());
-        let mut cspr_balance = CsprBalance(U512::zero());
+        let mut reputation_balance = Balance::zero();
+        let mut reputation_staked = Balance::zero();
+        let mut cspr_balance = Balance::zero();
         let mut account = None::<Account>;
 
         for (idx, label) in labels.iter().enumerate() {
@@ -100,7 +98,7 @@ impl UserConfiguration {
         self.reputation_balance
     }
 
-    pub fn cspr_balance(&self) -> CsprBalance {
+    pub fn cspr_balance(&self) -> Balance {
         self.cspr_balance
     }
 }

@@ -6,7 +6,7 @@ use casper_dao_utils::{
     DocumentHash,
     Mapping,
 };
-use casper_types::{runtime_args, RuntimeArgs, U256};
+use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
@@ -35,7 +35,7 @@ impl Action {
         }
     }
 
-    pub fn runtime_args(&self, account: Address, amount: U256) -> RuntimeArgs {
+    pub fn runtime_args(&self, account: Address, amount: U512) -> RuntimeArgs {
         match self {
             Action::Burn => {
                 runtime_args! {
@@ -58,7 +58,7 @@ impl Action {
 pub struct ReputationVoting {
     pub action: Action,
     pub account: Address,
-    pub amount: U256,
+    pub amount: U512,
     pub document_hash: DocumentHash,
 }
 
@@ -83,16 +83,16 @@ pub trait ReputationVoterContractInterface {
         &mut self,
         account: Address,
         action: Action,
-        amount: U256,
+        amount: U512,
         document_hash: DocumentHash,
-        stake: U256,
+        stake: U512,
     );
     /// see [GovernanceVoting](GovernanceVoting::vote())
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U256;
+    fn get_dust_amount(&self) -> U512;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
@@ -125,7 +125,7 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
     delegate! {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn get_dust_amount(&self) -> U256;
+            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
@@ -135,9 +135,9 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         &mut self,
         account: Address,
         action: Action,
-        amount: U256,
+        amount: U512,
         document_hash: DocumentHash,
-        stake: U256,
+        stake: U512,
     ) {
         let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
@@ -171,7 +171,7 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         .emit();
     }
 
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.vote(caller(), voting_id, choice, stake);
     }

@@ -3,7 +3,7 @@ use casper_dao_utils::{
     Address,
     BlockTime,
 };
-use casper_types::{U256, U512};
+use casper_types::{U512};
 
 use crate::bid::types::{BidId, JobOfferId};
 
@@ -29,7 +29,7 @@ pub struct Bid {
     pub job_offer_id: JobOfferId,
     pub proposed_timeframe: BlockTime,
     pub proposed_payment: U512,
-    pub reputation_stake: U256,
+    pub reputation_stake: U512,
     pub cspr_stake: Option<U512>,
     pub onboard: bool,
     pub worker: Address,
@@ -43,7 +43,7 @@ impl Bid {
         job_offer_id: JobOfferId,
         proposed_timeframe: BlockTime,
         proposed_payment: U512,
-        reputation_stake: U256,
+        reputation_stake: U512,
         cspr_stake: Option<U512>,
         onboard: bool,
         worker: Address,

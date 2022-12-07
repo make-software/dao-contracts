@@ -6,7 +6,7 @@ use casper_dao_utils::{
     DocumentHash,
     Error,
 };
-use casper_types::{U256, U512};
+use casper_types::{U512};
 
 use super::types::{BidId, JobId, JobOfferId};
 use crate::voting::types::VotingId;
@@ -42,7 +42,7 @@ pub struct Job {
     worker_type: WorkerType,
     poster: Address,
     payment: U512,
-    stake: U256,
+    stake: U512,
     external_worker_cspr_stake: U512,
 }
 
@@ -58,7 +58,7 @@ impl Job {
         worker_type: WorkerType,
         poster: Address,
         payment: U512,
-        stake: U256,
+        stake: U512,
         external_worker_cspr_stake: U512,
     ) -> Self {
         Job {
@@ -218,7 +218,7 @@ impl Job {
         &self.worker_type
     }
 
-    pub fn stake(&self) -> U256 {
+    pub fn stake(&self) -> U512 {
         self.stake
     }
 

@@ -12,7 +12,7 @@ entry_points:
       - name: activation_time
         cl_type: Option<U64>
       - name: stake
-        cl_type: U256
+        cl_type: U512
   - name: init
     arguments:
       - name: variable_repo
@@ -28,7 +28,7 @@ entry_points:
       - name: choice
         cl_type: Bytes
       - name: stake
-        cl_type: U256
+        cl_type: U512
   - name: finish_voting
     arguments:
       - name: voting_id
@@ -51,7 +51,7 @@ events:
       - name: choice
         cl_type: Bytes
       - name: stake
-        cl_type: U256
+        cl_type: U512
   - name: VotingCreated
     fields:
       - name: creator
@@ -63,15 +63,15 @@ events:
       - name: formal_voting_id
         cl_type: Option<U32>
       - name: config_formal_voting_quorum
-        cl_type: U256
+        cl_type: U512
       - name: config_formal_voting_time
         cl_type: U64
       - name: config_informal_voting_quorum
-        cl_type: U256
+        cl_type: U512
       - name: config_informal_voting_time
         cl_type: U64
       - name: config_create_minimum_reputation
-        cl_type: U256
+        cl_type: U512
   - name: VotingEnded
     fields:
       - name: voting_id
@@ -83,15 +83,15 @@ events:
       - name: result
         cl_type: String
       - name: votes_count
-        cl_type: U256
+        cl_type: U512
       - name: stake_in_favor
-        cl_type: U256
+        cl_type: U512
       - name: stake_against
-        cl_type: U256
+        cl_type: U512
       - name: transfers
-        cl_type: "Map<Address, U256>"
+        cl_type: "Map<Address, U512>"
       - name: burns
-        cl_type: "Map<Address, U256>"
+        cl_type: "Map<Address, U512>"
       - name: mints
-        cl_type: "Map<Address, U256>"
+        cl_type: "Map<Address, U512>"
 named_keys: []

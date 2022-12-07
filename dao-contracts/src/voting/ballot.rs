@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
 };
-use casper_types::U256;
+use casper_types::U512;
 
 use crate::voting::VotingId;
 
@@ -32,7 +32,7 @@ pub struct Ballot {
     pub voter: Address,
     pub voting_id: VotingId,
     pub choice: Choice,
-    pub stake: U256,
+    pub stake: U512,
     pub unbounded: bool,
 }
 
@@ -49,7 +49,7 @@ fn test_vote_serialization() {
         voter: address,
         voting_id: 123,
         choice: Choice::InFavor,
-        stake: U256::from(456),
+        stake: U512::from(456),
         unbounded: false,
     };
 

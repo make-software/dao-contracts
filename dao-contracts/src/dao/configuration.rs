@@ -4,18 +4,18 @@ use casper_dao_utils::{
     BlockTime,
     ContractCall,
 };
-use casper_types::{U256, U512};
+use casper_types::{U512};
 
 pub trait DaoConfigurationTrait {
-    fn reputation_conversion_rate(&self) -> U256;
+    fn reputation_conversion_rate(&self) -> U512;
     fn fiat_conversion_rate_address(&self) -> Address;
     fn forum_kyc_required(&self) -> bool;
-    fn governance_informal_quorum_ratio(&self) -> U256;
-    fn governance_formal_quorum_ratio(&self) -> U256;
+    fn governance_informal_quorum_ratio(&self) -> U512;
+    fn governance_formal_quorum_ratio(&self) -> U512;
     fn governance_informal_voting_time(&self) -> BlockTime;
     fn governance_formal_voting_time(&self) -> BlockTime;
-    fn informal_quorum_ratio(&self) -> U256;
-    fn formal_quorum_ratio(&self) -> U256;
+    fn informal_quorum_ratio(&self) -> U512;
+    fn formal_quorum_ratio(&self) -> U512;
     fn governance_formal_voting_quorum(&self) -> u32;
     fn governance_informal_voting_quorum(&self) -> u32;
     fn formal_voting_quorum(&self) -> u32;
@@ -25,18 +25,18 @@ pub trait DaoConfigurationTrait {
     fn informal_stake_reputation(&self) -> bool;
     fn time_between_informal_and_formal_voting(&self) -> BlockTime;
     fn governance_wallet_address(&self) -> Address;
-    fn default_reputation_slash(&self) -> U256;
-    fn voting_clearness_delta(&self) -> U256;
+    fn default_reputation_slash(&self) -> U512;
+    fn voting_clearness_delta(&self) -> U512;
     fn voting_start_after_job_submition(&self) -> BlockTime;
     fn governance_payment_ratio(&self) -> U512;
     fn post_job_dos_fee(&self) -> U512;
     fn internal_auction_time(&self) -> BlockTime;
     fn public_auction_time(&self) -> BlockTime;
-    fn default_policing_rate(&self) -> U256;
+    fn default_policing_rate(&self) -> U512;
     fn va_bid_acceptance_timeout(&self) -> BlockTime;
     fn va_can_bid_on_public_auction(&self) -> bool;
     fn distribute_payment_to_non_voters(&self) -> bool;
-    fn total_onboarded(&self) -> U256;
+    fn total_onboarded(&self) -> U512;
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
@@ -44,14 +44,14 @@ pub struct DaoConfiguration {
     pub post_job_dos_fee: U512,
     pub internal_auction_time: BlockTime,
     pub public_auction_time: BlockTime,
-    pub default_policing_rate: U256,
-    pub reputation_conversion_rate: U256,
+    pub default_policing_rate: U512,
+    pub reputation_conversion_rate: U512,
     pub fiat_conversion_rate_address: Address,
     pub forum_kyc_required: bool,
-    pub governance_informal_quorum_ratio: U256,
-    pub governance_formal_quorum_ratio: U256,
-    pub informal_quorum_ratio: U256,
-    pub formal_quorum_ratio: U256,
+    pub governance_informal_quorum_ratio: U512,
+    pub governance_formal_quorum_ratio: U512,
+    pub informal_quorum_ratio: U512,
+    pub formal_quorum_ratio: U512,
     pub governance_informal_voting_time: BlockTime,
     pub governance_formal_voting_time: BlockTime,
     pub informal_voting_time: BlockTime,
@@ -62,11 +62,11 @@ pub struct DaoConfiguration {
     pub va_can_bid_on_public_auction: bool,
     pub distribute_payment_to_non_voters: bool,
     pub governance_wallet_address: Address,
-    pub default_reputation_slash: U256,
-    pub voting_clearness_delta: U256,
+    pub default_reputation_slash: U512,
+    pub voting_clearness_delta: U512,
     pub voting_start_after_job_worker_submission: BlockTime,
     pub governance_payment_ratio: U512,
-    pub total_onboarded: U256,
+    pub total_onboarded: U512,
     pub contract_call: Option<ContractCall>,
     pub only_va_can_create: bool,
     pub unbounded_tokens_for_creator: bool,
@@ -74,7 +74,7 @@ pub struct DaoConfiguration {
 }
 
 impl DaoConfigurationTrait for DaoConfiguration {
-    fn reputation_conversion_rate(&self) -> U256 {
+    fn reputation_conversion_rate(&self) -> U512 {
         self.reputation_conversion_rate
     }
 
@@ -86,11 +86,11 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.forum_kyc_required
     }
 
-    fn governance_informal_quorum_ratio(&self) -> U256 {
+    fn governance_informal_quorum_ratio(&self) -> U512 {
         self.governance_informal_quorum_ratio
     }
 
-    fn governance_formal_quorum_ratio(&self) -> U256 {
+    fn governance_formal_quorum_ratio(&self) -> U512 {
         self.governance_formal_quorum_ratio
     }
 
@@ -102,11 +102,11 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.governance_formal_voting_time
     }
 
-    fn informal_quorum_ratio(&self) -> U256 {
+    fn informal_quorum_ratio(&self) -> U512 {
         self.informal_quorum_ratio
     }
 
-    fn formal_quorum_ratio(&self) -> U256 {
+    fn formal_quorum_ratio(&self) -> U512 {
         self.formal_quorum_ratio
     }
 
@@ -115,7 +115,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.governance_formal_quorum_ratio()
             .checked_mul(self.total_onboarded())
             .unwrap()
-            .checked_div(U256::from(1000))
+            .checked_div(U512::from(1000))
             .unwrap()
             .as_u32()
     }
@@ -125,7 +125,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.governance_informal_quorum_ratio()
             .checked_mul(self.total_onboarded())
             .unwrap()
-            .checked_div(U256::from(1000))
+            .checked_div(U512::from(1000))
             .unwrap()
             .as_u32()
     }
@@ -135,7 +135,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.formal_quorum_ratio()
             .checked_mul(self.total_onboarded())
             .unwrap()
-            .checked_div(U256::from(1000))
+            .checked_div(U512::from(1000))
             .unwrap()
             .as_u32()
     }
@@ -145,7 +145,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.informal_quorum_ratio()
             .checked_mul(self.total_onboarded())
             .unwrap()
-            .checked_div(U256::from(1000))
+            .checked_div(U512::from(1000))
             .unwrap()
             .as_u32()
     }
@@ -170,11 +170,11 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.governance_wallet_address
     }
 
-    fn default_reputation_slash(&self) -> U256 {
+    fn default_reputation_slash(&self) -> U512 {
         self.default_reputation_slash
     }
 
-    fn voting_clearness_delta(&self) -> U256 {
+    fn voting_clearness_delta(&self) -> U512 {
         self.voting_clearness_delta
     }
 
@@ -198,7 +198,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.public_auction_time
     }
 
-    fn default_policing_rate(&self) -> U256 {
+    fn default_policing_rate(&self) -> U512 {
         self.default_policing_rate
     }
 
@@ -214,7 +214,7 @@ impl DaoConfigurationTrait for DaoConfiguration {
         self.distribute_payment_to_non_voters
     }
 
-    fn total_onboarded(&self) -> U256 {
+    fn total_onboarded(&self) -> U512 {
         self.total_onboarded
     }
 }

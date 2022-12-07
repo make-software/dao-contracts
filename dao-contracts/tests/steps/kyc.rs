@@ -1,7 +1,7 @@
 use cucumber::{given, then, when};
 
 use crate::common::{
-    params::{Account, TokenId, U256},
+    params::{Account, TokenId},
     DaoWorld,
 };
 
@@ -9,7 +9,7 @@ use crate::common::{
 fn setup_user_with_token(world: &mut DaoWorld, user: Account) {
     world.mint_kyc_token(&Account::Owner, &user);
 
-    assert_eq!(world.balance_of(&user), U256::one());
+    assert_eq!(world.balance_of(&user), 1);
 }
 
 #[when(expr = "{account} mints a KYC Token to {account}")]
@@ -22,8 +22,8 @@ fn burn(world: &mut DaoWorld, burner: Account, holder: Account) {
     let _ = world.checked_burn_kyc_token(&burner, &holder);
 }
 
-#[then(expr = "the {account}'s balance of KYC Token is {u256}")]
-fn assert_balance(world: &mut DaoWorld, user: Account, expected_balance: U256) {
+#[then(expr = "the {account}'s balance of KYC Token is {int}")]
+fn assert_balance(world: &mut DaoWorld, user: Account, expected_balance: u32) {
     assert_eq!(world.balance_of(&user), expected_balance);
 }
 
@@ -33,13 +33,13 @@ fn assert_token_ownership(world: &mut DaoWorld, token_id: TokenId, user: Account
     let user_address = world.get_address(&user);
 
     assert_eq!(token_owner, Some(user_address));
-    assert_eq!(world.get_kyc_token_id(&user), U256::one());
+    assert_eq!(world.get_kyc_token_id(&user), token_id);
 }
 
-#[then(expr = "total supply of KYC Token is {u256} token(s)")]
-fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: U256) {
+#[then(expr = "total supply of KYC Token is {int} token(s)")]
+fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: u32) {
     let total_supply = world.kyc_token.total_supply();
-    assert_eq!(total_supply, expected_total_supply.0);
+    assert_eq!(total_supply.as_u32(), expected_total_supply);
 }
 
 #[then(expr = "{account} is kyced")]
@@ -48,7 +48,7 @@ fn assert_kyced(world: &mut DaoWorld, account: Account) {
 }
 
 impl DaoWorld {
-    fn balance_of(&self, account: &Account) -> U256 {
-        U256(self.kyc_token.balance_of(self.get_address(account)))
+    fn balance_of(&self, account: &Account) -> u32 {
+        self.kyc_token.balance_of(self.get_address(account)).as_u32()
     }
 }

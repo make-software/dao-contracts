@@ -205,7 +205,7 @@ mod tests {
     fn generating_test_contract_constructor_works() {
         let item = CasperContractItem {
             trait_methods: vec![
-                parse_quote! { fn do_something(&mut self, amount: U256); },
+                parse_quote! { fn do_something(&mut self, amount: U512); },
                 parse_quote! { fn init(&mut self); },
             ],
             ..utils::tests::mock_valid_item()

@@ -7,7 +7,7 @@ use casper_dao_utils::{
     Error,
     Mapping,
 };
-use casper_types::U256;
+use casper_types::U512;
 use delegate::delegate;
 
 use crate::{
@@ -30,13 +30,13 @@ pub trait SimpleVoterContractInterface {
     /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
     ///
     /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
-    fn create_voting(&mut self, document_hash: DocumentHash, stake: U256);
+    fn create_voting(&mut self, document_hash: DocumentHash, stake: U512);
     /// see [GovernanceVoting](GovernanceVoting::vote())
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [GovernanceVoting](GovernanceVoting::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U256;
+    fn get_dust_amount(&self) -> U512;
     /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
@@ -82,13 +82,13 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     delegate! {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn get_dust_amount(&self) -> U256;
+            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
     }
 
-    fn create_voting(&mut self, document_hash: DocumentHash, stake: U256) {
+    fn create_voting(&mut self, document_hash: DocumentHash, stake: U512) {
         let voting_configuration = DaoConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
@@ -137,7 +137,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         self.simple_votings.get(&voting_id)
     }
 
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U256) {
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.vote(caller(), voting_id, choice, stake);
     }

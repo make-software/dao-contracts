@@ -11,7 +11,7 @@ use casper_dao_utils::{
     Address,
     BlockTime,
 };
-use casper_types::{URef, U256, U512};
+use casper_types::{URef, U512};
 
 #[no_mangle]
 fn call() {
@@ -19,7 +19,7 @@ fn call() {
     let job_offer_id: u32 = get_named_arg("job_offer_id");
     let time: BlockTime = get_named_arg("time");
     let payment: U512 = get_named_arg("payment");
-    let reputation_stake: U256 = get_named_arg("reputation_stake");
+    let reputation_stake: U512 = get_named_arg("reputation_stake");
     let onboard: bool = get_named_arg("onboard");
     let cspr_amount: U512 = get_named_arg("cspr_amount");
     let main_purse: URef = get_main_purse();

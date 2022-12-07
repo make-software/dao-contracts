@@ -8,13 +8,13 @@ entry_points:
       - name: recipient
         cl_type: Address
       - name: amount
-        cl_type: U256
+        cl_type: U512
   - name: burn
     arguments:
       - name: owner
         cl_type: Address
       - name: amount
-        cl_type: U256
+        cl_type: U512
   - name: transfer_from
     arguments:
       - name: owner
@@ -22,7 +22,7 @@ entry_points:
       - name: recipient
         cl_type: Address
       - name: amount
-        cl_type: U256
+        cl_type: U512
   - name: change_ownership
     arguments:
       - name: owner
@@ -41,13 +41,13 @@ events:
       - name: address
         cl_type: Address
       - name: amount
-        cl_type: U256
+        cl_type: U512
   - name: Burn
     fields:
       - name: address
         cl_type: Address
       - name: amount
-        cl_type: U256
+        cl_type: U512
   - name: OwnerChanged
     fields:
       - name: new_owner

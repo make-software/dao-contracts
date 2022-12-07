@@ -3,11 +3,11 @@ use std::{fmt::Debug, str::FromStr};
 use casper_dao_utils::BlockTime;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    U256,
     U512,
 };
 
 use super::params::TimeUnit;
+use super::params::Balance;
 
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
@@ -27,7 +27,7 @@ pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
             | "FormalQuorumRatio"
             | "DefaultReputationSlash"
             | "VotingClearnessDelta" => {
-                let value = U256::from_dec_str(value).unwrap();
+                let value = U512::from_dec_str(value).unwrap();
                 Bytes::from(value.to_bytes().unwrap())
             }
             _ => {
@@ -38,22 +38,12 @@ pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
     }
 }
 
-pub fn to_rep(v: &str) -> U256 {
-    U256::from((v.parse::<f32>().unwrap() * 1_000f32) as u32) * 1_000_000
-}
-
-pub fn to_cspr(v: &str) -> U512 {
-    U512::from((v.parse::<f32>().unwrap() * 1_000f32) as u32) * 1_000_000
-}
-
-pub fn is_cspr_close_enough(a: U512, b: U512) -> bool {
+pub fn is_balance_close_enough<A: Into<Balance>, B: Into<Balance>>(a: A, b: B) -> bool {
+    let a: Balance = a.into();
+    let b: Balance = b.into();
+    let (a, b) = (a.0, b.0);
     let diff = if a > b { a - b } else { b - a };
     diff < U512::from(10_000_000)
-}
-
-pub fn is_rep_close_enough(a: U256, b: U256) -> bool {
-    let diff = if a > b { a - b } else { b - a };
-    diff < U256::from(10_000_000)
 }
 
 pub fn to_seconds(value: BlockTime, unit: TimeUnit) -> BlockTime {

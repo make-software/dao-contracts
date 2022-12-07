@@ -10,7 +10,7 @@ use casper_dao_contracts::{
     VariableRepositoryContractTest,
 };
 use casper_dao_utils::{Error, TestContract, TestEnv};
-use casper_types::U256;
+use casper_types::U512;
 
 #[allow(dead_code)]
 pub fn setup_bid_escrow_gherkin() -> (
@@ -65,8 +65,8 @@ pub fn setup_bid_escrow_gherkin() -> (
 }
 
 fn setup_repository_and_reputation_contracts_gherkin(
-    _informal_quorum: U256,
-    _formal_quorum: U256,
+    _informal_quorum: U512,
+    _formal_quorum: U512,
     total_onboarded: usize,
 ) -> (
     VariableRepositoryContractTest,
@@ -293,8 +293,8 @@ pub fn setup_simple_voter() -> SimpleVoterContractTest {
 // }
 
 pub fn setup_voting_contract(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    informal_quorum: U512,
+    formal_quorum: U512,
     total_onboarded: usize,
 ) -> (
     MockVoterContractTest,
@@ -328,8 +328,8 @@ pub fn setup_voting_contract(
 }
 
 fn setup_repository_and_reputation_contracts(
-    _informal_quorum: U256,
-    _formal_quorum: U256,
+    _informal_quorum: U512,
+    _formal_quorum: U512,
     total_onboarded: usize,
 ) -> (
     VariableRepositoryContractTest,
@@ -347,15 +347,15 @@ fn setup_repository_and_reputation_contracts(
 }
 
 pub fn setup_voting_contract_with_informal_voting(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    informal_quorum: U512,
+    formal_quorum: U512,
     total_onboarded: usize,
 ) -> (MockVoterContractTest, ReputationContractTest, Voting) {
     let (mut mock_voter_contract, _variable_repository_contract, reputation_token_contract) =
         setup_voting_contract(informal_quorum, formal_quorum, total_onboarded);
 
     mock_voter_contract
-        .create_voting("value".to_string(), U256::from(500))
+        .create_voting("value".to_string(), U512::from(500))
         .unwrap();
 
     let voting_id = 0;
@@ -365,8 +365,8 @@ pub fn setup_voting_contract_with_informal_voting(
 
 #[allow(dead_code)]
 pub fn setup_voting_contract_with_formal_voting(
-    informal_quorum: U256,
-    formal_quorum: U256,
+    informal_quorum: U512,
+    formal_quorum: U512,
     total_onboarded: usize,
 ) -> (MockVoterContractTest, ReputationContractTest, Voting) {
     let minimum_reputation = 500.into();
@@ -459,7 +459,7 @@ pub fn mass_vote(
 pub fn assert_reputation(reputation_contract: &ReputationContractTest, reputation: &[usize]) {
     for (account, amount) in reputation.iter().enumerate() {
         let address = reputation_contract.get_env().get_account(account);
-        assert_eq!(reputation_contract.balance_of(address), U256::from(*amount));
+        assert_eq!(reputation_contract.balance_of(address), U512::from(*amount));
     }
 }
 

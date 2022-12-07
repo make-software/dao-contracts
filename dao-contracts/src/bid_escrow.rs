@@ -17,7 +17,7 @@ use casper_dao_utils::{
     SequenceGenerator,
     VecMapping,
 };
-use casper_types::{URef, U256, U512};
+use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
@@ -83,7 +83,7 @@ pub trait BidEscrowContractInterface {
         job_offer_id: JobOfferId,
         time: BlockTime,
         payment: U512,
-        reputation_stake: U256,
+        reputation_stake: U512,
         onboard: bool,
         purse: Option<URef>,
     );
@@ -128,7 +128,7 @@ pub trait BidEscrowContractInterface {
     /// # Errors
     /// Throws [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn vote(&mut self, job_id: JobId, choice: Choice, stake: U256);
+    fn vote(&mut self, job_id: JobId, choice: Choice, stake: U512);
     /// Returns a job with given JobId
     fn get_job(&self, job_id: JobId) -> Option<Job>;
     /// Returns a JobOffer with given JobOfferId
@@ -143,7 +143,7 @@ pub trait BidEscrowContractInterface {
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, job_id: JobId);
     /// see [GovernanceVoting](GovernanceVoting)
-    fn get_dust_amount(&self) -> U256;
+    fn get_dust_amount(&self) -> U512;
     /// see [GovernanceVoting](GovernanceVoting)
     fn variable_repo_address(&self) -> Address;
     /// see [GovernanceVoting](GovernanceVoting)
@@ -186,7 +186,7 @@ pub struct BidEscrowContract {
 impl BidEscrowContractInterface for BidEscrowContract {
     delegate! {
         to self.voting {
-            fn get_dust_amount(&self) -> U256;
+            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
@@ -236,7 +236,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         job_offer_id: JobOfferId,
         time: BlockTime,
         payment: U512,
-        reputation_stake: U256,
+        reputation_stake: U512,
         onboard: bool,
         purse: Option<URef>,
     ) {
@@ -418,7 +418,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let job_offer = self.job_offer(job.job_offer_id());
 
-        if job.stake() != U256::zero() && job_offer.dao_configuration.informal_stake_reputation {
+        if job.stake() != U512::zero() && job_offer.dao_configuration.informal_stake_reputation {
             self.reputation_token().unstake_bid(worker, job.bid_id());
         }
 
@@ -434,7 +434,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         } else {
             // TODO: Implement promils of governance variable
             let stake = job.external_worker_cspr_stake() / U512::from(10);
-            U256::from(stake.as_u128())
+            U512::from(stake.as_u128())
         };
 
         let voting_id = self
@@ -458,7 +458,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.jobs.set(&job_id, job);
     }
 
-    fn vote(&mut self, bid_id: BidId, choice: Choice, stake: U256) {
+    fn vote(&mut self, bid_id: BidId, choice: Choice, stake: U512) {
         let job = self.jobs.get_or_revert(&bid_id);
         let voting_id = job
             .current_voting_id()
@@ -806,7 +806,7 @@ impl BidEscrowContract {
         self.mint_reputation_for_voters(job, total);
     }
 
-    fn mint_reputation_for_voters(&mut self, job: &Job, amount: U256) {
+    fn mint_reputation_for_voters(&mut self, job: &Job, amount: U512) {
         let voting = self
             .voting
             .get_voting(job.formal_voting_id().unwrap_or_revert())
@@ -880,7 +880,7 @@ impl BidEscrowContract {
     fn burn_external_worker_reputation(&self, job: &Job) {
         // TODO: remove 10
         let stake = job.external_worker_cspr_stake() / U512::from(10);
-        let stake = U256::from(stake.as_u128());
+        let stake = U512::from(stake.as_u128());
         self.reputation_token().burn(job.worker(), stake);
     }
 }
@@ -942,7 +942,7 @@ impl BidEscrowContractTest {
         job_offer_id: JobOfferId,
         time: BlockTime,
         payment: U512,
-        reputation_stake: U256,
+        reputation_stake: U512,
         onboard: bool,
         cspr_amount: U512,
     ) -> Result<(), Error> {

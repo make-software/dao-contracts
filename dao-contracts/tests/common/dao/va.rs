@@ -1,7 +1,7 @@
 use casper_dao_utils::TestContract;
 
 use crate::common::{
-    params::{Account, U256},
+    params::{Account, Balance, TokenId},
     DaoWorld,
 };
 
@@ -44,19 +44,19 @@ impl DaoWorld {
             .expect("VA Token should burned successfully");
     }
 
-    pub fn va_token_balance_of(&self, account: &Account) -> U256 {
+    pub fn va_token_balance_of(&self, account: &Account) -> Balance {
         let address = self.get_address(account);
 
-        U256(self.va_token.balance_of(address))
+        self.va_token.balance_of(address).into()
     }
 
-    pub fn get_va_token_id(&self, holder: &Account) -> U256 {
+    pub fn get_va_token_id(&self, holder: &Account) -> TokenId {
         let holder = self.get_address(holder);
         let id = self
             .va_token
             .token_id(holder)
             .expect("Holder should own a token");
-        U256(id)
+        TokenId(id)
     }
 
     pub fn is_va(&self, account: &Account) -> bool {

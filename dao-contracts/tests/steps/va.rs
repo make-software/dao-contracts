@@ -1,7 +1,7 @@
 use cucumber::{given, then, when};
 
 use crate::common::{
-    params::{Account, TokenId, U256},
+    params::{Account, TokenId, Balance},
     DaoWorld,
 };
 
@@ -9,7 +9,7 @@ use crate::common::{
 fn setup_user_with_token(world: &mut DaoWorld, user: Account) {
     world.mint_va_token(&Account::Owner, &user);
 
-    assert_eq!(world.va_token_balance_of(&user), U256::one());
+    assert_eq!(world.va_token_balance_of(&user), Balance::one());
 }
 
 #[when(expr = "{account} mints a VA Token to {account}")]
@@ -22,9 +22,9 @@ fn burn(world: &mut DaoWorld, burner: Account, holder: Account) {
     let _ = world.checked_burn_va_token(&burner, &holder);
 }
 
-#[then(expr = "the {account}'s balance of VA Token is {u256}")]
-fn assert_balance(world: &mut DaoWorld, user: Account, expected_balance: U256) {
-    assert_eq!(world.va_token_balance_of(&user), expected_balance);
+#[then(expr = "the {account}'s balance of VA Token is {int}")]
+fn assert_balance(world: &mut DaoWorld, user: Account, expected_balance: u32) {
+    assert_eq!(world.va_token_balance_of(&user).as_u32(), expected_balance);
 }
 
 #[then(expr = "VA Token with id {token_id} belongs to {account}")]
@@ -33,13 +33,13 @@ fn assert_token_ownership(world: &mut DaoWorld, token_id: TokenId, user: Account
     let user_address = world.get_address(&user);
 
     assert_eq!(token_owner, Some(user_address));
-    assert_eq!(world.get_va_token_id(&user), U256::one());
+    assert_eq!(world.get_va_token_id(&user), token_id);
 }
 
-#[then(expr = "total supply of VA Token is {u256} token(s)")]
-fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: U256) {
+#[then(expr = "total supply of VA Token is {int} token(s)")]
+fn assert_total_supply(world: &mut DaoWorld, expected_total_supply: u32) {
     let total_supply = world.va_token.total_supply();
-    assert_eq!(total_supply, expected_total_supply.0);
+    assert_eq!(total_supply.as_u32(), expected_total_supply);
 }
 
 #[then(expr = "{account} is a VA")]

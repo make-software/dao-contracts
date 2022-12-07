@@ -33,11 +33,11 @@ mod contract {
                     let mut params: Vec<casper_types::Parameter> = Vec::new();
                     params.push(casper_types::Parameter::new(
                         "first_arg",
-                        <casper_types::U256 as casper_types::CLTyped>::cl_type(),
+                        <casper_types::U512 as casper_types::CLTyped>::cl_type(),
                     ));
                     params.push(casper_types::Parameter::new(
                         "second_arg",
-                        <casper_types::U256 as casper_types::CLTyped>::cl_type(),
+                        <casper_types::U512 as casper_types::CLTyped>::cl_type(),
                     ));
                     params
                 },
@@ -57,7 +57,7 @@ mod contract {
                     ));
                     params.push(casper_types::Parameter::new(
                         "amount",
-                        <casper_types::U256 as casper_types::CLTyped>::cl_type(),
+                        <casper_types::U512 as casper_types::CLTyped>::cl_type(),
                     ));
                     params
                 },
@@ -93,9 +93,9 @@ mod contract {
         }
     }
     pub trait ImportantContractInterface {
-        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256);
-        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256);
-        fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U256;
+        fn init(&mut self, first_arg: casper_types::U512, second_arg: casper_types::U512);
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U512);
+        fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U512;
         fn argless(&mut self);
     }
     pub struct ImportantContractCaller {
@@ -109,7 +109,7 @@ mod contract {
         }
     }
     impl ImportantContractInterface for ImportantContractCaller {
-        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256) {
+        fn init(&mut self, first_arg: casper_types::U512, second_arg: casper_types::U512) {
             let _: () =
                 casper_dao_utils::casper_contract::contract_api::runtime::call_versioned_contract(
                     self.contract_package_hash,
@@ -123,7 +123,7 @@ mod contract {
                     },
                 );
         }
-        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256) {
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U512) {
             casper_dao_utils::casper_contract::contract_api::runtime::call_versioned_contract(
                 self.contract_package_hash,
                 std::option::Option::None,
@@ -136,7 +136,7 @@ mod contract {
                 },
             )
         }
-        fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U256 {
+        fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U512 {
             casper_dao_utils::casper_contract::contract_api::runtime::call_versioned_contract(
                 self.contract_package_hash,
                 std::option::Option::None,
@@ -167,8 +167,8 @@ mod contract {
     impl ImportantContractTest {
         pub fn new(
             env: &casper_dao_utils::TestEnv,
-            first_arg: casper_types::U256,
-            second_arg: casper_types::U256,
+            first_arg: casper_types::U512,
+            second_arg: casper_types::U512,
         ) -> ImportantContractTest {
             env.deploy_wasm_file("important_contract.wasm", {
                 let mut named_args = casper_types::RuntimeArgs::new();
@@ -267,8 +267,8 @@ mod contract {
     impl ImportantContractTest {
         pub fn init(
             &mut self,
-            first_arg: casper_types::U256,
-            second_arg: casper_types::U256,
+            first_arg: casper_types::U512,
+            second_arg: casper_types::U512,
         ) -> Result<(), casper_dao_utils::Error> {
             let result: Result<Option<()>, casper_dao_utils::Error> = self.env.call(
                 self.package_hash,
@@ -290,7 +290,7 @@ mod contract {
         pub fn mint(
             &mut self,
             recipient: casper_dao_utils::Address,
-            amount: casper_types::U256,
+            amount: casper_types::U512,
         ) -> Result<(), casper_dao_utils::Error> {
             let result: Result<Option<()>, casper_dao_utils::Error> = self.env.call(
                 self.package_hash,
@@ -309,9 +309,9 @@ mod contract {
                 Err(err) => Err(err),
             }
         }
-        pub fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U256 {
-            let result: Result<Option<casper_types::U256>, casper_dao_utils::Error> =
-                self.env.call::<casper_types::U256>(
+        pub fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U512 {
+            let result: Result<Option<casper_types::U512>, casper_dao_utils::Error> =
+                self.env.call::<casper_types::U512>(
                     self.package_hash,
                     "balance_of",
                     {
@@ -344,10 +344,10 @@ mod contract {
         }
     }
     impl ImportantContractInterface for ImportantContract {
-        fn init(&mut self, first_arg: casper_types::U256, second_arg: casper_types::U256) {}
-        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U256) {}
-        fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U256 {
-            casper_types::U256::default()
+        fn init(&mut self, first_arg: casper_types::U512, second_arg: casper_types::U512) {}
+        fn mint(&mut self, recipient: casper_dao_utils::Address, amount: casper_types::U512) {}
+        fn balance_of(&self, to: casper_dao_utils::Address) -> casper_types::U512 {
+            casper_types::U512::default()
         }
         fn argless(&mut self) {}
     }

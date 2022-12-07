@@ -1,7 +1,7 @@
 use casper_dao_utils::TestContract;
 
 use crate::common::{
-    params::{Account, U256},
+    params::{Account, TokenId},
     DaoWorld,
 };
 
@@ -39,13 +39,13 @@ impl DaoWorld {
             .expect("A token should be burned");
     }
 
-    pub fn get_kyc_token_id(&self, holder: &Account) -> U256 {
+    pub fn get_kyc_token_id(&self, holder: &Account) -> TokenId {
         let holder = self.get_address(holder);
         let id = self
             .kyc_token
             .token_id(holder)
             .expect("Holder should own a token");
-        U256(id)
+        TokenId(id)
     }
 
     pub fn is_account_kyced(&self, account: &Account) -> bool {

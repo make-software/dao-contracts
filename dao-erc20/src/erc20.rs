@@ -6,22 +6,22 @@ use casper_dao_utils::{
     Mapping,
     Variable,
 };
-use casper_types::{bytesrepr::ToBytes, U256};
+use casper_types::{bytesrepr::ToBytes, U512};
 
 use self::events::{Approval, Transfer};
 
 #[casper_contract_interface]
 pub trait ERC20Interface {
-    fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U256);
+    fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U512);
     fn name(&self) -> String;
     fn symbol(&self) -> String;
     fn decimals(&self) -> u8;
-    fn total_supply(&self) -> U256;
-    fn balance_of(&self, address: Address) -> U256;
-    fn transfer(&mut self, recipient: Address, amount: U256);
-    fn approve(&mut self, spender: Address, amount: U256);
-    fn allowance(&self, owner: Address, spender: Address) -> U256;
-    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256);
+    fn total_supply(&self) -> U512;
+    fn balance_of(&self, address: Address) -> U512;
+    fn transfer(&mut self, recipient: Address, amount: U512);
+    fn approve(&mut self, spender: Address, amount: U512);
+    fn allowance(&self, owner: Address, spender: Address) -> U512;
+    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U512);
 }
 
 #[derive(Instance)]
@@ -29,13 +29,13 @@ pub struct ERC20 {
     name: Variable<String>,
     symbol: Variable<String>,
     decimals: Variable<u8>,
-    total_supply: Variable<U256>,
-    balances: Mapping<Address, U256>,
-    allowances: Mapping<(Address, Address), U256>,
+    total_supply: Variable<U512>,
+    balances: Mapping<Address, U512>,
+    allowances: Mapping<(Address, Address), U512>,
 }
 
 impl ERC20Interface for ERC20 {
-    fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U256) {
+    fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U512) {
         let sender = casper_env::caller();
         self.name.set(name);
         self.symbol.set(symbol);
@@ -55,20 +55,20 @@ impl ERC20Interface for ERC20 {
         self.decimals.get_or_revert()
     }
 
-    fn total_supply(&self) -> U256 {
+    fn total_supply(&self) -> U512 {
         self.total_supply.get().unwrap_or_default()
     }
 
-    fn balance_of(&self, address: Address) -> U256 {
+    fn balance_of(&self, address: Address) -> U512 {
         self.balances.get(&address).unwrap_or_default()
     }
 
-    fn transfer(&mut self, recipient: Address, amount: U256) {
+    fn transfer(&mut self, recipient: Address, amount: U512) {
         let owner = casper_env::caller();
         self.raw_transfer(owner, recipient, amount);
     }
 
-    fn approve(&mut self, spender: Address, amount: U256) {
+    fn approve(&mut self, spender: Address, amount: U512) {
         let owner = casper_env::caller();
         self.allowances.set(&(owner, spender), amount);
 
@@ -79,11 +79,11 @@ impl ERC20Interface for ERC20 {
         });
     }
 
-    fn allowance(&self, owner: Address, spender: Address) -> U256 {
+    fn allowance(&self, owner: Address, spender: Address) -> U512 {
         self.allowances.get(&(owner, spender)).unwrap_or_default()
     }
 
-    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U256) {
+    fn transfer_from(&mut self, owner: Address, recipient: Address, amount: U512) {
         let spender = casper_env::caller();
         self.raw_transfer(owner, recipient, amount);
         self.spend_allowance(owner, spender, amount);
@@ -91,7 +91,7 @@ impl ERC20Interface for ERC20 {
 }
 
 impl ERC20 {
-    pub fn raw_transfer(&mut self, owner: Address, recipient: Address, amount: U256) {
+    pub fn raw_transfer(&mut self, owner: Address, recipient: Address, amount: U512) {
         let owner_balance = self.balance_of(owner);
         let recipient_balance = self.balance_of(recipient);
         if owner_balance < amount {
@@ -107,7 +107,7 @@ impl ERC20 {
         });
     }
 
-    pub fn spend_allowance(&mut self, owner: Address, spender: Address, amount: U256) {
+    pub fn spend_allowance(&mut self, owner: Address, spender: Address, amount: U512) {
         let allowance = self.allowance(owner, spender);
         if amount > allowance {
             casper_env::revert(Error::InsufficientAllowance);
@@ -121,7 +121,7 @@ impl ERC20 {
         });
     }
 
-    pub fn mint(&mut self, address: Address, amount: U256) {
+    pub fn mint(&mut self, address: Address, amount: U512) {
         let (new_supply, is_overflowed) = self.total_supply().overflowing_add(amount);
         if is_overflowed {
             casper_env::revert(Error::TotalSupplyOverflow);
@@ -137,7 +137,7 @@ impl ERC20 {
         });
     }
 
-    pub fn burn(&mut self, address: Address, amount: U256) {
+    pub fn burn(&mut self, address: Address, amount: U512) {
         let balance = self.balance_of(address);
         if balance < amount {
             casper_env::revert(Error::InsufficientBalance);
@@ -161,19 +161,19 @@ fn emit<T: ToBytes>(_event: T) {
 
 pub mod events {
     use casper_dao_utils::{casper_dao_macros::Event, Address};
-    use casper_types::U256;
+    use casper_types::U512;
 
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Transfer {
         pub from: Option<Address>,
         pub to: Option<Address>,
-        pub value: U256,
+        pub value: U512,
     }
 
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Approval {
         pub owner: Address,
         pub spender: Address,
-        pub value: U256,
+        pub value: U512,
     }
 }
