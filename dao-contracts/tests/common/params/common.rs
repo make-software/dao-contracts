@@ -27,7 +27,7 @@ impl FromStr for U256 {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         casper_types::U256::from_dec_str(s)
             .map_err(|_| "Err".to_string())
-            .map(|v| U256(v))
+            .map(U256)
     }
 }
 #[derive(

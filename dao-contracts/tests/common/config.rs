@@ -18,7 +18,7 @@ pub struct UserConfiguration {
 
 #[allow(dead_code)]
 impl UserConfiguration {
-    pub fn from_labeled_data(labels: &Vec<String>, data: &Vec<String>) -> Self {
+    pub fn from_labeled_data(labels: &[String], data: &[String]) -> Self {
         let mut whitelisted_in = vec![];
         let mut is_kyced = false;
         let mut is_va = false;
@@ -31,7 +31,7 @@ impl UserConfiguration {
             match label.as_str() {
                 "whitelisted_in" => {
                     let contracts_string = data.get(idx).map(|s| s.to_owned()).unwrap_or_default();
-                    let contracts_names = contracts_string.split(",");
+                    let contracts_names = contracts_string.split(',');
                     whitelisted_in = contracts_names
                         .filter(|s| !s.is_empty())
                         .map(|name| {

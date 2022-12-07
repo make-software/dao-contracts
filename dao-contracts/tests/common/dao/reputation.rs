@@ -8,13 +8,13 @@ use crate::common::{
 #[allow(dead_code)]
 impl DaoWorld {
     pub fn reputation_balance(&self, account: &Account) -> Balance {
-        let address = self.get_address(&account);
+        let address = self.get_address(account);
         let balance = self.reputation_token.balance_of(address);
         Balance(balance)
     }
 
     pub fn staked_reputation(&self, account: &Account) -> Balance {
-        let address = self.get_address(&account);
+        let address = self.get_address(account);
 
         Balance(self.reputation_token.get_stake(address))
     }
@@ -42,7 +42,7 @@ impl DaoWorld {
     }
 
     pub fn assert_reputation(&self, account: &Account, expected_balance: Balance) {
-        let real_reputation_balance = self.reputation_balance(&account);
+        let real_reputation_balance = self.reputation_balance(account);
 
         assert!(
             is_rep_close_enough(*expected_balance, *real_reputation_balance),

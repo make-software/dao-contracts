@@ -9,10 +9,11 @@ pub enum Event {
     OwnerChanged(Account),
     AddedToWhitelist(Account),
     RemovedFromWhitelist(Account),
-    NtfEvent(NtfEvent),
     VotingContractCreated(Contract, Contract, Contract),
     VotingCreated(Account, u32, u32, Option<u32>, u32, u64, u32, u64),
     BallotCast(Account, u32, Choice, U256),
+    NftTransfer(Option<Account>, Option<Account>, U256),
+    NftApproval(Option<Account>, Option<Account>, U256),
 }
 
 impl From<&Vec<String>> for Event {
@@ -35,13 +36,13 @@ impl From<&Vec<String>> for Event {
                 let from = helpers::parse_or_none(value.get(1));
                 let to = helpers::parse_or_none(value.get(2));
                 let token_id = helpers::parse(value.get(3), "Couldn't parse token id");
-                Self::NtfEvent(NtfEvent::Approval(from, to, token_id))
+                Self::NftApproval(from, to, token_id)
             }
             "Transfer" => {
                 let from = helpers::parse_or_none(value.get(1));
                 let to = helpers::parse_or_none(value.get(2));
                 let token_id = helpers::parse(value.get(3), "Couldn't parse token id");
-                Self::NtfEvent(NtfEvent::Transfer(from, to, token_id))
+                Self::NftTransfer(from, to, token_id)
             }
             "VotingContractCreated" => {
                 let variable_repo = helpers::parse(value.get(1), "Couldn't parse contract");
@@ -79,10 +80,4 @@ impl From<&Vec<String>> for Event {
             invalid => panic!("Unknown event {}", invalid),
         }
     }
-}
-
-#[derive(Debug)]
-pub enum NtfEvent {
-    Transfer(Option<Account>, Option<Account>, U256),
-    Approval(Option<Account>, Option<Account>, U256),
 }

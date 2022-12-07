@@ -4,7 +4,6 @@ use crate::common::{
     params::{
         voting::{Ballot, Voting, VotingType},
         Account,
-        Balance,
         Contract,
     },
     DaoWorld,
@@ -14,7 +13,7 @@ use crate::common::{
 impl DaoWorld {
     pub fn checked_create_voting(&mut self, creator: Account, voting: Voting) -> Result<(), Error> {
         let creator = self.get_address(&creator);
-        let stake: Balance = voting.get_stake().into();
+        let stake = voting.get_stake();
 
         match voting.contract {
             Contract::KycVoter => {
@@ -23,7 +22,7 @@ impl DaoWorld {
                 self.kyc_voter.as_account(creator).create_voting(
                     subject_address,
                     DocumentHash::default(),
-                    stake.0,
+                    *stake,
                 )
             }
             Contract::SlashingVoter => {
@@ -42,14 +41,14 @@ impl DaoWorld {
     }
 
     pub fn create_voting(&mut self, creator: Account, voting: Voting) {
-        let contract = voting.contract.clone();
+        let contract = voting.contract;
         self.checked_create_voting(creator, voting)
-            .expect(&format!("Couldn't create {:?} voting", contract));
+            .unwrap_or_else(|_| panic!("Couldn't create {:?} voting", contract));
     }
 
     pub fn vote(&mut self, contract: &Contract, ballot: &Ballot) {
         self.checked_vote(contract, ballot)
-            .expect(&format!("{:?} voting error", contract));
+            .unwrap_or_else(|_| panic!("{:?} voting error", contract));
     }
 
     pub fn checked_vote(&mut self, contract: &Contract, ballot: &Ballot) -> Result<(), Error> {

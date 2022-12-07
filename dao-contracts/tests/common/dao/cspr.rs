@@ -31,7 +31,7 @@ impl DaoWorld {
     }
 
     pub fn assert_cspr_balance(&self, account: &Account, expected_balance: CsprBalance) {
-        let real_cspr_balance = self.get_cspr_balance(&account);
+        let real_cspr_balance = self.get_cspr_balance(account);
 
         assert!(
             is_cspr_close_enough(*expected_balance, real_cspr_balance),

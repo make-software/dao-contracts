@@ -18,7 +18,7 @@ impl DaoWorld {
         recipient: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
         let minter = self.get_address(minter);
-        let recipient = self.get_address(&recipient);
+        let recipient = self.get_address(recipient);
 
         self.va_token.as_account(minter).mint(recipient)
     }

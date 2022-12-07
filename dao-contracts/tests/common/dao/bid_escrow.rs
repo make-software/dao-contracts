@@ -18,7 +18,7 @@ impl DaoWorld {
     }
 
     pub fn get_job_offer_id(&self, job_poster: &Account) -> Option<&JobOfferId> {
-        let job_poster = self.get_address(&job_poster);
+        let job_poster = self.get_address(job_poster);
         self.offers.get(&job_poster)
     }
 
