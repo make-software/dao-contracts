@@ -23,6 +23,10 @@ use self::{
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
+    voting::{
+        validation::{finish_formal_voting_validator, vote_validator},
+        voting::VotingState,
+    },
     Configuration,
     ReputationContractCaller,
     ReputationContractInterface,
@@ -259,10 +263,10 @@ impl GovernanceVoting {
                 .emit();
 
                 // Informal voting is completed and referenced with formal voting
-                voting.complete(Some(formal_voting_id));
+                voting.complete_informal_voting(formal_voting_id);
             }
             VotingResult::QuorumNotReached => {
-                voting.complete(None);
+                voting.finish();
             }
             VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
         };
@@ -296,9 +300,8 @@ impl GovernanceVoting {
     }
 
     fn finish_formal_voting(&mut self, mut voting: Voting) -> VotingSummary {
-        if !voting.is_in_time(get_block_time()) {
-            revert(Error::FormalVotingTimeNotReached)
-        }
+        let validator = finish_formal_voting_validator(&voting, get_block_time());
+        validator.validate();
 
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
@@ -334,7 +337,7 @@ impl GovernanceVoting {
         // }
         // .emit();
 
-        voting.complete(None);
+        voting.finish();
         self.set_voting(voting);
 
         VotingSummary::new(
@@ -356,12 +359,9 @@ impl GovernanceVoting {
     /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
     pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U512) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
+        let vote_validator = vote_validator(&voting, get_block_time());
 
-        let validation_result = voting.validate_vote(get_block_time());
-
-        if let Err(error) = validation_result {
-            revert(error)
-        }
+        vote_validator.validate();
 
         let vote = self.ballots.get(&(voting_id, voter));
 
