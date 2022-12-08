@@ -17,7 +17,7 @@ fn voting_setup(world: &mut DaoWorld, step: &Step, creator: Account) {
     for row in rows {
         let voting: Voting = row.into();
         let _ = world.checked_create_voting(creator, voting);
-    }   
+    }
 }
 
 #[when(expr = "voters vote in {contract}'s {voting_type} voting with id {int}")]
@@ -37,7 +37,9 @@ fn voting(
             .build(row)
     })
     .filter(|ballot| !ballot.stake.is_zero())
-    .for_each(|ballot| world.vote(&contract, &ballot));
+    .for_each(|ballot| {
+        let _ = world.checked_vote(&contract, &ballot);
+    });
 }
 
 #[when(expr = "{voting_type} voting with id {int} ends in {contract} contract")]

@@ -1,6 +1,6 @@
 use cucumber::Parameter;
 
-use super::{account::Account, voting::Choice, Contract, Balance, TokenId};
+use super::{account::Account, voting::Choice, Balance, Contract, TokenId};
 use crate::common::helpers;
 
 #[derive(Debug, Parameter)]

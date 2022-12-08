@@ -6,8 +6,7 @@ use casper_types::{
     U512,
 };
 
-use super::params::TimeUnit;
-use super::params::Balance;
+use super::params::{Balance, TimeUnit};
 
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str, key: &str) -> Bytes {

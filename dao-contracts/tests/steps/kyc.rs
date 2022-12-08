@@ -49,6 +49,8 @@ fn assert_kyced(world: &mut DaoWorld, account: Account) {
 
 impl DaoWorld {
     fn balance_of(&self, account: &Account) -> u32 {
-        self.kyc_token.balance_of(self.get_address(account)).as_u32()
+        self.kyc_token
+            .balance_of(self.get_address(account))
+            .as_u32()
     }
 }

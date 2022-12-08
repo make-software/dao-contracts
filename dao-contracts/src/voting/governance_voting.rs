@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{get_block_time, revert, self_address},
+    casper_env::{caller, get_block_time, revert, self_address},
     Address,
     Error,
     Mapping,
@@ -263,7 +263,7 @@ impl GovernanceVoting {
             }
             VotingResult::QuorumNotReached => {
                 voting.complete(None);
-            },
+            }
             VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
         };
 
@@ -309,7 +309,7 @@ impl GovernanceVoting {
             }
             VotingResult::Against => {}
             VotingResult::QuorumNotReached => {}
-            VotingResult::Canceled => {},
+            VotingResult::Canceled => {}
         };
 
         // ReputationContractCaller::at(self.get_reputation_token_address()).redistribute(
@@ -394,6 +394,7 @@ impl GovernanceVoting {
             voting_id,
             stake,
             unbounded,
+            canceled: false,
         };
 
         BallotCast::new(&vote).emit();
@@ -491,7 +492,7 @@ impl GovernanceVoting {
         let mut transfers = BTreeMap::new();
         for i in 0..self.voters.len(voting_id) {
             let ballot = self.get_ballot_at(voting_id, i);
-            if ballot.unbounded {
+            if ballot.unbounded || ballot.canceled {
                 continue;
             }
             transfers.insert(ballot.voter, ballot.stake);
@@ -652,10 +653,15 @@ impl GovernanceVoting {
         }
     }
 
-    pub fn cancel(&mut self, account: Address, voting_id: VotingId) {
+    pub fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        if caller() != self.reputation_token_address() {
+            revert(Error::OnlyReputationTokenContractCanCancel);
+        }
         let voting = self.get_voting_or_revert(voting_id);
-        if &account == voting.creator() {
-            self.cancel_voting(voting);    
+        if &voter == voting.creator() {
+            self.cancel_voting(voting);
+        } else {
+            self.cancel_ballot(voting, voter);
         }
     }
 
@@ -663,5 +669,34 @@ impl GovernanceVoting {
         voting.cancel();
         self.unstake_all_reputation(voting.voting_id());
         self.set_voting(voting);
+
+        // Emit event.
+    }
+
+    // Note: it doesn't remove a voter from self.votings to keep the quorum num right.
+    fn cancel_ballot(&mut self, mut voting: Voting, voter: Address) {
+        let voting_id = voting.voting_id();
+        let ballots_key = (voting_id, voter);
+        let mut ballot = self.ballots.get(&ballots_key).unwrap_or_revert();
+
+        // Unstake reputation.
+        ReputationContractCaller::at(self.reputation_token_address())
+            .unstake_voting(voter, voting_id);
+
+        // Update voting.
+        let stake = ballot.stake;
+        let choice = ballot.choice;
+        if ballot.unbounded {
+            voting.remove_unbounded_stake(stake, choice)
+        } else {
+            voting.remove_stake(stake, choice);
+        }
+        self.set_voting(voting);
+
+        // Update ballot.
+        ballot.canceled = true;
+        self.ballots.set(&ballots_key, ballot);
+
+        // Emit event.
     }
 }

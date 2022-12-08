@@ -1,15 +1,16 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit, revert},
     Address,
+    ContractCall,
     Error,
     Mapping,
-    Variable, ContractCall,
+    Variable,
 };
-use casper_types::{URef, U512, runtime_args, RuntimeArgs};
+use casper_types::{runtime_args, RuntimeArgs, URef, U512};
 use delegate::delegate;
 
 use self::events::{Burn, Mint};
@@ -113,6 +114,7 @@ pub struct ReputationContract {
     stakes: Mapping<Address, AccountStakeInfo>,
     total_stake: Mapping<Address, U512>,
     pub access_control: AccessControl,
+    bid_escrows: Variable<BidEscrows>,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -215,13 +217,19 @@ impl ReputationContractInterface for ReputationContract {
         if amount.is_zero() {
             revert(Error::ZeroStake);
         }
+        let bid_escrow_contract = caller();
         self.access_control.ensure_whitelisted();
         self.assert_available_balance(voter, amount);
         let mut stake_info = self.stake_info(&voter);
-        stake_info.add_stake_from_bid(caller(), bid_id, amount);
+        stake_info.add_stake_from_bid(bid_escrow_contract, bid_id, amount);
         self.stakes.set(&voter, stake_info);
 
         self.inc_total_stake(voter, amount);
+
+        // Record BidEscrow address.
+        let mut bid_escrows = self.bid_escrows.get().unwrap_or_default();
+        bid_escrows.add(bid_escrow_contract);
+        self.bid_escrows.set(bid_escrows);
 
         // // Emit Stake event.
         // emit(Stake {
@@ -290,15 +298,28 @@ impl ReputationContractInterface for ReputationContract {
         self.balances.set(balances);
         self.total_supply.set(self.total_supply() - balance);
 
+        let stakes_info = self.stake_info(&owner);
         // Call voter contracts.
-        let stakes_origins = self.stake_info(&owner).get_stakes_origins();
+        let stakes_origins = stakes_info.get_voting_stakes_origins();
         for (address, voting_id) in stakes_origins {
             let contract_call = ContractCall {
                 address,
-                entry_point: String::from("cancel"),
+                entry_point: String::from("cancel_voter"),
                 runtime_args: runtime_args! {
-                    "account" => owner,
+                    "voter" => owner,
                     "voting_id" => voting_id
+                },
+            };
+            contract_call.call();
+        }
+
+        // let stakes_origins = stakes_info.get_bids_stakes_origins();
+        for address in self.bid_escrows.get().unwrap_or_default().list() {
+            let contract_call = ContractCall {
+                address: *address,
+                entry_point: String::from("cancel_bidder"),
+                runtime_args: runtime_args! {
+                    "bidder" => owner
                 },
             };
             contract_call.call();
@@ -390,8 +411,12 @@ impl AccountStakeInfo {
         }
     }
 
-    fn get_stakes_origins(&self) -> Vec<(Address, VotingId)> {
+    fn get_voting_stakes_origins(&self) -> Vec<(Address, VotingId)> {
         self.stakes_from_voting.keys().cloned().collect()
+    }
+
+    fn get_bids_stakes_origins(&self) -> Vec<(Address, BidId)> {
+        self.stakes_from_bid.keys().cloned().collect()
     }
 }
 
@@ -423,6 +448,21 @@ impl Balances {
 
     pub fn rem(&mut self, address: Address) {
         self.balances.remove(&address);
+    }
+}
+
+#[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]
+pub struct BidEscrows {
+    addresses: BTreeSet<Address>,
+}
+
+impl BidEscrows {
+    pub fn add(&mut self, address: Address) {
+        self.addresses.insert(address);
+    }
+
+    pub fn list(&self) -> &BTreeSet<Address> {
+        &self.addresses
     }
 }
 

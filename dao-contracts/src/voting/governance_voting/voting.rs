@@ -20,7 +20,7 @@ pub enum VotingResult {
     InFavor,
     Against,
     QuorumNotReached,
-    Canceled
+    Canceled,
 }
 
 /// Type of Voting (Formal or Informal)
@@ -107,7 +107,7 @@ pub struct Voting {
     formal_voting_id: Option<VotingId>,
     creator: Address,
     voting_configuration: DaoConfiguration,
-    is_canceled: bool
+    is_canceled: bool,
 }
 
 impl Voting {
@@ -130,7 +130,7 @@ impl Voting {
             formal_voting_id: None,
             creator,
             voting_configuration,
-            is_canceled: false
+            is_canceled: false,
         }
     }
 
@@ -172,7 +172,7 @@ impl Voting {
             creator: self.creator,
             voting_configuration,
             // TODO: Shoudn't be false.
-            is_canceled: self.is_canceled
+            is_canceled: self.is_canceled,
         }
     }
 
@@ -254,6 +254,22 @@ impl Voting {
         match choice {
             Choice::InFavor => self.unbounded_stake_in_favor += stake,
             Choice::Against => self.unbounded_stake_against += stake,
+        }
+    }
+
+    pub fn remove_stake(&mut self, stake: U512, choice: Choice) {
+        // overflow is not possible due to reputation token having U512 as max
+        match choice {
+            Choice::InFavor => self.stake_in_favor -= stake,
+            Choice::Against => self.stake_against -= stake,
+        }
+    }
+
+    pub fn remove_unbounded_stake(&mut self, stake: U512, choice: Choice) {
+        // overflow is not possible due to reputation token having U512 as max
+        match choice {
+            Choice::InFavor => self.unbounded_stake_in_favor -= stake,
+            Choice::Against => self.unbounded_stake_against -= stake,
         }
     }
 

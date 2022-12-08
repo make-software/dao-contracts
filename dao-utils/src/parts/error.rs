@@ -81,7 +81,9 @@ dao_errors!(
     VotingDoesNotExist => 3407,
     ZeroStake => 3408,
     VotingAlreadyCanceled => 3409,
-    
+    OnlyReputationTokenContractCanCancel => 3410,
+    SubjectOfSlashing => 3411,
+
     // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,
     JobPosterNotKycd => 4001,

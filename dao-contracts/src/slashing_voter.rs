@@ -4,6 +4,8 @@ use casper_dao_utils::{
     casper_env::caller,
     Address,
     ContractCall,
+    Error,
+    Mapping,
 };
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
@@ -47,6 +49,7 @@ pub trait SlashingVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 /// Slashing Voter contract uses [GovernanceVoting](GovernanceVoting) to vote on changes of ownership and managing whitelists of other contracts.
@@ -57,6 +60,7 @@ pub trait SlashingVoterContractInterface {
 #[derive(Instance)]
 pub struct SlashingVoterContract {
     voting: GovernanceVoting,
+    subjects: Mapping<VotingId, Address>,
 }
 
 impl SlashingVoterContractInterface for SlashingVoterContract {
@@ -83,26 +87,23 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
                             "owner" => address_to_slash,
                         },
                     },
-
                     ContractCall {
                         address: self.voting.reputation_token_address(),
                         entry_point: "burn_all".to_string(),
                         runtime_args: runtime_args! {
                             "owner" => address_to_slash,
                         },
-                    }
+                    },
                 ]
             }
-            slash_ratio if slash_ratio < 1000 => vec![
-                ContractCall {
-                    address: self.voting.reputation_token_address(),
-                    entry_point: "burn".to_string(),
-                    runtime_args: runtime_args! {
-                        "owner" => address_to_slash,
-                        "amount" => current_reputation * slash_ratio / 1000,
-                    },
-                }
-            ],
+            slash_ratio if slash_ratio < 1000 => vec![ContractCall {
+                address: self.voting.reputation_token_address(),
+                entry_point: "burn".to_string(),
+                runtime_args: runtime_args! {
+                    "owner" => address_to_slash,
+                    "amount" => current_reputation * slash_ratio / 1000,
+                },
+            }],
             _ => {
                 // TODO: come up with clever error
                 revert(666);
@@ -117,11 +118,19 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         .build();
 
         let creator = caller();
-        self.voting
+        let voting_id = self
+            .voting
             .create_voting(creator, stake, voting_configuration);
+
+        self.subjects.set(&voting_id, address_to_slash);
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
+        // Check if the caller is not a subject for the voting.
+        let address_to_slash = self.subjects.get_or_revert(&voting_id);
+        if caller() == address_to_slash {
+            revert(Error::SubjectOfSlashing);
+        }
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.vote(caller(), voting_id, choice, stake);
     }
@@ -149,5 +158,9 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.finish_voting(voting_id);
+    }
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.voting.cancel_voter(voter, voting_id);
     }
 }

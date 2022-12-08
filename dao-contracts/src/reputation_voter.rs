@@ -108,6 +108,7 @@ pub trait ReputationVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 /// ReputationVoterContract
@@ -199,5 +200,9 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.finish_voting(voting_id);
+    }
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.voting.cancel_voter(voter, voting_id);
     }
 }

@@ -74,7 +74,7 @@ pub trait KycVoterContractInterface {
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
 
-    fn cancel(&mut self, account: Address, voting_id: VotingId);
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 /// KycVoterContract
@@ -183,8 +183,8 @@ impl KycVoterContractInterface for KycVoterContract {
         self.voting.get_voter(voting_id, at)
     }
 
-    fn cancel(&mut self, account: Address, voting_id: VotingId) {
-        self.voting.cancel(account, voting_id);
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.voting.cancel_voter(voter, voting_id);
     }
 }
 

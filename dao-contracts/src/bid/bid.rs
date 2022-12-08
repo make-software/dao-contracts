@@ -3,7 +3,7 @@ use casper_dao_utils::{
     Address,
     BlockTime,
 };
-use casper_types::{U512};
+use casper_types::U512;
 
 use crate::bid::types::{BidId, JobOfferId};
 
@@ -18,7 +18,8 @@ pub enum BidStatus {
     Created,
     Selected,
     Rejected,
-    Cancelled,
+    Reclaimed,
+    Canceled,
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
@@ -62,8 +63,8 @@ impl Bid {
         }
     }
 
-    pub fn cancel(&mut self) {
-        self.status = BidStatus::Cancelled;
+    pub fn reclaim(&mut self) {
+        self.status = BidStatus::Reclaimed;
     }
 
     pub fn pick(&mut self) {
@@ -72,5 +73,9 @@ impl Bid {
 
     pub fn reject(&mut self) {
         self.status = BidStatus::Rejected;
+    }
+
+    pub fn cancel(&mut self) {
+        self.status = BidStatus::Canceled;
     }
 }

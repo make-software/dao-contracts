@@ -4,7 +4,7 @@ use casper_dao_utils::{
     BlockTime,
     ContractCall,
 };
-use casper_types::{U512};
+use casper_types::U512;
 
 pub trait DaoConfigurationTrait {
     fn reputation_conversion_rate(&self) -> U512;

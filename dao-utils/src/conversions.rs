@@ -1,6 +1,4 @@
-use casper_types::{
-    bytesrepr::{Bytes, FromBytes, ToBytes},
-};
+use casper_types::bytesrepr::{Bytes, FromBytes, ToBytes};
 
 use crate::Error;
 

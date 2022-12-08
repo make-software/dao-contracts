@@ -1,8 +1,9 @@
 use casper_dao_utils::TestContract;
 
 use crate::common::{
+    helpers::is_balance_close_enough,
     params::{Account, Balance},
-    DaoWorld, helpers::is_balance_close_enough,
+    DaoWorld,
 };
 
 #[allow(dead_code)]
