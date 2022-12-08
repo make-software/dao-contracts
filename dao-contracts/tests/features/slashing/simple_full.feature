@@ -1,4 +1,4 @@
-Feature: Slashing a percentage of the Reputation of a VA who has not any Reputation staked
+Feature: Slashing all of the Reputation of a VA who has not any Reputation staked
 
   Background:
     Given following balances
@@ -8,10 +8,10 @@ Feature: Slashing a percentage of the Reputation of a VA who has not any Reputat
       | VA3              | 0            | 2000         | 0          | true     | true  |
       | VA4              | 0            | 2000         | 0          | true     | true  |
 
-  Scenario: VA1 gets his reputation slashed in half
+  Scenario: VA1 gets his reputation fully slashed
     When VA2 starts voting with the following config
         | voting_contract       | stake | arg1  | arg2 |
-        | SlashingVoter         | 500   | VA1   | 0.5  |
+        | SlashingVoter         | 500   | VA1   | 1    |
     And voters vote in SlashingVoter's informal voting with id 0
         | account | stake | vote | 
       # | VA2     | 500   | yes  | - automatically voted by the system
@@ -29,16 +29,17 @@ Feature: Slashing a percentage of the Reputation of a VA who has not any Reputat
     And formal voting with id 0 ends in SlashingVoter contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | VA1              | 0            | 500          | 0          |
+      | VA1              | 0            | 0            | 0          |
       | VA2              | 0            | 2250         | 0          |
       | VA3              | 0            | 2250         | 0          |
       | VA4              | 0            | 1500         | 0          |
-    And total reputation is 6500
+    And total reputation is 6000
+    And VA1 is not a VA
 
   Scenario: Reputation slash fails
     When VA2 starts voting with the following config
         | voting_contract       | stake | arg1  | arg2 |
-        | SlashingVoter         | 500   | VA1   | 0.5  |
+        | SlashingVoter         | 500   | VA1   | 1    |
     And voters vote in SlashingVoter's informal voting with id 0
         | account | stake | vote | 
       # | VA2     | 500   | yes  | - automatically voted by the system
@@ -61,3 +62,4 @@ Feature: Slashing a percentage of the Reputation of a VA who has not any Reputat
       | VA3              | 0            | 2250         | 0          |
       | VA4              | 0            | 2250         | 0          |
     And total reputation is 7000
+    And VA1 is a VA

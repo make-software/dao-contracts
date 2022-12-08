@@ -73,6 +73,8 @@ pub trait KycVoterContractInterface {
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 /// KycVoterContract
@@ -180,13 +182,18 @@ impl KycVoterContractInterface for KycVoterContract {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voter(voting_id, at)
     }
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.voting.cancel_voter(voter, voting_id);
+    }
 }
 
 // non-contract implementation
 impl KycVoterContract {
     fn extract_address_from_args(&self, voting: &Voting) -> Address {
         let runtime_args = voting
-            .contract_call()
+            .contract_calls()
+            .first()
             .clone()
             .unwrap_or_revert()
             .runtime_args();

@@ -1,6 +1,6 @@
 use super::{
     helpers,
-    params::{Account, Contract, Balance},
+    params::{Account, Balance, Contract},
 };
 
 #[allow(dead_code)]

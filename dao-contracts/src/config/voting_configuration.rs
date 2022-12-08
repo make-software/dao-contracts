@@ -5,7 +5,7 @@ use casper_dao_utils::{
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
 pub struct VotingConfiguration {
-    pub contract_call: Option<ContractCall>,
+    pub contract_calls: Vec<ContractCall>,
     pub only_va_can_create: bool,
     pub unbounded_tokens_for_creator: bool,
     pub onboard_creator: bool,

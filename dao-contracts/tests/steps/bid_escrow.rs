@@ -1,4 +1,4 @@
-use std::{time::Duration};
+use std::time::Duration;
 
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use cucumber::{gherkin::Step, then, when};

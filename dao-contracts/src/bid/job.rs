@@ -6,7 +6,7 @@ use casper_dao_utils::{
     DocumentHash,
     Error,
 };
-use casper_types::{U512};
+use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
 use crate::voting::types::VotingId;

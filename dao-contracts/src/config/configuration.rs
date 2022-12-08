@@ -187,8 +187,8 @@ impl Configuration {
         self.total_onboarded
     }
 
-    pub fn contract_call(&self) -> Option<ContractCall> {
-        self.voting_configuration.contract_call.clone()
+    pub fn contract_calls(&self) -> &Vec<ContractCall> {
+        &self.voting_configuration.contract_calls
     }
 
     pub fn only_va_can_create(&self) -> bool {

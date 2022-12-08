@@ -8,7 +8,6 @@ use casper_dao_erc721::{
 };
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
     Address,
@@ -89,7 +88,7 @@ pub trait VaNftContractInterface {
     ///
     /// # Events
     /// Emits [`Burn`](casper_dao_modules::events::Burn) event.
-    fn burn(&mut self, token_id: TokenId);
+    fn burn(&mut self, owner: Address);
 }
 
 /// Va Owned Nft contract acts like an erc-721 token and derives most of erc-721 standards from
@@ -153,15 +152,13 @@ impl VaNftContractInterface for VaNftContract {
         self.tokens.set(&to, Some(token_id));
     }
 
-    fn burn(&mut self, token_id: TokenId) {
+    fn burn(&mut self, owner: Address) {
         self.access_control.ensure_whitelisted();
-        let owner = self
-            .token
-            .owner_of(token_id)
-            .unwrap_or_revert_with(Error::InvalidTokenOwner);
-
-        BurnableERC721::burn_unchecked(&mut self.token, token_id);
-        self.tokens.set(&owner, None);
+        let token_id = self.token_id(owner);
+        if let Some(token_id) = token_id {
+            BurnableERC721::burn_unchecked(&mut self.token, token_id);
+            self.tokens.set(&owner, None);
+        }
     }
 }
 

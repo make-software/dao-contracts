@@ -166,6 +166,10 @@ pub trait BidEscrowContractInterface {
     fn jobs_count(&self) -> u32;
 
     fn bids_count(&self) -> u32;
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+
+    fn cancel_bidder(&mut self, bidder: Address);
 }
 
 #[derive(Instance)]
@@ -176,6 +180,7 @@ pub struct BidEscrowContract {
     jobs: Mapping<JobId, Job>,
     jobs_count: SequenceGenerator<JobId>,
     job_offers: Mapping<JobOfferId, JobOffer>,
+    active_job_offers_ids: Mapping<Address, Vec<JobOfferId>>,
     pub job_offers_count: SequenceGenerator<JobOfferId>,
     bids: Mapping<BidId, Bid>,
     job_offers_bids: VecMapping<JobOfferId, BidId>,
@@ -204,7 +209,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, max_budget: U512, purse: URef) {
-        if !self.kyc.is_kycd(&caller()) {
+        let job_poster = caller();
+        if !self.kyc.is_kycd(&job_poster) {
             revert(Error::JobPosterNotKycd);
         }
 
@@ -217,16 +223,21 @@ impl BidEscrowContractInterface for BidEscrowContract {
         );
         let job_offer = JobOffer::new(
             job_offer_id,
-            caller(),
+            job_poster,
             expected_timeframe,
             max_budget,
             dos_fee,
             get_block_time(),
             voting_configuration.build(),
         );
-
         self.job_offers.set(&job_offer_id, job_offer);
 
+        let mut job_offers = self
+            .active_job_offers_ids
+            .get(&job_poster)
+            .unwrap_or_default();
+        job_offers.push(job_offer_id);
+        self.active_job_offers_ids.set(&job_poster, job_offers);
         // JobOfferCreated::new(&job_offer).emit();
     }
 
@@ -322,7 +333,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
         }
 
-        bid.cancel();
+        bid.reclaim();
 
         match bid.cspr_stake {
             None => {
@@ -389,6 +400,17 @@ impl BidEscrowContractInterface for BidEscrowContract {
         bid.pick();
         self.bids.set(&bid_id, bid);
 
+        // TODO: Filter in place.
+        let job_offers: Vec<JobOfferId> = self
+            .active_job_offers_ids
+            .get(&job_poster)
+            .unwrap_or_default();
+        let job_offers: Vec<JobOfferId> = job_offers
+            .iter()
+            .filter(|id| id == &&job_offer_id)
+            .cloned()
+            .collect();
+        self.active_job_offers_ids.set(&job_poster, job_offers);
         // TODO: Emit event.
     }
 
@@ -514,6 +536,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                     self.return_job_poster_payment_and_dos_fee(&job);
                     self.return_external_worker_cspr_stake(&job);
                 }
+                VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
             },
             VotingType::Formal => {
                 match voting_summary.result() {
@@ -568,6 +591,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                         self.return_job_poster_payment_and_dos_fee(&job);
                         self.return_external_worker_cspr_stake(&job);
                     }
+                    VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
                 }
             }
         }
@@ -610,9 +634,48 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn bids_count(&self) -> u32 {
         self.bids_count.get_current_value()
     }
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.voting.cancel_voter(voter, voting_id);
+    }
+
+    fn cancel_bidder(&mut self, bidder: Address) {
+        // Cancel job offers created by the bidder.
+        let job_offer_ids = self.active_job_offers_ids.get(&bidder).unwrap_or_default();
+        for job_offer_id in job_offer_ids {
+            self.cancel_job_offer(job_offer_id);
+        }
+        self.active_job_offers_ids.set(&bidder, vec![]);
+    }
 }
 
 impl BidEscrowContract {
+    fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
+        let bids_amount = self.job_offers_bids.len(job_offer_id);
+        for i in 0..bids_amount {
+            let unstake_bid_id = self
+                .job_offers_bids
+                .get(job_offer_id, i)
+                .unwrap_or_revert_with(Error::BidNotFound);
+            let mut bid = self
+                .get_bid(unstake_bid_id)
+                .unwrap_or_revert_with(Error::BidNotFound);
+
+            match bid.cspr_stake {
+                None => {
+                    self.reputation_token()
+                        .unstake_bid(bid.worker, unstake_bid_id);
+                }
+                Some(cspr_stake) => {
+                    self.withdraw(bid.worker, cspr_stake);
+                }
+            }
+            bid.cancel();
+            self.bids.set(&unstake_bid_id, bid);
+        }
+        self.return_job_offer_poster_dos_fee(&job_offer_id);
+    }
+
     fn next_bid_id(&mut self) -> BidId {
         self.bids_count.next_value()
     }
@@ -769,6 +832,11 @@ impl BidEscrowContract {
     fn return_job_poster_dos_fee(&mut self, job: &Job) {
         let job_offer = self.job_offers.get_or_revert(&job.job_offer_id());
         self.withdraw(job.poster(), job_offer.dos_fee);
+    }
+
+    fn return_job_offer_poster_dos_fee(&mut self, job_offer_id: &JobOfferId) {
+        let job_offer = self.job_offers.get_or_revert(job_offer_id);
+        self.withdraw(job_offer.job_poster, job_offer.dos_fee);
     }
 
     fn return_external_worker_cspr_stake(&mut self, job: &Job) {

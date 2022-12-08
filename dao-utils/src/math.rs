@@ -1,4 +1,4 @@
-use casper_types::{U512};
+use casper_types::U512;
 
 use crate::{conversions::BytesConversion, Error};
 

@@ -19,6 +19,7 @@ pub enum VotingResult {
     InFavor,
     Against,
     QuorumNotReached,
+    Canceled,
 }
 
 /// Type of Voting (Formal or Informal)
@@ -104,6 +105,7 @@ pub struct Voting {
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
     creator: Address,
+    is_canceled: bool,
     configuration: Configuration,
 }
 
@@ -126,6 +128,7 @@ impl Voting {
             informal_voting_id: voting_id,
             formal_voting_id: None,
             creator,
+            is_canceled: false,
             configuration: voting_configuration,
         }
     }
@@ -166,6 +169,8 @@ impl Voting {
             informal_voting_id: self.informal_voting_id,
             formal_voting_id: Some(new_voting_id),
             creator: self.creator,
+            // TODO: Shoudn't be false.
+            is_canceled: self.is_canceled,
             configuration: voting_configuration,
         }
     }
@@ -246,6 +251,22 @@ impl Voting {
         match choice {
             Choice::InFavor => self.unbounded_stake_in_favor += stake,
             Choice::Against => self.unbounded_stake_against += stake,
+        }
+    }
+
+    pub fn remove_stake(&mut self, stake: U512, choice: Choice) {
+        // overflow is not possible due to reputation token having U512 as max
+        match choice {
+            Choice::InFavor => self.stake_in_favor -= stake,
+            Choice::Against => self.stake_against -= stake,
+        }
+    }
+
+    pub fn remove_unbounded_stake(&mut self, stake: U512, choice: Choice) {
+        // overflow is not possible due to reputation token having U512 as max
+        match choice {
+            Choice::InFavor => self.unbounded_stake_in_favor -= stake,
+            Choice::Against => self.unbounded_stake_against -= stake,
         }
     }
 
@@ -343,9 +364,9 @@ impl Voting {
         self.configuration.informal_voting_time()
     }
 
-    /// Get the voting's contract call.
-    pub fn contract_call(&self) -> Option<ContractCall> {
-        self.configuration.contract_call()
+    /// Get the voting's contract call reference.
+    pub fn contract_calls(&self) -> &Vec<ContractCall> {
+        &self.configuration.contract_calls()
     }
 
     /// Get a reference to the voting's voting configuration.
@@ -372,6 +393,10 @@ impl Voting {
         } else {
             VotingState::Finished
         }
+    }
+
+    pub fn cancel(&mut self) {
+        self.is_canceled = true;
     }
 }
 

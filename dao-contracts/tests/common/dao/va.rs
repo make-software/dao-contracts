@@ -33,10 +33,9 @@ impl DaoWorld {
         burner: &Account,
         holder: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
-        let token_id = self.get_va_token_id(holder);
         let burner = self.get_address(burner);
-
-        self.va_token.as_account(burner).burn(*token_id)
+        let holder = self.get_address(holder);
+        self.va_token.as_account(burner).burn(holder)
     }
 
     pub fn burn_va_token(&mut self, burner: &Account, holder: &Account) {

@@ -219,11 +219,7 @@ impl VariableRepositoryContractCaller {
 
     /// Calculates amount of reputation to be minted
     pub fn reputation_to_mint(&self, cspr_amount: U512) -> U512 {
-        math::promils_of(
-            cspr_amount,
-            self.reputation_conversion_rate(),
-        )
-        .unwrap_or_revert()
+        math::promils_of(cspr_amount, self.reputation_conversion_rate()).unwrap_or_revert()
     }
 
     /// Calculates amount of reputation to be redistributed
@@ -233,11 +229,7 @@ impl VariableRepositoryContractCaller {
 
     /// Calculates amount of CSPR to be redistributed
     pub fn cspr_to_redistribute(&self, cspr_amount: U512) -> U512 {
-        math::promils_of_u512(
-            cspr_amount,
-            self.default_policing_rate(),
-        )
-        .unwrap_or_revert()
+        math::promils_of_u512(cspr_amount, self.default_policing_rate()).unwrap_or_revert()
     }
 
     pub fn governance_wallet(&self) -> Address {

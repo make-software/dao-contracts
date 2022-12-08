@@ -96,7 +96,7 @@ impl ConfigurationBuilder {
                     ),
                 },
                 VotingConfiguration {
-                    contract_call: None,
+                    contract_calls: Vec::new(),
                     only_va_can_create: true,
                     unbounded_tokens_for_creator: false,
                     onboard_creator: false,
@@ -124,8 +124,12 @@ impl ConfigurationBuilder {
         result
     }
 
-    pub fn contract_call(mut self, contract_call: ContractCall) -> ConfigurationBuilder {
-        self.configuration.voting_configuration.contract_call = Some(contract_call);
+    pub fn contract_call(self, contract_call: ContractCall) -> ConfigurationBuilder {
+        self.contract_calls(vec![contract_call])
+    }
+
+    pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> ConfigurationBuilder {
+        self.configuration.voting_configuration.contract_calls = contract_calls;
         self
     }
 

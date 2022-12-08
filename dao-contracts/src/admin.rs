@@ -59,6 +59,7 @@ pub trait AdminContractInterface {
     ) -> Option<Ballot>;
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 /// Admin contract uses [GovernanceVoting](GovernanceVoting) to vote on changes of ownership and managing whitelists of other contracts.
@@ -133,5 +134,9 @@ impl AdminContractInterface for AdminContract {
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voter(voting_id, at)
+    }
+
+    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.voting.cancel_voter(voter, voting_id);
     }
 }

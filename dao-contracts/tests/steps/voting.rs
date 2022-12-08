@@ -13,9 +13,11 @@ use crate::common::{
 #[when(expr = "{account} starts voting with the following config")]
 #[given(expr = "{account} starts voting with the following config")]
 fn voting_setup(world: &mut DaoWorld, step: &Step, creator: Account) {
-    let voting: &Vec<String> = step.table.as_ref().unwrap().rows.get(1).unwrap();
-    let voting: Voting = voting.into();
-    let _ = world.checked_create_voting(creator, voting);
+    let rows = step.table.as_ref().unwrap().rows.iter().skip(1);
+    for row in rows {
+        let voting: Voting = row.into();
+        let _ = world.checked_create_voting(creator, voting);
+    }
 }
 
 #[when(expr = "voters vote in {contract}'s {voting_type} voting with id {int}")]
@@ -35,7 +37,9 @@ fn voting(
             .build(row)
     })
     .filter(|ballot| !ballot.stake.is_zero())
-    .for_each(|ballot| world.vote(&contract, &ballot));
+    .for_each(|ballot| {
+        let _ = world.checked_vote(&contract, &ballot);
+    });
 }
 
 #[when(expr = "{voting_type} voting with id {int} ends in {contract} contract")]

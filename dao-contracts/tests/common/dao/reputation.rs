@@ -1,8 +1,9 @@
 use casper_dao_utils::TestContract;
 
 use crate::common::{
+    helpers::is_balance_close_enough,
     params::{Account, Balance},
-    DaoWorld, helpers::is_balance_close_enough,
+    DaoWorld,
 };
 
 #[allow(dead_code)]
@@ -34,7 +35,7 @@ impl DaoWorld {
 
         assert!(
             is_balance_close_enough(expected_balance, *real_reputation_stake),
-            "For account {:?} CSPR balance should be {:?} but is {:?}",
+            "For account {:?} sREP balance should be {:?} but is {:?}",
             account,
             expected_balance,
             real_reputation_stake
@@ -46,7 +47,7 @@ impl DaoWorld {
 
         assert!(
             is_balance_close_enough(expected_balance, *real_reputation_balance),
-            "For account {:?} CSPR balance should be {:?} but is {:?}",
+            "For account {:?} REP balance should be {:?} but is {:?}",
             account,
             expected_balance,
             real_reputation_balance

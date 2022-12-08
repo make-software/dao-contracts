@@ -1,4 +1,8 @@
-use crate::common::{params::{Account, Balance}, DaoWorld, helpers::is_balance_close_enough};
+use crate::common::{
+    helpers::is_balance_close_enough,
+    params::{Account, Balance},
+    DaoWorld,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {

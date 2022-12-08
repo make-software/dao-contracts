@@ -48,7 +48,7 @@ impl DaoWorld {
 
     pub fn vote(&mut self, contract: &Contract, ballot: &Ballot) {
         self.checked_vote(contract, ballot)
-            .unwrap_or_else(|_| panic!("{:?} voting error", contract));
+            .unwrap_or_else(|e| panic!("{:?} voting error: {e:?}", contract));
     }
 
     pub fn checked_vote(&mut self, contract: &Contract, ballot: &Ballot) -> Result<(), Error> {

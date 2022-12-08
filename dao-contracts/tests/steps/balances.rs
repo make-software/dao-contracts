@@ -38,8 +38,7 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
                     world.assert_staked_reputation(&account, expected_reputation_stake)
                 }
                 "CSPR balance" => {
-                    let expected_cspr_balance =
-                        helpers::parse_or_default::<Balance>(row.get(idx));
+                    let expected_cspr_balance = helpers::parse_or_default::<Balance>(row.get(idx));
                     world.assert_cspr_balance(&account, expected_cspr_balance);
                 }
                 _ => {}
