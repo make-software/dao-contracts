@@ -415,9 +415,9 @@ impl AccountStakeInfo {
         self.stakes_from_voting.keys().cloned().collect()
     }
 
-    fn get_bids_stakes_origins(&self) -> Vec<(Address, BidId)> {
-        self.stakes_from_bid.keys().cloned().collect()
-    }
+    // fn get_bids_stakes_origins(&self) -> Vec<(Address, BidId)> {
+    //     self.stakes_from_bid.keys().cloned().collect()
+    // }
 }
 
 #[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]

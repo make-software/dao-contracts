@@ -8,10 +8,7 @@ use casper_dao_utils::{
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
-use crate::{
-    voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting},
-    DaoConfigurationBuilder,
-};
+use crate::{ConfigurationBuilder, voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting}};
 
 #[casper_contract_interface]
 pub trait MockVoterContractInterface {
@@ -51,7 +48,7 @@ impl MockVoterContractInterface for MockVoterContract {
     }
 
     fn create_voting(&mut self, value: String, stake: U512) {
-        let voting_configuration = DaoConfigurationBuilder::new(
+        let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )

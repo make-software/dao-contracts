@@ -34,8 +34,7 @@ use crate::{
         GovernanceVoting,
         VotingId,
     },
-    DaoConfigurationBuilder,
-    DaoConfigurationTrait,
+    ConfigurationBuilder,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
@@ -218,7 +217,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let dos_fee = self.deposit_dos_fee(purse);
 
         let job_offer_id = self.next_job_offer_id();
-        let voting_configuration = DaoConfigurationBuilder::new(
+        let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         );
@@ -330,9 +329,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::CannotCancelBidOnCompletedJobOffer);
         }
 
-        if get_block_time()
-            < bid.timestamp + job_offer.dao_configuration.va_bid_acceptance_timeout()
-        {
+        if get_block_time() < bid.timestamp + job_offer.configuration.va_bid_acceptance_timeout() {
             revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
         }
 
@@ -440,11 +437,11 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let job_offer = self.job_offer(job.job_offer_id());
 
-        if job.stake() != U512::zero() && job_offer.dao_configuration.informal_stake_reputation {
+        if job.stake() != U512::zero() && job_offer.configuration.informal_stake_reputation() {
             self.reputation_token().unstake_bid(worker, job.bid_id());
         }
 
-        let voting_configuration = DaoConfigurationBuilder::new(
+        let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )
@@ -518,21 +515,21 @@ impl BidEscrowContractInterface for BidEscrowContract {
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor => {
-                    if !job_offer.dao_configuration.informal_stake_reputation {
+                    if !job_offer.configuration.informal_stake_reputation() {
                         self.reputation_token()
                             .unstake_bid(job.worker(), job.bid_id());
                     }
                     self.create_formal_voting(&mut job, voting_id, &voting_summary);
                 }
                 VotingResult::Against => {
-                    if !job_offer.dao_configuration.informal_stake_reputation {
+                    if !job_offer.configuration.informal_stake_reputation() {
                         self.reputation_token()
                             .unstake_bid(job.worker(), job.bid_id());
                     }
                     self.create_formal_voting(&mut job, voting_id, &voting_summary);
                 }
                 VotingResult::QuorumNotReached => {
-                    if job_offer.dao_configuration.informal_stake_reputation {
+                    if job_offer.configuration.informal_stake_reputation() {
                         self.voting.return_reputation_of_yes_voters(voting_id);
                         self.voting.return_reputation_of_no_voters(voting_id);
                     }
@@ -740,8 +737,8 @@ impl BidEscrowContract {
 
         let redistribute_to_all_vas = self
             .job_offer(job.job_offer_id())
-            .dao_configuration
-            .distribute_payment_to_non_voters;
+            .configuration
+            .distribute_payment_to_non_voters();
 
         // For VA's
         if redistribute_to_all_vas {
@@ -768,8 +765,8 @@ impl BidEscrowContract {
 
         let redistribute_to_all_vas = self
             .job_offer(job.job_offer_id())
-            .dao_configuration
-            .distribute_payment_to_non_voters;
+            .configuration
+            .distribute_payment_to_non_voters();
 
         // For VA's
         if redistribute_to_all_vas {
