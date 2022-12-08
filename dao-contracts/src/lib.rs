@@ -8,6 +8,7 @@ mod bid_escrow;
 mod builder;
 mod kyc_nft;
 mod kyc_voter;
+mod rate_provider;
 mod slashing_voter;
 mod va_nft;
 
@@ -80,4 +81,11 @@ pub use variable_repository::{
     VariableRepositoryContract,
     VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
+};
+#[cfg(feature = "test-support")]
+pub use rate_provider::CSPRRateProviderContractTest;
+pub use rate_provider::{
+    CSPRRateProviderContract,
+    CSPRRateProviderContractCaller,
+    CSPRRateProviderContractInterface,
 };

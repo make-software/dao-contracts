@@ -1,5 +1,6 @@
 use casper_dao_contracts::{
     BidEscrowContractTest,
+    CSPRRateProviderContractTest,
     KycNftContractTest,
     KycVoterContractTest,
     ReputationContractTest,
@@ -29,9 +30,11 @@ pub fn setup_dao() -> (
     VariableRepositoryContractTest,
     SlashingVoterContractTest,
     KycVoterContractTest,
+    CSPRRateProviderContractTest,
 ) {
     let env = TestEnv::new();
-    let variable_repo = VariableRepositoryContractTest::new(&env);
+    let rate_provider = CSPRRateProviderContractTest::new(&env);
+    let variable_repo = VariableRepositoryContractTest::new(&env, rate_provider.address());
     let mut reputation_token = ReputationContractTest::new(&env);
 
     let mut va_token = VaNftContractTest::new(
@@ -97,5 +100,6 @@ pub fn setup_dao() -> (
         variable_repo,
         slashing_voter,
         kyc_voter,
+        rate_provider
     )
 }

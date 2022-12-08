@@ -30,10 +30,13 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn init(&mut self) {
+    pub fn init(&mut self, fiat_conversion_rate_address: Address) {
         for (key, value) in RepositoryDefaults::default().items() {
             self.set(key, value);
         }
+        let key = String::from(consts::FIAT_CONVERSION_RATE_ADDRESS);
+        let value = Bytes::from(fiat_conversion_rate_address.to_bytes().unwrap());
+        self.set(key, value);
     }
 
     pub fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {

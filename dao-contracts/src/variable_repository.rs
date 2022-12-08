@@ -37,7 +37,7 @@ pub trait VariableRepositoryContractInterface {
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     /// * multiple [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) events,
     /// one per value of the default repository configuration.
-    fn init(&mut self);
+    fn init(&mut self, fiat_conversion_rate_address: Address);
 
     /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
     /// Only the current owner is permited to call this method.
@@ -124,10 +124,10 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         }
     }
 
-    fn init(&mut self) {
+    fn init(&mut self, fiat_conversion_rate_address: Address) {
         let deployer = caller();
         self.access_control.init(deployer);
-        self.repository.init();
+        self.repository.init(fiat_conversion_rate_address);
     }
 
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {

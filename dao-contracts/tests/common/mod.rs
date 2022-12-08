@@ -4,7 +4,6 @@ pub mod config;
 pub mod dao;
 pub mod helpers;
 pub mod params;
-pub mod setup;
 
 use std::{
     collections::HashMap,
@@ -31,6 +30,7 @@ pub struct DaoWorld {
     pub slashing_voter: casper_dao_contracts::SlashingVoterContractTest,
     pub kyc_voter: casper_dao_contracts::KycVoterContractTest,
     pub variable_repo: casper_dao_contracts::VariableRepositoryContractTest,
+    pub rate_provider: casper_dao_contracts::CSPRRateProviderContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -70,6 +70,7 @@ impl Default for DaoWorld {
             variable_repo,
             slashing_voter,
             kyc_voter,
+            rate_provider,
         ) = dao::setup_dao();
         let mut dao = Self {
             env,
@@ -80,6 +81,7 @@ impl Default for DaoWorld {
             variable_repo,
             slashing_voter,
             kyc_voter,
+            rate_provider,
             balances: Default::default(),
             starting_balances: Default::default(),
             bids: Default::default(),
