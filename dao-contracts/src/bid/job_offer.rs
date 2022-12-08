@@ -11,7 +11,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::{bid::types::JobOfferId, DaoConfiguration, DaoConfigurationTrait};
+use crate::{bid::types::JobOfferId, Configuration};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
 pub enum JobOfferStatus {
@@ -37,7 +37,7 @@ pub struct JobOffer {
     pub dos_fee: U512,
     pub status: JobOfferStatus,
     pub start_time: BlockTime,
-    pub dao_configuration: DaoConfiguration,
+    pub configuration: Configuration,
 }
 
 impl JobOffer {
@@ -48,7 +48,7 @@ impl JobOffer {
         max_budget: U512,
         dos_fee: U512,
         block_time: BlockTime,
-        dao_configuration: DaoConfiguration,
+        dao_configuration: Configuration,
     ) -> Self {
         JobOffer {
             job_offer_id: offer_id,
@@ -58,15 +58,15 @@ impl JobOffer {
             dos_fee,
             status: JobOfferStatus::Created,
             start_time: block_time,
-            dao_configuration,
+            configuration: dao_configuration,
         }
     }
 
     pub fn auction_state(&self, block_time: BlockTime) -> AuctionState {
         let public_auction_start_time =
-            self.start_time + self.dao_configuration.internal_auction_time();
+            self.start_time + self.configuration.internal_auction_time();
         let public_auction_end_time =
-            public_auction_start_time + self.dao_configuration.public_auction_time();
+            public_auction_start_time + self.configuration.public_auction_time();
         if block_time >= self.start_time && block_time < public_auction_start_time {
             AuctionState::Internal
         } else if block_time >= public_auction_start_time && block_time < public_auction_end_time {
@@ -97,7 +97,7 @@ impl JobOffer {
                 }
             }
             AuctionState::Public => {
-                if worker_onboarded && !self.dao_configuration.va_can_bid_on_public_auction() {
+                if worker_onboarded && !self.configuration.va_can_bid_on_public_auction() {
                     return Err(OnboardedWorkerCannotBid);
                 }
             }

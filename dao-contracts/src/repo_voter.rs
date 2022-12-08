@@ -15,7 +15,7 @@ use crate::{
         Choice,
         GovernanceVoting,
     },
-    DaoConfigurationBuilder,
+    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -86,7 +86,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U512,
     ) {
-        let voting_configuration = DaoConfigurationBuilder::new(
+        let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )

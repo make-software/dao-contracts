@@ -11,7 +11,7 @@ mod kyc_voter;
 mod slashing_voter;
 mod va_nft;
 
-pub mod dao;
+pub mod config;
 #[doc(hidden)]
 pub mod mocks;
 pub mod repo_voter;
@@ -28,8 +28,8 @@ pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
 #[cfg(feature = "test-support")]
 pub use bid_escrow::BidEscrowContractTest;
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
-pub use builder::dao_configuration_builder::DaoConfigurationBuilder;
-pub use dao::configuration::*;
+pub use builder::configuration_builder::ConfigurationBuilder;
+pub use config::configuration::*;
 #[cfg(feature = "test-support")]
 pub use kyc_nft::KycNftContractTest;
 pub use kyc_nft::{KycNftContract, KycNftContractCaller, KycNftContractInterface};

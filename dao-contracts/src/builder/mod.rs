@@ -1,1 +1,1 @@
-pub mod dao_configuration_builder;
+pub mod configuration_builder;

@@ -5,8 +5,7 @@ use casper_types::U512;
 
 use crate::{
     voting::{ballot::Choice, types::VotingId, Ballot},
-    DaoConfiguration,
-    DaoConfigurationTrait,
+    Configuration,
 };
 
 /// Event thrown after voting contract is created
@@ -56,7 +55,7 @@ impl VotingCreated {
         voting_id: VotingId,
         informal_voting_id: VotingId,
         formal_voting_id: Option<VotingId>,
-        config: &DaoConfiguration,
+        config: &Configuration,
     ) -> Self {
         VotingCreated {
             creator: *creator,
