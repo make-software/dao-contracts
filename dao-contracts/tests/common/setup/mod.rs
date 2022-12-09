@@ -1,6 +1,6 @@
 use casper_dao_contracts::{
     simple_voter::SimpleVoterContractTest,
-    voting::{types::VotingId, voting::Voting, Choice},
+    voting::{types::VotingId, voting_state_machine::VotingStateMachine, Choice},
     BidEscrowContractTest,
     KycNftContractTest,
     MockVoterContractTest,
@@ -350,7 +350,11 @@ pub fn setup_voting_contract_with_informal_voting(
     informal_quorum: U512,
     formal_quorum: U512,
     total_onboarded: usize,
-) -> (MockVoterContractTest, ReputationContractTest, Voting) {
+) -> (
+    MockVoterContractTest,
+    ReputationContractTest,
+    VotingStateMachine,
+) {
     let (mut mock_voter_contract, _variable_repository_contract, reputation_token_contract) =
         setup_voting_contract(informal_quorum, formal_quorum, total_onboarded);
 
@@ -368,7 +372,11 @@ pub fn setup_voting_contract_with_formal_voting(
     informal_quorum: U512,
     formal_quorum: U512,
     total_onboarded: usize,
-) -> (MockVoterContractTest, ReputationContractTest, Voting) {
+) -> (
+    MockVoterContractTest,
+    ReputationContractTest,
+    VotingStateMachine,
+) {
     let minimum_reputation = 500.into();
     let (mut mock_voter_contract, reputation_token_contract, voting) =
         setup_voting_contract_with_informal_voting(informal_quorum, formal_quorum, total_onboarded);
@@ -433,7 +441,7 @@ pub fn mass_vote(
     votes_in_favor: usize,
     votes_against: usize,
     voting_contract: &mut MockVoterContractTest,
-    voting: &Voting,
+    voting: &VotingStateMachine,
 ) {
     let minimum_reputation = 500.into();
     let mut account = 1;

@@ -1,8 +1,8 @@
-use casper_dao_utils::{BlockTime, Error};
+use casper_dao_utils::{Error};
 
 use crate::{
     rules::validation::Validation,
-    voting::voting::{Voting, VotingState, VotingType},
+    voting::voting_state_machine::{VotingState},
 };
 
 pub struct VotingNotCompleted {

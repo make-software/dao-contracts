@@ -15,7 +15,7 @@ use delegate::delegate;
 
 use self::events::{Burn, Mint};
 use crate::{
-    bid::types::BidId,
+    escrow::types::BidId,
     voting::{Choice, VotingId},
 };
 

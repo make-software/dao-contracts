@@ -13,17 +13,17 @@ use delegate::delegate;
 use crate::{
     voting::{
         types::VotingId,
-        voting::{Voting, VotingType},
+        voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        GovernanceVoting,
+        VotingEngine,
     },
     ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
 pub trait SimpleVoterContractInterface {
-    /// see [GovernanceVoting](GovernanceVoting::init())
+    /// see [VotingEngine](VotingEngine::init())
     fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
     /// Creates new SimpleVoter voting.
     ///
@@ -31,26 +31,28 @@ pub trait SimpleVoterContractInterface {
     ///
     /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512);
-    /// see [GovernanceVoting](GovernanceVoting::vote())
+    /// see [VotingEngine](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [GovernanceVoting](GovernanceVoting::finish_voting())
+    /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U512;
-    /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
+    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
+    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting::get_voting())
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
-    /// see [GovernanceVoting](GovernanceVoting::get_ballot())
+    /// see [VotingEngine](VotingEngine::get_voting())
+    fn get_voting(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<VotingStateMachine>;
+    /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [GovernanceVoting](GovernanceVoting::get_voter())
+    /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns document hash being voted on for given voting id.
     fn get_document_hash(
@@ -75,7 +77,7 @@ pub struct SimpleVotingCreated {
 /// The topic of the voting is handled by `document_hash` which is a hash of a document being voted on.
 #[derive(Instance)]
 pub struct SimpleVoterContract {
-    voting: GovernanceVoting,
+    voting: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
 }
 
@@ -83,7 +85,6 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     delegate! {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
@@ -143,7 +144,11 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         self.voting.vote(caller(), voting_id, choice, stake);
     }
 
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
+    fn get_voting(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<VotingStateMachine> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }

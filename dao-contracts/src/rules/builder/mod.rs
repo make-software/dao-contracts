@@ -13,12 +13,18 @@ impl RulesBuilder {
         }
     }
 
-    pub fn add_validation<'a>(&mut self, validation: Box<dyn Validation>) -> &Self {
+    pub fn add_validation(&mut self, validation: Box<dyn Validation>) -> &Self {
         self.rules.validations.push(validation);
         self
     }
 
     pub fn build(self) -> Rules {
         self.rules
+    }
+}
+
+impl Default for RulesBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }

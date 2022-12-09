@@ -11,7 +11,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::{bid::types::JobOfferId, Configuration};
+use crate::{escrow::types::JobOfferId, Configuration};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
 pub enum JobOfferStatus {

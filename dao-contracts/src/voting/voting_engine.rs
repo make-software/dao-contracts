@@ -1,7 +1,7 @@
 //! Governance Voting module.
 pub mod consts;
 pub mod events;
-pub mod voting;
+pub mod voting_state_machine;
 
 use std::collections::BTreeMap;
 
@@ -19,13 +19,12 @@ use casper_types::U512;
 
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
-    voting::{Voting, VotingResult, VotingSummary, VotingType},
+    voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
     voting::{
         validation::{finish_formal_voting_validator, vote_validator},
-        voting::VotingState,
     },
     Configuration,
     ReputationContractCaller,
@@ -33,10 +32,6 @@ use crate::{
     VaNftContractCaller,
     VaNftContractInterface,
 };
-
-pub trait GovernanceVotingTrait {
-    fn init(&mut self, variable_repo: Address, reputation_token: Address);
-}
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
 /// 1. Informal voting
@@ -51,18 +46,17 @@ pub trait GovernanceVotingTrait {
 ///
 /// For example implementation see [AdminContract](crate::admin::AdminContract)
 #[derive(Instance)]
-pub struct GovernanceVoting {
+pub struct VotingEngine {
     variable_repo: Variable<Address>,
     reputation_token: Variable<Address>,
     va_token: Variable<Address>,
-    votings: Mapping<VotingId, Option<Voting>>,
+    voting_states: Mapping<VotingId, Option<VotingStateMachine>>,
     ballots: Mapping<(VotingId, Address), Ballot>,
     voters: VecMapping<VotingId, Address>,
     votings_count: Variable<VotingId>,
-    dust_amount: Variable<U512>,
 }
 
-impl GovernanceVoting {
+impl VotingEngine {
     /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract) and [Variable Repo](crate::VariableRepositoryContract)
     ///
     /// # Events
@@ -80,7 +74,7 @@ impl GovernanceVoting {
         .emit();
     }
 
-    /// Creates new informal [Voting](Voting).
+    /// Creates new informal [Voting](VotingStateMachine).
     ///
     /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed  when formal voting passes.
     ///
@@ -105,7 +99,8 @@ impl GovernanceVoting {
         let voting_id = self.next_voting_id();
 
         VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
-        let voting = Voting::new(voting_id, get_block_time(), creator, voting_configuration);
+        let voting =
+            VotingStateMachine::new(voting_id, get_block_time(), creator, voting_configuration);
         self.set_voting(voting);
         self.vote(creator, voting_id, Choice::InFavor, stake);
 
@@ -128,7 +123,8 @@ impl GovernanceVoting {
         // let cast_first_vote = voting_configuration.cast_first_vote;
         // let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
 
-        let voting = Voting::new(voting_id, get_block_time(), creator, voting_configuration);
+        let voting =
+            VotingStateMachine::new(voting_id, get_block_time(), creator, voting_configuration);
         self.set_voting(voting);
 
         voting_id
@@ -237,7 +233,7 @@ impl GovernanceVoting {
         )
     }
 
-    fn finish_informal_voting(&mut self, mut voting: Voting) -> VotingSummary {
+    fn finish_informal_voting(&mut self, mut voting: VotingStateMachine) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
@@ -299,7 +295,7 @@ impl GovernanceVoting {
         )
     }
 
-    fn finish_formal_voting(&mut self, mut voting: Voting) -> VotingSummary {
+    fn finish_formal_voting(&mut self, mut voting: VotingStateMachine) -> VotingSummary {
         let validator = finish_formal_voting_validator(&voting, get_block_time());
         validator.validate();
 
@@ -380,7 +376,7 @@ impl GovernanceVoting {
         choice: Choice,
         stake: U512,
         unbounded: bool,
-        mut voting: Voting,
+        mut voting: VotingStateMachine,
     ) {
         if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
@@ -412,14 +408,6 @@ impl GovernanceVoting {
             voting.add_stake(stake, choice);
         }
         self.set_voting(voting);
-    }
-
-    /// Returns the dust amount.
-    ///
-    /// Those are leftovers from redistribution of reputation tokens. For example, when 10 tokens needs to be redistributed between 3 voters,
-    /// each will recieve 3 reputation, with 1 reputation left in the contract's balance.
-    pub fn get_dust_amount(&self) -> U512 {
-        self.dust_amount.get().unwrap_or_default()
     }
 
     /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
@@ -459,20 +447,20 @@ impl GovernanceVoting {
         self.voters.get_or_none(voting_id, at)
     }
 
-    /// Returns the [Voting](Voting) for given id
-    pub fn get_voting(&self, voting_id: VotingId) -> Option<Voting> {
-        self.votings
+    /// Returns the [Voting](VotingStateMachine) for given id
+    pub fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine> {
+        self.voting_states
             .get_or_none(&voting_id)
             .map(|x| x.unwrap_or_revert())
     }
 
-    pub fn get_voting_or_revert(&self, voting_id: VotingId) -> Voting {
+    pub fn get_voting_or_revert(&self, voting_id: VotingId) -> VotingStateMachine {
         self.get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist)
     }
 
-    fn set_voting(&self, voting: Voting) {
-        self.votings.set(&voting.voting_id(), Some(voting))
+    fn set_voting(&self, voting: VotingStateMachine) {
+        self.voting_states.set(&voting.voting_id(), Some(voting))
     }
 
     fn next_voting_id(&mut self) -> VotingId {
@@ -665,7 +653,7 @@ impl GovernanceVoting {
         }
     }
 
-    fn cancel_voting(&mut self, mut voting: Voting) {
+    fn cancel_voting(&mut self, mut voting: VotingStateMachine) {
         voting.cancel();
         self.unstake_all_reputation(voting.voting_id());
         self.set_voting(voting);
@@ -674,7 +662,7 @@ impl GovernanceVoting {
     }
 
     // Note: it doesn't remove a voter from self.votings to keep the quorum num right.
-    fn cancel_ballot(&mut self, mut voting: Voting, voter: Address) {
+    fn cancel_ballot(&mut self, mut voting: VotingStateMachine, voter: Address) {
         let voting_id = voting.voting_id();
         let ballots_key = (voting_id, voter);
         let mut ballot = self.ballots.get(&ballots_key).unwrap_or_revert();

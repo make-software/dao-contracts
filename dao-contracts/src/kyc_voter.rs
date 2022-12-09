@@ -15,10 +15,10 @@ use crate::{
     voting::{
         kyc_info::KycInfo,
         types::VotingId,
-        voting::{Voting, VotingType},
+        voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        GovernanceVoting,
+        VotingEngine,
     },
     ConfigurationBuilder,
 };
@@ -29,7 +29,7 @@ pub trait KycVoterContractInterface {
     ///
     /// Initializes modules.
     ///
-    /// See [GovernanceVoting](GovernanceVoting::init()), [KycInfo](KycInfo::init())
+    /// See [VotingEngine](VotingEngine::init()), [KycInfo](KycInfo::init())
     fn init(
         &mut self,
         variable_repo: Address,
@@ -50,26 +50,24 @@ pub trait KycVoterContractInterface {
     /// `document_hash` - a hash of a document that verify the user. The hash is used as an id of a freshly minted  kyc token.
     /// `subject_address` - an [Address](Address) to be on/offboarded.
     fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U512);
-    /// see [GovernanceVoting](GovernanceVoting::vote())
+    /// see [VotingEngine](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [GovernanceVoting](GovernanceVoting::finish_voting())
+    /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U512;
-    /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
+    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
+    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting::get_voting())
+    /// see [VotingEngine](VotingEngine::get_voting())
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-    /// see [GovernanceVoting](GovernanceVoting::get_ballot())
+    /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [GovernanceVoting](GovernanceVoting::get_voter())
+    /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
@@ -85,7 +83,7 @@ pub trait KycVoterContractInterface {
 #[derive(Instance)]
 pub struct KycVoterContract {
     kyc: KycInfo,
-    voting: GovernanceVoting,
+    voting: VotingEngine,
 }
 
 impl KycVoterContractInterface for KycVoterContract {
@@ -97,7 +95,6 @@ impl KycVoterContractInterface for KycVoterContract {
         to self.voting {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
-            fn get_dust_amount(&self) -> U512;
         }
     }
 
@@ -190,11 +187,10 @@ impl KycVoterContractInterface for KycVoterContract {
 
 // non-contract implementation
 impl KycVoterContract {
-    fn extract_address_from_args(&self, voting: &Voting) -> Address {
+    fn extract_address_from_args(&self, voting: &VotingStateMachine) -> Address {
         let runtime_args = voting
             .contract_calls()
             .first()
-            .clone()
             .unwrap_or_revert()
             .runtime_args();
         let arg = runtime_args
