@@ -487,9 +487,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let stake = if job.external_worker_cspr_stake().is_zero() {
             job.stake()
         } else {
-            // TODO: Implement promils of governance variable
-            let stake = job.external_worker_cspr_stake() / U512::from(10);
-            U512::from(stake.as_u128())
+            voting_configuration.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake())
         };
 
         let voting_id = self
@@ -823,10 +821,8 @@ impl BidEscrowContract {
 
         // For VA's
         let (total_supply, balances) = self.reputation_token().all_balances();
-        let total_supply = U512::from(total_supply.as_u128());
         for (address, balance) in balances.balances {
-            // TODO: better conversions.
-            let amount = total_left * U512::from(balance.as_u128()) / total_supply;
+            let amount = total_left * balance / total_supply;
             self.withdraw(address, amount);
         }
     }
@@ -856,9 +852,8 @@ impl BidEscrowContract {
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
         let (total_supply, balances) = self.reputation_token().all_balances();
-        let total_supply = U512::from(total_supply.as_u128());
         for (address, balance) in balances.balances {
-            let amount = to_redistribute * U512::from(balance.as_u128()) / total_supply;
+            let amount = to_redistribute * balance / total_supply;
             self.withdraw(address, amount);
         }
     }
@@ -869,9 +864,8 @@ impl BidEscrowContract {
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
         let all_voters = self.voting.all_voters(voting_id, VotingType::Formal);
         let (partial_supply, balances) = self.reputation_token().partial_balances(all_voters);
-        let partial_supply = U512::from(partial_supply.as_u128());
         for (address, balance) in balances.balances {
-            let amount = to_redistribute * U512::from(balance.as_u128()) / partial_supply;
+            let amount = to_redistribute * balance / partial_supply;
             self.withdraw(address, amount);
         }
     }
@@ -991,9 +985,9 @@ impl BidEscrowContract {
     }
 
     fn burn_external_worker_reputation(&self, job: &Job) {
-        // TODO: remove 10
-        let stake = job.external_worker_cspr_stake() / U512::from(10);
-        let stake = U512::from(stake.as_u128());
+        let config = self.job_offers.get(&job.job_offer_id()).unwrap().configuration;
+
+        let stake = config.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake());
         self.reputation_token().burn(job.worker(), stake);
     }
 }

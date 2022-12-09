@@ -202,4 +202,8 @@ impl Configuration {
     pub fn apply_governance_payment_ratio_to(&self, amount: U512) -> U512 {
         math::promils_of_u512(amount, self.governance_payment_ratio()).unwrap_or_revert()
     }
+
+    pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
+        math::promils_of_u512(amount, self.reputation_conversion_rate()).unwrap_or_revert()
+    }
 }
