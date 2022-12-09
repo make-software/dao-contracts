@@ -122,6 +122,16 @@ fn cancel_bid(w: &mut DaoWorld, worker: Account, job_poster: Account) {
     w.cancel_bid(worker, *job_offer_id, bid.bid_id);
 }
 
+#[when(expr = "{account} got his active job offers slashed")]
+fn slash_all_active_job_offers(w: &mut DaoWorld, bidder: Account) {
+    w.slash_all_active_job_offers(bidder);
+}
+
+#[when(expr = "bid with id {int} is slashed")]
+fn slash_bid(w: &mut DaoWorld, bid_id: u32) {
+    w.slash_bid(bid_id);
+}
+
 #[then(expr = "Formal voting does not start")]
 fn formal_does_not_start(w: &mut DaoWorld) {
     let voting = w

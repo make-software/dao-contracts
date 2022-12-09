@@ -1,9 +1,11 @@
 use casper_dao_utils::{DocumentHash, Error, TestContract};
+use casper_types::bytesrepr::Bytes;
 
 use crate::common::{
     params::{
         voting::{Ballot, Voting, VotingType},
         Account,
+        Balance,
         Contract,
     },
     DaoWorld,
@@ -44,6 +46,20 @@ impl DaoWorld {
         let contract = voting.contract;
         self.checked_create_voting(creator, voting)
             .unwrap_or_else(|_| panic!("Couldn't create {:?} voting", contract));
+    }
+
+    pub fn create_random_voting(&mut self, contract: Contract, creator: Account, stake: Balance) {
+        let alice = self.get_address(&Account::Alice);
+        let creator = self.get_address(&creator);
+        match contract {
+            Contract::KycVoter => {
+                self.kyc_voter
+                    .as_account(creator)
+                    .create_voting(alice, Bytes::new(), *stake)
+            }
+            contract => panic!("{:?} is not a voting contract", contract),
+        }
+        .expect("Can't create voting")
     }
 
     pub fn vote(&mut self, contract: &Contract, ballot: &Ballot) {
@@ -113,6 +129,17 @@ impl DaoWorld {
             Contract::KycVoter => self.kyc_voter.voting_exists(voting_id, voting_type),
             Contract::BidEscrow => todo!(),
             Contract::SlashingVoter => todo!(),
+            invalid => panic!("{:?} is not a voting contract", invalid),
+        }
+    }
+
+    pub fn checked_slash_voter(&mut self, contract: Contract, voter: Account, voting_id: u32) {
+        let voter = self.get_address(&voter);
+        match contract {
+            Contract::KycVoter => self
+                .kyc_voter
+                .slash_voter(voter, voting_id)
+                .expect("Couldn't slash voter in KycVoter"),
             invalid => panic!("{:?} is not a voting contract", invalid),
         }
     }

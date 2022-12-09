@@ -137,6 +137,6 @@ impl AdminContractInterface for AdminContract {
     }
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+        self.voting.slash_voter(voter, voting_id);
     }
 }

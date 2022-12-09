@@ -5,6 +5,7 @@ use crate::common::{
     params::{
         voting::{BallotBuilder, Voting, VotingType},
         Account,
+        Balance,
         Contract,
     },
     DaoWorld,
@@ -42,9 +43,24 @@ fn voting(
     });
 }
 
+#[when(expr = "{account} creates random voting in {contract} with {balance} stake")]
+fn create_random_voting(
+    world: &mut DaoWorld,
+    creator: Account,
+    contract: Contract,
+    stake: Balance,
+) {
+    world.create_random_voting(contract, creator, stake);
+}
+
 #[when(expr = "{voting_type} voting with id {int} ends in {contract} contract")]
 fn end_voting(world: &mut DaoWorld, voting_type: VotingType, voting_id: u32, contract: Contract) {
     world.finish_voting(&contract, voting_id, Some(voting_type));
+}
+
+#[when(expr = "{contract} slashes {account} in voting with id {int}")]
+fn slash_voter(world: &mut DaoWorld, contract: Contract, voter: Account, voting_id: u32) {
+    world.checked_slash_voter(contract, voter, voting_id);
 }
 
 #[then(expr = "formal voting with id {int} in {contract} contract does not start")]

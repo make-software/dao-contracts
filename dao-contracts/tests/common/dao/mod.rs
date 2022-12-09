@@ -48,7 +48,7 @@ pub fn setup_dao() -> (
         "".to_string(),
     );
 
-    let bid_escrow = BidEscrowContractTest::new(
+    let mut bid_escrow = BidEscrowContractTest::new(
         variable_repo.get_env(),
         variable_repo.address(),
         reputation_token.address(),
@@ -56,7 +56,7 @@ pub fn setup_dao() -> (
         va_token.address(),
     );
 
-    let slashing_voter = SlashingVoterContractTest::new(
+    let mut slashing_voter = SlashingVoterContractTest::new(
         variable_repo.get_env(),
         variable_repo.address(),
         reputation_token.address(),
@@ -88,6 +88,15 @@ pub fn setup_dao() -> (
     va_token.add_to_whitelist(bid_escrow.address()).unwrap();
 
     va_token.add_to_whitelist(slashing_voter.address()).unwrap();
+
+    bid_escrow
+        .add_to_whitelist(reputation_token.address())
+        .unwrap();
+
+    slashing_voter
+        .update_bid_escrow_list(vec![bid_escrow.address()])
+        .unwrap();
+
     (
         env,
         bid_escrow,

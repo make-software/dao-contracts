@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::{
         contract_api::system::{
@@ -169,7 +170,16 @@ pub trait BidEscrowContractInterface {
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 
-    fn cancel_bidder(&mut self, bidder: Address);
+    fn slash_all_active_job_offers(&mut self, bidder: Address);
+
+    fn slash_bid(&mut self, bid_id: BidId);
+
+    // Whitelisting set.
+    fn change_ownership(&mut self, owner: Address);
+    fn add_to_whitelist(&mut self, address: Address);
+    fn remove_from_whitelist(&mut self, address: Address);
+    fn get_owner(&self) -> Option<Address>;
+    fn is_whitelisted(&self, address: Address) -> bool;
 }
 
 #[derive(Instance)]
@@ -185,6 +195,7 @@ pub struct BidEscrowContract {
     bids: Mapping<BidId, Bid>,
     job_offers_bids: VecMapping<JobOfferId, BidId>,
     bids_count: SequenceGenerator<BidId>,
+    access_control: AccessControl,
 }
 
 impl BidEscrowContractInterface for BidEscrowContract {
@@ -193,6 +204,14 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+        }
+
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
         }
     }
 
@@ -206,6 +225,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.voting.init(variable_repo, reputation_token, va_token);
         self.kyc.init(kyc_token);
         self.onboarding.init(va_token);
+        self.access_control.init(caller());
     }
 
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, max_budget: U512, purse: URef) {
@@ -636,16 +656,52 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+        self.access_control.ensure_whitelisted();
+        self.voting.slash_voter(voter, voting_id);
     }
 
-    fn cancel_bidder(&mut self, bidder: Address) {
+    fn slash_all_active_job_offers(&mut self, bidder: Address) {
+        self.access_control.ensure_whitelisted();
         // Cancel job offers created by the bidder.
         let job_offer_ids = self.active_job_offers_ids.get(&bidder).unwrap_or_default();
         for job_offer_id in job_offer_ids {
             self.cancel_job_offer(job_offer_id);
         }
         self.active_job_offers_ids.set(&bidder, vec![]);
+    }
+
+    fn slash_bid(&mut self, bid_id: BidId) {
+        self.access_control.ensure_whitelisted();
+
+        let mut bid = self
+            .get_bid(bid_id)
+            .unwrap_or_revert_with(Error::BidNotFound);
+
+        let job_offer = self
+            .get_job_offer(bid.job_offer_id)
+            .unwrap_or_revert_with(Error::JobOfferNotFound);
+
+        if job_offer.status != JobOfferStatus::Created {
+            revert(Error::CannotCancelBidOnCompletedJobOffer);
+        }
+
+        if get_block_time() < bid.timestamp + job_offer.configuration.va_bid_acceptance_timeout() {
+            revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
+        }
+
+        bid.cancel();
+
+        match bid.cspr_stake {
+            None => {
+                self.reputation_token().unstake_bid(bid.worker, bid_id);
+            }
+            Some(cspr_stake) => {
+                self.withdraw(bid.worker, cspr_stake);
+            }
+        }
+
+        // TODO: Implement Event
+        self.bids.set(&bid_id, bid);
     }
 }
 

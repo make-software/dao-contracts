@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -6,6 +7,7 @@ use casper_dao_utils::{
     ContractCall,
     Error,
     Mapping,
+    Variable,
 };
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
@@ -50,6 +52,14 @@ pub trait SlashingVoterContractInterface {
     /// see [GovernanceVoting](GovernanceVoting::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn update_bid_escrow_list(&mut self, bid_escrows: Vec<Address>);
+
+    // Whitelisting set.
+    fn change_ownership(&mut self, owner: Address);
+    fn add_to_whitelist(&mut self, address: Address);
+    fn remove_from_whitelist(&mut self, address: Address);
+    fn get_owner(&self) -> Option<Address>;
+    fn is_whitelisted(&self, address: Address) -> bool;
 }
 
 /// Slashing Voter contract uses [GovernanceVoting](GovernanceVoting) to vote on changes of ownership and managing whitelists of other contracts.
@@ -61,16 +71,35 @@ pub trait SlashingVoterContractInterface {
 pub struct SlashingVoterContract {
     voting: GovernanceVoting,
     subjects: Mapping<VotingId, Address>,
+    bid_escrows: Variable<Vec<Address>>,
+    access_control: AccessControl,
 }
 
 impl SlashingVoterContractInterface for SlashingVoterContract {
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
+
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
+        }
+    }
+
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
+        self.voting.init(variable_repo, reputation_token, va_token);
+        self.access_control.init(caller());
+    }
+
+    fn update_bid_escrow_list(&mut self, bid_escrows: Vec<Address>) {
+        self.access_control.ensure_whitelisted();
+        self.bid_escrows.set(bid_escrows);
     }
 
     fn create_voting(&mut self, address_to_slash: Address, slash_ratio: u32, stake: U512) {
@@ -161,6 +190,6 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
     }
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+        self.voting.slash_voter(voter, voting_id);
     }
 }

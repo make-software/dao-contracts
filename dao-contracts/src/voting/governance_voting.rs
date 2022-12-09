@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{caller, get_block_time, revert, self_address},
+    casper_env::{get_block_time, revert, self_address},
     Address,
     Error,
     Mapping,
@@ -653,10 +653,7 @@ impl GovernanceVoting {
         }
     }
 
-    pub fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        if caller() != self.reputation_token_address() {
-            revert(Error::OnlyReputationTokenContractCanCancel);
-        }
+    pub fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         let voting = self.get_voting_or_revert(voting_id);
         if &voter == voting.creator() {
             self.cancel_voting(voting);
