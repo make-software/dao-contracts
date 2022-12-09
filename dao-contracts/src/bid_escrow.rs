@@ -782,15 +782,7 @@ impl BidEscrowContract {
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
-        // 10% for Mutlisig
-        let repo = self.variable_repository();
-        let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.payment();
-        let governance_wallet_payment = repo.payment_for_governance(payment);
-        self.withdraw(governance_wallet, governance_wallet_payment);
-
-        let to_redistribute = payment - governance_wallet_payment;
-
+        let to_redistribute = self.redistribute_to_governance(job, job.payment());
         let redistribute_to_all_vas = self
             .job_offer(job.job_offer_id())
             .configuration
@@ -805,15 +797,9 @@ impl BidEscrowContract {
     }
 
     fn redistribute_cspr_external_worker(&mut self, job: &Job) {
-        // 10% for Mutlisig
-        let repo = self.variable_repository();
-        let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.payment();
-        let governance_wallet_payment = repo.payment_for_governance(payment);
-        self.withdraw(governance_wallet, governance_wallet_payment);
-
-        let total_left = payment - governance_wallet_payment;
-        let to_redistribute = repo.cspr_to_redistribute(total_left);
+        let total_left = self.redistribute_to_governance(job, job.payment());
+        let config = self.job_offers.get(&job.job_offer_id()).unwrap().configuration;
+        let to_redistribute = config.apply_default_policing_rate_to(total_left);
         let to_worker = total_left - to_redistribute;
 
         // For External Worker
@@ -830,6 +816,30 @@ impl BidEscrowContract {
         } else {
             self.redistribute_cspr_to_voters(job, to_redistribute);
         }
+    }
+
+    fn redistribute_cspr_external_worker_failed(&mut self, job: &Job) {
+        let total_left = self.redistribute_to_governance(job, job.external_worker_cspr_stake());
+
+        // For VA's
+        let (total_supply, balances) = self.reputation_token().all_balances();
+        let total_supply = U512::from(total_supply.as_u128());
+        for (address, balance) in balances.balances {
+            // TODO: better conversions.
+            let amount = total_left * U512::from(balance.as_u128()) / total_supply;
+            self.withdraw(address, amount);
+        }
+    }
+
+    fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
+        let job_offer = self.job_offers.get(&job.job_offer_id()).unwrap();
+        let configuration = job_offer.configuration;
+        
+        let governance_wallet: Address = configuration.governance_wallet_address();
+        let governance_wallet_payment = configuration.apply_governance_payment_ratio_to(payment);
+        self.withdraw(governance_wallet, governance_wallet_payment);
+
+        payment - governance_wallet_payment
     }
 
     fn job_offer(&self, job_offer_id: JobOfferId) -> JobOffer {
@@ -862,26 +872,6 @@ impl BidEscrowContract {
         let partial_supply = U512::from(partial_supply.as_u128());
         for (address, balance) in balances.balances {
             let amount = to_redistribute * U512::from(balance.as_u128()) / partial_supply;
-            self.withdraw(address, amount);
-        }
-    }
-
-    fn redistribute_cspr_external_worker_failed(&mut self, job: &Job) {
-        // 10% for Mutlisig
-        let repo = self.variable_repository();
-        let governance_wallet: Address = repo.governance_wallet();
-        let payment = job.external_worker_cspr_stake();
-        let governance_wallet_payment = repo.payment_for_governance(payment);
-        self.withdraw(governance_wallet, governance_wallet_payment);
-
-        let total_left = payment - governance_wallet_payment;
-
-        // For VA's
-        let (total_supply, balances) = self.reputation_token().all_balances();
-        let total_supply = U512::from(total_supply.as_u128());
-        for (address, balance) in balances.balances {
-            // TODO: better conversions.
-            let amount = total_left * U512::from(balance.as_u128()) / total_supply;
             self.withdraw(address, amount);
         }
     }

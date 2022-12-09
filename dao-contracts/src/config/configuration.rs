@@ -2,7 +2,7 @@ use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
     BlockTime,
-    ContractCall,
+    ContractCall, math, casper_contract::unwrap_or_revert::UnwrapOrRevert,
 };
 use casper_types::U512;
 
@@ -193,5 +193,13 @@ impl Configuration {
 
     pub fn only_va_can_create(&self) -> bool {
         self.voting_configuration.only_va_can_create
+    }
+
+    pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
+        math::promils_of_u512(amount, self.default_policing_rate()).unwrap_or_revert()
+    }
+
+    pub fn apply_governance_payment_ratio_to(&self, amount: U512) -> U512 {
+        math::promils_of_u512(amount, self.governance_payment_ratio()).unwrap_or_revert()
     }
 }
