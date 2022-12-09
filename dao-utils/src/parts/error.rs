@@ -67,6 +67,8 @@ dao_errors!(
     NotEnoughReputation => 2106,
     ContractToCallNotSet => 2107,
     VotingDuringTimeBetweenVotingsNotAllowed => 2108,
+    VotingNotCompleted => 2109,
+    FormalVotingNotCompleted => 2110,
     VaOnboardedAlready => 2201,
     OnboardingAlreadyInProgress => 2202,
     VaNotOnboarded => 2203,
@@ -83,6 +85,7 @@ dao_errors!(
     VotingAlreadyCanceled => 3409,
     OnlyReputationTokenContractCanCancel => 3410,
     SubjectOfSlashing => 3411,
+    VotingAlreadyFinished => 3412,
 
     // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,

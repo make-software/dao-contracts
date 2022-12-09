@@ -43,10 +43,6 @@ impl Configuration {
         self.dao_configuration.fiat_conversion_rate_address
     }
 
-    pub fn forum_kyc_required(&self) -> bool {
-        self.dao_configuration.forum_kyc_required
-    }
-
     pub fn governance_informal_quorum_ratio(&self) -> U512 {
         self.dao_configuration.governance_informal_quorum_ratio
     }
