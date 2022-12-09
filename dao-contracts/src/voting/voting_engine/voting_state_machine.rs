@@ -141,26 +141,9 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn finish(&mut self) {
-        self.state = VotingState::Finished;
-    }
-
-    /// Returns the type of voting
-    pub fn get_voting_type(&self) -> VotingType {
-        if self.voting_id == self.informal_voting_id {
-            VotingType::Informal
-        } else {
-            VotingType::Formal
-        }
-    }
-
-    pub fn is_informal_without_stake(&self) -> bool {
-        !self.voting_configuration().informal_stake_reputation()
-            && self.get_voting_type() == VotingType::Informal
-    }
-
-    pub fn start_time(&self) -> u64 {
-        self.start_time
+    pub fn complete_informal_voting(&mut self, formal_voting_id: VotingId) {
+        self.formal_voting_id = Some(formal_voting_id);
+        self.state = VotingState::Formal;
     }
 
     /// Creates new formal voting from self, cloning existing VotingConfiguration
@@ -184,6 +167,28 @@ impl VotingStateMachine {
             // TODO: Shoudn't be false.
             configuration: voting_configuration,
         }
+    }
+
+    pub fn finish(&mut self) {
+        self.state = VotingState::Finished;
+    }
+
+    pub fn cancel(&mut self) {
+        self.state = VotingState::Canceled;
+    }
+
+    /// Returns the type of voting
+    pub fn get_voting_type(&self) -> VotingType {
+        if self.voting_id == self.informal_voting_id {
+            VotingType::Informal
+        } else {
+            VotingType::Formal
+        }
+    }
+
+    pub fn is_informal_without_stake(&self) -> bool {
+        !self.voting_configuration().informal_stake_reputation()
+            && self.get_voting_type() == VotingType::Informal
     }
 
     /// Returns if voting is still in voting phase
@@ -348,6 +353,10 @@ impl VotingStateMachine {
         self.configuration.governance_informal_voting_quorum()
     }
 
+    pub fn start_time(&self) -> u64 {
+        self.start_time
+    }
+
     /// Get the voting's formal voting time.
     pub fn formal_voting_time(&self) -> u64 {
         self.configuration.formal_voting_time()
@@ -380,11 +389,6 @@ impl VotingStateMachine {
         self.state() == &VotingState::Finished || self.state() == &VotingState::Canceled
     }
 
-    pub fn complete_informal_voting(&mut self, formal_voting_id: VotingId) {
-        self.formal_voting_id = Some(formal_voting_id);
-        self.state = VotingState::Formal;
-    }
-
     pub fn state_in_time(&self, block_time: BlockTime) -> VotingState {
         let informal_voting_end = self.start_time + self.informal_voting_time();
         let between_voting_end =
@@ -401,66 +405,4 @@ impl VotingStateMachine {
             VotingState::Finished
         }
     }
-
-    pub fn cancel(&mut self) {
-        self.state = VotingState::Canceled;
-    }
 }
-
-// #[test]
-// fn test_voting_serialization() {
-//     use casper_types::bytesrepr::FromBytes;
-//     use casper_types::bytesrepr::ToBytes;
-
-//     let voting = Voting {
-//         voting_id: 1,
-//         completed: false,
-//         stake_in_favor: U512::zero(),
-//         stake_against: U512::zero(),
-//         start_time: 123,
-//         informal_voting_id: 1,
-//         formal_voting_id: None,
-//         voting_configuration: VotingConfiguration {
-//             formal_voting_quorum: U512::from(2),
-//             formal_voting_time: 2,
-//             informal_voting_quorum: U512::from(2),
-//             informal_voting_time: 2,
-//             create_minimum_reputation: U512::from(2),
-//             contract_call: None,
-//             cast_first_vote: true,
-//             cast_minimum_reputation: U512::from(2),
-//             only_va_can_create: true,
-//         },
-//     };
-
-//     let (voting2, _bytes) = Voting::from_bytes(&voting.to_bytes().unwrap()).unwrap();
-
-//     // TODO: rewrite asserts
-//     assert_eq!(voting.voting_id(), voting2.voting_id());
-//     assert_eq!(voting.informal_voting_id, voting2.informal_voting_id);
-//     assert_eq!(voting.formal_voting_id, voting2.formal_voting_id);
-//     assert_eq!(
-//         voting.voting_configuration.informal_voting_quorum,
-//         voting2.voting_configuration.informal_voting_quorum
-//     );
-//     assert_eq!(
-//         voting.voting_configuration.formal_voting_quorum,
-//         voting2.voting_configuration.formal_voting_quorum
-//     );
-//     assert_eq!(voting.stake_against, voting2.stake_against);
-//     assert_eq!(voting.stake_in_favor, voting2.stake_in_favor);
-//     assert_eq!(voting.completed, voting2.completed);
-//     assert_eq!(
-//         voting.voting_configuration.formal_voting_time,
-//         voting2.voting_configuration.formal_voting_time
-//     );
-//     assert_eq!(
-//         voting.voting_configuration.informal_voting_time,
-//         voting2.voting_configuration.informal_voting_time
-//     );
-//     assert_eq!(
-//         voting.voting_configuration().only_va_can_create,
-//         voting2.voting_configuration().only_va_can_create
-//     );
-//     assert_eq!(voting.start_time, voting2.start_time);
-// }

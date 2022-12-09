@@ -23,9 +23,6 @@ use self::{
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
-    voting::{
-        validation::{finish_formal_voting_validator, vote_validator},
-    },
     Configuration,
     ReputationContractCaller,
     ReputationContractInterface,
@@ -85,47 +82,28 @@ impl VotingEngine {
     /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`Error::NotEnoughReputation`](casper_dao_utils::Error::NotEnoughReputation) when the creator does not have enough reputation to create a voting
+    /// Throws [`Error::NotEnoughReputation`](Error::NotEnoughReputation) when the creator does not have enough reputation to create a voting
     pub fn create_voting(
         &mut self,
         creator: Address,
         stake: U512,
-        voting_configuration: Configuration,
+        configuration: Configuration,
     ) -> VotingId {
-        if voting_configuration.only_va_can_create() && !self.is_va(creator) {
+        if configuration.only_va_can_create() && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
         }
 
+        let cast_first_vote = !configuration.voting_configuration.is_bid_escrow;
         let voting_id = self.next_voting_id();
 
-        VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
+        VotingCreated::new(&creator, voting_id, voting_id, None, &configuration).emit();
         let voting =
-            VotingStateMachine::new(voting_id, get_block_time(), creator, voting_configuration);
+            VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
         self.set_voting(voting);
-        self.vote(creator, voting_id, Choice::InFavor, stake);
 
-        voting_id
-    }
-
-    pub fn create_voting_without_first_vote(
-        &mut self,
-        creator: Address,
-        voting_configuration: Configuration,
-    ) -> VotingId {
-        if voting_configuration.only_va_can_create() && !self.is_va(creator) {
-            revert(Error::VaNotOnboarded)
+        if cast_first_vote {
+            self.vote(creator, voting_id, Choice::InFavor, stake);
         }
-
-        let voting_id = self.next_voting_id();
-
-        VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
-
-        // let cast_first_vote = voting_configuration.cast_first_vote;
-        // let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
-
-        let voting =
-            VotingStateMachine::new(voting_id, get_block_time(), creator, voting_configuration);
-        self.set_voting(voting);
 
         voting_id
     }
@@ -144,13 +122,13 @@ impl VotingEngine {
     /// Emits [`VotingEnded`](VotingEnded), [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`FinishingCompletedVotingNotAllowed`](casper_dao_utils::Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
+    /// Throws [`FinishingCompletedVotingNotAllowed`](Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
     ///
-    /// Throws [`FormalVotingTimeNotReached`](casper_dao_utils::Error::FormalVotingTimeNotReached) if formal voting time did not pass
+    /// Throws [`FormalVotingTimeNotReached`](Error::FormalVotingTimeNotReached) if formal voting time did not pass
     ///
-    /// Throws [`InformalVotingTimeNotReached`](casper_dao_utils::Error::InformalVotingTimeNotReached) if informal voting time did not pass
+    /// Throws [`InformalVotingTimeNotReached`](Error::InformalVotingTimeNotReached) if informal voting time did not pass
     ///
-    /// Throws [`ArithmeticOverflow`](casper_dao_utils::Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
+    /// Throws [`ArithmeticOverflow`](Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
     pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {
         let voting = self
             .get_voting(voting_id)
@@ -296,8 +274,7 @@ impl VotingEngine {
     }
 
     fn finish_formal_voting(&mut self, mut voting: VotingStateMachine) -> VotingSummary {
-        let validator = finish_formal_voting_validator(&voting, get_block_time());
-        validator.validate();
+        voting.guard_finish_formal_voting(get_block_time());
 
         let voters_len = self.voters.len(voting.voting_id());
         let voting_result = voting.get_result(voters_len);
@@ -350,14 +327,12 @@ impl VotingEngine {
     /// Emits [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`VoteOnCompletedVotingNotAllowed`](casper_dao_utils::Error::VoteOnCompletedVotingNotAllowed) if voting is completed
+    /// Throws [`VoteOnCompletedVotingNotAllowed`](Error::VoteOnCompletedVotingNotAllowed) if voting is completed
     ///
-    /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
+    /// Throws [`CannotVoteTwice`](Error::CannotVoteTwice) if voter already voted
     pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U512) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
-        let vote_validator = vote_validator(&voting, get_block_time());
-
-        vote_validator.validate();
+        voting.guard_vote(get_block_time());
 
         let vote = self.ballots.get(&(voting_id, voter));
 

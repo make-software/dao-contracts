@@ -445,9 +445,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
-        )
-        .only_va_can_create(false)
-        .build();
+            )
+            .only_va_can_create(false)
+            .is_bid_escrow(true)
+            .build();
 
         let stake = if job.external_worker_cspr_stake().is_zero() {
             job.stake()
@@ -459,7 +460,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let voting_id = self
             .voting
-            .create_voting_without_first_vote(worker, voting_configuration);
+            .create_voting(worker, U512::zero(), voting_configuration);
 
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
         self.voting.cast_ballot(
