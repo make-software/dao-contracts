@@ -22,17 +22,17 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    bid::{
+    escrow::{
         job::{Job, WorkerType},
         types::BidId,
     },
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
-        voting::{Voting, VotingResult},
+        voting_state_machine::{VotingResult, VotingStateMachine},
         Ballot,
         Choice,
-        GovernanceVoting,
+        VotingEngine,
         VotingId,
     },
     ConfigurationBuilder,
@@ -49,7 +49,7 @@ pub trait BidEscrowContractInterface {
     /// KYC Token and VA Token
     ///
     /// # Events
-    /// Emits [`VotingContractCreated`](crate::voting::governance_voting::events::VotingContractCreated)
+    /// Emits [`VotingContractCreated`](crate::voting::voting_engine::events::VotingContractCreated)
     fn init(
         &mut self,
         variable_repo: Address,
@@ -65,7 +65,7 @@ pub trait BidEscrowContractInterface {
     /// Alongside Job Offer, Job Poster also sends DOS Fee in CSPR
     ///
     /// # Events
-    /// Emits [`JobOfferCreated`](crate::bid::events::JobOfferCreated)
+    /// Emits [`JobOfferCreated`](crate::escrow::events::JobOfferCreated)
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
     /// Worker submits a Bid for a Job
     /// Parameters:
@@ -77,7 +77,7 @@ pub trait BidEscrowContractInterface {
     /// purse: purse containing stake from External Worker
     ///
     /// # Events
-    /// Emits [`BidSubmitted`](crate::bid::events::BidSubmitted)
+    /// Emits [`BidSubmitted`](crate::escrow::events::BidSubmitted)
     fn submit_bid(
         &mut self,
         job_offer_id: JobOfferId,
@@ -114,7 +114,7 @@ pub trait BidEscrowContractInterface {
     /// # Events
     /// Emits [`JobProofSubmitted`](JobProofSubmitted)
     ///
-    /// Emits [`VotingCreated`](crate::voting::governance_voting::events::VotingCreated)
+    /// Emits [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     ///
     /// # Errors
     /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted
@@ -123,7 +123,7 @@ pub trait BidEscrowContractInterface {
     fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash);
     /// Casts a vote over a job
     /// # Events
-    /// Emits [`BallotCast`](crate::voting::governance_voting::events::BallotCast)
+    /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
 
     /// # Errors
     /// Throws [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
@@ -138,26 +138,28 @@ pub trait BidEscrowContractInterface {
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
     /// with a refund or pay the worker.
     /// # Events
-    /// Emits [`VotingEnded`](crate::voting::governance_voting::events::VotingEnded), [`VotingCreated`](crate::voting::governance_voting::events::VotingCreated)
+    /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, job_id: JobId);
-    /// see [GovernanceVoting](GovernanceVoting)
-    fn get_dust_amount(&self) -> U512;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [VotingEngine](VotingEngine)
     fn variable_repo_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [VotingEngine](VotingEngine)
     fn reputation_token_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting)
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [VotingEngine](VotingEngine)
+    fn get_voting(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<VotingStateMachine>;
+    /// see [VotingEngine](VotingEngine)
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [GovernanceVoting](GovernanceVoting)
+    /// see [VotingEngine](VotingEngine)
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
@@ -184,7 +186,7 @@ pub trait BidEscrowContractInterface {
 
 #[derive(Instance)]
 pub struct BidEscrowContract {
-    voting: GovernanceVoting,
+    voting: VotingEngine,
     kyc: KycInfo,
     onboarding: OnboardingInfo,
     jobs: Mapping<JobId, Job>,
@@ -201,7 +203,6 @@ pub struct BidEscrowContract {
 impl BidEscrowContractInterface for BidEscrowContract {
     delegate! {
         to self.voting {
-            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
@@ -623,7 +624,11 @@ impl BidEscrowContractInterface for BidEscrowContract {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
     }
 
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
+    fn get_voting(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<VotingStateMachine> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }
@@ -1010,12 +1015,12 @@ impl BidEscrowContract {
 use casper_dao_utils::TestContract;
 
 use crate::{
-    bid::{
+    escrow::{
         bid::{Bid, BidStatus},
         job_offer::{JobOffer, JobOfferStatus},
         types::{JobId, JobOfferId},
     },
-    voting::voting::{VotingSummary, VotingType},
+    voting::voting_state_machine::{VotingSummary, VotingType},
 };
 
 #[cfg(feature = "test-support")]

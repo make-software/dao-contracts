@@ -3,11 +3,12 @@
 #[doc(hidden)]
 pub mod action;
 mod admin;
-pub mod bid;
+pub mod escrow;
 mod bid_escrow;
 mod builder;
 mod kyc_nft;
 mod kyc_voter;
+pub mod rules;
 mod slashing_voter;
 mod va_nft;
 

@@ -11,17 +11,17 @@ use crate::{
     action::Action,
     voting::{
         types::VotingId,
-        voting::{Voting, VotingType},
+        voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        GovernanceVoting,
+        VotingEngine,
     },
     ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
 pub trait AdminContractInterface {
-    /// see [GovernanceVoting](GovernanceVoting::init())
+    /// see [VotingEngine](VotingEngine::init())
     fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
 
     /// Creates new admin voting.
@@ -38,45 +38,46 @@ pub trait AdminContractInterface {
         address: Address,
         stake: U512,
     );
-    /// see [GovernanceVoting](GovernanceVoting::vote())
+    /// see [VotingEngine](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [GovernanceVoting](GovernanceVoting::finish_voting())
+    /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [GovernanceVoting](GovernanceVoting::get_dust_amount())
-    fn get_dust_amount(&self) -> U512;
-    /// see [GovernanceVoting](GovernanceVoting::get_variable_repo_address())
+    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
     fn variable_repo_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting::get_reputation_token_address())
+    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
-    /// see [GovernanceVoting](GovernanceVoting::get_voting())
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting>;
-    /// see [GovernanceVoting](GovernanceVoting::get_ballot())
+    /// see [VotingEngine](VotingEngine::get_voting())
+    fn get_voting(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<VotingStateMachine>;
+    /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [GovernanceVoting](GovernanceVoting::get_voter())
+    /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
-/// Admin contract uses [GovernanceVoting](GovernanceVoting) to vote on changes of ownership and managing whitelists of other contracts.
+/// Admin contract uses [VotingEngine](VotingEngine) to vote on changes of ownership and managing whitelists of other contracts.
 ///
 /// Admin contract needs to have permissions to perform those actions.
 ///
 /// For details see [AdminContractInterface](AdminContractInterface)
 #[derive(Instance)]
 pub struct AdminContract {
-    voting: GovernanceVoting,
+    voting: VotingEngine,
 }
 
 impl AdminContractInterface for AdminContract {
     delegate! {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
         }
@@ -116,7 +117,11 @@ impl AdminContractInterface for AdminContract {
         self.voting.finish_voting(voting_id);
     }
 
-    fn get_voting(&self, voting_id: VotingId, voting_type: VotingType) -> Option<Voting> {
+    fn get_voting(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> Option<VotingStateMachine> {
         let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }
