@@ -73,17 +73,16 @@ impl DaoWorld {
         timeframe: BlockTime,
         maximum_budget: Balance,
         dos_fee: Balance,
-    ) -> JobOfferId {
+    ) -> Result<JobOfferId, casper_dao_utils::Error> {
         let poster = self.get_address(&poster);
 
         self.bid_escrow
             .as_account(poster)
-            .post_job_offer_with_cspr_amount(timeframe, *maximum_budget, *dos_fee)
-            .unwrap();
+            .post_job_offer_with_cspr_amount(timeframe, *maximum_budget, *dos_fee)?;
 
         let offer_id = self.bid_escrow.job_offers_count();
         self.offers.insert(poster, offer_id);
-        offer_id
+        Ok(offer_id)
     }
 
     pub fn pick_bid(&mut self, job_poster: Account, worker: Account) {

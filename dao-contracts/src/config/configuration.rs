@@ -159,6 +159,12 @@ impl Configuration {
         self.dao_configuration.post_job_dos_fee
     }
 
+    pub fn normalized_post_job_dos_fee(&self) -> U512 {
+        self.post_job_dos_fee()
+            .checked_div(U512::from(1000))
+            .unwrap()
+    }
+
     pub fn internal_auction_time(&self) -> BlockTime {
         self.dao_configuration.internal_auction_time
     }

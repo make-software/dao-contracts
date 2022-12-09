@@ -1,6 +1,9 @@
-use cucumber::then;
+use cucumber::{given, then};
 
-use crate::common::{params::Account, DaoWorld};
+use crate::common::{
+    params::{Account, Balance},
+    DaoWorld,
+};
 
 #[then(expr = "{account} Bid {word} posted")]
 fn bid_is_posted(w: &mut DaoWorld, account: Account, is_posted: String) {
@@ -12,4 +15,10 @@ fn bid_is_posted(w: &mut DaoWorld, account: Account, is_posted: String) {
     let bid = w.get_bid(0, account);
 
     assert_eq!(bid.is_some(), is_posted);
+}
+
+#[given(expr = "the price of USDT is {balance} CSPR")]
+fn set_cspr_rate(world: &mut DaoWorld, rate: Balance) {
+    dbg!(rate);
+    let _ = world.rate_provider.set_rate(*rate);
 }

@@ -37,7 +37,7 @@ pub trait VariableRepositoryContractInterface {
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     /// * multiple [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) events,
     /// one per value of the default repository configuration.
-    fn init(&mut self, fiat_conversion_rate_address: Address);
+    fn init(&mut self);
 
     /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
     /// Only the current owner is permited to call this method.
@@ -124,10 +124,10 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         }
     }
 
-    fn init(&mut self, fiat_conversion_rate_address: Address) {
+    fn init(&mut self) {
         let deployer = caller();
         self.access_control.init(deployer);
-        self.repository.init(fiat_conversion_rate_address);
+        self.repository.init();
     }
 
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {
@@ -197,6 +197,17 @@ impl VariableRepositoryContractCaller {
     /// Retrieves the value stored under the [DEFAULT_POLICING_RATE](dao_consts::DEFAULT_POLICING_RATE) key.
     pub fn default_policing_rate(&self) -> U512 {
         self.get_variable(dao_consts::DEFAULT_POLICING_RATE)
+    }
+
+    /// Retrieves the value stored under the [FIAT_CONVERSION_RATE_ADDRESS](dao_consts::FIAT_CONVERSION_RATE_ADDRESS) key.
+    pub fn fiat_conversion_rate_address(&self) -> Address {
+        self.get_variable(dao_consts::FIAT_CONVERSION_RATE_ADDRESS)
+    }
+
+    /// Retrieves a normalized value stored under the [POST_JOB_DOS_FEE](dao_consts::POST_JOB_DOS_FEE) key.
+    pub fn post_job_dos_fee(&self) -> U512 {
+        math::promils_of(self.get_variable(dao_consts::POST_JOB_DOS_FEE), U512::one())
+            .unwrap_or_revert()
     }
 
     /// Retrieves a normalized value stored under the [INFORMAL_VOTING_QUORUM](dao_consts::INFORMAL_VOTING_QUORUM) key.

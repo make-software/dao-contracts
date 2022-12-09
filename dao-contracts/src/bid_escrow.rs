@@ -700,16 +700,25 @@ impl BidEscrowContract {
     fn deposit_dos_fee(&mut self, cargo_purse: URef) -> U512 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
-        if amount < self.minimum_dos_fee() {
-            revert(Error::DosFeeTooLow);
-        }
+
+        self.validate_dos_fee(amount);
+
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
         amount
     }
 
-    fn minimum_dos_fee(&mut self) -> U512 {
-        // TODO: Implement using external contract and Governance Variable
-        U512::from(100_000_000_000u64)
+    fn validate_dos_fee(&self, dos_fee: U512) {
+        let variable_repo_address = self.voting.variable_repo_address();
+        let caller = VariableRepositoryContractCaller::at(variable_repo_address);
+
+        let fiat_conversion_rate_address = caller.fiat_conversion_rate_address();
+        let minimum_dos_fee = caller.post_job_dos_fee();
+
+        let usd_value =
+            casper_dao_utils::cspr_rate::convert_to_usd(dos_fee, fiat_conversion_rate_address);
+        if usd_value < minimum_dos_fee {
+            revert(Error::DosFeeTooLow);
+        };
     }
 
     fn withdraw(&mut self, address: Address, amount: U512) {

@@ -46,6 +46,13 @@ pub use mocks::mock_voter::{
     MockVoterContractInterface,
 };
 #[cfg(feature = "test-support")]
+pub use rate_provider::CSPRRateProviderContractTest;
+pub use rate_provider::{
+    CSPRRateProviderContract,
+    CSPRRateProviderContractCaller,
+    CSPRRateProviderContractInterface,
+};
+#[cfg(feature = "test-support")]
 pub use repo_voter::RepoVoterContractTest;
 pub use repo_voter::{RepoVoterContract, RepoVoterContractCaller, RepoVoterContractInterface};
 #[cfg(feature = "test-support")]
@@ -81,11 +88,4 @@ pub use variable_repository::{
     VariableRepositoryContract,
     VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
-};
-#[cfg(feature = "test-support")]
-pub use rate_provider::CSPRRateProviderContractTest;
-pub use rate_provider::{
-    CSPRRateProviderContract,
-    CSPRRateProviderContractCaller,
-    CSPRRateProviderContractInterface,
 };
