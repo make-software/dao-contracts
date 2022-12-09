@@ -4,12 +4,11 @@ use casper_dao_utils::{
     Address,
     BlockTime,
     ContractCall,
-    Mapping,
 };
 use casper_types::U512;
 
 use crate::{
-    voting::{ballot::Choice, types::VotingId, Ballot},
+    voting::{ballot::Choice, types::VotingId},
     Configuration,
 };
 
@@ -105,7 +104,7 @@ impl VotingSummary {
 
 /// Voting struct
 #[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
-pub struct Voting {
+pub struct VotingStateMachine {
     voting_id: VotingId,
     state: VotingState,
     stake_in_favor: U512,
@@ -119,7 +118,7 @@ pub struct Voting {
     configuration: Configuration,
 }
 
-impl Voting {
+impl VotingStateMachine {
     /// Creates new Voting with immutable VotingConfiguration
     pub fn new(
         voting_id: VotingId,
@@ -127,7 +126,7 @@ impl Voting {
         creator: Address,
         voting_configuration: Configuration,
     ) -> Self {
-        Voting {
+        VotingStateMachine {
             voting_id,
             state: VotingState::Created,
             stake_in_favor: U512::zero(),
@@ -171,7 +170,7 @@ impl Voting {
             voting_configuration.double_time_between_votings();
         }
 
-        Voting {
+        VotingStateMachine {
             voting_id: new_voting_id,
             state: VotingState::BetweenVotings,
             stake_in_favor: U512::zero(),
@@ -361,7 +360,7 @@ impl Voting {
 
     /// Get the voting's contract call reference.
     pub fn contract_calls(&self) -> &Vec<ContractCall> {
-        &self.configuration.contract_calls()
+        self.configuration.contract_calls()
     }
 
     /// Get a reference to the voting's voting configuration.

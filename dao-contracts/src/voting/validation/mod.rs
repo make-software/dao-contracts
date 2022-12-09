@@ -8,13 +8,13 @@ use crate::{
             vote_in_time::VoteInTime,
             voting_not_completed::VotingNotCompleted,
         },
-        voting::{Voting, VotingState},
+        voting_state_machine::{VotingStateMachine},
     },
 };
 
 pub mod rules;
 
-pub fn vote_validator(voting: &Voting, block_time: BlockTime) -> Rules {
+pub fn vote_validator(voting: &VotingStateMachine, block_time: BlockTime) -> Rules {
     let mut rules_builder = RulesBuilder::new();
     rules_builder.add_validation(Box::new(VoteInTime {
         voting_state: voting.state_in_time(block_time),
@@ -22,7 +22,7 @@ pub fn vote_validator(voting: &Voting, block_time: BlockTime) -> Rules {
     rules_builder.build()
 }
 
-pub fn finish_formal_voting_validator(voting: &Voting, block_time: BlockTime) -> Rules {
+pub fn finish_formal_voting_validator(voting: &VotingStateMachine, block_time: BlockTime) -> Rules {
     let mut rules_builder = RulesBuilder::new();
     rules_builder.add_validation(Box::new(AfterFormalVoting {
         state_in_time: voting.state_in_time(block_time),

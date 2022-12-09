@@ -1,6 +1,6 @@
-use casper_dao_utils::{BlockTime, Error};
+use casper_dao_utils::{Error};
 
-use crate::{rules::validation::Validation, voting::voting::VotingState};
+use crate::{rules::validation::Validation, voting::voting_state_machine::VotingState};
 
 pub struct VoteInTime {
     pub voting_state: VotingState,

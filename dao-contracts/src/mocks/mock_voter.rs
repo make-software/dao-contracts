@@ -9,7 +9,13 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
-    voting::{types::VotingId, voting::Voting, Ballot, Choice, GovernanceVoting},
+    voting::{
+        types::VotingId,
+        voting_state_machine::VotingStateMachine,
+        Ballot,
+        Choice,
+        VotingEngine,
+    },
     ConfigurationBuilder,
 };
 
@@ -19,10 +25,9 @@ pub trait MockVoterContractInterface {
     fn create_voting(&mut self, value: String, stake: U512);
     fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U512);
     fn finish_voting(&mut self, voting_id: VotingId);
-    fn get_dust_amount(&self) -> U512;
     fn variable_repo_address(&self) -> Address;
     fn reputation_token_address(&self) -> Address;
-    fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
     fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
     fn set_variable(&mut self, variable: String);
@@ -32,7 +37,7 @@ pub trait MockVoterContractInterface {
 #[doc(hidden)]
 #[derive(Instance)]
 pub struct MockVoterContract {
-    voting: GovernanceVoting,
+    voting: VotingEngine,
     variable: Variable<String>,
 }
 
@@ -41,10 +46,9 @@ impl MockVoterContractInterface for MockVoterContract {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId);
-            fn get_dust_amount(&self) -> U512;
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
-            fn get_voting(&self, voting_id: VotingId) -> Option<Voting>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
             fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
         }

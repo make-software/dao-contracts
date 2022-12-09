@@ -21,7 +21,7 @@ impl Voting {
     }
 
     pub fn get_stake(&self) -> Balance {
-        self.stake.into()
+        self.stake
     }
 }
 
@@ -59,11 +59,15 @@ impl FromStr for VotingType {
     }
 }
 
-impl From<VotingType> for casper_dao_contracts::voting::voting::VotingType {
+impl From<VotingType> for casper_dao_contracts::voting::voting_state_machine::VotingType {
     fn from(value: VotingType) -> Self {
         match value {
-            VotingType::Formal => casper_dao_contracts::voting::voting::VotingType::Formal,
-            VotingType::Informal => casper_dao_contracts::voting::voting::VotingType::Informal,
+            VotingType::Formal => {
+                casper_dao_contracts::voting::voting_state_machine::VotingType::Formal
+            }
+            VotingType::Informal => {
+                casper_dao_contracts::voting::voting_state_machine::VotingType::Informal
+            }
         }
     }
 }

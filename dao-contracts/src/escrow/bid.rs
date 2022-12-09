@@ -5,7 +5,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::bid::types::{BidId, JobOfferId};
+use crate::escrow::types::{BidId, JobOfferId};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub enum BidAuctionTime {
