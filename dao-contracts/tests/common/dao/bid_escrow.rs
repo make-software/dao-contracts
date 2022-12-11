@@ -39,12 +39,12 @@ impl DaoWorld {
             None => self
                 .bid_escrow
                 .as_account(bidder)
-                .submit_bid(0, timeframe, *budget, *stake, onboarding, None),
+                .submit_bid(offer_id, timeframe, *budget, *stake, onboarding, None),
             Some(cspr_stake) => self
                 .bid_escrow
                 .as_account(bidder)
                 .submit_bid_with_cspr_amount(
-                    0,
+                    offer_id,
                     timeframe,
                     *budget,
                     *stake,

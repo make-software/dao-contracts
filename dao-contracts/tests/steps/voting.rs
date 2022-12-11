@@ -21,7 +21,7 @@ fn voting_setup(world: &mut DaoWorld, step: &Step, creator: Account) {
     }
 }
 
-#[when(expr = "voters vote in {contract}'s {voting_type} voting with id {int}")]
+#[when(expr = "voters vote in {contract} {voting_type} voting with id {int}")]
 fn voting(
     world: &mut DaoWorld,
     step: &Step,
@@ -81,7 +81,7 @@ fn assert_formal_voting_starts(world: &mut DaoWorld, voting_id: u32, contract: C
     assert!(voting_exists);
 }
 
-#[then(expr = "votes in {contract}'s {voting_type} voting with id {int} fail")]
+#[then(expr = "votes in {contract}'s     {voting_type} voting with id {int} fail")]
 fn assert_vote_fails(
     world: &mut DaoWorld,
     step: &Step,

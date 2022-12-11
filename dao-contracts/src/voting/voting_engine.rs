@@ -23,9 +23,7 @@ use self::{
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
-    voting::{
-        validation::{finish_formal_voting_validator, vote_validator},
-    },
+    voting::validation::{finish_formal_voting_validator, vote_validator},
     Configuration,
     ReputationContractCaller,
     ReputationContractInterface,
@@ -579,7 +577,7 @@ impl VotingEngine {
         !self.va_token().balance_of(address).is_zero()
     }
 
-    fn va_token(&self) -> VaNftContractCaller {
+    pub fn va_token(&self) -> VaNftContractCaller {
         VaNftContractCaller::at(self.va_token_address())
     }
 
@@ -662,7 +660,10 @@ impl VotingEngine {
     fn cancel_ballot(&mut self, mut voting: VotingStateMachine, voter: Address) {
         let voting_id = voting.voting_id();
         let ballots_key = (voting_id, voter);
-        let mut ballot = self.ballots.get(&ballots_key).unwrap_or_revert();
+        let mut ballot = self
+            .ballots
+            .get(&ballots_key)
+            .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         // Unstake reputation.
         ReputationContractCaller::at(self.reputation_token_address())

@@ -12,6 +12,7 @@ pub enum Action {
     ChangeOwner,
 }
 
+// TODO: Move to admin.
 impl Action {
     pub(crate) fn get_entry_point(&self) -> String {
         match self {

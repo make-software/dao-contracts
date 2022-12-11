@@ -8,7 +8,7 @@ Feature: VA that is subject of the slashing vote, can't participate in the votin
     When VA2 starts voting with the following config
         | voting_contract       | stake | arg1  | arg2 |
         | SlashingVoter         | 500   | VA1   | 0.5  |
-    And voters vote in SlashingVoter's informal voting with id 0
+    And voters vote in SlashingVoter informal voting with id 0
         | account | stake | vote | 
         | VA1     | 500   | no   |
       # | VA2     | 500   | yes  | - automatically voted by the system

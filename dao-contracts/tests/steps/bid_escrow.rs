@@ -31,26 +31,28 @@ fn post_job_offer(
 }
 
 #[when(
-    expr = "{account} posted the Bid with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} REP stake"
+    expr = "{account} posted the Bid for JobOffer {int} with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} REP stake"
 )]
 fn submit_bid_internal(
     w: &mut DaoWorld,
     worker: Account,
+    job_offer_id: u32,
     timeframe: BlockTime,
     time_unit: TimeUnit,
     budget: Balance,
     stake: Balance,
 ) {
     let timeframe = helpers::to_seconds(timeframe, time_unit);
-    w.post_bid(0, worker, timeframe, budget, stake, false, None);
+    w.post_bid(job_offer_id, worker, timeframe, budget, stake, false, None);
 }
 
 #[when(
-    expr = "{account} posted the Bid with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} CSPR stake {word} onboarding"
+    expr = "{account} posted the Bid for JobOffer {int} with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} CSPR stake {word} onboarding"
 )]
 fn submit_bid_external(
     w: &mut DaoWorld,
     worker: Account,
+    job_offer_id: u32,
     timeframe: BlockTime,
     time_unit: TimeUnit,
     budget: Balance,
@@ -66,7 +68,7 @@ fn submit_bid_external(
     };
     let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_bid(
-        0,
+        job_offer_id,
         worker,
         timeframe,
         budget,

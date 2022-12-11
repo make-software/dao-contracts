@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
@@ -58,7 +59,16 @@ pub trait RepoVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+
+    // Whitelisting set.
+    fn change_ownership(&mut self, owner: Address);
+    fn add_to_whitelist(&mut self, address: Address);
+    fn remove_from_whitelist(&mut self, address: Address);
+    fn get_owner(&self) -> Option<Address>;
+    fn is_whitelisted(&self, address: Address) -> bool;
+
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 /// RepoVoterContract
@@ -69,15 +79,29 @@ pub trait RepoVoterContractInterface {
 #[derive(Instance)]
 pub struct RepoVoterContract {
     voting: VotingEngine,
+    access_control: AccessControl,
 }
 
 impl RepoVoterContractInterface for RepoVoterContract {
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
         }
+
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
+        }
+    }
+
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
+        self.voting.init(variable_repo, reputation_token, va_token);
+        self.access_control.init(caller());
     }
 
     fn create_voting(
@@ -141,7 +165,8 @@ impl RepoVoterContractInterface for RepoVoterContract {
         self.voting.finish_voting(voting_id);
     }
 
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
         self.voting.slash_voter(voter, voting_id);
     }
 }

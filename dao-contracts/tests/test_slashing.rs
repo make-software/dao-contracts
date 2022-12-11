@@ -5,8 +5,6 @@ use common::DaoWorld;
 use cucumber::World as _;
 
 fn main() {
-    // let runner = DaoWorld::cucumber().run_and_exit("tests/features/slashing/");
-    let runner = DaoWorld::cucumber()
-        .run_and_exit("tests/features/slashing/slashing_voter_contract.feature");
+    let runner = DaoWorld::cucumber().run_and_exit("tests/features/slashing/");
     futures::executor::block_on(runner);
 }

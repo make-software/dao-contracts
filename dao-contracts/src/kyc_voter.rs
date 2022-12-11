@@ -104,6 +104,7 @@ impl KycVoterContractInterface for KycVoterContract {
         to self.voting {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
         }
 
         to self.access_control {
@@ -177,10 +178,6 @@ impl KycVoterContractInterface for KycVoterContract {
             let address = self.extract_address_from_args(&voting);
             self.kyc.clear_voting(&address);
         }
-    }
-
-    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
-        self.voting.voting_exists(voting_id, voting_type)
     }
 
     fn get_ballot(

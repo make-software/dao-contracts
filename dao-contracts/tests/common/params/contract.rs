@@ -5,13 +5,17 @@ use cucumber::Parameter;
 #[derive(Clone, Copy, Debug, Parameter, PartialEq, Eq, PartialOrd, Ord)]
 #[param(name = "contract", regex = ".+")]
 pub enum Contract {
+    Admin,
     KycToken,
-    KycVoter,
     VaToken,
     ReputationToken,
-    BidEscrow,
     VariableRepository,
+    KycVoter,
+    RepoVoter,
     SlashingVoter,
+    SimpleVoter,
+    ReputationVoter,
+    BidEscrow,
 }
 
 impl FromStr for Contract {
@@ -19,13 +23,17 @@ impl FromStr for Contract {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let contract = match s {
+            "Admin" => Self::Admin,
             "KycToken" => Self::KycToken,
-            "KycVoter" => Self::KycVoter,
             "VaToken" => Self::VaToken,
             "ReputationToken" => Self::ReputationToken,
-            "BidEscrow" => Self::BidEscrow,
             "VariableRepository" => Self::VariableRepository,
+            "KycVoter" => Self::KycVoter,
+            "RepoVoter" => Self::RepoVoter,
             "SlashingVoter" => Self::SlashingVoter,
+            "SimpleVoter" => Self::SimpleVoter,
+            "ReputationVoter" => Self::ReputationVoter,
+            "BidEscrow" => Self::BidEscrow,
             invalid => return Err(format!("Unknown contract {}", invalid)),
         };
         Ok(contract)

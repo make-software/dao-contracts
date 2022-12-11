@@ -1,9 +1,6 @@
-use casper_dao_utils::{Error};
+use casper_dao_utils::Error;
 
-use crate::{
-    rules::validation::Validation,
-    voting::voting_state_machine::{VotingState},
-};
+use crate::{rules::validation::Validation, voting::voting_state_machine::VotingState};
 
 pub struct AfterFormalVoting {
     pub state_in_time: VotingState,

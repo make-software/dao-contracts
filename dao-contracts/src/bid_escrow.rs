@@ -161,6 +161,7 @@ pub trait BidEscrowContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine)
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
 
@@ -182,6 +183,9 @@ pub trait BidEscrowContractInterface {
     fn remove_from_whitelist(&mut self, address: Address);
     fn get_owner(&self) -> Option<Address>;
     fn is_whitelisted(&self, address: Address) -> bool;
+
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 #[derive(Instance)]
@@ -205,6 +209,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         to self.voting {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
         }
 
         to self.access_control {
@@ -690,23 +695,17 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::CannotCancelBidOnCompletedJobOffer);
         }
 
-        if get_block_time() < bid.timestamp + job_offer.configuration.va_bid_acceptance_timeout() {
-            revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
-        }
-
         bid.cancel();
 
-        match bid.cspr_stake {
-            None => {
-                self.reputation_token().unstake_bid(bid.worker, bid_id);
-            }
-            Some(cspr_stake) => {
-                self.withdraw(bid.worker, cspr_stake);
-            }
-        }
+        self.reputation_token().unstake_bid(bid.worker, bid_id);
 
         // TODO: Implement Event
         self.bids.set(&bid_id, bid);
+    }
+
+    fn slash_voter(&mut self, _voter: Address, _voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+        unimplemented!()
     }
 }
 
