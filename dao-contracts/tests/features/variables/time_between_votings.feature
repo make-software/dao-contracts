@@ -9,8 +9,10 @@ Feature: TimeBetweenInformalAndFormalVoting Variable
       | VA1              | 0            | 1000         | 0          | true     | true  |
       | VA2              | 0            | 1000         | 0          | true     | true  |
     And following configuration
-      | key                                     | value        |
-      | TimeBetweenInformalAndFormalVoting      | 86400        |
+      | key                                     | value    |
+      | TimeBetweenInformalAndFormalVoting      | 86400    |
+      | VotingStartAfterJobSubmission           | 0        |
+
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And JobPoster picked the Bid of InternalWorker

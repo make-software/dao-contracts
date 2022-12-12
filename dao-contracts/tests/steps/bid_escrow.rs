@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
-use casper_types::bytesrepr::FromBytes;
 use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
