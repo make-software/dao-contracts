@@ -1,6 +1,6 @@
 use std::{fmt::Debug, str::FromStr};
 
-use casper_dao_utils::BlockTime;
+use casper_dao_utils::{consts::*, BlockTime};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U512,
@@ -14,18 +14,16 @@ pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
         "true" => true.to_bytes().unwrap().into(),
         "false" => false.to_bytes().unwrap().into(),
         _ => match key {
-            "PostJobDosFee" | "GovernancePaymentRatio" => {
-                let value = U512::from_dec_str(value).unwrap();
-                Bytes::from(value.to_bytes().unwrap())
-            }
-            "DefaultPolicingRate"
-            | "ReputationConversionRate"
-            | "GovernanceInformalQuorumRatio"
-            | "GovernanceFormalQuorumRatio"
-            | "InformalQuorumRatio"
-            | "FormalQuorumRatio"
-            | "DefaultReputationSlash"
-            | "VotingClearnessDelta" => {
+            POST_JOB_DOS_FEE
+            | GOVERNANCE_PAYMENT_RATIO
+            | DEFAULT_POLICING_RATE
+            | REPUTATION_CONVERSION_RATE
+            | GOVERNANCE_INFORMAL_QUORUM_RATIO
+            | GOVERNANCE_FORMAL_QUORUM_RATIO
+            | INFORMAL_QUORUM_RATIO
+            | FORMAL_QUORUM_RATIO
+            | DEFAULT_REPUTATION_SLASH
+            | VOTING_CLEARNESS_DELTA => {
                 let value = U512::from_dec_str(value).unwrap();
                 Bytes::from(value.to_bytes().unwrap())
             }

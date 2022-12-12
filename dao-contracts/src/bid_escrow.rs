@@ -34,6 +34,7 @@ use crate::{
         VotingEngine,
         VotingId,
     },
+    Configuration,
     ConfigurationBuilder,
     ReputationContractCaller,
     ReputationContractInterface,
@@ -214,14 +215,15 @@ impl BidEscrowContractInterface for BidEscrowContract {
         if !self.kyc.is_kycd(&job_poster) {
             revert(Error::JobPosterNotKycd);
         }
-
-        let dos_fee = self.deposit_dos_fee(purse);
-
-        let job_offer_id = self.next_job_offer_id();
         let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
-        );
+        )
+        .build();
+
+        let dos_fee = self.deposit_dos_fee(purse, &voting_configuration);
+
+        let job_offer_id = self.next_job_offer_id();
         let job_offer = JobOffer::new(
             job_offer_id,
             job_poster,
@@ -229,7 +231,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             max_budget,
             dos_fee,
             get_block_time(),
-            voting_configuration.build(),
+            voting_configuration,
         );
         self.job_offers.set(&job_offer_id, job_offer);
 
@@ -702,19 +704,24 @@ impl BidEscrowContract {
     }
 
     /// Deposits a dos fee into the contract, checking the constraints
-    fn deposit_dos_fee(&mut self, cargo_purse: URef) -> U512 {
+    fn deposit_dos_fee(&mut self, cargo_purse: URef, configuration: &Configuration) -> U512 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
-        if amount < self.minimum_dos_fee() {
-            revert(Error::DosFeeTooLow);
-        }
+
+        self.validate_dos_fee(amount, configuration);
+
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
         amount
     }
 
-    fn minimum_dos_fee(&mut self) -> U512 {
-        // TODO: Implement using external contract and Governance Variable
-        U512::from(100_000_000_000u64)
+    fn validate_dos_fee(&self, dos_fee: U512, configuration: &Configuration) {
+        let fiat_conversion_rate_address = configuration.fiat_conversion_rate_address();
+
+        let fiat_value =
+            casper_dao_utils::cspr_rate::convert_to_fiat(dos_fee, fiat_conversion_rate_address);
+        if configuration.is_post_job_dos_fee_too_low(fiat_value) {
+            revert(Error::DosFeeTooLow);
+        };
     }
 
     fn withdraw(&mut self, address: Address, amount: U512) {

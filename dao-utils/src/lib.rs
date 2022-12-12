@@ -9,6 +9,7 @@ pub mod instance;
 mod parts;
 pub use casper_dao_macros;
 pub mod conversions;
+pub mod cspr_rate;
 pub mod math;
 
 #[cfg(feature = "test-support")]
