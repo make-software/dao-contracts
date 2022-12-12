@@ -11,15 +11,12 @@ pub struct VoteInTime {
 
 impl VotingValidation for VoteInTime {
     fn validate(&self, voting_state_machine: &VotingStateMachine) -> Result<(), Error> {
-        if voting_state_machine.state_in_time(self.block_time) == VotingState::BetweenVotings {
-            return Err(Error::VotingDuringTimeBetweenVotingsNotAllowed);
+        match voting_state_machine.state_in_time(self.block_time) {
+            VotingState::Created => Err(Error::InformalVotingNotStarted),
+            VotingState::BetweenVotings => Err(Error::VotingDuringTimeBetweenVotingsNotAllowed),
+            VotingState::Finished => Err(Error::VoteOnCompletedVotingNotAllowed),
+            _ => Ok(())
         }
-
-        if voting_state_machine.state_in_time(self.block_time) == VotingState::Finished {
-            return Err(Error::VoteOnCompletedVotingNotAllowed);
-        }
-
-        Ok(())
     }
 }
 

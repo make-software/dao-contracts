@@ -16,6 +16,7 @@ Feature: External Worker who wants to become a VA submits job
     And following configuration
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |
+      | VotingStartAfterJobSubmission          | 0             |
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And 8 days passed

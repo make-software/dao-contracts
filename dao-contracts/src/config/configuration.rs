@@ -110,9 +110,12 @@ impl Configuration {
         self.dao_configuration.voting_clearness_delta
     }
 
-    pub fn voting_start_after_job_submition(&self) -> BlockTime {
-        self.dao_configuration
-            .voting_start_after_job_worker_submission
+    pub fn voting_delay(&self) -> BlockTime {
+        if self.voting_configuration.is_bid_escrow {
+            self.dao_configuration.voting_start_after_job_worker_submission
+        } else {
+            0
+        }
     }
 
     pub fn is_post_job_dos_fee_too_low(&self, fiat_value: U512) -> bool {
@@ -149,6 +152,10 @@ impl Configuration {
 
     pub fn only_va_can_create(&self) -> bool {
         self.voting_configuration.only_va_can_create
+    }
+
+    pub fn is_bid_escrow(&self) -> bool {
+        self.voting_configuration.is_bid_escrow
     }
 
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {

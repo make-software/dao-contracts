@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
+use casper_types::bytesrepr::FromBytes;
 use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
@@ -26,6 +27,10 @@ fn post_job_offer(
     maximum_budget: Balance,
     dos_fee: Balance,
 ) {
+    let delay = w.variable_repository.get("VotingStartAfterJobSubmission".to_string()).unwrap();
+    
+    
+    dbg!(<u64 as FromBytes>::from_bytes(&delay).unwrap().0);
     let timeframe = helpers::to_seconds(timeframe, time_unit);
     let _ = w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }

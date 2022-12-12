@@ -19,7 +19,7 @@ Feature: TimeBetweenInformalAndFormalVoting Variable
       When InternalWorker submits the JobProof
       And votes are
         | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
+      # | InternalWorker   | Yes  | 100   | - automatically voted by the system
         | VA1              | Yes  | 500   |
         | VA2              | Yes  | 500   |
       And Informal voting ends

@@ -407,12 +407,17 @@ impl VotingStateMachine {
     }
 
     pub fn state_in_time(&self, block_time: BlockTime) -> VotingState {
-        let informal_voting_end = self.start_time + self.informal_voting_time();
+        let voting_delay = self.configuration.voting_delay();
+
+        let informal_voting_start = self.start_time + voting_delay;
+        let informal_voting_end = informal_voting_start + self.informal_voting_time();
         let between_voting_end =
             informal_voting_end + self.configuration.time_between_informal_and_formal_voting();
         let voting_end = between_voting_end + self.formal_voting_time();
 
-        if block_time <= informal_voting_end {
+        if block_time < informal_voting_start {
+            VotingState::Created
+        } else if block_time >= informal_voting_start && block_time <= informal_voting_end {
             VotingState::Informal
         } else if block_time > informal_voting_end && block_time <= between_voting_end {
             VotingState::BetweenVotings
