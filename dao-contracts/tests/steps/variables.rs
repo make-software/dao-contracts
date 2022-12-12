@@ -19,6 +19,5 @@ fn bid_is_posted(w: &mut DaoWorld, account: Account, is_posted: String) {
 
 #[given(expr = "the price of USDT is {balance} CSPR")]
 fn set_cspr_rate(world: &mut DaoWorld, rate: Balance) {
-    dbg!(rate);
     let _ = world.rate_provider.set_rate(*rate);
 }

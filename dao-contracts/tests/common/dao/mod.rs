@@ -24,7 +24,8 @@ mod reputation;
 mod va;
 mod voting;
 
-const DEFAULT_CSPR_USD_RATE: u64 = 2_000_000_000;
+// 1CSPR ~= 0.02924$
+const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
 
 #[allow(dead_code)]
 pub fn setup_dao() -> (
@@ -40,7 +41,6 @@ pub fn setup_dao() -> (
 ) {
     let env = TestEnv::new();
     let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
-    dbg!(U512::from(DEFAULT_CSPR_USD_RATE));
     let mut variable_repo = VariableRepositoryContractTest::new(&env);
     let mut reputation_token = ReputationContractTest::new(&env);
 
