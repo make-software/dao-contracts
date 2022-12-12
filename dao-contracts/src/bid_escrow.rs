@@ -250,6 +250,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )
+        .bid_escrow()
         .build();
 
         let dos_fee = self.deposit_dos_fee(purse, &voting_configuration);
@@ -830,7 +831,7 @@ impl BidEscrowContract {
         let configuration = self.get_job_offer_configuration(job);
         
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
-        let governance_wallet_payment = configuration.apply_governance_payment_ratio_to(payment);
+        let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 
         payment - governance_wallet_payment

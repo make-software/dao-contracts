@@ -362,12 +362,12 @@ impl VotingStateMachine {
 
     /// Get the voting's formal voting quorum.
     pub fn formal_voting_quorum(&self) -> u32 {
-        self.configuration.bid_escrow_formal_voting_quorum()
+        self.configuration.formal_voting_quorum()
     }
 
     /// Get the voting's informal voting quorum.
     pub fn informal_voting_quorum(&self) -> u32 {
-        self.configuration.bid_escrow_informal_voting_quorum()
+        self.configuration.informal_voting_quorum()
     }
 
     pub fn start_time(&self) -> u64 {

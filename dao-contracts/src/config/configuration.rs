@@ -35,84 +35,52 @@ impl Configuration {
         self.voting_configuration.double_time_between_votings = true
     }
 
-    pub fn reputation_conversion_rate(&self) -> U512 {
-        self.dao_configuration.reputation_conversion_rate
-    }
-
     pub fn fiat_conversion_rate_address(&self) -> Address {
         self.dao_configuration.fiat_conversion_rate_address
     }
 
-    pub fn bid_escrow_informal_quorum_ratio(&self) -> U512 {
-        self.dao_configuration.bid_escrow_informal_quorum_ratio
-    }
-
-    pub fn bid_escrow_formal_quorum_ratio(&self) -> U512 {
-        self.dao_configuration.bid_escrow_formal_quorum_ratio
-    }
-
-    pub fn bid_escrow_informal_voting_time(&self) -> BlockTime {
-        self.dao_configuration.bid_escrow_informal_voting_time
-    }
-
-    pub fn bid_escrow_formal_voting_time(&self) -> BlockTime {
-        self.dao_configuration.bid_escrow_formal_voting_time
-    }
-
-    pub fn informal_quorum_ratio(&self) -> U512 {
-        self.dao_configuration.informal_quorum_ratio
-    }
-
-    pub fn formal_quorum_ratio(&self) -> U512 {
-        self.dao_configuration.formal_quorum_ratio
-    }
-
-    pub fn bid_escrow_formal_voting_quorum(&self) -> u32 {
-        // TODO: make the math not fail and reusable
-        self.bid_escrow_formal_quorum_ratio()
-            .checked_mul(self.total_onboarded())
-            .unwrap()
-            .checked_div(U512::from(1000))
-            .unwrap()
-            .as_u32()
-    }
-
-    pub fn bid_escrow_informal_voting_quorum(&self) -> u32 {
-        // TODO: make the math not fail and reusable
-        self.bid_escrow_informal_quorum_ratio()
-            .checked_mul(self.total_onboarded())
-            .unwrap()
-            .checked_div(U512::from(1000))
-            .unwrap()
-            .as_u32()
-    }
-
     pub fn formal_voting_quorum(&self) -> u32 {
+        let ratio = match self.voting_configuration.is_bid_escrow {
+            true => self.dao_configuration.bid_escrow_formal_quorum_ratio,
+            false => self.dao_configuration.formal_quorum_ratio,
+        };
+
         // TODO: make the math not fail and reusable
-        self.formal_quorum_ratio()
+        ratio
             .checked_mul(self.total_onboarded())
             .unwrap()
-            .checked_div(U512::from(1000))
+            .checked_div(1_000.into())
             .unwrap()
             .as_u32()
     }
 
     pub fn informal_voting_quorum(&self) -> u32 {
+        let ratio = match self.voting_configuration.is_bid_escrow {
+            true => self.dao_configuration.bid_escrow_informal_quorum_ratio,
+            false => self.dao_configuration.informal_quorum_ratio,
+        };
+
         // TODO: make the math not fail and reusable
-        self.informal_quorum_ratio()
+        ratio
             .checked_mul(self.total_onboarded())
             .unwrap()
-            .checked_div(U512::from(1000))
+            .checked_div(1_000.into())
             .unwrap()
             .as_u32()
     }
 
     pub fn informal_voting_time(&self) -> BlockTime {
-        self.dao_configuration.informal_voting_time
+        match self.voting_configuration.is_bid_escrow {
+            true => self.dao_configuration.bid_escrow_informal_voting_time,
+            false => self.dao_configuration.informal_voting_time,
+        }
     }
 
     pub fn formal_voting_time(&self) -> BlockTime {
-        self.dao_configuration.formal_voting_time
+        match self.voting_configuration.is_bid_escrow {
+            true => self.dao_configuration.bid_escrow_formal_voting_time,
+            false => self.dao_configuration.formal_voting_time,
+        }
     }
 
     pub fn informal_stake_reputation(&self) -> bool {
@@ -147,16 +115,8 @@ impl Configuration {
             .voting_start_after_job_worker_submission
     }
 
-    pub fn bid_escrow_payment_ratio(&self) -> U512 {
-        self.dao_configuration.bid_escrow_payment_ratio
-    }
-
-    pub fn post_job_dos_fee(&self) -> U512 {
-        self.dao_configuration.post_job_dos_fee
-    }
-
     pub fn is_post_job_dos_fee_too_low(&self, fiat_value: U512) -> bool {
-        self.post_job_dos_fee() > fiat_value.saturating_mul(1_000.into())
+        self.dao_configuration.post_job_dos_fee > fiat_value.saturating_mul(1_000.into())
     }
 
     pub fn internal_auction_time(&self) -> BlockTime {
@@ -165,10 +125,6 @@ impl Configuration {
 
     pub fn public_auction_time(&self) -> BlockTime {
         self.dao_configuration.public_auction_time
-    }
-
-    pub fn default_policing_rate(&self) -> U512 {
-        self.dao_configuration.default_policing_rate
     }
 
     pub fn va_bid_acceptance_timeout(&self) -> BlockTime {
@@ -196,14 +152,14 @@ impl Configuration {
     }
 
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.default_policing_rate()).unwrap_or_revert()
+        math::promils_of_u512(amount, self.dao_configuration.default_policing_rate).unwrap_or_revert()
     }
 
-    pub fn apply_governance_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.bid_escrow_payment_ratio()).unwrap_or_revert()
+    pub fn apply_bid_escrow_payment_ratio_to(&self, amount: U512) -> U512 {
+        math::promils_of_u512(amount, self.dao_configuration.bid_escrow_payment_ratio).unwrap_or_revert()
     }
 
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.reputation_conversion_rate()).unwrap_or_revert()
+        math::promils_of_u512(amount, self.dao_configuration.reputation_conversion_rate).unwrap_or_revert()
     }
 }

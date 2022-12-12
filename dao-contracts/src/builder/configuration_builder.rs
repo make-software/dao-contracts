@@ -17,7 +17,8 @@ pub struct ConfigurationBuilder {
 }
 
 impl ConfigurationBuilder {
-    pub fn new(variable_repo_address: Address, va_token_address: Address) -> ConfigurationBuilder {
+
+    pub fn new(variable_repo_address: Address, va_token_address: Address) -> Self {
         let total_onboarded = VaNftContractCaller::at(va_token_address).total_supply();
         let variables = VariableRepositoryContractCaller::at(variable_repo_address).all_variables();
         use consts::*;
@@ -100,6 +101,7 @@ impl ConfigurationBuilder {
                     contract_calls: Vec::new(),
                     only_va_can_create: true,
                     double_time_between_votings: false,
+                    is_bid_escrow: false,
                 },
                 total_onboarded,
             ),
@@ -123,16 +125,16 @@ impl ConfigurationBuilder {
         result
     }
 
-    pub fn contract_call(self, contract_call: ContractCall) -> ConfigurationBuilder {
+    pub fn contract_call(self, contract_call: ContractCall) -> Self {
         self.contract_calls(vec![contract_call])
     }
 
-    pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> ConfigurationBuilder {
+    pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> Self {
         self.configuration.voting_configuration.contract_calls = contract_calls;
         self
     }
 
-    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> ConfigurationBuilder {
+    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> Self {
         self.configuration.voting_configuration.only_va_can_create = only_va_can_create;
         self
     }
