@@ -41,7 +41,6 @@ use crate::{
     ReputationContractInterface,
     VaNftContractCaller,
     VaNftContractInterface,
-    VariableRepositoryContractCaller,
 };
 
 #[casper_contract_interface]
@@ -796,7 +795,7 @@ impl BidEscrowContract {
 
     fn redistribute_cspr_external_worker(&mut self, job: &Job) {
         let total_left = self.redistribute_to_governance(job, job.payment());
-        let config = self.job_offers.get(&job.job_offer_id()).unwrap().configuration;
+        let config = self.get_job_offer_configuration(job);
         let to_redistribute = config.apply_default_policing_rate_to(total_left);
         let to_worker = total_left - to_redistribute;
 
@@ -828,8 +827,7 @@ impl BidEscrowContract {
     }
 
     fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
-        let job_offer = self.job_offers.get(&job.job_offer_id()).unwrap();
-        let configuration = job_offer.configuration;
+        let configuration = self.get_job_offer_configuration(job);
         
         let governance_wallet: Address = configuration.governance_wallet_address();
         let governance_wallet_payment = configuration.apply_governance_payment_ratio_to(payment);
@@ -890,12 +888,10 @@ impl BidEscrowContract {
     }
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
-        let reputation_to_mint =
-            VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
-                .reputation_to_mint(job.payment());
-        let reputation_to_redistribute =
-            VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
-                .reputation_to_redistribute(reputation_to_mint);
+        let configuration = self.get_job_offer_configuration(job);
+        
+        let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
+        let reputation_to_redistribute = configuration.apply_default_policing_rate_to(reputation_to_mint);
 
         // Worker
         ReputationContractCaller::at(self.voting.reputation_token_address()).mint(
@@ -908,12 +904,9 @@ impl BidEscrowContract {
     }
 
     fn mint_and_redistribute_reputation_for_external_worker(&mut self, job: &Job) {
-        let var_repo = self.variable_repository();
-
-        let payment_reputation_to_mint = var_repo.reputation_to_mint(job.payment());
-
-        let total = VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
-            .reputation_to_redistribute(payment_reputation_to_mint);
+        let configuration = self.get_job_offer_configuration(job);
+        let payment_reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
+        let total = configuration.apply_default_policing_rate_to(payment_reputation_to_mint);
         self.mint_reputation_for_voters(job, total);
     }
 
@@ -936,10 +929,6 @@ impl BidEscrowContract {
 
     fn reputation_token(&self) -> ReputationContractCaller {
         ReputationContractCaller::at(self.voting.reputation_token_address())
-    }
-
-    fn variable_repository(&self) -> VariableRepositoryContractCaller {
-        VariableRepositoryContractCaller::at(self.voting.variable_repo_address())
     }
 
     fn va_token(&self) -> VaNftContractCaller {
@@ -985,10 +974,15 @@ impl BidEscrowContract {
     }
 
     fn burn_external_worker_reputation(&self, job: &Job) {
-        let config = self.job_offers.get(&job.job_offer_id()).unwrap().configuration;
+        let config = self.get_job_offer_configuration(job);
 
         let stake = config.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake());
         self.reputation_token().burn(job.worker(), stake);
+    }
+
+    fn get_job_offer_configuration(&self, job: &Job) -> Configuration {
+        let job_offer = self.job_offers.get(&job.job_offer_id()).unwrap_or_revert();
+        job_offer.configuration
     }
 }
 
