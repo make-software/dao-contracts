@@ -829,7 +829,7 @@ impl BidEscrowContract {
     fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
         let configuration = self.get_job_offer_configuration(job);
         
-        let governance_wallet: Address = configuration.governance_wallet_address();
+        let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_governance_payment_ratio_to(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
 

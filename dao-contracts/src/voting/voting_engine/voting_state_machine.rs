@@ -222,8 +222,8 @@ impl VotingStateMachine {
 
     pub fn get_quorum(&self) -> u32 {
         match self.voting_type() {
-            VotingType::Informal => self.configuration.governance_informal_voting_quorum(),
-            VotingType::Formal => self.configuration.governance_formal_voting_quorum(),
+            VotingType::Informal => self.configuration.bid_escrow_informal_voting_quorum(),
+            VotingType::Formal => self.configuration.bid_escrow_formal_voting_quorum(),
         }
     }
 
@@ -362,12 +362,12 @@ impl VotingStateMachine {
 
     /// Get the voting's formal voting quorum.
     pub fn formal_voting_quorum(&self) -> u32 {
-        self.configuration.governance_formal_voting_quorum()
+        self.configuration.bid_escrow_formal_voting_quorum()
     }
 
     /// Get the voting's informal voting quorum.
     pub fn informal_voting_quorum(&self) -> u32 {
-        self.configuration.governance_informal_voting_quorum()
+        self.configuration.bid_escrow_informal_voting_quorum()
     }
 
     pub fn start_time(&self) -> u64 {

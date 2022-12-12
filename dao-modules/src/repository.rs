@@ -139,12 +139,12 @@ impl Default for RepositoryDefaults {
             Address::from(ContractPackageHash::from([0u8; 32])),
         );
         items.push(consts::FORUM_KYC_REQUIRED, true);
-        items.push(consts::GOVERNANCE_INFORMAL_QUORUM_RATIO, U512::from(500));
-        items.push(consts::GOVERNANCE_FORMAL_QUORUM_RATIO, U512::from(500));
+        items.push(consts::BID_ESCROW_INFORMAL_QUORUM_RATIO, U512::from(500));
+        items.push(consts::BID_ESCROW_FORMAL_QUORUM_RATIO, U512::from(500));
         items.push(consts::INFORMAL_QUORUM_RATIO, U512::from(500));
         items.push(consts::FORMAL_QUORUM_RATIO, U512::from(500));
-        items.push(consts::GOVERNANCE_INFORMAL_VOTING_TIME, 432000u64);
-        items.push(consts::GOVERNANCE_FORMAL_VOTING_TIME, 432000u64);
+        items.push(consts::BID_ESCROW_INFORMAL_VOTING_TIME, 432000u64);
+        items.push(consts::BID_ESCROW_FORMAL_VOTING_TIME, 432000u64);
         items.push(consts::INFORMAL_VOTING_TIME, 432000u64);
         items.push(consts::FORMAL_VOTING_TIME, 432000u64);
         items.push(consts::INFORMAL_STAKE_REPUTATION, true);
@@ -153,13 +153,13 @@ impl Default for RepositoryDefaults {
         items.push(consts::VA_CAN_BID_ON_PUBLIC_AUCTION, false);
         items.push(consts::DISTRIBUTE_PAYMENT_TO_NON_VOTERS, true);
         items.push(
-            consts::GOVERNANCE_WALLET_ADDRESS,
+            consts::BID_ESCROW_WALLET_ADDRESS,
             Address::from(ContractPackageHash::from([0u8; 32])),
         );
         items.push(consts::DEFAULT_REPUTATION_SLASH, U512::from(100));
         items.push(consts::VOTING_CLEARNESS_DELTA, U512::from(8));
         items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);
-        items.push(consts::GOVERNANCE_PAYMENT_RATIO, U512::from(100));
+        items.push(consts::BID_ESCROW_PAYMENT_RATIO, U512::from(100));
         items
     }
 }

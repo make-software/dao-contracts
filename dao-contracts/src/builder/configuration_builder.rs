@@ -37,20 +37,20 @@ impl ConfigurationBuilder {
                         &variables,
                     ),
                     forum_kyc_required: Self::get_variable(FORUM_KYC_REQUIRED, &variables),
-                    governance_informal_quorum_ratio: Self::get_variable(
-                        GOVERNANCE_INFORMAL_QUORUM_RATIO,
+                    bid_escrow_informal_quorum_ratio: Self::get_variable(
+                        BID_ESCROW_INFORMAL_QUORUM_RATIO,
                         &variables,
                     ),
-                    governance_formal_quorum_ratio: Self::get_variable(
-                        GOVERNANCE_FORMAL_QUORUM_RATIO,
+                    bid_escrow_formal_quorum_ratio: Self::get_variable(
+                        BID_ESCROW_FORMAL_QUORUM_RATIO,
                         &variables,
                     ),
-                    governance_informal_voting_time: Self::get_variable(
-                        GOVERNANCE_INFORMAL_VOTING_TIME,
+                    bid_escrow_informal_voting_time: Self::get_variable(
+                        BID_ESCROW_INFORMAL_VOTING_TIME,
                         &variables,
                     ),
-                    governance_formal_voting_time: Self::get_variable(
-                        GOVERNANCE_FORMAL_VOTING_TIME,
+                    bid_escrow_formal_voting_time: Self::get_variable(
+                        BID_ESCROW_FORMAL_VOTING_TIME,
                         &variables,
                     ),
                     informal_voting_time: Self::get_variable(INFORMAL_VOTING_TIME, &variables),
@@ -75,8 +75,8 @@ impl ConfigurationBuilder {
                         DISTRIBUTE_PAYMENT_TO_NON_VOTERS,
                         &variables,
                     ),
-                    governance_wallet_address: Self::get_variable(
-                        GOVERNANCE_WALLET_ADDRESS,
+                    bid_escrow_wallet_address: Self::get_variable(
+                        BID_ESCROW_WALLET_ADDRESS,
                         &variables,
                     ),
                     default_reputation_slash: Self::get_variable(
@@ -90,8 +90,8 @@ impl ConfigurationBuilder {
                     ),
                     informal_quorum_ratio: Self::get_variable(INFORMAL_QUORUM_RATIO, &variables),
                     formal_quorum_ratio: Self::get_variable(FORMAL_QUORUM_RATIO, &variables),
-                    governance_payment_ratio: Self::get_variable(
-                        GOVERNANCE_PAYMENT_RATIO,
+                    bid_escrow_payment_ratio: Self::get_variable(
+                        BID_ESCROW_PAYMENT_RATIO,
                         &variables,
                     ),
                 },

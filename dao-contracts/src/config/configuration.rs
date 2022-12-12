@@ -43,20 +43,20 @@ impl Configuration {
         self.dao_configuration.fiat_conversion_rate_address
     }
 
-    pub fn governance_informal_quorum_ratio(&self) -> U512 {
-        self.dao_configuration.governance_informal_quorum_ratio
+    pub fn bid_escrow_informal_quorum_ratio(&self) -> U512 {
+        self.dao_configuration.bid_escrow_informal_quorum_ratio
     }
 
-    pub fn governance_formal_quorum_ratio(&self) -> U512 {
-        self.dao_configuration.governance_formal_quorum_ratio
+    pub fn bid_escrow_formal_quorum_ratio(&self) -> U512 {
+        self.dao_configuration.bid_escrow_formal_quorum_ratio
     }
 
-    pub fn governance_informal_voting_time(&self) -> BlockTime {
-        self.dao_configuration.governance_informal_voting_time
+    pub fn bid_escrow_informal_voting_time(&self) -> BlockTime {
+        self.dao_configuration.bid_escrow_informal_voting_time
     }
 
-    pub fn governance_formal_voting_time(&self) -> BlockTime {
-        self.dao_configuration.governance_formal_voting_time
+    pub fn bid_escrow_formal_voting_time(&self) -> BlockTime {
+        self.dao_configuration.bid_escrow_formal_voting_time
     }
 
     pub fn informal_quorum_ratio(&self) -> U512 {
@@ -67,9 +67,9 @@ impl Configuration {
         self.dao_configuration.formal_quorum_ratio
     }
 
-    pub fn governance_formal_voting_quorum(&self) -> u32 {
+    pub fn bid_escrow_formal_voting_quorum(&self) -> u32 {
         // TODO: make the math not fail and reusable
-        self.governance_formal_quorum_ratio()
+        self.bid_escrow_formal_quorum_ratio()
             .checked_mul(self.total_onboarded())
             .unwrap()
             .checked_div(U512::from(1000))
@@ -77,9 +77,9 @@ impl Configuration {
             .as_u32()
     }
 
-    pub fn governance_informal_voting_quorum(&self) -> u32 {
+    pub fn bid_escrow_informal_voting_quorum(&self) -> u32 {
         // TODO: make the math not fail and reusable
-        self.governance_informal_quorum_ratio()
+        self.bid_escrow_informal_quorum_ratio()
             .checked_mul(self.total_onboarded())
             .unwrap()
             .checked_div(U512::from(1000))
@@ -130,8 +130,8 @@ impl Configuration {
         }
     }
 
-    pub fn governance_wallet_address(&self) -> Address {
-        self.dao_configuration.governance_wallet_address
+    pub fn bid_escrow_wallet_address(&self) -> Address {
+        self.dao_configuration.bid_escrow_wallet_address
     }
 
     pub fn default_reputation_slash(&self) -> U512 {
@@ -147,8 +147,8 @@ impl Configuration {
             .voting_start_after_job_worker_submission
     }
 
-    pub fn governance_payment_ratio(&self) -> U512 {
-        self.dao_configuration.governance_payment_ratio
+    pub fn bid_escrow_payment_ratio(&self) -> U512 {
+        self.dao_configuration.bid_escrow_payment_ratio
     }
 
     pub fn post_job_dos_fee(&self) -> U512 {
@@ -200,7 +200,7 @@ impl Configuration {
     }
 
     pub fn apply_governance_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.governance_payment_ratio()).unwrap_or_revert()
+        math::promils_of_u512(amount, self.bid_escrow_payment_ratio()).unwrap_or_revert()
     }
 
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {

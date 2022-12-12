@@ -240,7 +240,7 @@ impl Default for DaoWorld {
                 .to_bytes()
                 .unwrap(),
         );
-        let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
+        let key = String::from(casper_dao_utils::consts::BID_ESCROW_WALLET_ADDRESS);
         dao.variable_repository
             .update_at(key, multisig_address, None)
             .unwrap();
