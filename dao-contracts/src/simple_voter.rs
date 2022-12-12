@@ -44,7 +44,6 @@ pub trait SimpleVoterContractInterface {
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
@@ -59,7 +58,6 @@ pub trait SimpleVoterContractInterface {
     fn get_document_hash(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<DocumentHash>;
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
@@ -90,6 +88,17 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_voting(
+                &self,
+                voting_id: VotingId,
+            ) -> Option<VotingStateMachine>;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
         }
     }
 
@@ -119,7 +128,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let voting_summary = self.voting.finish_voting(voting_id);
+        let voting_summary = self.voting.finish_voting(voting_id, voting_type);
 
         if let VotingType::Informal = voting_summary.voting_type() {
             match voting_summary.voting_type() {
@@ -140,34 +149,12 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     fn get_document_hash(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<DocumentHash> {
         self.simple_votings.get(&voting_id)
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting.vote(caller(), voting_id, choice, stake);
-    }
-
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-    ) -> Option<VotingStateMachine> {
-        self.voting.get_voting(voting_id)
-    }
-
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        self.voting.get_ballot(voting_id, voting_type, address)
-    }
-
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        self.voting.get_voter(voting_id, voting_type, at)
+        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

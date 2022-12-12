@@ -104,7 +104,7 @@ impl VotingEngine {
         self.set_voting(voting);
 
         if cast_first_vote {
-            self.vote(creator, voting_id, Choice::InFavor, stake);
+            self.vote(creator, voting_id, VotingType::Informal, Choice::InFavor, stake);
         }
 
         voting_id
@@ -131,10 +131,12 @@ impl VotingEngine {
     /// Throws [`InformalVotingTimeNotReached`](Error::InformalVotingTimeNotReached) if informal voting time did not pass
     ///
     /// Throws [`ArithmeticOverflow`](Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
-    pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {
+    pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
         let voting = self
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
+
+        self.assert_voting_type(&voting, voting_type);
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
@@ -286,8 +288,9 @@ impl VotingEngine {
     /// Throws [`VoteOnCompletedVotingNotAllowed`](Error::VoteOnCompletedVotingNotAllowed) if voting is completed
     ///
     /// Throws [`CannotVoteTwice`](Error::CannotVoteTwice) if voter already voted
-    pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U512) {
+    pub fn vote(&mut self, voter: Address, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
+        self.assert_voting_type(&voting, voting_type);
         voting.guard_vote(get_block_time());
         self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);
         self.cast_ballot(voter, voting_id, choice, stake, false, voting);
@@ -297,8 +300,13 @@ impl VotingEngine {
         let vote = self.ballots.get(&(voting_id, voting_type, voter));
 
         if vote.is_some() {
-            let voting = self.get_voting(voting_id).unwrap_or_revert();
             revert(Error::CannotVoteTwice)
+        }
+    }
+
+    fn assert_voting_type(&self, voting: &VotingStateMachine, voting_type: VotingType) {
+        if voting.voting_type() != voting_type {
+            revert(Error::VotingWithGivenTypeNotInProgress)
         }
     }
 

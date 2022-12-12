@@ -86,6 +86,8 @@ dao_errors!(
     OnlyReputationTokenContractCanCancel => 3410,
     SubjectOfSlashing => 3411,
     VotingAlreadyFinished => 3412,
+    VotingWithGivenTypeNotInProgress => 3413,
+    VotingIdNotFound => 3414,
 
     // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,

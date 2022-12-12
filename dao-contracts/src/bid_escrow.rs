@@ -129,7 +129,7 @@ pub trait BidEscrowContractInterface {
     /// # Errors
     /// Throws [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn vote(&mut self, job_id: JobId, choice: Choice, stake: U512);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// Returns a job with given JobId
     fn get_job(&self, job_id: JobId) -> Option<Job>;
     /// Returns a JobOffer with given JobOfferId
@@ -151,7 +151,6 @@ pub trait BidEscrowContractInterface {
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine)
     fn get_ballot(
@@ -195,6 +194,7 @@ pub struct BidEscrowContract {
     kyc: KycInfo,
     onboarding: OnboardingInfo,
     jobs: Mapping<JobId, Job>,
+    jobs_for_voting: Mapping<VotingId, JobId>,
     jobs_count: SequenceGenerator<JobId>,
     job_offers: Mapping<JobOfferId, JobOffer>,
     active_job_offers_ids: Mapping<Address, Vec<JobOfferId>>,
@@ -211,6 +211,13 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
         }
 
         to self.access_control {
@@ -489,6 +496,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             .voting
             .create_voting(worker, U512::zero(), voting_configuration);
 
+        self.jobs_for_voting.set(&voting_id, job_id);
+        
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
         self.voting.cast_ballot(
             worker,
@@ -506,18 +515,14 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.jobs.set(&job_id, job);
     }
 
-    fn vote(&mut self, bid_id: BidId, choice: Choice, stake: U512) {
-        let job = self.jobs.get_or_revert(&bid_id);
-        let voting_id = job
-            .voting_id()
-            .unwrap_or_revert_with(Error::VotingNotStarted);
-
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
+        let job = self.jobs.get_or_revert(&self.job_id_by_voting_id(voting_id));
         let caller = caller();
 
         if caller == job.poster() || caller == job.worker() {
             revert(Error::CannotVoteOnOwnJob);
         }
-        self.voting.vote(caller, voting_id, choice, stake);
+        self.voting.vote(caller, voting_id, voting_type, choice, stake);
     }
 
     fn get_job(&self, bid_id: BidId) -> Option<Job> {
@@ -533,7 +538,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn finish_voting(&mut self, job_id: JobId) {
-        let mut job = self.jobs.get_or_revert(&job_id);
+        let job = self.jobs.get_or_revert(&job_id);
         let job_offer = self.job_offer(job.job_offer_id());
         let voting_id = job
             .voting_id()
@@ -548,14 +553,14 @@ impl BidEscrowContractInterface for BidEscrowContract {
                         self.reputation_token()
                             .unstake_bid(job.worker(), job.bid_id());
                     }
-                    self.create_formal_voting(&mut job, voting_id, &voting_summary);
+                    self.create_formal_voting(voting_id);
                 }
                 VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
                         self.reputation_token()
                             .unstake_bid(job.worker(), job.bid_id());
                     }
-                    self.create_formal_voting(&mut job, voting_id, &voting_summary);
+                    self.create_formal_voting(voting_id);
                 }
                 VotingResult::QuorumNotReached => {
                     if job_offer.configuration.informal_stake_reputation() {
@@ -635,22 +640,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine> {
         self.voting.get_voting(voting_id)
-    }
-
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        self.voting.get_ballot(voting_id, voting_type, address)
-    }
-
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        self.voting.get_voter(voting_id, voting_type, at)
     }
 
     fn job_offers_count(&self) -> u32 {
@@ -847,6 +838,12 @@ impl BidEscrowContract {
             .unwrap_or_revert_with(Error::JobOfferNotFound)
     }
 
+    fn job_id_by_voting_id(&self, voting_id: VotingId) -> JobId {
+        self.jobs_for_voting
+            .get(&voting_id)
+            .unwrap_or_revert_with(Error::VotingIdNotFound)
+    }
+
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
         let (total_supply, balances) = self.reputation_token().all_balances();
         let total_supply = U512::from(total_supply.as_u128());
@@ -990,9 +987,7 @@ impl BidEscrowContract {
 
     fn create_formal_voting(
         &mut self,
-        job: &mut Job,
         voting_id: VotingId,
-        voting_summary: &VotingSummary,
     ) {
         let voting = self
             .voting
@@ -1022,7 +1017,7 @@ use crate::{
         job_offer::{JobOffer, JobOfferStatus},
         types::{JobId, JobOfferId},
     },
-    voting::voting_state_machine::{VotingSummary, VotingType},
+    voting::voting_state_machine::VotingType,
 };
 
 #[cfg(feature = "test-support")]

@@ -48,7 +48,6 @@ pub trait RepoVoterContractInterface {
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
@@ -88,6 +87,10 @@ impl RepoVoterContractInterface for RepoVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_voting(
+            &self,
+                voting_id: VotingId,
+            ) -> Option<VotingStateMachine>;
         }
 
         to self.access_control {
@@ -132,15 +135,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting.vote(caller(), voting_id, choice, stake);
-    }
-
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-    ) -> Option<VotingStateMachine> {
-        self.voting.get_voting(voting_id)
+        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn get_ballot(
@@ -157,7 +152,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        self.voting.finish_voting(voting_id);
+        self.voting.finish_voting(voting_id, voting_type);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

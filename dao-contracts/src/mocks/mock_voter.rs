@@ -24,8 +24,8 @@ use crate::{
 pub trait MockVoterContractInterface {
     fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
     fn create_voting(&mut self, value: String, stake: U512);
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U512);
-    fn finish_voting(&mut self, voting_id: VotingId);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     fn variable_repo_address(&self) -> Address;
     fn reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -46,7 +46,7 @@ impl MockVoterContractInterface for MockVoterContract {
     delegate! {
         to self.voting {
             fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
-            fn finish_voting(&mut self, voting_id: VotingId);
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -73,8 +73,8 @@ impl MockVoterContractInterface for MockVoterContract {
             .create_voting(caller(), stake, voting_configuration);
     }
 
-    fn vote(&mut self, voting_id: VotingId, choice: Choice, stake: U512) {
-        self.voting.vote(caller(), voting_id, choice, stake);
+    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
+        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn set_variable(&mut self, variable: String) {

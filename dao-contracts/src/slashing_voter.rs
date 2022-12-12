@@ -43,7 +43,6 @@ pub trait SlashingVoterContractInterface {
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
@@ -136,13 +135,12 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         if caller() == task.subject {
             revert(Error::SubjectOfSlashing);
         }
-        self.voting.vote(caller(), voting_id, choice, stake);
+        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine> {
         self.voting.get_voting(voting_id)
     }
@@ -161,8 +159,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        self.voting.finish_voting(voting_id);
-        let summary = self.voting.finish_voting(voting_id);
+        let summary = self.voting.finish_voting(voting_id, voting_type);
         if summary.is_formal() && summary.result() == VotingResult::InFavor {
             self.slash(voting_id);
         }
