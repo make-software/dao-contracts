@@ -143,6 +143,7 @@ impl VotingStateMachine {
         if self.is_result_close() {
             self.configuration.double_time_between_votings();
         }
+        self.voting_type = VotingType::Formal;
     }
 
     pub fn finish(&mut self) {

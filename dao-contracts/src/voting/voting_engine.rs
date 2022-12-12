@@ -16,7 +16,6 @@ use casper_dao_utils::{
     VecMapping,
 };
 use casper_types::U512;
-use casper_dao_utils::casper_contract::contract_api::runtime::print;
 
 use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
@@ -218,6 +217,7 @@ impl VotingEngine {
             revert(Error::InformalVotingTimeNotReached)
         }
 
+
         let voting_id = voting.voting_id();
         let voters_len = self.voters.len((voting_id, voting.voting_type()));
         let voting_result = voting.get_result(voters_len);
@@ -246,9 +246,7 @@ impl VotingEngine {
         //     mints: BTreeMap::new(),
         // }
         // .emit();
-
         self.set_voting(voting);
-
         VotingSummary::new(
             voting_result,
             VotingType::Informal,
@@ -300,7 +298,6 @@ impl VotingEngine {
 
         if vote.is_some() {
             let voting = self.get_voting(voting_id).unwrap_or_revert();
-            print(format!("Voting type: {:?}", voting.voting_type()).as_str());
             revert(Error::CannotVoteTwice)
         }
     }
