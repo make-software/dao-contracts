@@ -15,7 +15,7 @@ Feature: Kyc Voter - staking
         | KycVoter        | 100   | Alice |
 
     Scenario: Check staked balances
-       When voters vote in KycVoter's informal voting with id 0
+       When voters vote in KycVoter informal voting with id 0
         | user    | REP stake  | choice   | 
         | VA2     | 500        | in favor |
         | VA3     | 200        | in favor |

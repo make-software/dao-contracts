@@ -31,8 +31,12 @@ impl DaoWorld {
             Contract::VaToken => self.va_token.address(),
             Contract::ReputationToken => self.reputation_token.address(),
             Contract::BidEscrow => self.bid_escrow.address(),
-            Contract::VariableRepository => self.variable_repo.address(),
+            Contract::VariableRepository => self.variable_repository.address(),
             Contract::SlashingVoter => self.slashing_voter.address(),
+            Contract::Admin => self.admin.address(),
+            Contract::RepoVoter => self.repo_voter.address(),
+            Contract::SimpleVoter => self.simple_voter.address(),
+            Contract::ReputationVoter => self.reputation_voter.address(),
         }
     }
 }

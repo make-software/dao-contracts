@@ -25,15 +25,7 @@ impl DaoWorld {
         caller: &Account,
         contract_to_whitelist: &Contract,
     ) -> Result<(), casper_dao_utils::Error> {
-        let address = match contract_to_whitelist {
-            Contract::KycToken => self.kyc_token.address(),
-            Contract::VaToken => self.va_token.address(),
-            Contract::ReputationToken => self.reputation_token.address(),
-            Contract::VariableRepository => self.variable_repo.address(),
-            Contract::KycVoter => self.kyc_voter.address(),
-            Contract::BidEscrow => self.bid_escrow.address(),
-            Contract::SlashingVoter => self.slashing_voter.address(),
-        };
+        let address = self.get_contract_address(contract_to_whitelist);
         let caller = self.get_address(caller);
 
         self.whitelist(contract, caller, address)
@@ -59,7 +51,7 @@ impl DaoWorld {
                 .as_account(caller)
                 .remove_from_whitelist(user),
             Contract::VariableRepository => self
-                .variable_repo
+                .variable_repository
                 .as_account(caller)
                 .remove_from_whitelist(user),
             _ => Err(casper_dao_utils::Error::Unknown),
@@ -71,7 +63,7 @@ impl DaoWorld {
             Contract::KycToken => self.kyc_token.get_owner(),
             Contract::VaToken => self.va_token.get_owner(),
             Contract::ReputationToken => self.reputation_token.get_owner(),
-            Contract::VariableRepository => self.variable_repo.get_owner(),
+            Contract::VariableRepository => self.variable_repository.get_owner(),
             _ => None,
         }
     }
@@ -96,7 +88,7 @@ impl DaoWorld {
                 .as_account(caller)
                 .change_ownership(new_owner),
             Contract::VariableRepository => self
-                .variable_repo
+                .variable_repository
                 .as_account(caller)
                 .change_ownership(new_owner),
             _ => Err(casper_dao_utils::Error::Unknown),
@@ -110,7 +102,7 @@ impl DaoWorld {
             Contract::KycToken => self.kyc_token.is_whitelisted(account),
             Contract::VaToken => self.va_token.is_whitelisted(account),
             Contract::ReputationToken => self.reputation_token.is_whitelisted(account),
-            Contract::VariableRepository => self.variable_repo.is_whitelisted(account),
+            Contract::VariableRepository => self.variable_repository.is_whitelisted(account),
             _ => false,
         }
     }
@@ -129,7 +121,7 @@ impl DaoWorld {
                 .as_account(caller)
                 .add_to_whitelist(address),
             Contract::VariableRepository => self
-                .variable_repo
+                .variable_repository
                 .as_account(caller)
                 .add_to_whitelist(address),
             _ => Err(casper_dao_utils::Error::Unknown),

@@ -19,9 +19,9 @@ Feature: External Worker who does not want to become a va - Quorum not reached
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
-    And InternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
+    And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And 8 days passed
-    And ExternalWorker posted the Bid with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake without onboarding
+    And ExternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake without onboarding
     And JobPoster picked the Bid of ExternalWorker
 
   Scenario: Informal voting does not reach quorum

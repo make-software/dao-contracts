@@ -14,7 +14,7 @@ Feature: Kyc Voter
         | KycVoter        | 100   | Alice |
 
     Scenario: Quorum reached, voting passed
-      When voters vote in KycVoter's informal voting with id 0
+      When voters vote in KycVoter informal voting with id 0
         | user    | REP stake  | choice   | 
         | VA2     | 500        | in favor |
         | VA3     | 200        | in favor |
@@ -22,7 +22,7 @@ Feature: Kyc Voter
       And 5 days passed
       And informal voting with id 0 ends in KycVoter contract
       And 2 days passed
-      And voters vote in KycVoter's formal voting with id 0
+      And voters vote in KycVoter formal voting with id 0
         | user    | REP stake  | choice   | 
         | VA2     | 500        | in favor |
         | VA3     | 200        | in favor |

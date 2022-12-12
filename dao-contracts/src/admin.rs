@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
@@ -61,7 +62,8 @@ pub trait AdminContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
 }
 
 /// Admin contract uses [VotingEngine](VotingEngine) to vote on changes of ownership and managing whitelists of other contracts.
@@ -72,15 +74,21 @@ pub trait AdminContractInterface {
 #[derive(Instance)]
 pub struct AdminContract {
     voting: VotingEngine,
+    access_control: AccessControl,
 }
 
 impl AdminContractInterface for AdminContract {
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
         }
+    }
+
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
+        self.voting.init(variable_repo, reputation_token, va_token);
+        self.access_control.init(caller());
     }
 
     fn create_voting(
@@ -136,7 +144,8 @@ impl AdminContractInterface for AdminContract {
         self.voting.get_voter(voting_id, voting_type, at)
     }
 
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+        self.voting.slash_voter(voter, voting_id);
     }
 }

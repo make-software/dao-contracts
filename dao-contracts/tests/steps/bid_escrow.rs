@@ -31,26 +31,28 @@ fn post_job_offer(
 }
 
 #[when(
-    expr = "{account} posted the Bid with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} REP stake"
+    expr = "{account} posted the Bid for JobOffer {int} with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} REP stake"
 )]
 fn submit_bid_internal(
     w: &mut DaoWorld,
     worker: Account,
+    job_offer_id: u32,
     timeframe: BlockTime,
     time_unit: TimeUnit,
     budget: Balance,
     stake: Balance,
 ) {
     let timeframe = helpers::to_seconds(timeframe, time_unit);
-    w.post_bid(0, worker, timeframe, budget, stake, false, None);
+    w.post_bid(job_offer_id, worker, timeframe, budget, stake, false, None);
 }
 
 #[when(
-    expr = "{account} posted the Bid with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} CSPR stake {word} onboarding"
+    expr = "{account} posted the Bid for JobOffer {int} with proposed timeframe of {int} {time_unit} and {balance} CSPR price and {balance} CSPR stake {word} onboarding"
 )]
 fn submit_bid_external(
     w: &mut DaoWorld,
     worker: Account,
+    job_offer_id: u32,
     timeframe: BlockTime,
     time_unit: TimeUnit,
     budget: Balance,
@@ -66,7 +68,7 @@ fn submit_bid_external(
     };
     let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_bid(
-        0,
+        job_offer_id,
         worker,
         timeframe,
         budget,
@@ -120,6 +122,16 @@ fn cancel_bid(w: &mut DaoWorld, worker: Account, job_poster: Account) {
     let bid = w.get_bid(*job_offer_id, worker).unwrap();
 
     w.cancel_bid(worker, *job_offer_id, bid.bid_id);
+}
+
+#[when(expr = "{account} got his active job offers slashed")]
+fn slash_all_active_job_offers(w: &mut DaoWorld, bidder: Account) {
+    w.slash_all_active_job_offers(bidder);
+}
+
+#[when(expr = "bid with id {int} is slashed")]
+fn slash_bid(w: &mut DaoWorld, bid_id: u32) {
+    w.slash_bid(bid_id);
 }
 
 #[then(expr = "Formal voting does not start")]

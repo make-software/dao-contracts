@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{caller, get_block_time, revert, self_address},
+    casper_env::{get_block_time, revert, self_address},
     Address,
     Error,
     Mapping,
@@ -512,7 +512,7 @@ impl VotingEngine {
         !self.va_token().balance_of(address).is_zero()
     }
 
-    fn va_token(&self) -> VaNftContractCaller {
+    pub fn va_token(&self) -> VaNftContractCaller {
         VaNftContractCaller::at(self.va_token_address())
     }
 
@@ -552,10 +552,7 @@ impl VotingEngine {
         }
     }
 
-    pub fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        if caller() != self.reputation_token_address() {
-            revert(Error::OnlyReputationTokenContractCanCancel);
-        }
+    pub fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         let voting = self.get_voting_or_revert(voting_id);
         if &voter == voting.creator() {
             self.cancel_voting(voting);
@@ -576,7 +573,10 @@ impl VotingEngine {
     fn cancel_ballot(&mut self, mut voting: VotingStateMachine, voter: Address) {
         let voting_id = voting.voting_id();
         let ballots_key = (voting_id, voting.voting_type(), voter);
-        let mut ballot = self.ballots.get(&ballots_key).unwrap_or_revert();
+        let mut ballot = self
+            .ballots
+            .get(&ballots_key)
+            .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         // Unstake reputation.
         ReputationContractCaller::at(self.reputation_token_address())
