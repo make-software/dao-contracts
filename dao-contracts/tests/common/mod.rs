@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use casper_dao_contracts::bid::types::{BidId, JobOfferId};
+use casper_dao_contracts::escrow::types::{BidId, JobOfferId};
 use casper_dao_utils::{Address, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},

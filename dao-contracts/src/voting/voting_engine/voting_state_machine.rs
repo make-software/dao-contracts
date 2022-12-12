@@ -4,7 +4,6 @@ use casper_dao_utils::{
     Address,
     BlockTime,
     ContractCall,
-    Error,
 };
 use casper_types::U512;
 
@@ -32,10 +31,21 @@ pub enum VotingType {
 /// State of Voting
 #[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
 pub enum VotingState {
+    Created,
     Informal,
     BetweenVotings,
     Formal,
     Finished,
+    Canceled,
+}
+
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
+pub enum VotingStateInTime {
+    BeforeInformal,
+    Informal,
+    BetweenVotings,
+    Formal,
+    AfterFormal,
 }
 
 /// Finished Voting summary
@@ -94,9 +104,9 @@ impl VotingSummary {
 
 /// Voting struct
 #[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
-pub struct Voting {
+pub struct VotingStateMachine {
     voting_id: VotingId,
-    completed: bool,
+    state: VotingState,
     stake_in_favor: U512,
     stake_against: U512,
     unbounded_stake_in_favor: U512,
@@ -105,11 +115,10 @@ pub struct Voting {
     informal_voting_id: VotingId,
     formal_voting_id: Option<VotingId>,
     creator: Address,
-    is_canceled: bool,
     configuration: Configuration,
 }
 
-impl Voting {
+impl VotingStateMachine {
     /// Creates new Voting with immutable VotingConfiguration
     pub fn new(
         voting_id: VotingId,
@@ -117,9 +126,9 @@ impl Voting {
         creator: Address,
         voting_configuration: Configuration,
     ) -> Self {
-        Voting {
+        VotingStateMachine {
             voting_id,
-            completed: false,
+            state: VotingState::Created,
             stake_in_favor: U512::zero(),
             stake_against: U512::zero(),
             unbounded_stake_in_favor: U512::zero(),
@@ -128,9 +137,12 @@ impl Voting {
             informal_voting_id: voting_id,
             formal_voting_id: None,
             creator,
-            is_canceled: false,
             configuration: voting_configuration,
         }
+    }
+
+    pub fn finish(&mut self) {
+        self.state = VotingState::Finished;
     }
 
     /// Returns the type of voting
@@ -158,9 +170,9 @@ impl Voting {
             voting_configuration.double_time_between_votings();
         }
 
-        Voting {
+        VotingStateMachine {
             voting_id: new_voting_id,
-            completed: false,
+            state: VotingState::BetweenVotings,
             stake_in_favor: U512::zero(),
             stake_against: U512::zero(),
             unbounded_stake_in_favor: U512::zero(),
@@ -170,21 +182,8 @@ impl Voting {
             formal_voting_id: Some(new_voting_id),
             creator: self.creator,
             // TODO: Shoudn't be false.
-            is_canceled: self.is_canceled,
             configuration: voting_configuration,
         }
-    }
-
-    pub fn can_be_completed(&self, block_time: u64) -> bool {
-        !self.completed && self.state(block_time) == VotingState::Finished
-    }
-
-    /// Sets voting as completed, optionally saves id of newly created formal voting
-    pub fn complete(&mut self, formal_voting_id: Option<VotingId>) {
-        if formal_voting_id.is_some() {
-            self.formal_voting_id = formal_voting_id
-        }
-        self.completed = true;
     }
 
     /// Returns if voting is still in voting phase
@@ -199,6 +198,19 @@ impl Voting {
                 self.start_time + self.configuration.formal_voting_time() <= block_time
             }
         }
+    }
+
+    pub fn informal_voting_end_time(&self) -> BlockTime {
+        self.start_time() + self.configuration.informal_voting_time()
+    }
+
+    pub fn time_between_votings_end_time(&self) -> BlockTime {
+        self.informal_voting_end_time()
+            + self.configuration.time_between_informal_and_formal_voting()
+    }
+
+    pub fn formal_voting_end_time(&self) -> BlockTime {
+        self.time_between_votings_end_time() + self.configuration.formal_voting_time()
     }
 
     pub fn is_in_favor(&self) -> bool {
@@ -298,24 +310,6 @@ impl Voting {
         self.voting_id
     }
 
-    /// Get the voting's completed.
-    pub fn completed(&self) -> bool {
-        self.completed
-    }
-
-    pub fn validate_vote(&self, block_time: u64) -> Result<(), Error> {
-        // Is in time?
-        if self.state(block_time) == VotingState::BetweenVotings {
-            return Err(Error::VotingDuringTimeBetweenVotingsNotAllowed);
-        }
-
-        if self.state(block_time) == VotingState::Finished {
-            return Err(Error::VoteOnCompletedVotingNotAllowed);
-        }
-
-        Ok(())
-    }
-
     /// Get the voting's stake in favor.
     pub fn stake_in_favor(&self) -> U512 {
         self.stake_in_favor
@@ -366,7 +360,7 @@ impl Voting {
 
     /// Get the voting's contract call reference.
     pub fn contract_calls(&self) -> &Vec<ContractCall> {
-        &self.configuration.contract_calls()
+        self.configuration.contract_calls()
     }
 
     /// Get a reference to the voting's voting configuration.
@@ -378,7 +372,20 @@ impl Voting {
         &self.creator
     }
 
-    pub fn state(&self, block_time: BlockTime) -> VotingState {
+    pub fn state(&self) -> &VotingState {
+        &self.state
+    }
+
+    pub fn completed(&self) -> bool {
+        self.state() == &VotingState::Finished || self.state() == &VotingState::Canceled
+    }
+
+    pub fn complete_informal_voting(&mut self, formal_voting_id: VotingId) {
+        self.formal_voting_id = Some(formal_voting_id);
+        self.state = VotingState::Formal;
+    }
+
+    pub fn state_in_time(&self, block_time: BlockTime) -> VotingState {
         let informal_voting_end = self.start_time + self.informal_voting_time();
         let between_voting_end =
             informal_voting_end + self.configuration.time_between_informal_and_formal_voting();
@@ -396,7 +403,7 @@ impl Voting {
     }
 
     pub fn cancel(&mut self) {
-        self.is_canceled = true;
+        self.state = VotingState::Canceled;
     }
 }
 

@@ -25,8 +25,8 @@ Feature: External Worker who doesn't want to become a VA submits job
   Scenario: JobPoster is fully slashed
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  | 
-      | BidEscrow        | 600          | 0            | 0          |
-      | JobPoster        | 900          | 1000         | 0          |
+      | BidEscrow        | 900          | 0            | 0          |
+      | JobPoster        | 600          | 1000         | 0          |
       | InternalWorker   | 0            | 1000         | 100        |
       | ExternalWorker   | 0            | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |
