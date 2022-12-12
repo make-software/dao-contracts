@@ -711,11 +711,11 @@ impl BidEscrowContract {
 
     fn validate_dos_fee(&self, dos_fee: U512, configuration: &Configuration) {
         let fiat_conversion_rate_address = configuration.fiat_conversion_rate_address();
-        let minimum_dos_fee = configuration.normalized_post_job_dos_fee();
+        let minimum_dos_fee = configuration.post_job_dos_fee();
 
         let fiat_value =
             casper_dao_utils::cspr_rate::convert_to_fiat(dos_fee, fiat_conversion_rate_address);
-        if fiat_value < minimum_dos_fee {
+        if configuration.is_post_job_dos_fee_too_low(fiat_value) {
             revert(Error::DosFeeTooLow);
         };
     }
