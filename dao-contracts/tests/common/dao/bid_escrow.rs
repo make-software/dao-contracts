@@ -39,12 +39,12 @@ impl DaoWorld {
             None => self
                 .bid_escrow
                 .as_account(bidder)
-                .submit_bid(0, timeframe, *budget, *stake, onboarding, None),
+                .submit_bid(offer_id, timeframe, *budget, *stake, onboarding, None),
             Some(cspr_stake) => self
                 .bid_escrow
                 .as_account(bidder)
                 .submit_bid_with_cspr_amount(
-                    0,
+                    offer_id,
                     timeframe,
                     *budget,
                     *stake,
@@ -97,5 +97,16 @@ impl DaoWorld {
             .as_account(job_poster)
             .pick_bid_with_cspr_amount(*job_offer_id, *bid_id, bid.proposed_payment)
             .unwrap();
+    }
+
+    pub fn slash_all_active_job_offers(&mut self, bidder: Account) {
+        let bidder = self.get_address(&bidder);
+        self.bid_escrow
+            .slash_all_active_job_offers(bidder)
+            .expect("Can't cancel bidder.");
+    }
+
+    pub fn slash_bid(&mut self, bid_id: u32) {
+        self.bid_escrow.slash_bid(bid_id).expect("Can't slash bid");
     }
 }

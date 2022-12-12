@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -72,7 +73,14 @@ pub trait KycVoterContractInterface {
     /// see [KycInfo](KycInfo::get_kyc_token_address())
     fn get_kyc_token_address(&self) -> Address;
 
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+
+    // Whitelisting set.
+    fn change_ownership(&mut self, owner: Address);
+    fn add_to_whitelist(&mut self, address: Address);
+    fn remove_from_whitelist(&mut self, address: Address);
+    fn get_owner(&self) -> Option<Address>;
+    fn is_whitelisted(&self, address: Address) -> bool;
 }
 
 /// KycVoterContract
@@ -83,6 +91,7 @@ pub trait KycVoterContractInterface {
 #[derive(Instance)]
 pub struct KycVoterContract {
     kyc: KycInfo,
+    access_control: AccessControl,
     voting: VotingEngine,
 }
 
@@ -95,6 +104,15 @@ impl KycVoterContractInterface for KycVoterContract {
         to self.voting {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+        }
+
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
         }
     }
 
@@ -107,6 +125,7 @@ impl KycVoterContractInterface for KycVoterContract {
     ) {
         self.kyc.init(kyc_token);
         self.voting.init(variable_repo, reputation_token, va_token);
+        self.access_control.init(caller());
     }
 
     fn create_voting(
@@ -161,10 +180,6 @@ impl KycVoterContractInterface for KycVoterContract {
         }
     }
 
-    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
-        self.voting.voting_exists(voting_id, voting_type)
-    }
-
     fn get_ballot(
         &self,
         voting_id: VotingId,
@@ -180,8 +195,9 @@ impl KycVoterContractInterface for KycVoterContract {
         self.voting.get_voter(voting_id, at)
     }
 
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+        self.voting.slash_voter(voter, voting_id);
     }
 }
 

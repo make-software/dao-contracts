@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -60,7 +61,8 @@ pub trait SimpleVoterContractInterface {
         voting_id: VotingId,
         voting_type: VotingType,
     ) -> Option<DocumentHash>;
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
 }
 
 /// Event thrown after SimpleVoting is created
@@ -79,15 +81,21 @@ pub struct SimpleVotingCreated {
 pub struct SimpleVoterContract {
     voting: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
+    access_control: AccessControl,
 }
 
 impl SimpleVoterContractInterface for SimpleVoterContract {
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
         }
+    }
+
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
+        self.voting.init(variable_repo, reputation_token, va_token);
+        self.access_control.init(caller())
     }
 
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512) {
@@ -168,7 +176,8 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         self.voting.get_voter(voting_id, at)
     }
 
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+        self.voting.slash_voter(voter, voting_id);
     }
 }

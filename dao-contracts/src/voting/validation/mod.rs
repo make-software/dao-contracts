@@ -8,7 +8,7 @@ use crate::{
             vote_in_time::VoteInTime,
             voting_not_completed::VotingNotCompleted,
         },
-        voting_state_machine::{VotingStateMachine},
+        voting_state_machine::VotingStateMachine,
     },
 };
 

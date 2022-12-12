@@ -81,7 +81,7 @@ impl VotingSummary {
     }
 
     pub fn is_formal(&self) -> bool {
-        self.formal_voting_id().is_some()
+        self.ty == VotingType::Formal
     }
 
     pub fn formal_voting_id(&self) -> Option<VotingId> {

@@ -5,12 +5,11 @@ use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit, revert},
     Address,
-    ContractCall,
     Error,
     Mapping,
     Variable,
 };
-use casper_types::{runtime_args, RuntimeArgs, URef, U512};
+use casper_types::{URef, U512};
 use delegate::delegate;
 
 use self::events::{Burn, Mint};
@@ -103,6 +102,8 @@ pub trait ReputationContractInterface {
     fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U512>, burns: BTreeMap<Address, U512>);
 
     fn burn_all(&mut self, owner: Address);
+
+    fn stakes_info(&self, address: Address) -> AccountStakeInfo;
 }
 
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
@@ -187,7 +188,7 @@ impl ReputationContractInterface for ReputationContract {
         }
         self.access_control.ensure_whitelisted();
         self.assert_available_balance(voter, amount);
-        let mut stake_info = self.stake_info(&voter);
+        let mut stake_info = self.stakes_info(voter);
         stake_info.add_stake_from_voting(caller(), voting_id, choice, amount);
         self.stakes.set(&voter, stake_info);
 
@@ -205,7 +206,7 @@ impl ReputationContractInterface for ReputationContract {
     fn unstake_voting(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
 
-        let mut stake_info = self.stake_info(&voter);
+        let mut stake_info = self.stakes_info(voter);
         let amount = stake_info.remove_stake_from_voting(caller(), voting_id);
         self.stakes.set(&voter, stake_info);
 
@@ -220,7 +221,7 @@ impl ReputationContractInterface for ReputationContract {
         let bid_escrow_contract = caller();
         self.access_control.ensure_whitelisted();
         self.assert_available_balance(voter, amount);
-        let mut stake_info = self.stake_info(&voter);
+        let mut stake_info = self.stakes_info(voter);
         stake_info.add_stake_from_bid(bid_escrow_contract, bid_id, amount);
         self.stakes.set(&voter, stake_info);
 
@@ -243,7 +244,7 @@ impl ReputationContractInterface for ReputationContract {
     fn unstake_bid(&mut self, voter: Address, bid_id: BidId) {
         self.access_control.ensure_whitelisted();
 
-        let mut stake_info = self.stake_info(&voter);
+        let mut stake_info = self.stakes_info(voter);
         let amount = stake_info.remove_stake_from_bid(caller(), bid_id);
         self.stakes.set(&voter, stake_info);
 
@@ -291,47 +292,16 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn burn_all(&mut self, owner: Address) {
-        // Clear balance.
-        let mut balances = self.balances.get_or_revert();
-        let balance = balances.get(&owner);
-        balances.rem(owner);
-        self.balances.set(balances);
-        self.total_supply.set(self.total_supply() - balance);
+        let balance = self.balance_of(owner);
+        self.burn(owner, balance);
+    }
 
-        let stakes_info = self.stake_info(&owner);
-        // Call voter contracts.
-        let stakes_origins = stakes_info.get_voting_stakes_origins();
-        for (address, voting_id) in stakes_origins {
-            let contract_call = ContractCall {
-                address,
-                entry_point: String::from("cancel_voter"),
-                runtime_args: runtime_args! {
-                    "voter" => owner,
-                    "voting_id" => voting_id
-                },
-            };
-            contract_call.call();
-        }
-
-        // let stakes_origins = stakes_info.get_bids_stakes_origins();
-        for address in self.bid_escrows.get().unwrap_or_default().list() {
-            let contract_call = ContractCall {
-                address: *address,
-                entry_point: String::from("cancel_bidder"),
-                runtime_args: runtime_args! {
-                    "bidder" => owner
-                },
-            };
-            contract_call.call();
-        }
+    fn stakes_info(&self, address: Address) -> AccountStakeInfo {
+        self.stakes.get(&address).unwrap_or_default()
     }
 }
 
 impl ReputationContract {
-    fn stake_info(&self, address: &Address) -> AccountStakeInfo {
-        self.stakes.get(address).unwrap_or_default()
-    }
-
     fn inc_total_stake(&mut self, account: Address, amount: U512) {
         self.total_stake
             .set(&account, self.get_stake(account) + amount);
@@ -367,7 +337,7 @@ pub struct CSPRRedistribution {
 }
 
 #[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]
-struct AccountStakeInfo {
+pub struct AccountStakeInfo {
     stakes_from_voting: BTreeMap<(Address, VotingId), (Choice, U512)>,
     stakes_from_bid: BTreeMap<(Address, BidId), U512>,
 }
@@ -411,13 +381,13 @@ impl AccountStakeInfo {
         }
     }
 
-    fn get_voting_stakes_origins(&self) -> Vec<(Address, VotingId)> {
+    pub fn get_voting_stakes_origins(&self) -> Vec<(Address, VotingId)> {
         self.stakes_from_voting.keys().cloned().collect()
     }
 
-    // fn get_bids_stakes_origins(&self) -> Vec<(Address, BidId)> {
-    //     self.stakes_from_bid.keys().cloned().collect()
-    // }
+    pub fn get_bids_stakes_origins(&self) -> Vec<(Address, BidId)> {
+        self.stakes_from_bid.keys().cloned().collect()
+    }
 }
 
 #[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]

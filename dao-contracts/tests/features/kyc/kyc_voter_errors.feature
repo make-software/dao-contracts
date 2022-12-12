@@ -15,10 +15,10 @@ Feature: Kyc Voter errors
         | KycVoter        | 100   | Alice |
 
     Scenario: Invalid votes
-      When voters vote in KycVoter's informal voting with id 0
+      When voters vote in KycVoter informal voting with id 0
         | user    | REP stake  | choice   | 
         | VA2     | 200        | in favor |
-      Then votes in KycVoter's informal voting with id 0 fail
+      Then votes in KycVoter informal voting with id 0 fail
         | user    | REP stake  | choice   | result              |
         | VA1     | 100        | against  | CannotVoteTwice     |
         | VA3     | 0          | against  | ZeroStake           |
@@ -29,7 +29,7 @@ Feature: Kyc Voter errors
         | VA2     | 1000         | 200        |
     
     Scenario: Informal voting quorum not reached
-      When voters vote in KycVoter's informal voting with id 0
+      When voters vote in KycVoter informal voting with id 0
         | user    | REP stake  | choice   | 
         | VA2     | 100        | in favor |
       And 5 days passed

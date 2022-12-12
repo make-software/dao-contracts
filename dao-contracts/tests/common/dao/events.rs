@@ -107,11 +107,17 @@ impl DaoWorld {
                 TestContract::assert_event_at(&self.reputation_token, idx, ev)
             }
             Contract::VariableRepository => {
-                TestContract::assert_event_at(&self.variable_repo, idx, ev)
+                TestContract::assert_event_at(&self.variable_repository, idx, ev)
             }
             Contract::BidEscrow => TestContract::assert_event_at(&self.bid_escrow, idx, ev),
             Contract::SlashingVoter => TestContract::assert_event_at(&self.slashing_voter, idx, ev),
             Contract::KycVoter => TestContract::assert_event_at(&self.kyc_voter, idx, ev),
+            Contract::Admin => TestContract::assert_event_at(&self.admin, idx, ev),
+            Contract::RepoVoter => TestContract::assert_event_at(&self.repo_voter, idx, ev),
+            Contract::SimpleVoter => TestContract::assert_event_at(&self.simple_voter, idx, ev),
+            Contract::ReputationVoter => {
+                TestContract::assert_event_at(&self.reputation_voter, idx, ev)
+            }
         }
     }
 }

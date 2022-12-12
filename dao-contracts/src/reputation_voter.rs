@@ -1,3 +1,4 @@
+use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
     casper_env::caller,
@@ -110,7 +111,8 @@ pub trait ReputationVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
 }
 
 /// ReputationVoterContract
@@ -122,15 +124,21 @@ pub trait ReputationVoterContractInterface {
 pub struct ReputationVoterContract {
     voting: VotingEngine,
     reputation_votings: Mapping<VotingId, ReputationVoting>,
+    access_control: AccessControl,
 }
 
 impl ReputationVoterContractInterface for ReputationVoterContract {
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
+            fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
         }
+    }
+
+    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
+        self.voting.init(variable_repo, reputation_token, va_token);
+        self.access_control.init(caller());
     }
 
     fn create_voting(
@@ -207,7 +215,8 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         self.voting.finish_voting(voting_id);
     }
 
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.cancel_voter(voter, voting_id);
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+        self.voting.slash_voter(voter, voting_id);
     }
 }

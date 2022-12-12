@@ -1,4 +1,4 @@
-use casper_dao_utils::{Error};
+use casper_dao_utils::Error;
 
 use crate::{rules::validation::Validation, voting::voting_state_machine::VotingState};
 
