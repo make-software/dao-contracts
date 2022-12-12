@@ -8,13 +8,13 @@ Feature: PostJobDosFee Variable
       | JobPoster        | 1000         | 0            | 0          | true     | false |
     And following configuration
       | key              | value        |
-      | PostJobDOSFee    | 10           |
+      | PostJobDOSFee    | 10000        |
     And the price of USDT is 21 CSPR
 
   Scenario: Post a job with insufficient dos fee
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 200 CSPR DOS Fee
-    Then the JobOffer isn't posted
+    Then the JobOffer by JobPoster isn't posted
 
   Scenario: Post a job with sufficient dos fee
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 220 CSPR DOS Fee
-    Then the JobOffer is posted
+    Then the JobOffer by JobPoster is posted

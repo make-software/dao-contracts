@@ -8,6 +8,7 @@ mod builder;
 pub mod escrow;
 mod kyc_nft;
 mod kyc_voter;
+mod rate_provider;
 pub mod rules;
 mod slashing_voter;
 mod va_nft;
@@ -44,6 +45,13 @@ pub use mocks::mock_voter::{
     MockVoterContract,
     MockVoterContractCaller,
     MockVoterContractInterface,
+};
+#[cfg(feature = "test-support")]
+pub use rate_provider::CSPRRateProviderContractTest;
+pub use rate_provider::{
+    CSPRRateProviderContract,
+    CSPRRateProviderContractCaller,
+    CSPRRateProviderContractInterface,
 };
 #[cfg(feature = "test-support")]
 pub use repo_voter::RepoVoterContractTest;

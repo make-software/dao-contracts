@@ -1,5 +1,6 @@
 use casper_dao_contracts::{
     BidEscrowContractTest,
+    CSPRRateProviderContractTest,
     KycNftContractTest,
     KycVoterContractTest,
     ReputationContractTest,
@@ -7,7 +8,11 @@ use casper_dao_contracts::{
     VaNftContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{TestContract, TestEnv};
+use casper_dao_utils::{consts, TestContract, TestEnv};
+use casper_types::{
+    bytesrepr::{Bytes, ToBytes},
+    U512,
+};
 
 mod account;
 mod bid_escrow;
@@ -19,6 +24,9 @@ mod reputation;
 mod va;
 mod voting;
 
+// 1CSPR ~= 0.02924$
+const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
+
 #[allow(dead_code)]
 pub fn setup_dao() -> (
     TestEnv,
@@ -29,9 +37,11 @@ pub fn setup_dao() -> (
     VariableRepositoryContractTest,
     SlashingVoterContractTest,
     KycVoterContractTest,
+    CSPRRateProviderContractTest,
 ) {
     let env = TestEnv::new();
-    let variable_repo = VariableRepositoryContractTest::new(&env);
+    let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
+    let mut variable_repo = VariableRepositoryContractTest::new(&env);
     let mut reputation_token = ReputationContractTest::new(&env);
 
     let mut va_token = VaNftContractTest::new(
@@ -71,6 +81,14 @@ pub fn setup_dao() -> (
         kyc_token.address(),
     );
 
+    variable_repo
+        .update_at(
+            consts::FIAT_CONVERSION_RATE_ADDRESS.to_string(),
+            Bytes::from(rate_provider.address().to_bytes().unwrap()),
+            None,
+        )
+        .unwrap();
+
     reputation_token
         .add_to_whitelist(bid_escrow.address())
         .unwrap();
@@ -97,5 +115,6 @@ pub fn setup_dao() -> (
         variable_repo,
         slashing_voter,
         kyc_voter,
+        rate_provider,
     )
 }

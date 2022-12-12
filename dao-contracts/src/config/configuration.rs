@@ -155,6 +155,10 @@ impl Configuration {
         self.dao_configuration.post_job_dos_fee
     }
 
+    pub fn is_post_job_dos_fee_too_low(&self, fiat_value: U512) -> bool {
+        self.post_job_dos_fee() > fiat_value.saturating_mul(1_000.into())
+    }
+
     pub fn internal_auction_time(&self) -> BlockTime {
         self.dao_configuration.internal_auction_time
     }
