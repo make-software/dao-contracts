@@ -48,7 +48,7 @@ impl DaoWorld {
             .unwrap_or_else(|_| panic!("Couldn't create {:?} voting", contract));
     }
 
-    pub fn create_random_voting(&mut self, contract: Contract, creator: Account, stake: Balance) {
+    pub fn create_test_voting(&mut self, contract: Contract, creator: Account, stake: Balance) {
         let alice = self.get_address(&Account::Alice);
         let creator = self.get_address(&creator);
         let document_hash = Bytes::from(vec![1u8]);

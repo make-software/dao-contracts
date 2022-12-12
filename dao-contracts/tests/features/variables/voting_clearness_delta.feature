@@ -13,7 +13,7 @@ Feature: Voting clearness delta
       | key                                    | value         |
       | VotingClearnessDelta                   | 8             |
       | TimeBetweenInformalAndFormalVoting     | 86400         |
-    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
+    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And JobPoster picked the Bid of InternalWorker
 

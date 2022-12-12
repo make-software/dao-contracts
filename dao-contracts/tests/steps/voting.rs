@@ -43,14 +43,9 @@ fn voting(
     });
 }
 
-#[when(expr = "{account} creates random voting in {contract} with {balance} stake")]
-fn create_random_voting(
-    world: &mut DaoWorld,
-    creator: Account,
-    contract: Contract,
-    stake: Balance,
-) {
-    world.create_random_voting(contract, creator, stake);
+#[when(expr = "{account} creates test voting in {contract} with {balance} stake")]
+fn create_test_voting(world: &mut DaoWorld, creator: Account, contract: Contract, stake: Balance) {
+    world.create_test_voting(contract, creator, stake);
 }
 
 #[when(expr = "{voting_type} voting with id {int} ends in {contract} contract")]

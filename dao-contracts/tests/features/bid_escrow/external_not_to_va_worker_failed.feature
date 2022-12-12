@@ -16,7 +16,7 @@ Feature: External Worker who doesn't want to become a VA submits job
     And following configuration
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |
-    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
+    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And 8 days passed
     And ExternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake without onboarding
@@ -25,8 +25,8 @@ Feature: External Worker who doesn't want to become a VA submits job
   Scenario: JobPoster picked the Bid of External Worker
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  | 
-      | BidEscrow        | 1100         | 0            | 0          |
-      | JobPoster        | 400          | 0            | 0          |
+      | BidEscrow        | 1400         | 0            | 0          |
+      | JobPoster        | 100          | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 0          |
       | ExternalWorker   | 0            | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |
@@ -39,9 +39,9 @@ Feature: External Worker who doesn't want to become a VA submits job
       | VA2              | No   | 500   |
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 1100         | 0            | 0          |
+      | BidEscrow        | 1400         | 0            | 0          |
       | MultisigWallet   | 0            | 0            | 0          |
-      | JobPoster        | 400          | 0            | 0          |
+      | JobPoster        | 100          | 0            | 0          |
       | ExternalWorker   | 0            | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 0          |
       | VA1              | 0            | 1000         | 500        |
@@ -51,9 +51,9 @@ Feature: External Worker who doesn't want to become a VA submits job
     When Informal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 1100         | 0            | 0          |
+      | BidEscrow        | 1400         | 0            | 0          |
       | MultisigWallet   | 0            | 0            | 0          |
-      | JobPoster        | 400          | 0            | 0          |
+      | JobPoster        | 100          | 0            | 0          |
       | ExternalWorker   | 0            | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 0          |
       | VA1              | 0            | 1000         | 0          |

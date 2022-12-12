@@ -12,7 +12,7 @@ Feature: Full bid slash on BidEscrow
     And following configuration
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |
-    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
+    When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And VA1 posted the Bid for JobOffer 0 with proposed timeframe of 2 days and 100 CSPR price and 200 REP stake
     And 8 days passed
@@ -32,8 +32,8 @@ Feature: Full bid slash on BidEscrow
     When bid with id 0 is slashed
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 600          | 0            | 0          |
-      | JobPoster        | 900          | 0            | 0          |
+      | BidEscrow        | 900          | 0            | 0          |
+      | JobPoster        | 600          | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 0          |
       | ExternalWorker   | 0            | 0            | 0          |
       | VA1              | 0            | 300          | 200        |

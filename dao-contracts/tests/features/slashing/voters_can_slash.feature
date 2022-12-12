@@ -8,7 +8,7 @@ Feature: Slashing in voter contract
       | VA3     | 2000        | true     | true  |
     
     Scenario Outline: Voting creator gets slashed.
-      When VA1 creates random voting in <contract> with 500 stake
+      When VA1 creates test voting in <contract> with 500 stake
       And voters vote in <contract> informal voting with id 0
         | account | stake | vote | 
       # | VA1     | 500   | yes  | - automatically voted by the system
@@ -32,7 +32,7 @@ Feature: Slashing in voter contract
         | Admin           |
 
     Scenario Outline: Voting participan gets slashed.
-      When VA1 creates random voting in <contract> with 500 stake
+      When VA1 creates test voting in <contract> with 500 stake
       Then balances are
         | account  | REP balance  | REP stake  |
         | VA1      | 1000         | 500        |

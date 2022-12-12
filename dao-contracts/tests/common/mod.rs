@@ -4,7 +4,6 @@ pub mod config;
 pub mod dao;
 pub mod helpers;
 pub mod params;
-pub mod setup;
 
 use std::{
     collections::HashMap,
@@ -17,6 +16,7 @@ use casper_dao_contracts::{
     repo_voter,
     AdminContractTest,
     BidEscrowContractTest,
+    CSPRRateProviderContractTest,
     KycNftContractTest,
     KycVoterContractTest,
     RepoVoterContractTest,
@@ -27,13 +27,16 @@ use casper_dao_contracts::{
     VaNftContractTest,
     VariableRepositoryContractTest,
 };
-use casper_dao_utils::{Address, TestContract, TestEnv};
+use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     U512,
 };
 
 use self::params::Account;
+
+// 1CSPR ~= 0.02924$
+const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
 
 #[derive(cucumber::World)]
 pub struct DaoWorld {
@@ -49,6 +52,7 @@ pub struct DaoWorld {
     pub reputation_voter: ReputationVoterContractTest,
     pub simple_voter: SimpleVoterContractTest,
     pub admin: AdminContractTest,
+    pub rate_provider: CSPRRateProviderContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -150,6 +154,8 @@ impl Default for DaoWorld {
             va_token.address(),
         );
 
+        let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
+
         // Setup Reputation.
         // Setup VariableRepository.
         // Setup VaToken.
@@ -220,6 +226,7 @@ impl Default for DaoWorld {
             reputation_voter,
             simple_voter,
             admin,
+            rate_provider,
             balances: Default::default(),
             starting_balances: Default::default(),
             bids: Default::default(),
@@ -236,6 +243,15 @@ impl Default for DaoWorld {
         let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
         dao.variable_repository
             .update_at(key, multisig_address, None)
+            .unwrap();
+
+        // Update rate provider.
+        dao.variable_repository
+            .update_at(
+                consts::FIAT_CONVERSION_RATE_ADDRESS.to_string(),
+                Bytes::from(dao.rate_provider.address().to_bytes().unwrap()),
+                None,
+            )
             .unwrap();
 
         // Return dao.

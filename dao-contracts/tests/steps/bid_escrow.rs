@@ -27,7 +27,7 @@ fn post_job_offer(
     dos_fee: Balance,
 ) {
     let timeframe = helpers::to_seconds(timeframe, time_unit);
-    w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
+    let _ = w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
 #[when(
@@ -204,4 +204,15 @@ fn cannot_vote(
         .vote(0, choice.into(), *stake);
 
     assert_eq!(*expected_result, vote_result.is_ok());
+}
+
+#[then(expr = "the JobOffer by {account} {word} posted")]
+fn assert_job_offer_status(world: &mut DaoWorld, job_poster: Account, job_offer_status: String) {
+    match job_offer_status.as_str() {
+        "is" => assert!(world.get_job_offer_id(&job_poster).is_some()),
+        "isn't" => assert!(world.get_job_offer_id(&job_poster).is_none()),
+        _ => {
+            panic!("Unknown job offer option");
+        }
+    };
 }

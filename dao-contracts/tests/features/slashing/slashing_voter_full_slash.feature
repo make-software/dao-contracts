@@ -11,19 +11,19 @@ Feature: Slashing voter can fully slash VA.
       | VA1              | 10000        | 1000         | 0          | true     | true  |
       | VA2              | 0            | 2000         | 0          | true     | true  |
       | VA3              | 500          | 2000         | 0          | true     | true  |
-      | ExternalWorker   | 0            | 0            | 0          | true     | false |
+      | ExternalWorker   | 500          | 0            | 0          | true     | false |
 
   Scenario: VA1 gets removed from the DAO
 
     # VA1 crates a new voter.
-    When VA1 creates random voting in KycVoter with 100 stake
+    When VA1 creates test voting in KycVoter with 100 stake
     And voters vote in KycVoter informal voting with id 0
         | account | stake | vote | 
       # | VA1     | 100   | yes  | - automatically voted by the system
         | VA2     | 200   | yes  |
 
     # VA1 participates in another vote.
-    When VA2 creates random voting in RepoVoter with 300 stake
+    When VA2 creates test voting in RepoVoter with 300 stake
     And voters vote in RepoVoter informal voting with id 0
         | account | stake | vote | 
         | VA1     | 200   | yes  |
@@ -35,28 +35,30 @@ Feature: Slashing voter can fully slash VA.
       | VA2              | 0            | 2000         | 500        |
 
     # VA1 creates a JobOffer
-    When VA1 posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 100 CSPR DOS Fee
+    When VA1 posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And VA2 posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And 8 days passed
     And ExternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 500 CSPR stake without onboarding
 
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 600          | 0            | 0          |
-      | VA1              | 9900         | 1000         | 300        |
+      | BidEscrow        | 900          | 0            | 0          |
+      | VA1              | 9600         | 1000         | 300        |
       | VA2              | 0            | 2000         | 600        |
+      | VA3              | 500          | 2000         | 0          |
+      | ExternalWorker   | 0            | 0            | 0          |
 
     # VA1 participates in aother JobOffer.
-    When VA3 posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 300 CSPR DOS Fee
+    When VA3 posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 500 CSPR DOS Fee
     And VA1 posted the Bid for JobOffer 1 with proposed timeframe of 7 days and 500 CSPR price and 400 REP stake
     And VA2 posted the Bid for JobOffer 1 with proposed timeframe of 7 days and 500 CSPR price and 500 REP stake
 
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 900          | 0            | 0          |
-      | VA1              | 9900         | 1000         | 700        |
+      | BidEscrow        | 1400         | 0            | 0          |
+      | VA1              | 9600         | 1000         | 700        |
       | VA2              | 0            | 2000         | 1100       |
-      | VA3              | 200          | 2000         | 0          |
+      | VA3              | 0            | 2000         | 0          |
 
     # TODO: VA1 is worker in active job
     # TODO: VA1 is job poster in active job
@@ -82,8 +84,9 @@ Feature: Slashing voter can fully slash VA.
 
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
-      | BidEscrow        | 300          | 0            | 0          |
+      | BidEscrow        | 500          | 0            | 0          |
       | VA1              | 10000        | 0            | 0          |
       | VA2              | 0            | 2000         | 800        |
-      | VA3              | 200          | 2000         | 0          |
+      | VA3              | 0            | 2000         | 0          |
+      | ExternalWorker   | 500          | 0            | 0          |
     And total reputation is 4000
