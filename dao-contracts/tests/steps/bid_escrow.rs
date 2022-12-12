@@ -128,7 +128,7 @@ fn formal_does_not_start(w: &mut DaoWorld) {
         .bid_escrow
         .get_voting(0, VotingType::Informal.into())
         .unwrap();
-    assert_eq!(voting.formal_voting_id(), None);
+    assert_eq!(voting.voting_type(), VotingType::Informal.into());
 }
 
 #[then(expr = "ballot for {voting_type} voting {int} for {account} has {balance} unbounded tokens")]

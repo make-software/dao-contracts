@@ -33,8 +33,7 @@ pub struct Job {
     job_id: JobId,
     bid_id: BidId,
     job_offer_id: JobOfferId,
-    informal_voting_id: Option<VotingId>,
-    formal_voting_id: Option<VotingId>,
+    voting_id: Option<VotingId>,
     job_proof: Option<DocumentHash>,
     finish_time: BlockTime,
     status: JobStatus,
@@ -65,8 +64,7 @@ impl Job {
             job_id,
             bid_id,
             job_offer_id,
-            informal_voting_id: None,
-            formal_voting_id: None,
+            voting_id: None,
             job_proof: None,
             finish_time,
             status: JobStatus::Created,
@@ -174,35 +172,9 @@ impl Job {
         self.payment
     }
 
-    /// Get the job's informal voting id.
-    pub fn informal_voting_id(&self) -> Option<VotingId> {
-        self.informal_voting_id
-    }
-
-    /// Get the job's formal voting id.
-    pub fn formal_voting_id(&self) -> Option<VotingId> {
-        self.formal_voting_id
-    }
-
-    /// Set the job's informal voting id.
-    pub fn set_informal_voting_id(&mut self, informal_voting_id: Option<VotingId>) {
-        self.informal_voting_id = informal_voting_id;
-    }
-
-    /// Set the job's formal voting id.
-    pub fn set_formal_voting_id(&mut self, formal_voting_id: Option<VotingId>) {
-        self.formal_voting_id = formal_voting_id;
-    }
-
-    /// Get the current voting Id
-    pub fn current_voting_id(&self) -> Option<VotingId> {
-        if self.formal_voting_id.is_some() {
-            return self.formal_voting_id;
-        } else if self.informal_voting_id.is_some() {
-            return self.informal_voting_id;
-        }
-
-        None
+    /// Get the job's voting id.
+    pub fn voting_id(&self) -> Option<VotingId> {
+        self.voting_id
     }
 
     pub fn job_proof(&self) -> Option<&DocumentHash> {
@@ -224,6 +196,10 @@ impl Job {
 
     pub fn external_worker_cspr_stake(&self) -> U512 {
         self.external_worker_cspr_stake
+    }
+
+    pub fn set_voting_id(&mut self, voting_id: VotingId) {
+        self.voting_id = Some(voting_id);
     }
 }
 

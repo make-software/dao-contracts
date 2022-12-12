@@ -12,6 +12,7 @@ use crate::{
     voting::{
         types::VotingId,
         voting_state_machine::VotingStateMachine,
+        voting_state_machine::VotingType,
         Ballot,
         Choice,
         VotingEngine,
@@ -28,8 +29,8 @@ pub trait MockVoterContractInterface {
     fn variable_repo_address(&self) -> Address;
     fn reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-    fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-    fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+    fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
+    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     fn set_variable(&mut self, variable: String);
     fn get_variable(&self) -> String;
 }
@@ -49,8 +50,8 @@ impl MockVoterContractInterface for MockVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-            fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot>;
-            fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address>;
+            fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
         }
     }
 

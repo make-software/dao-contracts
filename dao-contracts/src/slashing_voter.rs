@@ -132,7 +132,6 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         if caller() == address_to_slash {
             revert(Error::SubjectOfSlashing);
         }
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.vote(caller(), voting_id, choice, stake);
     }
 
@@ -141,7 +140,6 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         voting_id: VotingId,
         voting_type: VotingType,
     ) -> Option<VotingStateMachine> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.get_voting(voting_id)
     }
 
@@ -151,17 +149,14 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_ballot(voting_id, address)
+        self.voting.get_ballot(voting_id, voting_type, address)
     }
 
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voter(voting_id, at)
+        self.voting.get_voter(voting_id, voting_type, at)
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         self.voting.finish_voting(voting_id);
     }
 
