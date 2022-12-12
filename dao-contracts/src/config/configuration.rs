@@ -162,4 +162,8 @@ impl Configuration {
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
         math::promils_of_u512(amount, self.dao_configuration.reputation_conversion_rate).unwrap_or_revert()
     }
+
+    pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
+        math::promils_of_u512(amount, self.dao_configuration.default_reputation_slash).unwrap_or_revert()
+    }
 }

@@ -609,6 +609,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                             self.voting.return_reputation_of_no_voters(voting_id, VotingType::Formal);
                             self.voting.redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
                             self.return_job_poster_payment_and_dos_fee(&job);
+                            self.slash_worker(&job);
                         }
                         WorkerType::ExternalToVA | WorkerType::External => {
                             self.voting.return_reputation_of_no_voters(voting_id, VotingType::Formal);
@@ -699,6 +700,13 @@ impl BidEscrowContractInterface for BidEscrowContract {
 }
 
 impl BidEscrowContract {
+    fn slash_worker(&self, job: &Job) {
+        let config = self.get_job_offer_configuration(&job);
+        let worker_balance = self.reputation_token().balance_of(job.worker());
+        let amount_to_burn = config.apply_default_reputation_slash_to(worker_balance);
+        self.reputation_token().burn(job.worker(), amount_to_burn);
+    }
+
     fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
         let bids_amount = self.job_offers_bids.len(job_offer_id);
         for i in 0..bids_amount {
