@@ -40,10 +40,7 @@ pub trait SlashingVoterContractInterface {
     /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<VotingStateMachine>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
@@ -146,7 +143,8 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         if caller() == task.subject {
             revert(Error::SubjectOfSlashing);
         }
-        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
+        self.voting
+            .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {

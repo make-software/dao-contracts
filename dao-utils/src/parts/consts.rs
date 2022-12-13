@@ -39,10 +39,10 @@ pub const DEFAULT_POLICING_RATE: &str = "DefaultPolicingRate";
 pub const REPUTATION_CONVERSION_RATE: &str = "ReputationConversionRate";
 pub const FIAT_CONVERSION_RATE_ADDRESS: &str = "FiatConversionRateAddress";
 pub const FORUM_KYC_REQUIRED: &str = "ForumKycRequired";
-pub const GOVERNANCE_INFORMAL_QUORUM_RATIO: &str = "GovernanceInformalQuorumRatio";
-pub const GOVERNANCE_FORMAL_QUORUM_RATIO: &str = "GovernanceFormalQuorumRatio";
-pub const GOVERNANCE_FORMAL_VOTING_TIME: &str = "GovernanceFormalVotingTime";
-pub const GOVERNANCE_INFORMAL_VOTING_TIME: &str = "GovernanceInformalVotingTime";
+pub const BID_ESCROW_INFORMAL_QUORUM_RATIO: &str = "BidEscrowInformalQuorumRatio";
+pub const BID_ESCROW_FORMAL_QUORUM_RATIO: &str = "BidEscrowFormalQuorumRatio";
+pub const BID_ESCROW_FORMAL_VOTING_TIME: &str = "BidEscrowFormalVotingTime";
+pub const BID_ESCROW_INFORMAL_VOTING_TIME: &str = "BidEscrowInformalVotingTime";
 pub const FORMAL_VOTING_TIME: &str = "FormalVotingTime";
 pub const INFORMAL_VOTING_TIME: &str = "InformalVotingTime";
 pub const FORMAL_QUORUM_RATIO: &str = "FormalQuorumRatio";
@@ -52,16 +52,11 @@ pub const DISTRIBUTE_PAYMENT_TO_NON_VOTERS: &str = "DistributePaymentToNonVoters
 pub const TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING: &str = "TimeBetweenInformalAndFormalVoting";
 pub const VA_BID_ACCEPTANCE_TIMEOUT: &str = "VABidAcceptanceTimeout";
 pub const VA_CAN_BID_ON_PUBLIC_AUCTION: &str = "VACanBidOnPublicAuction";
-pub const GOVERNANCE_WALLET_ADDRESS: &str = "GovernanceWalletAddress";
-pub const GOVERNANCE_PAYMENT_RATIO: &str = "GovernancePaymentRatio";
+pub const BID_ESCROW_WALLET_ADDRESS: &str = "BidEscrowWalletAddress";
+pub const BID_ESCROW_PAYMENT_RATIO: &str = "BidEscrowPaymentRatio";
 pub const VOTING_CLEARNESS_DELTA: &str = "VotingClearnessDelta";
 pub const VOTING_START_AFTER_JOB_WORKER_SUBMISSION: &str = "VotingStartAfterJobSubmission";
 pub const DEFAULT_REPUTATION_SLASH: &str = "DefaultReputationSlash";
-
-// TODO: Remove
-pub const MINIMUM_GOVERNANCE_REPUTATION: &str = "minimum_governance_reputation";
-// TODO: Remove
-pub const MINIMUM_VOTING_REPUTATION: &str = "minimum_voting_reputation";
 
 // Contract keys.
 pub const CONTRACT_MAIN_PURSE: &str = "__contract_main_purse";

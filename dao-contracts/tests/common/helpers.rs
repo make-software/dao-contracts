@@ -11,15 +11,14 @@ use super::params::{Balance, TimeUnit};
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
     match value {
-        "true" => true.to_bytes().unwrap().into(),
-        "false" => false.to_bytes().unwrap().into(),
+        "true" | "false" => value.parse::<bool>().unwrap().to_bytes().unwrap().into(),
         _ => match key {
             POST_JOB_DOS_FEE
-            | GOVERNANCE_PAYMENT_RATIO
+            | BID_ESCROW_PAYMENT_RATIO
             | DEFAULT_POLICING_RATE
             | REPUTATION_CONVERSION_RATE
-            | GOVERNANCE_INFORMAL_QUORUM_RATIO
-            | GOVERNANCE_FORMAL_QUORUM_RATIO
+            | BID_ESCROW_INFORMAL_QUORUM_RATIO
+            | BID_ESCROW_FORMAL_QUORUM_RATIO
             | INFORMAL_QUORUM_RATIO
             | FORMAL_QUORUM_RATIO
             | DEFAULT_REPUTATION_SLASH

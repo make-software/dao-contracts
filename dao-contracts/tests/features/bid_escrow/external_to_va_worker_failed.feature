@@ -16,6 +16,7 @@ Feature: External Worker who wants to become a VA submits job
     And following configuration
       | key                                    | value         |
       | TimeBetweenInformalAndFormalVoting     | 0             |
+      | VotingStartAfterJobSubmission          | 0             |
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And 8 days passed
@@ -47,7 +48,7 @@ Feature: External Worker who wants to become a VA submits job
       | VA1              | 0            | 1000         | 500        |
       | VA2              | 0            | 1000         | 500        |
     And total unbounded stake for voting 0 is 50 tokens
-    And ballot for informal voting 0 for ExternalWorker has 50 unbounded tokens
+    And ballot for voting 0 for ExternalWorker has 50 unbounded tokens
     When Informal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
@@ -59,7 +60,7 @@ Feature: External Worker who wants to become a VA submits job
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     And total unbounded stake for voting 0 is 50 tokens
-    And ballot for formal voting 0 for ExternalWorker has 50 unbounded tokens
+    And ballot for voting 0 for ExternalWorker has 50 unbounded tokens
     When votes are
       | account          | vote | stake |
      #| ExternalWorker   | Yes  | 50    | - automatically voted by the system

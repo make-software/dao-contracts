@@ -167,7 +167,8 @@ impl KycVoterContractInterface for KycVoterContract {
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voter = caller();
-        self.voting.vote(voter, voting_id, voting_type, choice, stake);
+        self.voting
+            .vote(voter, voting_id, voting_type, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {

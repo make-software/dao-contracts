@@ -2,18 +2,11 @@ use std::collections::BTreeMap;
 
 use casper_dao_modules::{AccessControl, Record, Repository};
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
-    casper_env::{caller, revert},
-    consts as dao_consts,
-    math,
+    casper_env::caller,
     Address,
-    Error,
 };
-use casper_types::{
-    bytesrepr::{Bytes, FromBytes},
-    U512,
-};
+use casper_types::bytesrepr::Bytes;
 use delegate::delegate;
 
 // Interface of the Variable Repository Contract.
@@ -161,86 +154,5 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         }
 
         result
-    }
-}
-
-impl VariableRepositoryContractCaller {
-    /// Retrieves the value for the given key and returns a deserialized struct.
-    ///
-    /// # Errors
-    /// Throws [`ValueNotAvailable`](casper_dao_utils::Error::NotAnOwner) if a value
-    /// for the given key does not exist.
-    pub fn get_variable<T: FromBytes>(&self, key: &str) -> T {
-        let variable = self.get(key.into()).unwrap_or_revert();
-        let (variable, bytes) = <T>::from_bytes(&variable).unwrap_or_revert();
-        if !bytes.is_empty() {
-            revert(Error::ValueNotAvailable)
-        }
-        variable
-    }
-
-    /// Retrieves the value stored under the [INFORMAL_VOTING_TIME](dao_consts::INFORMAL_VOTING_TIME) key.
-    pub fn informal_voting_time(&self) -> u64 {
-        self.get_variable(dao_consts::INFORMAL_VOTING_TIME)
-    }
-
-    /// Retrieves the value stored under the [FORMAL_VOTING_TIME](dao_consts::FORMAL_VOTING_TIME) key.
-    pub fn formal_voting_time(&self) -> u64 {
-        self.get_variable(dao_consts::FORMAL_VOTING_TIME)
-    }
-
-    /// Retrieves the value stored under the [REPUTATION_CONVERSION_RATE](dao_consts::REPUTATION_CONVERSION_RATE) key.
-    pub fn reputation_conversion_rate(&self) -> U512 {
-        self.get_variable(dao_consts::REPUTATION_CONVERSION_RATE)
-    }
-
-    /// Retrieves the value stored under the [DEFAULT_POLICING_RATE](dao_consts::DEFAULT_POLICING_RATE) key.
-    pub fn default_policing_rate(&self) -> U512 {
-        self.get_variable(dao_consts::DEFAULT_POLICING_RATE)
-    }
-
-    /// Retrieves a normalized value stored under the [INFORMAL_VOTING_QUORUM](dao_consts::INFORMAL_VOTING_QUORUM) key.
-    pub fn informal_voting_quorum(&self, total_onboarded: U512) -> U512 {
-        math::promils_of(
-            total_onboarded,
-            self.get_variable(dao_consts::GOVERNANCE_INFORMAL_QUORUM_RATIO),
-        )
-        .unwrap_or_revert()
-    }
-
-    /// Retrieves a normalized value stored under the [FORMAL_VOTING_QUORUM](dao_consts::FORMAL_VOTING_QUORUM) key.
-    pub fn formal_voting_quorum(&self, total_onboarded: U512) -> U512 {
-        math::promils_of(
-            total_onboarded,
-            self.get_variable(dao_consts::GOVERNANCE_FORMAL_QUORUM_RATIO),
-        )
-        .unwrap_or_revert()
-    }
-
-    /// Calculates amount of reputation to be minted
-    pub fn reputation_to_mint(&self, cspr_amount: U512) -> U512 {
-        math::promils_of(cspr_amount, self.reputation_conversion_rate()).unwrap_or_revert()
-    }
-
-    /// Calculates amount of reputation to be redistributed
-    pub fn reputation_to_redistribute(&self, reputation_amount: U512) -> U512 {
-        math::promils_of(reputation_amount, self.default_policing_rate()).unwrap_or_revert()
-    }
-
-    /// Calculates amount of CSPR to be redistributed
-    pub fn cspr_to_redistribute(&self, cspr_amount: U512) -> U512 {
-        math::promils_of_u512(cspr_amount, self.default_policing_rate()).unwrap_or_revert()
-    }
-
-    pub fn governance_wallet(&self) -> Address {
-        self.get_variable(dao_consts::GOVERNANCE_WALLET_ADDRESS)
-    }
-
-    pub fn governance_payment_ratio(&self) -> U512 {
-        self.get_variable(dao_consts::GOVERNANCE_PAYMENT_RATIO)
-    }
-
-    pub fn payment_for_governance(&self, cspr_amount: U512) -> U512 {
-        math::promils_of_u512(cspr_amount, self.governance_payment_ratio()).unwrap_or_revert()
     }
 }
