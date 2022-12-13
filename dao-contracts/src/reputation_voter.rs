@@ -97,10 +97,7 @@ pub trait ReputationVoterContractInterface {
     /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<VotingStateMachine>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
@@ -193,7 +190,8 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
+        self.voting
+            .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

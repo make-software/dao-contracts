@@ -60,7 +60,7 @@ Feature: External Worker who wants to become a VA submits job
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     And total unbounded stake for voting 0 is 50 tokens
-    And ballot for formal voting 0 for ExternalWorker has 50 unbounded tokens
+    And ballot for voting 0 for ExternalWorker has 50 unbounded tokens
     When votes are
       | account          | vote | stake |
      #| ExternalWorker   | Yes  | 50    | - automatically voted by the system

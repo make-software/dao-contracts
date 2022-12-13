@@ -15,7 +15,7 @@ impl VotingValidation for VoteInTime {
             VotingState::Created => Err(Error::InformalVotingNotStarted),
             VotingState::BetweenVotings => Err(Error::VotingDuringTimeBetweenVotingsNotAllowed),
             VotingState::Finished => Err(Error::VoteOnCompletedVotingNotAllowed),
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 }

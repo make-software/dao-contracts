@@ -41,10 +41,7 @@ pub trait SimpleVoterContractInterface {
     /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<VotingStateMachine>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
@@ -55,10 +52,7 @@ pub trait SimpleVoterContractInterface {
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns document hash being voted on for given voting id.
-    fn get_document_hash(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<DocumentHash>;
+    fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash>;
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
 }
@@ -146,15 +140,13 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         }
     }
 
-    fn get_document_hash(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<DocumentHash> {
+    fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash> {
         self.simple_votings.get(&voting_id)
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
+        self.voting
+            .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

@@ -147,10 +147,7 @@ pub trait BidEscrowContractInterface {
     /// see [VotingEngine](VotingEngine)
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<VotingStateMachine>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine)
     fn get_ballot(
         &self,
@@ -250,7 +247,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
         )
-        .bid_escrow()
+        .is_bid_escrow(true)
         .build();
 
         let dos_fee = self.deposit_dos_fee(purse, &voting_configuration);
@@ -479,15 +476,16 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_configuration = ConfigurationBuilder::new(
             self.voting.variable_repo_address(),
             self.voting.va_token_address(),
-            )
-            .only_va_can_create(false)
-            .is_bid_escrow(true)
-            .build();
+        )
+        .only_va_can_create(false)
+        .is_bid_escrow(true)
+        .build();
 
         let stake = if job.external_worker_cspr_stake().is_zero() {
             job.stake()
         } else {
-            voting_configuration.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake())
+            voting_configuration
+                .apply_reputation_conversion_rate_to(job.external_worker_cspr_stake())
         };
 
         let voting_id = self
@@ -495,7 +493,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             .create_voting(worker, U512::zero(), voting_configuration);
 
         self.jobs_for_voting.set(&voting_id, job_id);
-        
+
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
         self.voting.cast_ballot(
             worker,
@@ -514,13 +512,16 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        let job = self.jobs.get_or_revert(&self.job_id_by_voting_id(voting_id));
+        let job = self
+            .jobs
+            .get_or_revert(&self.job_id_by_voting_id(voting_id));
         let caller = caller();
 
         if caller == job.poster() || caller == job.worker() {
             revert(Error::CannotVoteOnOwnJob);
         }
-        self.voting.vote(caller, voting_id, voting_type, choice, stake);
+        self.voting
+            .vote(caller, voting_id, voting_type, choice, stake);
     }
 
     fn get_job(&self, bid_id: BidId) -> Option<Job> {
@@ -562,8 +563,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 }
                 VotingResult::QuorumNotReached => {
                     if job_offer.configuration.informal_stake_reputation() {
-                        self.voting.return_reputation_of_yes_voters(voting_id, VotingType::Informal);
-                        self.voting.return_reputation_of_no_voters(voting_id, VotingType::Informal);
+                        self.voting
+                            .return_reputation_of_yes_voters(voting_id, VotingType::Informal);
+                        self.voting
+                            .return_reputation_of_no_voters(voting_id, VotingType::Informal);
                     }
                     self.return_job_poster_payment_and_dos_fee(&job);
                     self.return_external_worker_cspr_stake(&job);
@@ -574,8 +577,12 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 match voting_summary.result() {
                     VotingResult::InFavor => match job.worker_type() {
                         WorkerType::Internal => {
-                            self.voting.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                            self.voting.redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+                            self.voting
+                                .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                            self.voting.redistribute_reputation_of_no_voters(
+                                voting_id,
+                                VotingType::Formal,
+                            );
                             self.mint_and_redistribute_reputation_for_internal_worker(&job);
                             self.redistribute_cspr_internal_worker(&job);
                             self.return_job_poster_dos_fee(&job);
@@ -586,18 +593,27 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
                             self.return_external_worker_cspr_stake(&job);
                             // Bound ballot for worker.
-                            self.voting.bound_ballot(voting_id, job.worker(), VotingType::Formal);
+                            self.voting
+                                .bound_ballot(voting_id, job.worker(), VotingType::Formal);
 
-                            self.voting.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                            self.voting.redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+                            self.voting
+                                .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                            self.voting.redistribute_reputation_of_no_voters(
+                                voting_id,
+                                VotingType::Formal,
+                            );
                             self.mint_and_redistribute_reputation_for_internal_worker(&job);
                             self.burn_external_worker_reputation(&job);
                             self.redistribute_cspr_internal_worker(&job);
                             self.return_job_poster_dos_fee(&job);
                         }
                         WorkerType::External => {
-                            self.voting.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                            self.voting.redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+                            self.voting
+                                .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                            self.voting.redistribute_reputation_of_no_voters(
+                                voting_id,
+                                VotingType::Formal,
+                            );
                             self.mint_and_redistribute_reputation_for_external_worker(&job);
                             self.redistribute_cspr_external_worker(&job);
                             self.return_job_poster_dos_fee(&job);
@@ -606,21 +622,31 @@ impl BidEscrowContractInterface for BidEscrowContract {
                     },
                     VotingResult::Against => match job.worker_type() {
                         WorkerType::Internal => {
-                            self.voting.return_reputation_of_no_voters(voting_id, VotingType::Formal);
-                            self.voting.redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                            self.voting
+                                .return_reputation_of_no_voters(voting_id, VotingType::Formal);
+                            self.voting.redistribute_reputation_of_yes_voters(
+                                voting_id,
+                                VotingType::Formal,
+                            );
                             self.return_job_poster_payment_and_dos_fee(&job);
                             self.slash_worker(&job);
                         }
                         WorkerType::ExternalToVA | WorkerType::External => {
-                            self.voting.return_reputation_of_no_voters(voting_id, VotingType::Formal);
-                            self.voting.redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                            self.voting
+                                .return_reputation_of_no_voters(voting_id, VotingType::Formal);
+                            self.voting.redistribute_reputation_of_yes_voters(
+                                voting_id,
+                                VotingType::Formal,
+                            );
                             self.return_job_poster_payment_and_dos_fee(&job);
                             self.redistribute_cspr_external_worker_failed(&job);
                         }
                     },
                     VotingResult::QuorumNotReached => {
-                        self.voting.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                        self.voting.return_reputation_of_no_voters(voting_id, VotingType::Formal);
+                        self.voting
+                            .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                        self.voting
+                            .return_reputation_of_no_voters(voting_id, VotingType::Formal);
                         self.return_job_poster_payment_and_dos_fee(&job);
                         self.return_external_worker_cspr_stake(&job);
                     }
@@ -636,10 +662,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
     }
 
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<VotingStateMachine> {
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine> {
         self.voting.get_voting(voting_id)
     }
 
@@ -837,7 +860,7 @@ impl BidEscrowContract {
 
     fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
         let configuration = self.get_job_offer_configuration(job);
-        
+
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
         self.withdraw(governance_wallet, governance_wallet_payment);
@@ -898,9 +921,10 @@ impl BidEscrowContract {
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
         let configuration = self.get_job_offer_configuration(job);
-        
+
         let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
-        let reputation_to_redistribute = configuration.apply_default_policing_rate_to(reputation_to_mint);
+        let reputation_to_redistribute =
+            configuration.apply_default_policing_rate_to(reputation_to_mint);
 
         // Worker
         ReputationContractCaller::at(self.voting.reputation_token_address()).mint(
@@ -914,7 +938,8 @@ impl BidEscrowContract {
 
     fn mint_and_redistribute_reputation_for_external_worker(&mut self, job: &Job) {
         let configuration = self.get_job_offer_configuration(job);
-        let payment_reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
+        let payment_reputation_to_mint =
+            configuration.apply_reputation_conversion_rate_to(job.payment());
         let total = configuration.apply_default_policing_rate_to(payment_reputation_to_mint);
         self.mint_reputation_for_voters(job, total);
     }
@@ -925,8 +950,14 @@ impl BidEscrowContract {
             .get_voting(job.voting_id().unwrap_or_revert())
             .unwrap_or_revert();
 
-        for i in 0..self.voting.voters().len((voting.voting_id(), VotingType::Formal)) {
-            let ballot = self.voting.get_ballot_at(voting.voting_id(), VotingType::Formal, i);
+        for i in 0..self
+            .voting
+            .voters()
+            .len((voting.voting_id(), VotingType::Formal))
+        {
+            let ballot = self
+                .voting
+                .get_ballot_at(voting.voting_id(), VotingType::Formal, i);
             if ballot.unbounded {
                 continue;
             }
@@ -967,16 +998,14 @@ impl BidEscrowContract {
         }
     }
 
-    fn create_formal_voting(
-        &mut self,
-        voting_id: VotingId,
-    ) {
+    fn create_formal_voting(&mut self, voting_id: VotingId) {
         let voting = self
             .voting
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
         if voting.voting_configuration().informal_stake_reputation() {
-            self.voting.unstake_all_reputation(voting_id, VotingType::Informal);
+            self.voting
+                .unstake_all_reputation(voting_id, VotingType::Informal);
         }
         self.voting
             .recast_creators_ballot_from_informal_to_formal(voting_id);

@@ -17,7 +17,6 @@ pub struct ConfigurationBuilder {
 }
 
 impl ConfigurationBuilder {
-
     pub fn new(variable_repo_address: Address, va_token_address: Address) -> Self {
         let total_onboarded = VaNftContractCaller::at(va_token_address).total_supply();
         let variables = VariableRepositoryContractCaller::at(variable_repo_address).all_variables();
@@ -101,7 +100,6 @@ impl ConfigurationBuilder {
                     contract_calls: Vec::new(),
                     only_va_can_create: true,
                     double_time_between_votings: false,
-                    is_bid_escrow: false,
                 },
                 total_onboarded,
             ),

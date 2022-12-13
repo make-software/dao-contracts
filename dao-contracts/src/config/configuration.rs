@@ -1,8 +1,10 @@
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
+    math,
     Address,
     BlockTime,
-    ContractCall, math, casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    ContractCall,
 };
 use casper_types::U512;
 
@@ -112,7 +114,8 @@ impl Configuration {
 
     pub fn voting_delay(&self) -> BlockTime {
         if self.voting_configuration.is_bid_escrow {
-            self.dao_configuration.voting_start_after_job_worker_submission
+            self.dao_configuration
+                .voting_start_after_job_worker_submission
         } else {
             0
         }
@@ -159,18 +162,22 @@ impl Configuration {
     }
 
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.default_policing_rate).unwrap_or_revert()
+        math::promils_of_u512(amount, self.dao_configuration.default_policing_rate)
+            .unwrap_or_revert()
     }
 
     pub fn apply_bid_escrow_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.bid_escrow_payment_ratio).unwrap_or_revert()
+        math::promils_of_u512(amount, self.dao_configuration.bid_escrow_payment_ratio)
+            .unwrap_or_revert()
     }
 
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.reputation_conversion_rate).unwrap_or_revert()
+        math::promils_of_u512(amount, self.dao_configuration.reputation_conversion_rate)
+            .unwrap_or_revert()
     }
 
     pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.default_reputation_slash).unwrap_or_revert()
+        math::promils_of_u512(amount, self.dao_configuration.default_reputation_slash)
+            .unwrap_or_revert()
     }
 }
