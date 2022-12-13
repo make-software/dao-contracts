@@ -156,7 +156,20 @@ impl Default for DaoWorld {
         );
 
         let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
-        let voting_ids = DaoIdsContractTest::new(&env);
+
+        // Setup DaoIds.
+        let mut voting_ids = DaoIdsContractTest::new(&env);
+        voting_ids.add_to_whitelist(kyc_voter.address()).unwrap();
+        voting_ids.add_to_whitelist(bid_escrow.address()).unwrap();
+        voting_ids
+            .add_to_whitelist(slashing_voter.address())
+            .unwrap();
+        voting_ids.add_to_whitelist(repo_voter.address()).unwrap();
+        voting_ids
+            .add_to_whitelist(reputation_voter.address())
+            .unwrap();
+        voting_ids.add_to_whitelist(simple_voter.address()).unwrap();
+        voting_ids.add_to_whitelist(admin.address()).unwrap();
 
         // Setup Reputation.
         // Setup VariableRepository.
