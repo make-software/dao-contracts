@@ -4,11 +4,20 @@ use casper_dao_utils::{
     casper_env::caller,
     SequenceGenerator,
 };
+
 use crate::voting::VotingId;
 
 #[casper_contract_interface]
 pub trait DaoIdsContractInterface {
+    ///  Initializes a contract.
+    ///  Sets the deployer as the owner.
+    ///
+    ///  see [AccessControl](AccessControl)
     fn init(&mut self);
+    /// Returns the next voting id in the system.
+    ///
+    /// # Errors
+    /// Throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if the caller is not whitelisted.
     fn next_voting_id(&mut self) -> VotingId;
 }
 
@@ -25,6 +34,7 @@ impl DaoIdsContractInterface for DaoIdsContract {
     }
 
     fn next_voting_id(&mut self) -> VotingId {
+        self.access_control.ensure_whitelisted();
         self.voting_id_seq.next_value()
     }
 }

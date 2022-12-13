@@ -1,6 +1,6 @@
 Feature: Internal Flow
   Job Poster picks a bid of an Internal Worker, and the Internal Worker accepts the job.
-  The formal voting fails. A part of the reputation of the Internal Worker is getting slashed.
+  The formal voting fails.
 
   Background:
     Given following balances

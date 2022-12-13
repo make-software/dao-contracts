@@ -24,7 +24,7 @@ Feature: Slashing voter can fully slash VA.
 
     # VA1 participates in another vote.
     When VA2 creates test voting in RepoVoter with 300 stake
-    And voters vote in RepoVoter informal voting with id 0
+    And voters vote in RepoVoter informal voting with id 1
         | account | stake | vote | 
         | VA1     | 200   | yes  |
       # | VA2     | 300   | yes  | - automatically voted by the system
@@ -68,19 +68,19 @@ Feature: Slashing voter can fully slash VA.
     When VA2 starts voting with the following config
         | voting_contract       | stake | arg1  | arg2 |
         | SlashingVoter         | 500   | VA1   | 1    |
-    And voters vote in SlashingVoter informal voting with id 0
+    And voters vote in SlashingVoter informal voting with id 2
         | account | stake | vote | 
       # | VA2     | 500   | yes  | - automatically voted by the system
         | VA3     | 500   | yes  |
     And 5 days passed
-    And informal voting with id 0 ends in SlashingVoter contract
+    And informal voting with id 2 ends in SlashingVoter contract
     And 2 days passed
-    And voters vote in SlashingVoter formal voting with id 0
+    And voters vote in SlashingVoter formal voting with id 2
       | account | stake | vote | 
     # | VA2     | 500   | yes  | - automatically voted by the system
       | VA3     | 500   | yes  |
     And 5 days passed
-    And formal voting with id 0 ends in SlashingVoter contract
+    And formal voting with id 2 ends in SlashingVoter contract
 
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
