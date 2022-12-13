@@ -160,6 +160,10 @@ impl Default for RepositoryDefaults {
         items.push(consts::VOTING_CLEARNESS_DELTA, U512::from(8));
         items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);
         items.push(consts::BID_ESCROW_PAYMENT_RATIO, U512::from(100));
+        items.push(
+            consts::VOTING_IDS_ADDRESS,
+            Address::from(ContractPackageHash::from([0u8; 32])),
+        );
         items
     }
 }

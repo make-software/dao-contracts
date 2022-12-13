@@ -170,6 +170,13 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "dao_ids_contract"
+path = "bin/dao_ids.rs"
+bench = false
+doctest = false
+test = false
+
 [features]
 default = [ "test-support" ]
 test-support = [ "casper-dao-utils/test-support", "casper-dao-modules/test-support" ]
