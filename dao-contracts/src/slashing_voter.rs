@@ -50,7 +50,6 @@ pub trait SlashingVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
     fn update_bid_escrow_list(&mut self, bid_escrows: Vec<Address>);
 
     // Whitelisting set.
@@ -152,10 +151,6 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         if summary.is_formal() && summary.result() == VotingResult::InFavor {
             self.slash(voting_id);
         }
-    }
-
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.slash_voter(voter, voting_id);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

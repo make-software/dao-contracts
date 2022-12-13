@@ -55,6 +55,12 @@ pub trait SimpleVoterContractInterface {
     fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash>;
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+
+    fn change_ownership(&mut self, owner: Address);
+    fn add_to_whitelist(&mut self, address: Address);
+    fn remove_from_whitelist(&mut self, address: Address);
+    fn get_owner(&self) -> Option<Address>;
+    fn is_whitelisted(&self, address: Address) -> bool;
 }
 
 /// Event thrown after SimpleVoting is created
@@ -93,6 +99,14 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
                 address: Address,
             ) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+        }
+
+        to self.access_control {
+            fn change_ownership(&mut self, owner: Address);
+            fn add_to_whitelist(&mut self, address: Address);
+            fn remove_from_whitelist(&mut self, address: Address);
+            fn is_whitelisted(&self, address: Address) -> bool;
+            fn get_owner(&self) -> Option<Address>;
         }
     }
 

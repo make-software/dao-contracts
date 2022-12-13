@@ -28,10 +28,10 @@ impl DaoWorld {
         burner: &Account,
         holder: &Account,
     ) -> Result<(), casper_dao_utils::Error> {
-        let token_id = self.get_kyc_token_id(holder);
         let burner = self.get_address(burner);
+        let holder = self.get_address(holder);
 
-        self.kyc_token.as_account(burner).burn(*token_id)
+        self.kyc_token.as_account(burner).burn(holder)
     }
 
     pub fn burn_kyc_token(&mut self, minter: &Account, recipient: &Account) {
