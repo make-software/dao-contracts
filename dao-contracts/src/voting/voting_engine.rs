@@ -95,7 +95,7 @@ impl VotingEngine {
 
         let cast_first_vote = !configuration.voting_configuration.is_bid_escrow;
 
-        let voting_id = self.next_voting_id();
+        let voting_id = 0;//self.next_voting_id();
 
         VotingCreated::new(&creator, voting_id, voting_id, None, &configuration).emit();
 
@@ -419,12 +419,6 @@ impl VotingEngine {
 
     fn set_voting(&self, voting: VotingStateMachine) {
         self.voting_states.set(&voting.voting_id(), Some(voting))
-    }
-
-    fn next_voting_id(&mut self) -> VotingId {
-        let voting_id = self.votings_count.get().unwrap_or_default();
-        self.votings_count.set(voting_id + 1);
-        voting_id
     }
 
     fn perform_action(&self, voting_id: VotingId) {

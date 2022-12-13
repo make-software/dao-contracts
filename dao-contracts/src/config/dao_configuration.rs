@@ -32,4 +32,5 @@ pub struct DaoConfiguration {
     pub voting_clearness_delta: U512,
     pub voting_start_after_job_worker_submission: BlockTime,
     pub bid_escrow_payment_ratio: U512,
+    pub voting_ids_address: Address,
 }
