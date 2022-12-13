@@ -1,17 +1,26 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{BlockTime, Error};
 
-use crate::{rules::validation::Validation, voting::voting_state_machine::VotingState};
+use crate::{
+    rules::validation::VotingValidation,
+    voting::voting_state_machine::{VotingState, VotingStateMachine},
+};
 
 pub struct VotingNotCompleted {
-    pub voting_state: VotingState,
+    pub block_time: BlockTime,
 }
 
-impl Validation for VotingNotCompleted {
-    fn validate(&self) -> Result<(), Error> {
-        if self.voting_state == VotingState::Finished {
+impl VotingValidation for VotingNotCompleted {
+    fn validate(&self, voting_state_machine: &VotingStateMachine) -> Result<(), Error> {
+        if voting_state_machine.state() == &VotingState::Finished {
             return Err(Error::VotingAlreadyFinished);
         }
 
         Ok(())
+    }
+}
+
+impl VotingNotCompleted {
+    pub fn create(block_time: BlockTime) -> Box<VotingNotCompleted> {
+        Box::new(Self { block_time })
     }
 }

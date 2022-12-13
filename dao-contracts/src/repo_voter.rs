@@ -48,7 +48,6 @@ pub trait RepoVoterContractInterface {
     fn get_voting(
         &self,
         voting_id: VotingId,
-        voting_type: VotingType,
     ) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
@@ -88,6 +87,18 @@ impl RepoVoterContractInterface for RepoVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_voting(
+            &self,
+                voting_id: VotingId,
+            ) -> Option<VotingStateMachine>;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
         }
 
         to self.access_control {
@@ -132,38 +143,10 @@ impl RepoVoterContractInterface for RepoVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.vote(caller(), voting_id, choice, stake);
+        self.voting.vote(caller(), voting_id, voting_type, choice, stake);
     }
 
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-    ) -> Option<VotingStateMachine> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voting(voting_id)
-    }
 
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_ballot(voting_id, address)
-    }
-
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voter(voting_id, at)
-    }
-
-    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.finish_voting(voting_id);
-    }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();

@@ -23,7 +23,6 @@ use self::{
 };
 use super::{ballot::Choice, types::VotingId, Ballot};
 use crate::{
-    voting::validation::{finish_formal_voting_validator, vote_validator},
     Configuration,
     ReputationContractCaller,
     ReputationContractInterface,
@@ -49,8 +48,8 @@ pub struct VotingEngine {
     reputation_token: Variable<Address>,
     va_token: Variable<Address>,
     voting_states: Mapping<VotingId, Option<VotingStateMachine>>,
-    ballots: Mapping<(VotingId, Address), Ballot>,
-    voters: VecMapping<VotingId, Address>,
+    ballots: Mapping<(VotingId, VotingType, Address), Ballot>,
+    voters: VecMapping<(VotingId, VotingType), Address>,
     votings_count: Variable<VotingId>,
 }
 
@@ -83,47 +82,30 @@ impl VotingEngine {
     /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`Error::NotEnoughReputation`](casper_dao_utils::Error::NotEnoughReputation) when the creator does not have enough reputation to create a voting
+    /// Throws [`Error::NotEnoughReputation`](Error::NotEnoughReputation) when the creator does not have enough reputation to create a voting
     pub fn create_voting(
         &mut self,
         creator: Address,
         stake: U512,
-        voting_configuration: Configuration,
+        configuration: Configuration,
     ) -> VotingId {
-        if voting_configuration.only_va_can_create() && !self.is_va(creator) {
+        if configuration.only_va_can_create() && !self.is_va(creator) {
             revert(Error::VaNotOnboarded)
         }
 
+        let cast_first_vote = !configuration.voting_configuration.is_bid_escrow;
+
         let voting_id = self.next_voting_id();
 
-        VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
+        VotingCreated::new(&creator, voting_id, voting_id, None, &configuration).emit();
+
         let voting =
-            VotingStateMachine::new(voting_id, get_block_time(), creator, voting_configuration);
+            VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
         self.set_voting(voting);
-        self.vote(creator, voting_id, Choice::InFavor, stake);
 
-        voting_id
-    }
-
-    pub fn create_voting_without_first_vote(
-        &mut self,
-        creator: Address,
-        voting_configuration: Configuration,
-    ) -> VotingId {
-        if voting_configuration.only_va_can_create() && !self.is_va(creator) {
-            revert(Error::VaNotOnboarded)
+        if cast_first_vote {
+            self.vote(creator, voting_id, VotingType::Informal, Choice::InFavor, stake);
         }
-
-        let voting_id = self.next_voting_id();
-
-        VotingCreated::new(&creator, voting_id, voting_id, None, &voting_configuration).emit();
-
-        // let cast_first_vote = voting_configuration.cast_first_vote;
-        // let unbounded_tokens_for_creator = voting_configuration.unbounded_tokens_for_creator;
-
-        let voting =
-            VotingStateMachine::new(voting_id, get_block_time(), creator, voting_configuration);
-        self.set_voting(voting);
 
         voting_id
     }
@@ -142,35 +124,37 @@ impl VotingEngine {
     /// Emits [`VotingEnded`](VotingEnded), [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`FinishingCompletedVotingNotAllowed`](casper_dao_utils::Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
+    /// Throws [`FinishingCompletedVotingNotAllowed`](Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
     ///
-    /// Throws [`FormalVotingTimeNotReached`](casper_dao_utils::Error::FormalVotingTimeNotReached) if formal voting time did not pass
+    /// Throws [`FormalVotingTimeNotReached`](Error::FormalVotingTimeNotReached) if formal voting time did not pass
     ///
-    /// Throws [`InformalVotingTimeNotReached`](casper_dao_utils::Error::InformalVotingTimeNotReached) if informal voting time did not pass
+    /// Throws [`InformalVotingTimeNotReached`](Error::InformalVotingTimeNotReached) if informal voting time did not pass
     ///
-    /// Throws [`ArithmeticOverflow`](casper_dao_utils::Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
-    pub fn finish_voting(&mut self, voting_id: VotingId) -> VotingSummary {
+    /// Throws [`ArithmeticOverflow`](Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
+    pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
         let voting = self
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
+
+        self.assert_voting_type(&voting, voting_type);
 
         if voting.completed() {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
         let informal_without_stake = voting.is_informal_without_stake();
-        match voting.get_voting_type() {
+        match voting.voting_type() {
             VotingType::Informal => {
                 let voting_result = self.finish_informal_voting(voting);
                 if !informal_without_stake {
-                    self.return_reputation_of_yes_voters(voting_id);
-                    self.return_reputation_of_no_voters(voting_id);
+                    self.return_reputation_of_yes_voters(voting_id, VotingType::Informal);
+                    self.return_reputation_of_no_voters(voting_id, VotingType::Informal);
                 }
 
                 match voting_result.result() {
                     VotingResult::InFavor | VotingResult::Against => {
                         self.recast_creators_ballot_from_informal_to_formal(
-                            voting_result.formal_voting_id().unwrap_or_revert(),
+                            voting_id,
                         );
                     }
                     VotingResult::QuorumNotReached => {
@@ -184,16 +168,16 @@ impl VotingEngine {
                 let voting_result = self.finish_formal_voting(voting);
                 match voting_result.result() {
                     VotingResult::InFavor => {
-                        self.return_reputation_of_yes_voters(voting_id);
-                        self.redistribute_reputation_of_no_voters(voting_id);
+                        self.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                        self.redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
                     }
                     VotingResult::Against => {
-                        self.return_reputation_of_no_voters(voting_id);
-                        self.redistribute_reputation_of_yes_voters(voting_id);
+                        self.return_reputation_of_no_voters(voting_id, VotingType::Formal);
+                        self.redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
                     }
                     VotingResult::QuorumNotReached => {
-                        self.return_reputation_of_yes_voters(voting_id);
-                        self.return_reputation_of_no_voters(voting_id);
+                        self.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                        self.return_reputation_of_no_voters(voting_id, VotingType::Formal);
                     }
                     VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
                 }
@@ -214,7 +198,7 @@ impl VotingEngine {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
-        match voting.get_voting_type() {
+        match voting.voting_type() {
             VotingType::Informal => self.finish_informal_voting(voting),
             VotingType::Formal => self.finish_formal_voting(voting),
         }
@@ -222,12 +206,11 @@ impl VotingEngine {
 
     pub fn summary(&self, voting_id: VotingId) -> VotingSummary {
         let voting = self.get_voting_or_revert(voting_id);
-        let voters_len = self.voters.len(voting.voting_id());
+        let voters_len = self.voters.len((voting.voting_id(), voting.voting_type()));
         VotingSummary::new(
             voting.get_result(voters_len),
-            voting.get_voting_type(),
-            voting.informal_voting_id(),
-            voting.formal_voting_id(),
+            voting.voting_type(),
+            voting_id
         )
     }
 
@@ -235,38 +218,21 @@ impl VotingEngine {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
-        let voters_len = self.voters.len(voting.voting_id());
+
+
+        let voting_id = voting.voting_id();
+        let voters_len = self.voters.len((voting_id, voting.voting_type()));
         let voting_result = voting.get_result(voters_len);
         match voting_result {
             VotingResult::InFavor | VotingResult::Against => {
-                let informal_voting_id = voting.voting_id();
-                // let transfers = self.return_reputation(informal_voting_id, skip_first_vote);
-
-                let formal_voting_id = self.next_voting_id();
-
-                // Formal voting is created.
-                self.set_voting(voting.create_formal_voting(formal_voting_id));
-
-                VotingCreated::new(
-                    voting.creator(),
-                    formal_voting_id,
-                    informal_voting_id,
-                    Some(formal_voting_id),
-                    voting.voting_configuration(),
-                )
-                .emit();
-
-                // Informal voting is completed and referenced with formal voting
-                voting.complete_informal_voting(formal_voting_id);
+                // TODO: Emit event
+                voting.complete_informal_voting();
             }
             VotingResult::QuorumNotReached => {
                 voting.finish();
             }
             VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
         };
-
-        let informal_voting_id = voting.voting_id();
-        let formal_voting_id = voting.formal_voting_id();
 
         // Move up in stack.
         // VotingEnded {
@@ -282,54 +248,26 @@ impl VotingEngine {
         //     mints: BTreeMap::new(),
         // }
         // .emit();
-
         self.set_voting(voting);
-
         VotingSummary::new(
             voting_result,
             VotingType::Informal,
-            informal_voting_id,
-            formal_voting_id,
+            voting_id
         )
+
     }
 
     fn finish_formal_voting(&mut self, mut voting: VotingStateMachine) -> VotingSummary {
-        let validator = finish_formal_voting_validator(&voting, get_block_time());
-        validator.validate();
-
-        let voters_len = self.voters.len(voting.voting_id());
+        voting.guard_finish_formal_voting(get_block_time());
+        let voting_id = voting.voting_id();
+        let voters_len = self.voters.len((voting_id, VotingType::Formal));
         let voting_result = voting.get_result(voters_len);
 
-        match voting_result {
-            VotingResult::InFavor => {
-                self.perform_action(voting.voting_id());
-            }
-            VotingResult::Against => {}
-            VotingResult::QuorumNotReached => {}
-            VotingResult::Canceled => {}
-        };
+        if voting_result == VotingResult::InFavor {
+            self.perform_action(voting.voting_id());
+        }
 
-        // ReputationContractCaller::at(self.get_reputation_token_address()).redistribute(
-        //     mints.clone(),
-        //     burns.clone(),
-        //     voting.voting_id(),
-        // );
-
-        let formal_voting_id = voting.voting_id();
-        let informal_voting_id = voting.informal_voting_id();
-        // VotingEnded {
-        //     voting_id: formal_voting_id,
-        //     informal_voting_id,
-        //     formal_voting_id: Some(formal_voting_id),
-        //     result: result.into(),
-        //     votes_count: voters_len.into(),
-        //     stake_in_favor: voting.stake_in_favor(),
-        //     stake_against: voting.stake_against(),
-        //     transfers: mints,
-        //     burns,
-        //     mints: BTreeMap::new(),
-        // }
-        // .emit();
+        // TODO: Emit events
 
         voting.finish();
         self.set_voting(voting);
@@ -337,8 +275,7 @@ impl VotingEngine {
         VotingSummary::new(
             voting_result,
             VotingType::Formal,
-            informal_voting_id,
-            Some(formal_voting_id),
+            voting_id,
         )
     }
 
@@ -348,22 +285,29 @@ impl VotingEngine {
     /// Emits [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`VoteOnCompletedVotingNotAllowed`](casper_dao_utils::Error::VoteOnCompletedVotingNotAllowed) if voting is completed
+    /// Throws [`VoteOnCompletedVotingNotAllowed`](Error::VoteOnCompletedVotingNotAllowed) if voting is completed
     ///
-    /// Throws [`CannotVoteTwice`](casper_dao_utils::Error::CannotVoteTwice) if voter already voted
-    pub fn vote(&mut self, voter: Address, voting_id: VotingId, choice: Choice, stake: U512) {
+    /// Throws [`CannotVoteTwice`](Error::CannotVoteTwice) if voter already voted
+    pub fn vote(&mut self, voter: Address, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let voting = self.get_voting(voting_id).unwrap_or_revert();
-        let vote_validator = vote_validator(&voting, get_block_time());
+        self.assert_voting_type(&voting, voting_type);
+        voting.guard_vote(get_block_time());
+        self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);
+        self.cast_ballot(voter, voting_id, choice, stake, false, voting);
+    }
 
-        vote_validator.validate();
-
-        let vote = self.ballots.get(&(voting_id, voter));
+    fn assert_vote_doesnt_exist(&mut self, voting_id: VotingId, voting_type: VotingType, voter: Address) {
+        let vote = self.ballots.get(&(voting_id, voting_type, voter));
 
         if vote.is_some() {
             revert(Error::CannotVoteTwice)
         }
+    }
 
-        self.cast_ballot(voter, voting_id, choice, stake, false, voting);
+    fn assert_voting_type(&self, voting: &VotingStateMachine, voting_type: VotingType) {
+        if voting.voting_type() != voting_type {
+            revert(Error::VotingWithGivenTypeNotInProgress)
+        }
     }
 
     // TODO: REFACTOR EVERYTHING
@@ -394,10 +338,10 @@ impl VotingEngine {
         BallotCast::new(&vote).emit();
 
         // Add a voter to the list
-        self.voters.add(voting_id, voter);
+        self.voters.add((voting_id, voting.voting_type()), voter);
 
         // Update the votes list
-        self.ballots.set(&(voting_id, voter), vote);
+        self.ballots.set(&(voting_id, voting.voting_type(), voter), vote);
 
         // update voting
         if unbounded {
@@ -422,27 +366,27 @@ impl VotingEngine {
         self.va_token.get().unwrap_or_revert()
     }
 
-    pub fn all_voters(&self, voting_id: VotingId) -> Vec<Address> {
-        self.voters.get_all(voting_id)
+    pub fn all_voters(&self, voting_id: VotingId, voting_type: VotingType) -> Vec<Address> {
+        self.voters.get_all((voting_id, voting_type))
     }
 
     /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
-    pub fn get_ballot(&self, voting_id: VotingId, address: Address) -> Option<Ballot> {
-        self.ballots.get_or_none(&(voting_id, address))
+    pub fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot> {
+        self.ballots.get_or_none(&(voting_id, voting_type, address))
     }
 
     /// Returns the nth [Ballot](Ballot) of cast on `voting_id`
-    pub fn get_ballot_at(&self, voting_id: VotingId, i: u32) -> Ballot {
+    pub fn get_ballot_at(&self, voting_id: VotingId, voting_type: VotingType, i: u32) -> Ballot {
         let address = self
-            .get_voter(voting_id, i)
+            .get_voter(voting_id, voting_type, i)
             .unwrap_or_revert_with(Error::VoterDoesNotExist);
-        self.get_ballot(voting_id, address)
+        self.get_ballot(voting_id, voting_type, address)
             .unwrap_or_revert_with(Error::BallotDoesNotExist)
     }
 
     /// Returns the address of nth voter who voted on Voting with `voting_id`
-    pub fn get_voter(&self, voting_id: VotingId, at: u32) -> Option<Address> {
-        self.voters.get_or_none(voting_id, at)
+    pub fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
+        self.voters.get_or_none((voting_id, voting_type), at)
     }
 
     /// Returns the [Voting](VotingStateMachine) for given id
@@ -474,10 +418,10 @@ impl VotingEngine {
         }
     }
 
-    pub fn unstake_all_reputation(&mut self, voting_id: VotingId) -> BTreeMap<Address, U512> {
+    pub fn unstake_all_reputation(&mut self, voting_id: VotingId, voting_type: VotingType) -> BTreeMap<Address, U512> {
         let mut transfers = BTreeMap::new();
-        for i in 0..self.voters.len(voting_id) {
-            let ballot = self.get_ballot_at(voting_id, i);
+        for i in 0..self.voters.len((voting_id, voting_type)) {
+            let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded || ballot.canceled {
                 continue;
             }
@@ -489,17 +433,16 @@ impl VotingEngine {
         transfers
     }
 
-    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, formal_voting_id: VotingId) {
-        let voting = self.get_voting_or_revert(formal_voting_id);
-        let informal_voting_id = voting.informal_voting_id();
+    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(voting_id);
         let creator = voting.creator();
         let creator_ballot = self
-            .get_ballot(informal_voting_id, *creator)
+            .get_ballot(voting_id, VotingType::Informal, *creator)
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         self.cast_ballot(
             *creator,
-            formal_voting_id,
+            voting_id,
             Choice::InFavor,
             creator_ballot.stake,
             creator_ballot.unbounded,
@@ -507,9 +450,9 @@ impl VotingEngine {
         );
     }
 
-    pub fn return_reputation_of_yes_voters(&self, voting_id: VotingId) {
-        for i in 0..self.voters.len(voting_id) {
-            let ballot = self.get_ballot_at(voting_id, i);
+    pub fn return_reputation_of_yes_voters(&self, voting_id: VotingId, voting_type: VotingType) {
+        for i in 0..self.voters.len((voting_id, voting_type)) {
+            let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_in_favor() && !ballot.unbounded {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
@@ -517,9 +460,9 @@ impl VotingEngine {
         }
     }
 
-    pub fn return_reputation_of_no_voters(&self, voting_id: VotingId) {
-        for i in 0..self.voters.len(voting_id) {
-            let ballot = self.get_ballot_at(voting_id, i);
+    pub fn return_reputation_of_no_voters(&self, voting_id: VotingId, voting_type: VotingType) {
+        for i in 0..self.voters.len((voting_id, voting_type)) {
+            let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_against() && !ballot.unbounded {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
@@ -527,14 +470,14 @@ impl VotingEngine {
         }
     }
 
-    pub fn redistribute_reputation_of_no_voters(&self, voting_id: VotingId) {
+    pub fn redistribute_reputation_of_no_voters(&self, voting_id: VotingId, voting_type: VotingType) {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
-        for i in 0..self.voters.len(voting_id) {
-            let ballot = self.get_ballot_at(voting_id, i);
+        for i in 0..self.voters.len((voting_id, voting_type)) {
+            let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded {
                 continue;
             }
@@ -550,14 +493,14 @@ impl VotingEngine {
         self.reputation_token().bulk_mint_burn(mints, burns);
     }
 
-    pub fn redistribute_reputation_of_yes_voters(&self, voting_id: VotingId) {
+    pub fn redistribute_reputation_of_yes_voters(&self, voting_id: VotingId, voting_type: VotingType) {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
-        for i in 0..self.voters.len(voting_id) {
-            let ballot = self.get_ballot_at(voting_id, i);
+        for i in 0..self.voters.len((voting_id, voting_type)) {
+            let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded {
                 continue;
             }
@@ -586,13 +529,13 @@ impl VotingEngine {
     }
 
     /// Get a reference to the governance voting's voters.
-    pub fn voters(&self) -> &VecMapping<VotingId, Address> {
+    pub fn voters(&self) -> &VecMapping<(VotingId, VotingType), Address> {
         &self.voters
     }
 
-    pub fn bound_ballot(&mut self, voting_id: u32, worker: Address) {
+    pub fn bound_ballot(&mut self, voting_id: u32, worker: Address, voting_type: VotingType) {
         let mut ballot = self
-            .get_ballot(voting_id, worker)
+            .get_ballot(voting_id, voting_type,worker)
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         let mut voting = self.get_voting_or_revert(voting_id);
@@ -604,37 +547,15 @@ impl VotingEngine {
             .stake_voting(worker, voting_id, ballot.choice, ballot.stake);
 
         ballot.unbounded = false;
-        self.ballots.set(&(voting_id, worker), ballot);
-    }
-
-    pub fn to_real_voting_id(&self, voting_id: VotingId, voting_type: VotingType) -> VotingId {
-        let voting = self.get_voting_or_revert(voting_id);
-
-        // voting_id should point at informal voting.
-        // Revert if it's formal voting.
-        if voting.get_voting_type() == VotingType::Formal {
-            revert(Error::ExpectedInformal);
-        }
-
-        match voting_type {
-            VotingType::Informal => voting_id,
-            VotingType::Formal => match voting.formal_voting_id() {
-                Some(formal_voting_id) => formal_voting_id,
-                None => revert(Error::ExpectedFormalToBeOn),
-            },
-        }
+        self.ballots.set(&(voting_id, voting_type, worker), ballot);
     }
 
     pub fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
         let voting = self.get_voting(voting_id);
         match voting {
             None => false,
-            Some(voting) => match voting.get_voting_type() {
-                VotingType::Informal => match voting_type {
-                    VotingType::Informal => true,
-                    VotingType::Formal => voting.formal_voting_id().is_some(),
-                },
-                VotingType::Formal => false,
+            Some(voting) => {
+                voting.voting_type() == voting_type
             },
         }
     }
@@ -650,7 +571,7 @@ impl VotingEngine {
 
     fn cancel_voting(&mut self, mut voting: VotingStateMachine) {
         voting.cancel();
-        self.unstake_all_reputation(voting.voting_id());
+        self.unstake_all_reputation(voting.voting_id(), voting.voting_type());
         self.set_voting(voting);
 
         // Emit event.
@@ -659,7 +580,7 @@ impl VotingEngine {
     // Note: it doesn't remove a voter from self.votings to keep the quorum num right.
     fn cancel_ballot(&mut self, mut voting: VotingStateMachine, voter: Address) {
         let voting_id = voting.voting_id();
-        let ballots_key = (voting_id, voter);
+        let ballots_key = (voting_id, voting.voting_type(), voter);
         let mut ballot = self
             .ballots
             .get(&ballots_key)

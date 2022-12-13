@@ -113,7 +113,7 @@ impl DaoWorld {
             Contract::BidEscrow => self
                 .bid_escrow
                 .as_account(voter)
-                .vote(voting_id, choice, stake),
+                .vote(voting_id, voting_type, choice, stake),
             Contract::SlashingVoter => {
                 self.slashing_voter
                     .as_account(voter)

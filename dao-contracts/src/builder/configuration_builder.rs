@@ -96,10 +96,9 @@ impl ConfigurationBuilder {
                     ),
                 },
                 VotingConfiguration {
+                    is_bid_escrow: false,
                     contract_calls: Vec::new(),
                     only_va_can_create: true,
-                    unbounded_tokens_for_creator: false,
-                    onboard_creator: false,
                     double_time_between_votings: false,
                 },
                 total_onboarded,
@@ -138,18 +137,8 @@ impl ConfigurationBuilder {
         self
     }
 
-    pub fn unbounded_tokens_for_creator(
-        mut self,
-        unbounded_tokens_for_creator: bool,
-    ) -> ConfigurationBuilder {
-        self.configuration
-            .voting_configuration
-            .unbounded_tokens_for_creator = unbounded_tokens_for_creator;
-        self
-    }
-
-    pub fn onboard(mut self, onboard: bool) -> ConfigurationBuilder {
-        self.configuration.voting_configuration.onboard_creator = onboard;
+    pub fn is_bid_escrow(mut self, is_bid_escrow: bool) -> ConfigurationBuilder {
+        self.configuration.voting_configuration.is_bid_escrow = is_bid_escrow;
         self
     }
 
