@@ -85,6 +85,17 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn get_voting(
+                &self,
+                voting_id: VotingId,
+            ) -> Option<VotingStateMachine>;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
         }
 
         to self.access_control {
@@ -136,26 +147,6 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             revert(Error::SubjectOfSlashing);
         }
         self.voting.vote(caller(), voting_id, voting_type, choice, stake);
-    }
-
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-    ) -> Option<VotingStateMachine> {
-        self.voting.get_voting(voting_id)
-    }
-
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        self.voting.get_ballot(voting_id, voting_type, address)
-    }
-
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        self.voting.get_voter(voting_id, voting_type, at)
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {

@@ -169,10 +169,9 @@ fn ballot_is_unbounded(
     );
 }
 
-#[then(expr = "total unbounded stake for {voting_type} voting {int} is {balance} tokens")]
+#[then(expr = "total unbounded stake for voting {int} is {balance} tokens")]
 fn total_unbounded_stake_is(
     w: &mut DaoWorld,
-    _voting_type: VotingType,
     voting_id: u32,
     amount: Balance,
 ) {

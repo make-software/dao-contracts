@@ -91,6 +91,14 @@ impl RepoVoterContractInterface for RepoVoterContract {
             &self,
                 voting_id: VotingId,
             ) -> Option<VotingStateMachine>;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
         }
 
         to self.access_control {
@@ -138,22 +146,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
         self.voting.vote(caller(), voting_id, voting_type, choice, stake);
     }
 
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        self.voting.get_ballot(voting_id, voting_type, address)
-    }
 
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        self.voting.get_voter(voting_id, voting_type, at)
-    }
-
-    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        self.voting.finish_voting(voting_id, voting_type);
-    }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();

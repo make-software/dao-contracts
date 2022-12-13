@@ -143,8 +143,9 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
                 address: Address,
             ) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-                }
-            }
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
+        }
+    }
 
     fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
         self.voting.init(variable_repo, reputation_token, va_token);
@@ -193,10 +194,6 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         self.voting.vote(caller(), voting_id, voting_type, choice, stake);
-    }
-
-    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        self.voting.finish_voting(voting_id, voting_type);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

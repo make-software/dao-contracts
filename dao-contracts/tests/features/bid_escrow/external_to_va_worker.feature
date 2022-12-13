@@ -46,8 +46,8 @@ Feature: External Worker who wants to become a VA submits job
       | InternalWorker   | 0            | 1000         | 0          |
       | VA1              | 0            | 1000         | 500        |
       | VA2              | 0            | 1000         | 500        |
-    And total unbounded stake for informal voting 0 is 50 tokens
-    And ballot for informal voting 0 for ExternalWorker has 50 unbounded tokens
+    And total unbounded stake for voting 0 is 50 tokens
+    And ballot for voting 0 for ExternalWorker has 50 unbounded tokens
     When Informal voting ends
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
@@ -58,7 +58,7 @@ Feature: External Worker who wants to become a VA submits job
       | InternalWorker   | 0            | 1000         | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    And total unbounded stake for formal voting 0 is 50 tokens
+    And total unbounded stake for voting 0 is 50 tokens
     And ballot for formal voting 0 for ExternalWorker has 50 unbounded tokens
     When votes are
       | account          | vote | stake |
