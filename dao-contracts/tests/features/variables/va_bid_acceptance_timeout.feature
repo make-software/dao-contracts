@@ -8,10 +8,11 @@ Feature: VA Bid
       | ExternalWorker   | 1000         | 0            | 0          | true     | false |
       | InternalWorker   | 0            | 1000         | 0          | true     | true  |
     And following configuration
-      | key                     | value        |
-      | InternalAuctionTime     | 604800       |
-      | ExternalAuctionTime     | 864000       |
-      | VABidAcceptanceTimeout  | 172800       |
+      | key                            | value   |
+      | InternalAuctionTime            | 604800  |
+      | ExternalAuctionTime            | 864000  |
+      | VABidAcceptanceTimeout         | 172800  |
+      | VotingStartAfterJobSubmission  | 0       |
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
 
   Scenario: Internal Worker can post a bid but cannot cancel it right away

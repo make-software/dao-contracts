@@ -105,6 +105,13 @@ impl KycVoterContractInterface for KycVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
         }
 
         to self.access_control {
@@ -159,14 +166,13 @@ impl KycVoterContractInterface for KycVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
         let voter = caller();
-        self.voting.vote(voter, voting_id, choice, stake);
+        self.voting
+            .vote(voter, voting_id, voting_type, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        let summary = self.voting.finish_voting(voting_id);
+        let summary = self.voting.finish_voting(voting_id, voting_type);
         // The voting is ended when:
         // 1. Informal voting has been rejected.
         // 2. Formal voting has been finish (regardless of the final result).
@@ -178,21 +184,6 @@ impl KycVoterContractInterface for KycVoterContract {
             let address = self.extract_address_from_args(&voting);
             self.kyc.clear_voting(&address);
         }
-    }
-
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_ballot(voting_id, address)
-    }
-
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voter(voting_id, at)
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

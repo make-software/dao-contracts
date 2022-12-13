@@ -22,7 +22,7 @@ pub enum VotingResult {
 }
 
 /// Type of Voting (Formal or Informal)
-#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, Copy, Hash, PartialEq)]
 pub enum VotingType {
     Informal,
     Formal,
@@ -54,22 +54,15 @@ pub enum VotingStateInTime {
 pub struct VotingSummary {
     result: VotingResult,
     ty: VotingType,
-    informal_voting_id: VotingId,
-    formal_voting_id: Option<VotingId>,
+    voting_id: VotingId,
 }
 
 impl VotingSummary {
-    pub fn new(
-        result: VotingResult,
-        ty: VotingType,
-        informal_voting_id: VotingId,
-        formal_voting_id: Option<VotingId>,
-    ) -> Self {
+    pub fn new(result: VotingResult, ty: VotingType, voting_id: VotingId) -> Self {
         Self {
             result,
             ty,
-            informal_voting_id,
-            formal_voting_id,
+            voting_id,
         }
     }
 
@@ -81,11 +74,7 @@ impl VotingSummary {
     }
 
     pub fn is_formal(&self) -> bool {
-        self.ty == VotingType::Formal
-    }
-
-    pub fn formal_voting_id(&self) -> Option<VotingId> {
-        self.formal_voting_id
+        self.voting_type() == &VotingType::Formal
     }
 
     fn is_rejected(&self) -> bool {
@@ -102,18 +91,25 @@ impl VotingSummary {
     }
 }
 
+#[derive(Debug, Clone, Default, CLTyped, ToBytes, FromBytes)]
+pub struct Stats {
+    stake_in_favor: U512,
+    stake_against: U512,
+    unbounded_stake_in_favor: U512,
+    unbounded_stake_against: U512,
+    votes_in_favor: u32,
+    votes_against: u32,
+}
+
 /// Voting struct
 #[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
 pub struct VotingStateMachine {
     voting_id: VotingId,
     state: VotingState,
-    stake_in_favor: U512,
-    stake_against: U512,
-    unbounded_stake_in_favor: U512,
-    unbounded_stake_against: U512,
-    start_time: u64,
-    informal_voting_id: VotingId,
-    formal_voting_id: Option<VotingId>,
+    voting_type: VotingType,
+    informal_stats: Stats,
+    formal_stats: Stats,
+    created_at: u64,
     creator: Address,
     configuration: Configuration,
 }
@@ -122,86 +118,65 @@ impl VotingStateMachine {
     /// Creates new Voting with immutable VotingConfiguration
     pub fn new(
         voting_id: VotingId,
-        start_time: u64,
+        created_at: u64,
         creator: Address,
         voting_configuration: Configuration,
     ) -> Self {
         VotingStateMachine {
             voting_id,
             state: VotingState::Created,
-            stake_in_favor: U512::zero(),
-            stake_against: U512::zero(),
-            unbounded_stake_in_favor: U512::zero(),
-            unbounded_stake_against: U512::zero(),
-            start_time,
-            informal_voting_id: voting_id,
-            formal_voting_id: None,
+            voting_type: VotingType::Informal,
+            informal_stats: Default::default(),
+            formal_stats: Default::default(),
+            created_at,
             creator,
             configuration: voting_configuration,
         }
+    }
+
+    pub fn complete_informal_voting(&mut self) {
+        self.state = VotingState::Formal;
+        if self.is_result_close() {
+            self.configuration.double_time_between_votings();
+        }
+        self.voting_type = VotingType::Formal;
     }
 
     pub fn finish(&mut self) {
         self.state = VotingState::Finished;
     }
 
+    pub fn cancel(&mut self) {
+        self.state = VotingState::Canceled;
+    }
+
     /// Returns the type of voting
-    pub fn get_voting_type(&self) -> VotingType {
-        if self.voting_id == self.informal_voting_id {
-            VotingType::Informal
-        } else {
-            VotingType::Formal
-        }
+    pub fn voting_type(&self) -> VotingType {
+        self.voting_type
     }
 
     pub fn is_informal_without_stake(&self) -> bool {
         !self.voting_configuration().informal_stake_reputation()
-            && self.get_voting_type() == VotingType::Informal
-    }
-
-    pub fn start_time(&self) -> u64 {
-        self.start_time
-    }
-
-    /// Creates new formal voting from self, cloning existing VotingConfiguration
-    pub fn create_formal_voting(&self, new_voting_id: VotingId) -> Self {
-        let mut voting_configuration = self.configuration.clone();
-        if self.is_result_close() {
-            voting_configuration.double_time_between_votings();
-        }
-
-        VotingStateMachine {
-            voting_id: new_voting_id,
-            state: VotingState::BetweenVotings,
-            stake_in_favor: U512::zero(),
-            stake_against: U512::zero(),
-            unbounded_stake_in_favor: U512::zero(),
-            unbounded_stake_against: U512::zero(),
-            start_time: self.start_time,
-            informal_voting_id: self.informal_voting_id,
-            formal_voting_id: Some(new_voting_id),
-            creator: self.creator,
-            // TODO: Shoudn't be false.
-            configuration: voting_configuration,
-        }
+            && self.voting_type() == VotingType::Informal
     }
 
     /// Returns if voting is still in voting phase
     pub fn is_in_time(&self, block_time: u64) -> bool {
-        match self.get_voting_type() {
+        match self.voting_type() {
             VotingType::Informal => {
-                let start_time = self.start_time;
+                let start_time = self.informal_voting_start_time();
                 let voting_time = self.configuration.informal_voting_time();
                 start_time + voting_time <= block_time
             }
             VotingType::Formal => {
-                self.start_time + self.configuration.formal_voting_time() <= block_time
+                self.informal_voting_start_time() + self.configuration.formal_voting_time()
+                    <= block_time
             }
         }
     }
 
     pub fn informal_voting_end_time(&self) -> BlockTime {
-        self.start_time() + self.configuration.informal_voting_time()
+        self.informal_voting_start_time() + self.configuration.informal_voting_time()
     }
 
     pub fn time_between_votings_end_time(&self) -> BlockTime {
@@ -214,14 +189,23 @@ impl VotingStateMachine {
     }
 
     pub fn is_in_favor(&self) -> bool {
-        self.stake_in_favor >= self.stake_against
+        match self.voting_type() {
+            VotingType::Informal => {
+                self.informal_stats.stake_in_favor >= self.informal_stats.stake_against
+            }
+            VotingType::Formal => {
+                self.formal_stats.stake_in_favor >= self.formal_stats.stake_against
+            }
+        }
     }
 
     /// Depending on the result of the voting, returns the amount of reputation staked on the winning side
     pub fn get_winning_stake(&self) -> U512 {
-        match self.is_in_favor() {
-            true => self.stake_in_favor,
-            false => self.stake_against,
+        match (self.voting_type(), self.is_in_favor()) {
+            (VotingType::Informal, true) => self.informal_stats.stake_in_favor,
+            (VotingType::Informal, false) => self.informal_stats.stake_against,
+            (VotingType::Formal, true) => self.formal_stats.stake_in_favor,
+            (VotingType::Formal, false) => self.formal_stats.stake_against,
         }
     }
 
@@ -234,9 +218,9 @@ impl VotingStateMachine {
     }
 
     pub fn get_quorum(&self) -> u32 {
-        match self.get_voting_type() {
-            VotingType::Informal => self.configuration.governance_informal_voting_quorum(),
-            VotingType::Formal => self.configuration.governance_formal_voting_quorum(),
+        match self.voting_type() {
+            VotingType::Informal => self.configuration.informal_voting_quorum(),
+            VotingType::Formal => self.configuration.formal_voting_quorum(),
         }
     }
 
@@ -252,40 +236,74 @@ impl VotingStateMachine {
 
     pub fn add_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
-        match choice {
-            Choice::InFavor => self.stake_in_favor += stake,
-            Choice::Against => self.stake_against += stake,
+        match (self.voting_type(), choice) {
+            (VotingType::Informal, Choice::InFavor) => self.informal_stats.stake_in_favor += stake,
+            (VotingType::Informal, Choice::Against) => self.informal_stats.stake_against += stake,
+            (VotingType::Formal, Choice::InFavor) => self.formal_stats.stake_in_favor += stake,
+            (VotingType::Formal, Choice::Against) => self.formal_stats.stake_against += stake,
         }
     }
 
     pub fn add_unbounded_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
-        match choice {
-            Choice::InFavor => self.unbounded_stake_in_favor += stake,
-            Choice::Against => self.unbounded_stake_against += stake,
+        match (self.voting_type(), choice) {
+            (VotingType::Informal, Choice::InFavor) => {
+                self.informal_stats.unbounded_stake_in_favor += stake
+            }
+            (VotingType::Informal, Choice::Against) => {
+                self.informal_stats.unbounded_stake_against += stake
+            }
+            (VotingType::Formal, Choice::InFavor) => {
+                self.formal_stats.unbounded_stake_in_favor += stake
+            }
+            (VotingType::Formal, Choice::Against) => {
+                self.formal_stats.unbounded_stake_against += stake
+            }
         }
     }
 
     pub fn remove_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
-        match choice {
-            Choice::InFavor => self.stake_in_favor -= stake,
-            Choice::Against => self.stake_against -= stake,
+        match (self.voting_type(), choice) {
+            (VotingType::Informal, Choice::InFavor) => self.informal_stats.stake_in_favor -= stake,
+            (VotingType::Informal, Choice::Against) => self.informal_stats.stake_against -= stake,
+            (VotingType::Formal, Choice::InFavor) => self.formal_stats.stake_in_favor -= stake,
+            (VotingType::Formal, Choice::Against) => self.formal_stats.stake_against -= stake,
         }
     }
 
     pub fn remove_unbounded_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
-        match choice {
-            Choice::InFavor => self.unbounded_stake_in_favor -= stake,
-            Choice::Against => self.unbounded_stake_against -= stake,
+        match (self.voting_type(), choice) {
+            (VotingType::Informal, Choice::InFavor) => {
+                self.informal_stats.unbounded_stake_in_favor -= stake
+            }
+            (VotingType::Informal, Choice::Against) => {
+                self.informal_stats.unbounded_stake_against -= stake
+            }
+            (VotingType::Formal, Choice::InFavor) => {
+                self.formal_stats.unbounded_stake_in_favor -= stake
+            }
+            (VotingType::Formal, Choice::Against) => {
+                self.formal_stats.unbounded_stake_against -= stake
+            }
         }
     }
 
     pub fn bound_stake(&mut self, stake: U512, choice: Choice) {
-        match choice {
-            Choice::InFavor => self.unbounded_stake_in_favor -= stake,
-            Choice::Against => self.unbounded_stake_against -= stake,
+        match (self.voting_type(), choice) {
+            (VotingType::Informal, Choice::InFavor) => {
+                self.informal_stats.unbounded_stake_in_favor -= stake
+            }
+            (VotingType::Informal, Choice::Against) => {
+                self.informal_stats.unbounded_stake_against -= stake
+            }
+            (VotingType::Formal, Choice::InFavor) => {
+                self.formal_stats.unbounded_stake_in_favor -= stake
+            }
+            (VotingType::Formal, Choice::Against) => {
+                self.formal_stats.unbounded_stake_against -= stake
+            }
         };
         self.add_stake(stake, choice);
     }
@@ -297,12 +315,28 @@ impl VotingStateMachine {
 
     pub fn total_bounded_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
-        self.stake_in_favor + self.stake_against
+        match self.voting_type() {
+            VotingType::Informal => {
+                self.informal_stats.stake_in_favor + self.informal_stats.stake_against
+            }
+            VotingType::Formal => {
+                self.formal_stats.stake_in_favor + self.formal_stats.stake_against
+            }
+        }
     }
 
     pub fn total_unbounded_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
-        self.unbounded_stake_in_favor + self.unbounded_stake_against
+        match self.voting_type() {
+            VotingType::Informal => {
+                self.informal_stats.unbounded_stake_in_favor
+                    + self.informal_stats.unbounded_stake_against
+            }
+            VotingType::Formal => {
+                self.formal_stats.unbounded_stake_in_favor
+                    + self.formal_stats.unbounded_stake_against
+            }
+        }
     }
 
     /// Get the voting's voting id.
@@ -312,40 +346,50 @@ impl VotingStateMachine {
 
     /// Get the voting's stake in favor.
     pub fn stake_in_favor(&self) -> U512 {
-        self.stake_in_favor
+        match self.voting_type() {
+            VotingType::Informal => self.informal_stats.stake_in_favor,
+            VotingType::Formal => self.formal_stats.stake_in_favor,
+        }
     }
 
     /// Get the voting's stake against.
     pub fn stake_against(&self) -> U512 {
-        self.stake_against
+        match self.voting_type() {
+            VotingType::Informal => self.informal_stats.stake_against,
+            VotingType::Formal => self.formal_stats.stake_against,
+        }
     }
 
     pub fn unbounded_stake_in_favor(&self) -> U512 {
-        self.unbounded_stake_in_favor
+        match self.voting_type() {
+            VotingType::Informal => self.informal_stats.unbounded_stake_in_favor,
+            VotingType::Formal => self.formal_stats.unbounded_stake_in_favor,
+        }
     }
 
     pub fn unbounded_stake_against(&self) -> U512 {
-        self.unbounded_stake_against
-    }
-
-    /// Get the voting's informal voting id.
-    pub fn informal_voting_id(&self) -> VotingId {
-        self.informal_voting_id
-    }
-
-    /// Get the voting's formal voting id.
-    pub fn formal_voting_id(&self) -> Option<VotingId> {
-        self.formal_voting_id
+        match self.voting_type() {
+            VotingType::Informal => self.informal_stats.unbounded_stake_against,
+            VotingType::Formal => self.formal_stats.unbounded_stake_against,
+        }
     }
 
     /// Get the voting's formal voting quorum.
     pub fn formal_voting_quorum(&self) -> u32 {
-        self.configuration.governance_formal_voting_quorum()
+        self.configuration.formal_voting_quorum()
     }
 
     /// Get the voting's informal voting quorum.
     pub fn informal_voting_quorum(&self) -> u32 {
-        self.configuration.governance_informal_voting_quorum()
+        self.configuration.informal_voting_quorum()
+    }
+
+    pub fn informal_voting_start_time(&self) -> u64 {
+        self.created_at() + self.configuration.voting_delay()
+    }
+
+    pub fn created_at(&self) -> u64 {
+        self.created_at
     }
 
     /// Get the voting's formal voting time.
@@ -380,18 +424,15 @@ impl VotingStateMachine {
         self.state() == &VotingState::Finished || self.state() == &VotingState::Canceled
     }
 
-    pub fn complete_informal_voting(&mut self, formal_voting_id: VotingId) {
-        self.formal_voting_id = Some(formal_voting_id);
-        self.state = VotingState::Formal;
-    }
-
     pub fn state_in_time(&self, block_time: BlockTime) -> VotingState {
-        let informal_voting_end = self.start_time + self.informal_voting_time();
-        let between_voting_end =
-            informal_voting_end + self.configuration.time_between_informal_and_formal_voting();
-        let voting_end = between_voting_end + self.formal_voting_time();
+        let informal_voting_start = self.informal_voting_start_time();
+        let informal_voting_end = self.informal_voting_end_time();
+        let between_voting_end = self.time_between_votings_end_time();
+        let voting_end = self.formal_voting_end_time();
 
-        if block_time <= informal_voting_end {
+        if block_time < informal_voting_start {
+            VotingState::Created
+        } else if block_time >= informal_voting_start && block_time <= informal_voting_end {
             VotingState::Informal
         } else if block_time > informal_voting_end && block_time <= between_voting_end {
             VotingState::BetweenVotings
@@ -401,66 +442,4 @@ impl VotingStateMachine {
             VotingState::Finished
         }
     }
-
-    pub fn cancel(&mut self) {
-        self.state = VotingState::Canceled;
-    }
 }
-
-// #[test]
-// fn test_voting_serialization() {
-//     use casper_types::bytesrepr::FromBytes;
-//     use casper_types::bytesrepr::ToBytes;
-
-//     let voting = Voting {
-//         voting_id: 1,
-//         completed: false,
-//         stake_in_favor: U512::zero(),
-//         stake_against: U512::zero(),
-//         start_time: 123,
-//         informal_voting_id: 1,
-//         formal_voting_id: None,
-//         voting_configuration: VotingConfiguration {
-//             formal_voting_quorum: U512::from(2),
-//             formal_voting_time: 2,
-//             informal_voting_quorum: U512::from(2),
-//             informal_voting_time: 2,
-//             create_minimum_reputation: U512::from(2),
-//             contract_call: None,
-//             cast_first_vote: true,
-//             cast_minimum_reputation: U512::from(2),
-//             only_va_can_create: true,
-//         },
-//     };
-
-//     let (voting2, _bytes) = Voting::from_bytes(&voting.to_bytes().unwrap()).unwrap();
-
-//     // TODO: rewrite asserts
-//     assert_eq!(voting.voting_id(), voting2.voting_id());
-//     assert_eq!(voting.informal_voting_id, voting2.informal_voting_id);
-//     assert_eq!(voting.formal_voting_id, voting2.formal_voting_id);
-//     assert_eq!(
-//         voting.voting_configuration.informal_voting_quorum,
-//         voting2.voting_configuration.informal_voting_quorum
-//     );
-//     assert_eq!(
-//         voting.voting_configuration.formal_voting_quorum,
-//         voting2.voting_configuration.formal_voting_quorum
-//     );
-//     assert_eq!(voting.stake_against, voting2.stake_against);
-//     assert_eq!(voting.stake_in_favor, voting2.stake_in_favor);
-//     assert_eq!(voting.completed, voting2.completed);
-//     assert_eq!(
-//         voting.voting_configuration.formal_voting_time,
-//         voting2.voting_configuration.formal_voting_time
-//     );
-//     assert_eq!(
-//         voting.voting_configuration.informal_voting_time,
-//         voting2.voting_configuration.informal_voting_time
-//     );
-//     assert_eq!(
-//         voting.voting_configuration().only_va_can_create,
-//         voting2.voting_configuration().only_va_can_create
-//     );
-//     assert_eq!(voting.start_time, voting2.start_time);
-// }

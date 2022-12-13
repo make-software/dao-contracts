@@ -17,7 +17,7 @@ pub struct ConfigurationBuilder {
 }
 
 impl ConfigurationBuilder {
-    pub fn new(variable_repo_address: Address, va_token_address: Address) -> ConfigurationBuilder {
+    pub fn new(variable_repo_address: Address, va_token_address: Address) -> Self {
         let total_onboarded = VaNftContractCaller::at(va_token_address).total_supply();
         let variables = VariableRepositoryContractCaller::at(variable_repo_address).all_variables();
         use consts::*;
@@ -37,20 +37,20 @@ impl ConfigurationBuilder {
                         &variables,
                     ),
                     forum_kyc_required: Self::get_variable(FORUM_KYC_REQUIRED, &variables),
-                    governance_informal_quorum_ratio: Self::get_variable(
-                        GOVERNANCE_INFORMAL_QUORUM_RATIO,
+                    bid_escrow_informal_quorum_ratio: Self::get_variable(
+                        BID_ESCROW_INFORMAL_QUORUM_RATIO,
                         &variables,
                     ),
-                    governance_formal_quorum_ratio: Self::get_variable(
-                        GOVERNANCE_FORMAL_QUORUM_RATIO,
+                    bid_escrow_formal_quorum_ratio: Self::get_variable(
+                        BID_ESCROW_FORMAL_QUORUM_RATIO,
                         &variables,
                     ),
-                    governance_informal_voting_time: Self::get_variable(
-                        GOVERNANCE_INFORMAL_VOTING_TIME,
+                    bid_escrow_informal_voting_time: Self::get_variable(
+                        BID_ESCROW_INFORMAL_VOTING_TIME,
                         &variables,
                     ),
-                    governance_formal_voting_time: Self::get_variable(
-                        GOVERNANCE_FORMAL_VOTING_TIME,
+                    bid_escrow_formal_voting_time: Self::get_variable(
+                        BID_ESCROW_FORMAL_VOTING_TIME,
                         &variables,
                     ),
                     informal_voting_time: Self::get_variable(INFORMAL_VOTING_TIME, &variables),
@@ -75,8 +75,8 @@ impl ConfigurationBuilder {
                         DISTRIBUTE_PAYMENT_TO_NON_VOTERS,
                         &variables,
                     ),
-                    governance_wallet_address: Self::get_variable(
-                        GOVERNANCE_WALLET_ADDRESS,
+                    bid_escrow_wallet_address: Self::get_variable(
+                        BID_ESCROW_WALLET_ADDRESS,
                         &variables,
                     ),
                     default_reputation_slash: Self::get_variable(
@@ -90,16 +90,15 @@ impl ConfigurationBuilder {
                     ),
                     informal_quorum_ratio: Self::get_variable(INFORMAL_QUORUM_RATIO, &variables),
                     formal_quorum_ratio: Self::get_variable(FORMAL_QUORUM_RATIO, &variables),
-                    governance_payment_ratio: Self::get_variable(
-                        GOVERNANCE_PAYMENT_RATIO,
+                    bid_escrow_payment_ratio: Self::get_variable(
+                        BID_ESCROW_PAYMENT_RATIO,
                         &variables,
                     ),
                 },
                 VotingConfiguration {
+                    is_bid_escrow: false,
                     contract_calls: Vec::new(),
                     only_va_can_create: true,
-                    unbounded_tokens_for_creator: false,
-                    onboard_creator: false,
                     double_time_between_votings: false,
                 },
                 total_onboarded,
@@ -124,32 +123,22 @@ impl ConfigurationBuilder {
         result
     }
 
-    pub fn contract_call(self, contract_call: ContractCall) -> ConfigurationBuilder {
+    pub fn contract_call(self, contract_call: ContractCall) -> Self {
         self.contract_calls(vec![contract_call])
     }
 
-    pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> ConfigurationBuilder {
+    pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> Self {
         self.configuration.voting_configuration.contract_calls = contract_calls;
         self
     }
 
-    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> ConfigurationBuilder {
+    pub fn only_va_can_create(mut self, only_va_can_create: bool) -> Self {
         self.configuration.voting_configuration.only_va_can_create = only_va_can_create;
         self
     }
 
-    pub fn unbounded_tokens_for_creator(
-        mut self,
-        unbounded_tokens_for_creator: bool,
-    ) -> ConfigurationBuilder {
-        self.configuration
-            .voting_configuration
-            .unbounded_tokens_for_creator = unbounded_tokens_for_creator;
-        self
-    }
-
-    pub fn onboard(mut self, onboard: bool) -> ConfigurationBuilder {
-        self.configuration.voting_configuration.onboard_creator = onboard;
+    pub fn is_bid_escrow(mut self, is_bid_escrow: bool) -> ConfigurationBuilder {
+        self.configuration.voting_configuration.is_bid_escrow = is_bid_escrow;
         self
     }
 

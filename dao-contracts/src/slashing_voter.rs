@@ -40,11 +40,7 @@ pub trait SlashingVoterContractInterface {
     /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-    ) -> Option<VotingStateMachine>;
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     /// see [VotingEngine](VotingEngine::get_ballot())
     fn get_ballot(
         &self,
@@ -54,7 +50,6 @@ pub trait SlashingVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
     fn update_bid_escrow_list(&mut self, bid_escrows: Vec<Address>);
 
     // Whitelisting set.
@@ -86,6 +81,17 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             fn variable_repo_address(&self) -> Address;
             fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+            fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn get_voting(
+                &self,
+                voting_id: VotingId,
+            ) -> Option<VotingStateMachine>;
+            fn get_ballot(
+                &self,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -> Option<Ballot>;
         }
 
         to self.access_control {
@@ -136,44 +142,15 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         if caller() == task.subject {
             revert(Error::SubjectOfSlashing);
         }
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.vote(caller(), voting_id, choice, stake);
-    }
-
-    fn get_voting(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-    ) -> Option<VotingStateMachine> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voting(voting_id)
-    }
-
-    fn get_ballot(
-        &self,
-        voting_id: VotingId,
-        voting_type: VotingType,
-        address: Address,
-    ) -> Option<Ballot> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_ballot(voting_id, address)
-    }
-
-    fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address> {
-        let voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        self.voting.get_voter(voting_id, at)
+        self.voting
+            .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let real_voting_id = self.voting.to_real_voting_id(voting_id, voting_type);
-        let summary = self.voting.finish_voting(real_voting_id);
+        let summary = self.voting.finish_voting(voting_id, voting_type);
         if summary.is_formal() && summary.result() == VotingResult::InFavor {
             self.slash(voting_id);
         }
-    }
-
-    fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
-        self.voting.slash_voter(voter, voting_id);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

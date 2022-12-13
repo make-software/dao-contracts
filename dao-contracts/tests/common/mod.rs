@@ -147,7 +147,7 @@ impl Default for DaoWorld {
             va_token.address(),
         );
 
-        let admin = AdminContractTest::new(
+        let mut admin = AdminContractTest::new(
             &env,
             variable_repository.address(),
             reputation_token.address(),
@@ -192,10 +192,10 @@ impl Default for DaoWorld {
         kyc_voter
             .add_to_whitelist(slashing_voter.address())
             .unwrap();
-
         bid_escrow
             .add_to_whitelist(slashing_voter.address())
             .unwrap();
+        admin.add_to_whitelist(slashing_voter.address()).unwrap();
 
         // Setup SimpleVoter.
         repo_voter.add_to_whitelist(simple_voter.address()).unwrap();
@@ -240,7 +240,7 @@ impl Default for DaoWorld {
                 .to_bytes()
                 .unwrap(),
         );
-        let key = String::from(casper_dao_utils::consts::GOVERNANCE_WALLET_ADDRESS);
+        let key = String::from(casper_dao_utils::consts::BID_ESCROW_WALLET_ADDRESS);
         dao.variable_repository
             .update_at(key, multisig_address, None)
             .unwrap();

@@ -100,18 +100,18 @@ fn voting_ends(w: &mut DaoWorld) {
 }
 
 #[when(expr = "votes are")]
-fn informal_voting(w: &mut DaoWorld, step: &Step) {
+fn votes_are(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
+    let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
     for row in table {
         let voter = helpers::parse(row.get(0), "Couldn't parse account");
         let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
         let stake = helpers::parse::<Balance>(row.get(2), "Couldn't parse balance");
 
         let voter = w.get_address(&voter);
-
         w.bid_escrow
             .as_account(voter)
-            .vote(0, choice.into(), *stake)
+            .vote(0, voting_type, choice.into(), *stake)
             .unwrap();
     }
 }
@@ -136,25 +136,15 @@ fn slash_bid(w: &mut DaoWorld, bid_id: u32) {
 
 #[then(expr = "Formal voting does not start")]
 fn formal_does_not_start(w: &mut DaoWorld) {
-    let voting = w
-        .bid_escrow
-        .get_voting(0, VotingType::Informal.into())
-        .unwrap();
-    assert_eq!(voting.formal_voting_id(), None);
+    let voting = w.bid_escrow.get_voting(0).unwrap();
+    assert_eq!(voting.voting_type(), VotingType::Informal.into());
 }
 
-#[then(expr = "ballot for {voting_type} voting {int} for {account} has {balance} unbounded tokens")]
-fn ballot_is_unbounded(
-    w: &mut DaoWorld,
-    voting_type: VotingType,
-    voting_id: u32,
-    account: Account,
-    amount: Balance,
-) {
+#[then(expr = "ballot for voting {int} for {account} has {balance} unbounded tokens")]
+fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amount: Balance) {
+    let voting_type = w.bid_escrow.get_voting(voting_id).unwrap().voting_type();
     let account = w.get_address(&account);
-    let ballot = w
-        .bid_escrow
-        .get_ballot(voting_id, voting_type.into(), account);
+    let ballot = w.bid_escrow.get_ballot(voting_id, voting_type, account);
     let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
     assert_eq!(
         ballot.choice,
@@ -169,16 +159,11 @@ fn ballot_is_unbounded(
     );
 }
 
-#[then(expr = "total unbounded stake for {voting_type} voting {int} is {balance} tokens")]
-fn total_unbounded_stake_is(
-    w: &mut DaoWorld,
-    voting_type: VotingType,
-    voting_id: u32,
-    amount: Balance,
-) {
+#[then(expr = "total unbounded stake for voting {int} is {balance} tokens")]
+fn total_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
     let total_unbounded_stake = w
         .bid_escrow
-        .get_voting(voting_id, voting_type.into())
+        .get_voting(voting_id)
         .unwrap()
         .total_unbounded_stake();
     assert_eq!(
@@ -197,11 +182,11 @@ fn cannot_vote(
     expected_result: Result,
 ) {
     let voter = w.get_address(&voter);
-
+    let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
     let vote_result = w
         .bid_escrow
         .as_account(voter)
-        .vote(0, choice.into(), *stake);
+        .vote(0, voting_type, choice.into(), *stake);
 
     assert_eq!(*expected_result, vote_result.is_ok());
 }
