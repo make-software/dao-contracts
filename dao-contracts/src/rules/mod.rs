@@ -15,7 +15,7 @@ pub struct Rules {
 }
 
 impl Rules {
-    pub fn validate_validations(&self) {
+    pub fn validate_generic_validations(&self) {
         for validation in &self.validations {
             let result = validation.validate();
             if result.is_err() {
@@ -34,7 +34,7 @@ impl Rules {
     }
 
     pub fn validate(&self, voting_state_machine: &VotingStateMachine) {
-        self.validate_validations();
+        self.validate_generic_validations();
         self.validate_voting_validations(voting_state_machine);
     }
 }

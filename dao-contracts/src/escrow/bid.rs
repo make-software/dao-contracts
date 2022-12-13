@@ -13,7 +13,7 @@ pub enum BidAuctionTime {
     PublicAuction,
 }
 
-#[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
+#[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq, Clone)]
 pub enum BidStatus {
     Created,
     Selected,
@@ -22,7 +22,7 @@ pub enum BidStatus {
     Canceled,
 }
 
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
+#[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
 pub struct Bid {
     pub bid_id: BidId,
     pub status: BidStatus,
@@ -63,8 +63,29 @@ impl Bid {
         }
     }
 
-    pub fn reclaim(&mut self) {
+    pub fn reclaim(
+        &mut self,
+        new_bid_id: BidId,
+        new_worker: Address,
+        block_time: BlockTime,
+        reputation_stake: U512,
+        cspr_stake: Option<U512>,
+        onboard: bool,
+    ) -> Bid {
+        let mut new_bid = self.clone();
         self.status = BidStatus::Reclaimed;
+
+        new_bid.bid_id = new_bid_id;
+        new_bid.status = BidStatus::Selected;
+        new_bid.worker = new_worker;
+        new_bid.timestamp = block_time;
+        new_bid.reputation_stake = reputation_stake;
+        new_bid.proposed_timeframe =
+            self.timestamp + self.proposed_timeframe + self.proposed_timeframe;
+        new_bid.cspr_stake = cspr_stake;
+        new_bid.onboard = onboard;
+
+        new_bid
     }
 
     pub fn pick(&mut self) {
@@ -77,5 +98,9 @@ impl Bid {
 
     pub fn cancel(&mut self) {
         self.status = BidStatus::Canceled;
+    }
+
+    pub fn bid_id(&self) -> BidId {
+        self.bid_id
     }
 }

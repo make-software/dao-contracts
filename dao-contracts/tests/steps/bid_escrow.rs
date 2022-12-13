@@ -1,10 +1,11 @@
 use std::time::Duration;
 
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
+use casper_types::U512;
 use cucumber::{gherkin::Step, then, when};
 
 use crate::common::{
-    helpers::{self},
+    helpers::{self, parse_with},
     params::{
         voting::{Choice, VotingType},
         Account,
@@ -59,13 +60,7 @@ fn submit_bid_external(
     stake: Balance,
     onboarding: String,
 ) {
-    let onboarding = match onboarding.as_str() {
-        "with" => true,
-        "without" => false,
-        _ => {
-            panic!("Unknown onboarding option");
-        }
-    };
+    let onboarding = parse_with(onboarding);
     let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_bid(
         job_offer_id,
@@ -90,6 +85,47 @@ fn submit_job_proof(w: &mut DaoWorld, worker: Account) {
     w.bid_escrow
         .as_account(worker)
         .submit_job_proof(0, DocumentHash::from(b"Job Proof".to_vec()))
+        .unwrap();
+}
+
+#[when(expr = "{account} submits the JobProof with {balance} CSPR stake {word} onboarding")]
+fn submit_job_proof_during_grace_period_external(
+    w: &mut DaoWorld,
+    worker: Account,
+    cspr_stake: Balance,
+    onboarding: String,
+) {
+    let onboarding = parse_with(onboarding);
+    // TODO: Use bid_ids from the storage.
+    let worker = w.get_address(&worker);
+    w.bid_escrow
+        .as_account(worker)
+        .submit_job_proof_during_grace_period_with_cspr_amount(
+            0,
+            DocumentHash::from(b"Job Proof".to_vec()),
+            U512::zero(),
+            onboarding,
+            cspr_stake.0,
+        )
+        .unwrap();
+}
+
+#[when(expr = "{account} submits the JobProof with {balance} REP stake")]
+fn submit_job_proof_during_grace_period_internal(
+    w: &mut DaoWorld,
+    worker: Account,
+    rep_stake: Balance,
+) {
+    let worker = w.get_address(&worker);
+    w.bid_escrow
+        .as_account(worker)
+        .submit_job_proof_during_grace_period(
+            0,
+            DocumentHash::from(b"Job Proof".to_vec()),
+            rep_stake.0,
+            false,
+            None,
+        )
         .unwrap();
 }
 
