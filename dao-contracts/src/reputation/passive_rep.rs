@@ -38,6 +38,10 @@ impl PassiveReputation {
         self.set_balance(&owner, new_balance);
     }
 
+    pub fn balance_of(&self, address: Address) -> U512 {
+        self.balances.get(&address).unwrap_or_default()
+    }
+
     fn set_balance(&mut self, owner: &Address, new_balance: U512) {
         self.balances.set(owner, new_balance);
     }

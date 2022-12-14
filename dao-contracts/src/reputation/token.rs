@@ -85,6 +85,8 @@ pub trait ReputationContractInterface {
     /// Returns the current token balance of the given address.
     fn balance_of(&self, address: Address) -> U512;
 
+    fn passive_balance_of(&self, address: Address) -> U512;
+
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
 
@@ -139,6 +141,8 @@ impl ReputationContractInterface for ReputationContract {
             fn mint_passive(&mut self, recipient: Address, amount: U512);
             #[call(burn)]
             fn burn_passive(&mut self, owner: Address, amount: U512);
+            #[call(balance_of)]
+            fn passive_balance_of(&self, address: Address) -> U512;
         }
     }
 

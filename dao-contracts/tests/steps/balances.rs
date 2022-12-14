@@ -11,6 +11,11 @@ fn total_reputation(world: &mut DaoWorld, total_reputation_expected: Balance) {
     world.assert_total_supply(total_reputation_expected);
 }
 
+#[then(expr = "passive REP of {account} is {balance}")]
+fn assert_passive_reputation(world: &mut DaoWorld, account: Account, expected_balance: Balance) {
+    world.assert_passive_reputation(&account, expected_balance);
+}
+
 #[then(expr = "balances are")]
 #[then(expr = "users balances are")]
 fn assert_balances(world: &mut DaoWorld, step: &Step) {
