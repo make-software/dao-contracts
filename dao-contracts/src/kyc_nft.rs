@@ -8,7 +8,6 @@ use casper_dao_erc721::{
 };
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
     Address,

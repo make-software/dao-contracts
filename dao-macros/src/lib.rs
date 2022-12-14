@@ -1,3 +1,4 @@
+#![feature(iterator_try_collect)]
 extern crate proc_macro;
 
 use contract::CasperContractItem;
@@ -17,7 +18,7 @@ pub fn derive_events(input: TokenStream) -> TokenStream {
     event::expand_derive_events(input).into()
 }
 
-#[proc_macro_derive(Instance)]
+#[proc_macro_derive(Instance, attributes(scoped))]
 pub fn derive_instance(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     instance::generate_code(input).into()
