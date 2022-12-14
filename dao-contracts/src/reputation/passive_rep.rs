@@ -8,6 +8,11 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
+/// The PassiveReputation module.
+///
+/// Stores information about potential balances of the users who are not eligible to have reputation tokens.
+/// If an Address owns a passive reputation, it means they have impacted the system (eg. have done a job). 
+/// These balances allow for keeping track of the total value of the system.
 #[derive(Instance)]
 pub struct PassiveReputation {
     balances: Mapping<Address, U512>,
