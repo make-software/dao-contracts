@@ -8,6 +8,16 @@ use casper_types::{
 
 use super::params::{Balance, TimeUnit};
 
+pub fn parse_with(value: String) -> bool {
+    match value.as_str() {
+        "with" => true,
+        "without" => false,
+        _ => {
+            panic!("Unknown with option");
+        }
+    }
+}
+
 /// Converts a string value from Gherkin scenario to a `Bytes` representation of the value
 pub fn value_to_bytes(value: &str, key: &str) -> Bytes {
     match value {

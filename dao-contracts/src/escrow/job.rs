@@ -9,7 +9,13 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
-use crate::voting::types::VotingId;
+use crate::{
+    escrow::{
+        bid::Bid,
+        job::{JobStatus::Completed, WorkerType::ExternalToVA},
+    },
+    voting::types::VotingId,
+};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -17,6 +23,7 @@ pub enum JobStatus {
     Accepted,
     Cancelled,
     Submitted,
+    Reclaimed,
     NotCompleted,
     Completed,
 }
@@ -28,7 +35,7 @@ impl Default for JobStatus {
 }
 
 /// Struct holding Job
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
+#[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
 pub struct Job {
     job_id: JobId,
     bid_id: BidId,
@@ -43,6 +50,7 @@ pub struct Job {
     payment: U512,
     stake: U512,
     external_worker_cspr_stake: U512,
+    followed_by: Option<JobId>,
 }
 
 impl Job {
@@ -74,7 +82,36 @@ impl Job {
             payment,
             stake,
             external_worker_cspr_stake,
+            followed_by: None,
         }
+    }
+
+    pub fn reclaim(&mut self, new_job_id: JobId, new_bid: &Bid) -> Job {
+        self.status = Completed;
+        self.followed_by = Some(new_job_id);
+
+        let worker_type = match (new_bid.cspr_stake.is_some(), new_bid.onboard) {
+            (_, true) => ExternalToVA,
+            (true, false) => WorkerType::External,
+            (false, false) => WorkerType::Internal,
+        };
+
+        let mut new_job = Job::new(
+            new_job_id,
+            new_bid.bid_id,
+            new_bid.job_offer_id,
+            new_bid.proposed_timeframe,
+            new_bid.worker,
+            worker_type,
+            self.poster,
+            self.payment,
+            new_bid.reputation_stake,
+            new_bid.cspr_stake.unwrap_or_default(),
+        );
+
+        new_job.status = JobStatus::Submitted;
+
+        new_job
     }
 
     /// Changes status to the Accepted
@@ -200,6 +237,10 @@ impl Job {
 
     pub fn set_voting_id(&mut self, voting_id: VotingId) {
         self.voting_id = Some(voting_id);
+    }
+
+    pub fn job_id(&self) -> JobId {
+        self.job_id
     }
 }
 

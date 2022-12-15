@@ -121,6 +121,14 @@ pub trait BidEscrowContractInterface {
     /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
     /// job submission is not met.
     fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash);
+    fn submit_job_proof_during_grace_period(
+        &mut self,
+        job_id: JobId,
+        proof: DocumentHash,
+        reputation_stake: U512,
+        onboard: bool,
+        purse: Option<URef>,
+    );
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
@@ -141,7 +149,7 @@ pub trait BidEscrowContractInterface {
     /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn finish_voting(&mut self, job_id: JobId);
+    fn finish_voting(&mut self, voting_id: VotingId);
     /// see [VotingEngine](VotingEngine)
     fn variable_repo_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
@@ -365,7 +373,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
         }
 
-        bid.reclaim();
+        bid.cancel();
 
         match bid.cspr_stake {
             None => {
@@ -451,18 +459,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             .get_job(job_id)
             .unwrap_or_revert_with(Error::JobNotFound);
         let worker = caller();
-
-        // if job.worker() != worker {
-        //     if !job.is_grace_period(get_block_time()) {
-        //         revert(Error::OnlyWorkerCanSubmitProof);
-        //     } else {
-        //         if self.kyc.is_kycd(&worker) {
-        //             revert(Error::WorkerNotKycd);
-        //         }
-        //     }
-        //
-        //     // TODO: Implement Worker switching during Grace Period
-        // }
+        // TODO: Check if proof was not already send
 
         job.submit_proof(proof);
         // TODO: Emit event.
@@ -511,6 +508,85 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.jobs.set(&job_id, job);
     }
 
+    fn submit_job_proof_during_grace_period(
+        &mut self,
+        job_id: JobId,
+        proof: DocumentHash,
+        reputation_stake: U512,
+        onboard: bool,
+        purse: Option<URef>,
+    ) {
+        let cspr_stake = if purse.is_some() {
+            Some(self.deposit(purse.unwrap()))
+        } else {
+            None
+        };
+
+        if cspr_stake.is_none() && reputation_stake.is_zero() {
+            revert(Error::ZeroStake);
+        }
+
+        let new_worker = caller();
+        let mut old_job: Job = self
+            .get_job(job_id)
+            .unwrap_or_revert_with(Error::JobNotFound);
+
+        Self::validate_grace_period_job_proof_to_move(&mut old_job);
+
+        let mut old_bid = self
+            .bids
+            .get(&old_job.bid_id())
+            .unwrap_or_revert_with(Error::BidNotFound);
+
+        // redistribute original cspr stake
+        if old_bid.cspr_stake.is_some() {
+            let left = self.redistribute_to_governance(&old_job, old_bid.cspr_stake.unwrap());
+            self.redistribute_cspr_to_all_vas(left);
+        }
+
+        // burn original reputation stake
+        if old_bid.reputation_stake > U512::zero() {
+            self.reputation_token()
+                .unstake_bid(old_bid.worker, old_bid.bid_id());
+            self.reputation_token()
+                .burn(old_bid.worker, old_bid.reputation_stake);
+        }
+
+        // slash original worker
+        if self.is_va(old_bid.worker) {
+            self.slash_worker(&old_job);
+        }
+
+        // Create new job and bid
+        let new_bid = old_bid.reclaim(
+            self.next_bid_id(),
+            new_worker,
+            get_block_time(),
+            reputation_stake,
+            cspr_stake,
+            onboard,
+        );
+        let new_job = old_job.reclaim(self.next_job_id(), &new_bid);
+        let new_job_id = new_job.job_id();
+
+        // Stake new bid
+        if new_bid.reputation_stake > U512::zero() {
+            self.reputation_token().stake_bid(
+                new_bid.worker,
+                new_bid.bid_id(),
+                new_bid.reputation_stake,
+            );
+        }
+
+        self.jobs.set(&old_job.job_id(), old_job);
+        self.bids.set(&old_bid.bid_id(), old_bid);
+        self.jobs.set(&new_job.job_id(), new_job);
+        self.bids.set(&new_bid.bid_id(), new_bid);
+
+        // continue as normal
+        self.submit_job_proof(new_job_id, proof);
+    }
+
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
         let job = self
             .jobs
@@ -536,12 +612,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.bids.get_or_none(&bid_id)
     }
 
-    fn finish_voting(&mut self, job_id: JobId) {
+    fn finish_voting(&mut self, voting_id: VotingId) {
+        let job_id = self.job_id_by_voting_id(voting_id);
         let job = self.jobs.get_or_revert(&job_id);
         let job_offer = self.job_offer(job.job_offer_id());
-        let voting_id = job
-            .voting_id()
-            .unwrap_or_revert_with(Error::VotingNotStarted);
         let voting_summary = self
             .voting
             .finish_voting_without_token_redistribution(voting_id);
@@ -771,6 +845,10 @@ impl BidEscrowContract {
     fn deposit(&mut self, cargo_purse: URef) -> U512 {
         let main_purse = casper_env::contract_main_purse();
         let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
+
+        if amount == U512::zero() {
+            revert(Error::CannotDepositZeroAmount);
+        }
 
         transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
         amount
@@ -1022,6 +1100,16 @@ impl BidEscrowContract {
         let job_offer = self.job_offers.get(&job.job_offer_id()).unwrap_or_revert();
         job_offer.configuration
     }
+
+    fn validate_grace_period_job_proof_to_move(job: &mut Job) {
+        if job.status() != JobStatus::Created {
+            revert(Error::CannotSubmitJobProof);
+        }
+
+        if job.finish_time() >= get_block_time() {
+            revert(Error::GracePeriodNotStarted);
+        }
+    }
 }
 
 #[cfg(feature = "test-support")]
@@ -1030,6 +1118,7 @@ use casper_dao_utils::TestContract;
 use crate::{
     escrow::{
         bid::{Bid, BidStatus},
+        job::JobStatus,
         job_offer::{JobOffer, JobOfferStatus},
         types::{JobId, JobOfferId},
     },
@@ -1093,6 +1182,29 @@ impl BidEscrowContractTest {
                 "job_offer_id" => job_offer_id,
                 "time" => time,
                 "payment" => payment,
+                "reputation_stake" => reputation_stake,
+                "onboard" => onboard,
+                "cspr_amount" => cspr_amount,
+                "amount" => cspr_amount,
+            },
+        )
+    }
+
+    pub fn submit_job_proof_during_grace_period_with_cspr_amount(
+        &mut self,
+        job_id: JobId,
+        proof: DocumentHash,
+        reputation_stake: U512,
+        onboard: bool,
+        cspr_amount: U512,
+    ) -> Result<(), Error> {
+        use casper_types::{runtime_args, RuntimeArgs};
+        self.env.deploy_wasm_file(
+            "submit_job_proof_during_grace_period.wasm",
+            runtime_args! {
+                "bid_escrow_address" => self.address(),
+                "job_id" => job_id,
+                "proof" => proof,
                 "reputation_stake" => reputation_stake,
                 "onboard" => onboard,
                 "cspr_amount" => cspr_amount,

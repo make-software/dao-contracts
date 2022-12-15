@@ -2,7 +2,7 @@ use casper_dao_contracts::escrow::{
     bid::Bid,
     types::{BidId, JobOfferId},
 };
-use casper_dao_utils::{BlockTime, TestContract};
+use casper_dao_utils::{casper_contract::contract_api::runtime::print, BlockTime, TestContract};
 
 use crate::common::{
     params::{Account, Balance},
