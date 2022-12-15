@@ -423,14 +423,14 @@ impl BidEscrowContractInterface for BidEscrowContract {
             WorkerType::External
         };
 
-        let finish_time = get_block_time() + bid.proposed_timeframe;
         let job_id = self.next_job_id();
 
         let job = Job::new(
             job_id,
             bid_id,
             job_offer_id,
-            finish_time,
+            get_block_time(),
+            bid.proposed_timeframe,
             bid.worker,
             worker_type,
             job_poster,
@@ -460,8 +460,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
         let mut job = self
-            .get_job(job_id)
-            .unwrap_or_revert_with(Error::JobNotFound);
+            .job(job_id);
         let worker = caller();
         // TODO: Check if proof was not already send
 
@@ -532,8 +531,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let new_worker = caller();
         let mut old_job: Job = self
-            .get_job(job_id)
-            .unwrap_or_revert_with(Error::JobNotFound);
+            .job(job_id);
 
         Self::validate_grace_period_job_proof_to_move(&mut old_job);
 
@@ -570,7 +568,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             cspr_stake,
             onboard,
         );
-        let new_job = old_job.reclaim(self.next_job_id(), &new_bid);
+        let new_job = old_job.reclaim(self.next_job_id(), &new_bid, get_block_time());
         let new_job_id = new_job.job_id();
 
         // Stake new bid
@@ -602,18 +600,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
         self.voting
             .vote(caller, voting_id, voting_type, choice, stake);
-    }
-
-    fn get_job(&self, bid_id: BidId) -> Option<Job> {
-        self.jobs.get_or_none(&bid_id)
-    }
-
-    fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer> {
-        self.job_offers.get_or_none(&job_offer_id)
-    }
-
-    fn get_bid(&self, bid_id: BidId) -> Option<Bid> {
-        self.bids.get_or_none(&bid_id)
     }
 
     fn finish_voting(&mut self, voting_id: VotingId) {
@@ -774,7 +760,38 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn cancel_job(&mut self, job_id: JobId) {
-        todo!()
+        let mut job = self.job(job_id);
+        let caller = caller();
+
+        if let Err(e) = job.validate_cancel(get_block_time()) {
+            revert(e);
+        }
+
+        self.return_job_poster_payment_and_dos_fee(&job);
+
+        let bid = self.bid(job.bid_id());
+
+        // redistribute cspr stake
+        if let Some(cspr_stake) = bid.cspr_stake {
+            let left = self.redistribute_to_governance(&job, cspr_stake);
+            self.redistribute_cspr_to_all_vas(left);
+        }
+
+        // burn reputation stake
+        if bid.reputation_stake > U512::zero() {
+            self.reputation_token()
+                .unstake_bid(bid.worker, bid.bid_id());
+            self.reputation_token()
+                .burn(bid.worker, bid.reputation_stake);
+        }
+
+        // slash worker
+        if self.is_va(bid.worker) {
+            self.slash_worker(&job);
+        }
+
+        job.cancel(caller).unwrap_or_else(|e| revert(e));
+        self.jobs.set(&job_id, job);
     }
 
     fn slash_all_active_job_offers(&mut self, bidder: Address) {
@@ -814,6 +831,18 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn slash_voter(&mut self, _voter: Address, _voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
         unimplemented!()
+    }
+
+    fn get_job(&self, bid_id: BidId) -> Option<Job> {
+        self.jobs.get_or_none(&bid_id)
+    }
+
+    fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer> {
+        self.job_offers.get_or_none(&job_offer_id)
+    }
+
+    fn get_bid(&self, bid_id: BidId) -> Option<Bid> {
+        self.bids.get_or_none(&bid_id)
     }
 }
 
@@ -970,6 +999,18 @@ impl BidEscrowContract {
         self.job_offers
             .get(&job_offer_id)
             .unwrap_or_revert_with(Error::JobOfferNotFound)
+    }
+
+    fn bid(&self, bid_id: BidId) -> Bid {
+        self.bids
+            .get(&bid_id)
+            .unwrap_or_revert_with(Error::BidNotFound)
+    }
+
+    fn job(&self, job_id: JobId) -> Job {
+        self.jobs
+            .get(&job_id)
+            .unwrap_or_revert_with(Error::JobNotFound)
     }
 
     fn job_id_by_voting_id(&self, voting_id: VotingId) -> JobId {

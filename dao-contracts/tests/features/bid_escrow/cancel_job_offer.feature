@@ -9,7 +9,7 @@ Feature: Cancelling the Job Offer
 
   Scenario: Nobody submits a bid, JobPoster cancels the Job during auction phase
     When JobPoster cancels the JobOffer with id 0
-    Then JobOffer 0 isn't cancelled
+    Then JobOffer with id 0 isn't cancelled
     And balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | JobPoster        | 600          | 0            | 0          |
@@ -17,7 +17,7 @@ Feature: Cancelling the Job Offer
   Scenario: JobPoster cancels the Job after the auction phase
     When 18 days passed
     And JobPoster cancels the JobOffer with id 0
-    Then JobOffer 0 is cancelled
+    Then JobOffer with id 0 is cancelled
     And balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | JobPoster        | 1000         | 0            | 0          |
@@ -25,7 +25,7 @@ Feature: Cancelling the Job Offer
   Scenario: Somebody tries to cancel the Job after the auction phase
     When 18 days passed
     And VA1 cancels the JobOffer with id 0
-    Then JobOffer 0 isn't cancelled
+    Then JobOffer with id 0 isn't cancelled
     And balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | JobPoster        | 600          | 0            | 0          |

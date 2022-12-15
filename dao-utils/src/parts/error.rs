@@ -125,6 +125,7 @@ dao_errors!(
     GracePeriodNotStarted => 4029,
     OnlyJobPosterCanCancelJobOffer => 4030,
     JobOfferCannotBeYetCanceled => 4031,
+    JobCannotBeYetCanceled => 4032,
     // Reputation Token Errors.
     CannotStakeTwice => 4500,
     VotingStakeDoesntExists => 4501,

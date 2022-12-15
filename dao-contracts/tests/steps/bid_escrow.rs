@@ -4,6 +4,7 @@ use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
 use cucumber::{gherkin::Step, then, when};
 use casper_dao_contracts::escrow::job_offer::JobOfferStatus;
+use casper_dao_contracts::escrow::job::JobStatus;
 
 
 use crate::common::{
@@ -42,6 +43,17 @@ fn cancel_job_offer(
     offer_id: u32,
 ) {
     let _ = w.bid_escrow.as_account(w.get_address(&caller)).cancel_job_offer(offer_id);
+}
+
+#[when(
+expr = "{account} cancels the Job with id {int}"
+)]
+fn cancel_job(
+    w: &mut DaoWorld,
+    caller: Account,
+    offer_id: u32,
+) {
+    let _ = w.bid_escrow.as_account(w.get_address(&caller)).cancel_job(offer_id);
 }
 
 #[when(
@@ -183,12 +195,22 @@ fn slash_bid(w: &mut DaoWorld, bid_id: u32) {
     w.slash_bid(bid_id);
 }
 
-#[then(expr = "JobOffer {int} {word} cancelled")]
+#[then(expr = "JobOffer with id {int} {word} cancelled")]
 fn is_job_offer_cancelled(w: &mut DaoWorld, job_offer_id: u32, cancelled: String) {
     let cancelled = parse_bool(cancelled);
     let job_offer = w.bid_escrow.get_job_offer(job_offer_id).unwrap();
     match job_offer.status {
         JobOfferStatus::Cancelled => assert!(cancelled),
+        _ => assert!(!cancelled),
+    }
+}
+
+#[then(expr = "Job with id {int} {word} cancelled")]
+fn is_job_cancelled(w: &mut DaoWorld, job_id: u32, cancelled: String) {
+    let cancelled = parse_bool(cancelled);
+    let job = w.bid_escrow.get_job(job_id).unwrap();
+    match job.status() {
+        JobStatus::Cancelled => assert!(cancelled),
         _ => assert!(!cancelled),
     }
 }
