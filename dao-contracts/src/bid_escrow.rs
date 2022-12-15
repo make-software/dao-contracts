@@ -177,6 +177,10 @@ pub trait BidEscrowContractInterface {
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId);
 
+    fn cancel_job_offer(&mut self, job_offer_id: JobOfferId);
+
+    fn cancel_job(&mut self, job_id: JobId);
+
     fn slash_all_active_job_offers(&mut self, bidder: Address);
 
     fn slash_bid(&mut self, bid_id: BidId);
@@ -516,8 +520,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         onboard: bool,
         purse: Option<URef>,
     ) {
-        let cspr_stake = if purse.is_some() {
-            Some(self.deposit(purse.unwrap()))
+        let cspr_stake = if let Some(purse) = purse {
+            Some(self.deposit(purse))
         } else {
             None
         };
@@ -539,8 +543,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             .unwrap_or_revert_with(Error::BidNotFound);
 
         // redistribute original cspr stake
-        if old_bid.cspr_stake.is_some() {
-            let left = self.redistribute_to_governance(&old_job, old_bid.cspr_stake.unwrap());
+        if let Some(cspr_stake) = old_bid.cspr_stake {
+            let left = self.redistribute_to_governance(&old_job, cspr_stake);
             self.redistribute_cspr_to_all_vas(left);
         }
 
@@ -757,12 +761,29 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.voting.slash_voter(voter, voting_id);
     }
 
+    fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
+        let mut job_offer = self.job_offer(job_offer_id);
+        if let Err(e) = job_offer.validate_cancel(caller(), get_block_time()) {
+            revert(e);
+        }
+        self.cancel_all_bids(job_offer_id);
+        self.return_job_offer_poster_dos_fee(&job_offer_id);
+
+        job_offer.status = JobOfferStatus::Cancelled;
+        self.job_offers.set(&job_offer_id, job_offer);
+    }
+
+    fn cancel_job(&mut self, job_id: JobId) {
+        todo!()
+    }
+
     fn slash_all_active_job_offers(&mut self, bidder: Address) {
         self.access_control.ensure_whitelisted();
         // Cancel job offers created by the bidder.
         let job_offer_ids = self.active_job_offers_ids.get(&bidder).unwrap_or_default();
         for job_offer_id in job_offer_ids {
-            self.cancel_job_offer(job_offer_id);
+            self.cancel_all_bids(job_offer_id);
+            self.return_job_offer_poster_dos_fee(&job_offer_id);
         }
         self.active_job_offers_ids.set(&bidder, vec![]);
     }
@@ -804,7 +825,7 @@ impl BidEscrowContract {
         self.reputation_token().burn(job.worker(), amount_to_burn);
     }
 
-    fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
+    fn cancel_all_bids(&mut self, job_offer_id: JobOfferId) {
         let bids_amount = self.job_offers_bids.len(job_offer_id);
         for i in 0..bids_amount {
             let unstake_bid_id = self
@@ -827,7 +848,6 @@ impl BidEscrowContract {
             bid.cancel();
             self.bids.set(&unstake_bid_id, bid);
         }
-        self.return_job_offer_poster_dos_fee(&job_offer_id);
     }
 
     fn next_bid_id(&mut self) -> BidId {
@@ -844,24 +864,24 @@ impl BidEscrowContract {
 
     fn deposit(&mut self, cargo_purse: URef) -> U512 {
         let main_purse = casper_env::contract_main_purse();
-        let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
+        let amount = get_purse_balance(cargo_purse).unwrap_or_revert_with(Error::PurseError);
 
-        if amount == U512::zero() {
+        if amount.is_zero() {
             revert(Error::CannotDepositZeroAmount);
         }
 
-        transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
+        transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert_with(Error::TransferError);
         amount
     }
 
     /// Deposits a dos fee into the contract, checking the constraints
     fn deposit_dos_fee(&mut self, cargo_purse: URef, configuration: &Configuration) -> U512 {
         let main_purse = casper_env::contract_main_purse();
-        let amount = get_purse_balance(cargo_purse).unwrap_or_revert();
+        let amount = get_purse_balance(cargo_purse).unwrap_or_revert_with(Error::PurseError);
 
         self.validate_dos_fee(amount, configuration);
 
-        transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert();
+        transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None).unwrap_or_revert_with(Error::TransferError);
         amount
     }
 

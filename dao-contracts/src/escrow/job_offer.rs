@@ -1,14 +1,9 @@
-use casper_dao_utils::{
-    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
-    Address,
-    BlockTime,
-    Error::{
-        AuctionNotRunning,
-        OnboardedWorkerCannotBid,
-        OnlyOnboardedWorkerCanBid,
-        PaymentExceedsMaxBudget,
-    },
-};
+use casper_dao_utils::{casper_dao_macros::{CLTyped, FromBytes, ToBytes}, Address, BlockTime, Error::{
+    AuctionNotRunning,
+    OnboardedWorkerCannotBid,
+    OnlyOnboardedWorkerCanBid,
+    PaymentExceedsMaxBudget,
+}, Error};
 use casper_types::U512;
 
 use crate::{escrow::types::JobOfferId, Configuration};
@@ -20,6 +15,7 @@ pub enum JobOfferStatus {
     Cancelled,
 }
 
+#[derive(PartialEq)]
 pub enum AuctionState {
     None,
     Internal,
@@ -101,6 +97,18 @@ impl JobOffer {
                     return Err(OnboardedWorkerCannotBid);
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    pub fn validate_cancel(&self, caller: Address, block_time: BlockTime) -> Result<(), casper_dao_utils::Error> {
+        if caller != self.job_poster {
+            return Err(Error::OnlyJobPosterCanCancelJobOffer);
+        }
+
+        if self.auction_state(block_time) != AuctionState::None {
+            return Err(Error::JobOfferCannotBeYetCanceled);
         }
 
         Ok(())

@@ -3,9 +3,11 @@ use std::time::Duration;
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
 use cucumber::{gherkin::Step, then, when};
+use casper_dao_contracts::escrow::job_offer::JobOfferStatus;
+
 
 use crate::common::{
-    helpers::{self, parse_with},
+    helpers::{self, parse_bool},
     params::{
         voting::{Choice, VotingType},
         Account,
@@ -29,6 +31,17 @@ fn post_job_offer(
 ) {
     let timeframe = helpers::to_seconds(timeframe, time_unit);
     let _ = w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
+}
+
+#[when(
+expr = "{account} cancels the JobOffer with id {int}"
+)]
+fn cancel_job_offer(
+    w: &mut DaoWorld,
+    caller: Account,
+    offer_id: u32,
+) {
+    let _ = w.bid_escrow.as_account(w.get_address(&caller)).cancel_job_offer(offer_id);
 }
 
 #[when(
@@ -60,7 +73,7 @@ fn submit_bid_external(
     stake: Balance,
     onboarding: String,
 ) {
-    let onboarding = parse_with(onboarding);
+    let onboarding = parse_bool(onboarding);
     let timeframe = helpers::to_seconds(timeframe, time_unit);
     w.post_bid(
         job_offer_id,
@@ -95,7 +108,7 @@ fn submit_job_proof_during_grace_period_external(
     cspr_stake: Balance,
     onboarding: String,
 ) {
-    let onboarding = parse_with(onboarding);
+    let onboarding = parse_bool(onboarding);
     // TODO: Use bid_ids from the storage.
     let worker = w.get_address(&worker);
     w.bid_escrow
@@ -168,6 +181,16 @@ fn slash_all_active_job_offers(w: &mut DaoWorld, bidder: Account) {
 #[when(expr = "bid with id {int} is slashed")]
 fn slash_bid(w: &mut DaoWorld, bid_id: u32) {
     w.slash_bid(bid_id);
+}
+
+#[then(expr = "JobOffer {int} {word} cancelled")]
+fn is_job_offer_cancelled(w: &mut DaoWorld, job_offer_id: u32, cancelled: String) {
+    let cancelled = parse_bool(cancelled);
+    let job_offer = w.bid_escrow.get_job_offer(job_offer_id).unwrap();
+    match job_offer.status {
+        JobOfferStatus::Cancelled => assert!(cancelled),
+        _ => assert!(!cancelled),
+    }
 }
 
 #[then(expr = "Formal voting does not start")]

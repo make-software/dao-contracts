@@ -33,10 +33,11 @@ macro_rules! wildcard {
 }
 
 dao_errors!(
-    PurseBalanceMismatch => 403,
-    InsufficientBalance => 404,
     InsufficientAllowance => 401,
     CannotDepositZeroAmount => 402,
+    PurseBalanceMismatch => 403,
+    InsufficientBalance => 404,
+    PurseError => 405,
     NotAnOwner => 1000,
     OwnerIsNotInitialized => 1001,
     NotWhitelisted => 1002,
@@ -122,7 +123,8 @@ dao_errors!(
     CannotCancelNotOwnedBid => 4027,
     CannotSubmitJobProof => 4028,
     GracePeriodNotStarted => 4029,
-
+    OnlyJobPosterCanCancelJobOffer => 4030,
+    JobOfferCannotBeYetCanceled => 4031,
     // Reputation Token Errors.
     CannotStakeTwice => 4500,
     VotingStakeDoesntExists => 4501,

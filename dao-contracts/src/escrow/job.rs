@@ -12,7 +12,7 @@ use super::types::{BidId, JobId, JobOfferId};
 use crate::{
     escrow::{
         bid::Bid,
-        job::{JobStatus::Completed, WorkerType::ExternalToVA},
+        job::JobStatus::Completed,
     },
     voting::types::VotingId,
 };
@@ -91,7 +91,7 @@ impl Job {
         self.followed_by = Some(new_job_id);
 
         let worker_type = match (new_bid.cspr_stake.is_some(), new_bid.onboard) {
-            (_, true) => ExternalToVA,
+            (_, true) => WorkerType::ExternalToVA,
             (true, false) => WorkerType::External,
             (false, false) => WorkerType::Internal,
         };

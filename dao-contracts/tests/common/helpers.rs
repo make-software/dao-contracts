@@ -8,10 +8,14 @@ use casper_types::{
 
 use super::params::{Balance, TimeUnit};
 
-pub fn parse_with(value: String) -> bool {
+pub fn parse_bool(value: String) -> bool {
     match value.as_str() {
         "with" => true,
         "without" => false,
+        "is" => true,
+        "isn't" => false,
+        "yes" => true,
+        "no" => false,
         _ => {
             panic!("Unknown with option");
         }

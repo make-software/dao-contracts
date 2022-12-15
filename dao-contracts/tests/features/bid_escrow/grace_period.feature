@@ -66,7 +66,7 @@ Feature: Grace period
       | InternalWorker   | 195.20       | 1119.69      | 0          |
       | JobPoster        | 500          | 0            | 0          |
       | VA1              | 240.02       | 1423.48      | 0          |
-      | VA2              | 104.77        | 506.82       | 0          |
+      | VA2              | 104.77       | 506.82       | 0          |
       | BidEscrow        | 0            | 0            | 0          |
     And total reputation is 3050
     And ExternalWorker is not a VA
