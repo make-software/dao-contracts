@@ -164,6 +164,13 @@ doctest = false
 test = false
 
 [[bin]]
+name = "submit_onboarding_request"
+path = "bin/submit_onboarding_request.rs"
+bench = false
+doctest = false
+test = false
+
+[[bin]]
 name = "post_job_offer"
 path = "bin/post_job_offer.rs"
 bench = false

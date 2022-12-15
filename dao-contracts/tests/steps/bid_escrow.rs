@@ -155,16 +155,18 @@ fn voting_ends(w: &mut DaoWorld) {
 #[when(expr = "votes are")]
 fn votes_are(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
-    let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
+    let voting_id = 0;
+    let voting_type = w.bid_escrow.get_voting(voting_id).unwrap().voting_type();
     for row in table {
         let voter = helpers::parse(row.get(0), "Couldn't parse account");
         let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
         let stake = helpers::parse::<Balance>(row.get(2), "Couldn't parse balance");
 
+        dbg!(voter);
         let voter = w.get_address(&voter);
         w.bid_escrow
             .as_account(voter)
-            .vote(0, voting_type, choice.into(), *stake)
+            .vote(voting_id, voting_type, choice.into(), *stake)
             .unwrap();
     }
 }
@@ -205,6 +207,14 @@ fn is_job_cancelled(w: &mut DaoWorld, job_id: u32, cancelled: String) {
         JobStatus::Cancelled => assert!(cancelled),
         _ => assert!(!cancelled),
     }
+}
+
+#[when(expr = "{account} submits an onboarding request with the stake of {balance} CSPR")]
+fn submit_onboarding_request(world: &mut DaoWorld, account: Account, cspr_stake: Balance) {
+    let account = world.get_address(&account);
+    let _ = world.bid_escrow
+        .as_account(account)
+        .submit_onboarding_request_with_cspr_amount(DocumentHash::default(), *cspr_stake);
 }
 
 #[then(expr = "Formal voting does not start")]
