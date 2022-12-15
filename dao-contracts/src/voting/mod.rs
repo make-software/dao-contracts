@@ -1,4 +1,5 @@
 mod ballot;
+mod ids;
 pub mod kyc_info;
 pub mod onboarding_info;
 pub mod types;

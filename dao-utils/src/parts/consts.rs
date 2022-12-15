@@ -57,6 +57,7 @@ pub const BID_ESCROW_PAYMENT_RATIO: &str = "BidEscrowPaymentRatio";
 pub const VOTING_CLEARNESS_DELTA: &str = "VotingClearnessDelta";
 pub const VOTING_START_AFTER_JOB_WORKER_SUBMISSION: &str = "VotingStartAfterJobSubmission";
 pub const DEFAULT_REPUTATION_SLASH: &str = "DefaultReputationSlash";
+pub const VOTING_IDS_ADDRESS: &str = "VotingIdsAddress";
 
 // Contract keys.
 pub const CONTRACT_MAIN_PURSE: &str = "__contract_main_purse";

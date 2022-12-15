@@ -161,6 +161,14 @@ impl Configuration {
         self.voting_configuration.is_bid_escrow
     }
 
+    pub fn voting_ids_address(&self) -> Address {
+        self.dao_configuration.voting_ids_address
+    }
+
+    pub fn should_cast_first_vote(&self) -> bool {
+        !self.is_bid_escrow()
+    }
+
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
         math::promils_of_u512(amount, self.dao_configuration.default_policing_rate)
             .unwrap_or_revert()

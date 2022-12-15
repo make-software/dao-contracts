@@ -6,6 +6,7 @@ mod admin;
 mod bid_escrow;
 mod builder;
 pub mod escrow;
+mod ids;
 mod kyc_nft;
 mod kyc_voter;
 mod rate_provider;
@@ -32,6 +33,9 @@ pub use bid_escrow::BidEscrowContractTest;
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
 pub use builder::configuration_builder::ConfigurationBuilder;
 pub use config::configuration::*;
+#[cfg(feature = "test-support")]
+pub use ids::DaoIdsContractTest;
+pub use ids::{DaoIdsContract, DaoIdsContractCaller, DaoIdsContractInterface};
 #[cfg(feature = "test-support")]
 pub use kyc_nft::KycNftContractTest;
 pub use kyc_nft::{KycNftContract, KycNftContractCaller, KycNftContractInterface};

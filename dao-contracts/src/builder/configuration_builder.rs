@@ -94,6 +94,7 @@ impl ConfigurationBuilder {
                         BID_ESCROW_PAYMENT_RATIO,
                         &variables,
                     ),
+                    voting_ids_address: Self::get_variable(VOTING_IDS_ADDRESS, &variables),
                 },
                 VotingConfiguration {
                     is_bid_escrow: false,

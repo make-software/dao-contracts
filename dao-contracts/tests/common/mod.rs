@@ -17,6 +17,7 @@ use casper_dao_contracts::{
     AdminContractTest,
     BidEscrowContractTest,
     CSPRRateProviderContractTest,
+    DaoIdsContractTest,
     KycNftContractTest,
     KycVoterContractTest,
     RepoVoterContractTest,
@@ -156,6 +157,20 @@ impl Default for DaoWorld {
 
         let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
 
+        // Setup DaoIds.
+        let mut voting_ids = DaoIdsContractTest::new(&env);
+        voting_ids.add_to_whitelist(kyc_voter.address()).unwrap();
+        voting_ids.add_to_whitelist(bid_escrow.address()).unwrap();
+        voting_ids
+            .add_to_whitelist(slashing_voter.address())
+            .unwrap();
+        voting_ids.add_to_whitelist(repo_voter.address()).unwrap();
+        voting_ids
+            .add_to_whitelist(reputation_voter.address())
+            .unwrap();
+        voting_ids.add_to_whitelist(simple_voter.address()).unwrap();
+        voting_ids.add_to_whitelist(admin.address()).unwrap();
+
         // Setup Reputation.
         // Setup VariableRepository.
         // Setup VaToken.
@@ -181,7 +196,7 @@ impl Default for DaoWorld {
             .add_to_whitelist(reputation_voter.address())
             .unwrap();
 
-        // Setup SlashinVoter.
+        // Setup SlashingVoter.
         reputation_token
             .add_to_whitelist(slashing_voter.address())
             .unwrap();
@@ -250,6 +265,15 @@ impl Default for DaoWorld {
             .update_at(
                 consts::FIAT_CONVERSION_RATE_ADDRESS.to_string(),
                 Bytes::from(dao.rate_provider.address().to_bytes().unwrap()),
+                None,
+            )
+            .unwrap();
+
+        // Update voting ids.
+        dao.variable_repository
+            .update_at(
+                consts::VOTING_IDS_ADDRESS.to_string(),
+                Bytes::from(voting_ids.address().to_bytes().unwrap()),
                 None,
             )
             .unwrap();

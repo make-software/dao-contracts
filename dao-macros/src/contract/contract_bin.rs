@@ -57,6 +57,16 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
         let ident = &method.sig.ident;
         let (casper_args, punctuated_args) = utils::parse_casper_args(method);
         let has_return = matches!(&method.sig.output, syn::ReturnType::Type(_, _));
+        let mutability = method.sig.inputs
+            .iter()
+            .filter_map(|i| match i {
+                syn::FnArg::Receiver(r) => r.mutability,
+                syn::FnArg::Typed(_) => None,
+            }).collect::<Vec<_>>();
+        let mutability_token = match mutability.first() {
+            Some(m) => quote!(#m),
+            None => quote!(),
+        };
         if has_return {
             quote! {
                 #[no_mangle]
@@ -64,8 +74,8 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                     use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
 
                     #casper_args
-                    let contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
-                    let result = #contract_interface_ident::#ident(&contract, #punctuated_args);
+                    let #mutability_token contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
+                    let result = #contract_interface_ident::#ident(&#mutability_token contract, #punctuated_args);
                     let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
                     casper_dao_utils::casper_contract::contract_api::runtime::ret(result);
                 }
@@ -75,9 +85,9 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                 #[no_mangle]
                 fn #ident() {
                     #casper_args
-                    let mut contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
+                    let #mutability_token contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
                     #[allow(clippy::unnecessary_mut_passed)]
-                    #contract_interface_ident::#ident(&mut contract, #punctuated_args);
+                    #contract_interface_ident::#ident(&#mutability_token contract, #punctuated_args);
                 }
             }
         }

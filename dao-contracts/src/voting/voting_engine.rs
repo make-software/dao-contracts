@@ -21,7 +21,7 @@ use self::{
     events::{BallotCast, VotingContractCreated, VotingCreated},
     voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
 };
-use super::{ballot::Choice, types::VotingId, Ballot};
+use super::{ballot::Choice, ids, types::VotingId, Ballot};
 use crate::{
     Configuration,
     ReputationContractCaller,
@@ -50,7 +50,6 @@ pub struct VotingEngine {
     voting_states: Mapping<VotingId, Option<VotingStateMachine>>,
     ballots: Mapping<(VotingId, VotingType, Address), Ballot>,
     voters: VecMapping<(VotingId, VotingType), Address>,
-    votings_count: Variable<VotingId>,
 }
 
 impl VotingEngine {
@@ -93,16 +92,17 @@ impl VotingEngine {
             revert(Error::VaNotOnboarded)
         }
 
-        let cast_first_vote = !configuration.voting_configuration.is_bid_escrow;
+        let should_cast_first_vote = configuration.should_cast_first_vote();
 
-        let voting_id = self.next_voting_id();
+        let voting_ids_address = configuration.voting_ids_address();
+        let voting_id = ids::get_next_voting_id(voting_ids_address);
 
         VotingCreated::new(&creator, voting_id, voting_id, None, &configuration).emit();
 
         let voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
         self.set_voting(voting);
 
-        if cast_first_vote {
+        if should_cast_first_vote {
             self.vote(
                 creator,
                 voting_id,
@@ -419,12 +419,6 @@ impl VotingEngine {
 
     fn set_voting(&self, voting: VotingStateMachine) {
         self.voting_states.set(&voting.voting_id(), Some(voting))
-    }
-
-    fn next_voting_id(&mut self) -> VotingId {
-        let voting_id = self.votings_count.get().unwrap_or_default();
-        self.votings_count.set(voting_id + 1);
-        voting_id
     }
 
     fn perform_action(&self, voting_id: VotingId) {
