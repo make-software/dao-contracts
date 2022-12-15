@@ -61,8 +61,12 @@ pub use rate_provider::{
 pub use repo_voter::RepoVoterContractTest;
 pub use repo_voter::{RepoVoterContract, RepoVoterContractCaller, RepoVoterContractInterface};
 #[cfg(feature = "test-support")]
-pub use reputation::ReputationContractTest;
-pub use reputation::{ReputationContract, ReputationContractCaller, ReputationContractInterface};
+pub use reputation::token::ReputationContractTest;
+pub use reputation::token::{
+    ReputationContract,
+    ReputationContractCaller,
+    ReputationContractInterface,
+};
 #[cfg(feature = "test-support")]
 pub use reputation_voter::ReputationVoterContractTest;
 pub use reputation_voter::{

@@ -1016,10 +1016,18 @@ impl BidEscrowContract {
 
     fn mint_and_redistribute_reputation_for_external_worker(&mut self, job: &Job) {
         let configuration = self.get_job_offer_configuration(job);
-        let payment_reputation_to_mint =
-            configuration.apply_reputation_conversion_rate_to(job.payment());
-        let total = configuration.apply_default_policing_rate_to(payment_reputation_to_mint);
-        self.mint_reputation_for_voters(job, total);
+        let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
+        let reputation_to_redistribute =
+            configuration.apply_default_policing_rate_to(reputation_to_mint);
+
+        // Worker
+        ReputationContractCaller::at(self.voting.reputation_token_address()).mint_passive(
+            job.worker(),
+            reputation_to_mint - reputation_to_redistribute,
+        );
+        
+        // Voters
+        self.mint_reputation_for_voters(job, reputation_to_redistribute);
     }
 
     fn mint_reputation_for_voters(&mut self, job: &Job, amount: U512) {

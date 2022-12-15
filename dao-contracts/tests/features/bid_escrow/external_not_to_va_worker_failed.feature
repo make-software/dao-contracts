@@ -76,5 +76,6 @@ Feature: External Worker who doesn't want to become a VA submits job
       | VA1              | 150          | 1000         | 0          |
       | VA2              | 150          | 1000         | 0          |
       | BidEscrow        | 0            | 0            | 0          |
+    And passive REP of ExternalWorker is 0
     And total reputation is 3000
     And ExternalWorker is not a VA

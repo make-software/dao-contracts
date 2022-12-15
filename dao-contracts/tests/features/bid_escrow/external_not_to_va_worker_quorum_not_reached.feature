@@ -66,5 +66,6 @@ Feature: External Worker who does not want to become a va - Quorum not reached
       | ExternalWorker   | 500          | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
+    And passive REP of ExternalWorker is 0
     And total reputation is 6000
     And ExternalWorker is not a VA

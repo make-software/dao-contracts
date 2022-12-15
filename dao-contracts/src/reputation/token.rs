@@ -13,6 +13,7 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use self::events::{Burn, Mint};
+use super::passive_rep::PassiveReputation;
 use crate::{
     escrow::types::BidId,
     voting::{Choice, VotingId},
@@ -37,7 +38,7 @@ pub trait ReputationContractInterface {
     fn init(&mut self);
 
     /// Mint new tokens. Add `amount` of new tokens to the balance of the `recipient` and
-    /// increment the total supply. Only whitelisted addresses are permited to call this method.
+    /// increment the total supply. Only whitelisted addresses are permitted to call this method.
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
@@ -45,8 +46,14 @@ pub trait ReputationContractInterface {
     /// It emits [`Mint`](casper_dao_contracts::reputation::events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U512);
 
+    /// Increases the balance of the passive reputation of the given address.
+    ///
+    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// is not whitelisted.
+    fn mint_passive(&mut self, recipient: Address, amount: U512);
+
     /// Burn existing tokens. Remove `amount` of existing tokens from the balance of the `owner`
-    /// and decrement the total supply. Only whitelisted addresses are permited to call this
+    /// and decrement the total supply. Only whitelisted addresses are permitted to call this
     /// method.
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
@@ -55,8 +62,17 @@ pub trait ReputationContractInterface {
     /// It emits [`Burn`](casper_dao_contracts::reputation::events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U512);
 
+    /// Decreases the balance of the passive reputation of the given address.
+    ///
+    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// is not whitelisted.
+    /// 
+    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance) if the passed
+    /// amount exceeds the balance of the passive reputation of the given address.
+    fn burn_passive(&mut self, owner: Address, amount: U512);
+
     /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
-    /// is permited to call this method.
+    /// is permitted to call this method.
     ///
     /// See [AccessControl](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
@@ -79,6 +95,9 @@ pub trait ReputationContractInterface {
 
     /// Returns the current token balance of the given address.
     fn balance_of(&self, address: Address) -> U512;
+
+    /// Returns the current passive balance of the given address.
+    fn passive_balance_of(&self, address: Address) -> U512;
 
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
@@ -114,8 +133,9 @@ pub struct ReputationContract {
     // (owner, staker, voting) -> (stake, choice)
     stakes: Mapping<Address, AccountStakeInfo>,
     total_stake: Mapping<Address, U512>,
-    pub access_control: AccessControl,
+    access_control: AccessControl,
     bid_escrows: Variable<BidEscrows>,
+    passive_reputation: PassiveReputation,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -126,6 +146,15 @@ impl ReputationContractInterface for ReputationContract {
             fn remove_from_whitelist(&mut self, address: Address);
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
+        }
+
+        to self.passive_reputation {
+            #[call(mint)]
+            fn mint_passive(&mut self, recipient: Address, amount: U512);
+            #[call(burn)]
+            fn burn_passive(&mut self, owner: Address, amount: U512);
+            #[call(balance_of)]
+            fn passive_balance_of(&self, address: Address) -> U512;
         }
     }
 
