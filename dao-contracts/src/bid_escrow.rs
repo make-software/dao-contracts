@@ -21,7 +21,7 @@ use crate::{
         bid::{Bid, BidStatus},
         job::{Job, JobStatus, WorkerType},
         job_offer::{JobOffer, JobOfferStatus, PostJobOfferRequest},
-        types::{BidId, JobId, JobOfferId}, storage::JobStorage,
+        types::{BidId, JobId, JobOfferId}, storage::JobStorage, onboarding::Onboarding,
     },
     voting::{
         kyc_info::KycInfo,
@@ -127,6 +127,7 @@ pub trait BidEscrowContractInterface {
         purse: Option<URef>,
     );
 
+    fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
@@ -200,6 +201,7 @@ pub struct BidEscrowContract {
     kyc: KycInfo,
     onboarding_info: OnboardingInfo,
     access_control: AccessControl,
+    onboarding: Onboarding,
     job_storage: JobStorage,
 }
 
@@ -224,6 +226,11 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn remove_from_whitelist(&mut self, address: Address);
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
+        }
+
+        to self.onboarding {
+            #[call(submit_request)]
+            fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
         }
 
         to self.job_storage {
