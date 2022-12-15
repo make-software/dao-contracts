@@ -429,7 +429,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = self
             .voting
             .create_voting(worker, U512::zero(), voting_configuration);
-        
+
         self.job_storage.store_job_for_voting(voting_id, job_id);
 
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
@@ -780,6 +780,7 @@ impl BidEscrowContract {
             bid.cancel();
             self.job_storage.store_bid(bid);
         }
+        self.return_job_offer_poster_dos_fee(job_offer_id);
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
@@ -953,7 +954,7 @@ impl BidEscrowContract {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
-            
+
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
                 self.reputation_token()
                     .unstake_bid(bid.worker, bid.bid_id);
