@@ -776,6 +776,7 @@ impl BidEscrowContract {
             bid.cancel();
             self.job_storage.store_bid(bid);
         }
+        self.return_job_offer_poster_dos_fee(job_offer_id);
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
