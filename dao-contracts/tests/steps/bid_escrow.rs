@@ -1,11 +1,9 @@
 use std::time::Duration;
 
+use casper_dao_contracts::escrow::{job::JobStatus, job_offer::JobOfferStatus};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
 use cucumber::{gherkin::Step, then, when};
-use casper_dao_contracts::escrow::job_offer::JobOfferStatus;
-use casper_dao_contracts::escrow::job::JobStatus;
-
 
 use crate::common::{
     helpers::{self, parse_bool},
@@ -34,26 +32,20 @@ fn post_job_offer(
     let _ = w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
-#[when(
-expr = "{account} cancels the JobOffer with id {int}"
-)]
-fn cancel_job_offer(
-    w: &mut DaoWorld,
-    caller: Account,
-    offer_id: u32,
-) {
-    let _ = w.bid_escrow.as_account(w.get_address(&caller)).cancel_job_offer(offer_id);
+#[when(expr = "{account} cancels the JobOffer with id {int}")]
+fn cancel_job_offer(w: &mut DaoWorld, caller: Account, offer_id: u32) {
+    let _ = w
+        .bid_escrow
+        .as_account(w.get_address(&caller))
+        .cancel_job_offer(offer_id);
 }
 
-#[when(
-expr = "{account} cancels the Job with id {int}"
-)]
-fn cancel_job(
-    w: &mut DaoWorld,
-    caller: Account,
-    offer_id: u32,
-) {
-    let _ = w.bid_escrow.as_account(w.get_address(&caller)).cancel_job(offer_id);
+#[when(expr = "{account} cancels the Job with id {int}")]
+fn cancel_job(w: &mut DaoWorld, caller: Account, offer_id: u32) {
+    let _ = w
+        .bid_escrow
+        .as_account(w.get_address(&caller))
+        .cancel_job(offer_id);
 }
 
 #[when(

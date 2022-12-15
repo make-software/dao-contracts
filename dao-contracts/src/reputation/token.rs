@@ -66,7 +66,7 @@ pub trait ReputationContractInterface {
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
-    /// 
+    ///
     /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance) if the passed
     /// amount exceeds the balance of the passive reputation of the given address.
     fn burn_passive(&mut self, owner: Address, amount: U512);

@@ -73,7 +73,7 @@ impl DaoWorld {
 
     pub fn assert_passive_reputation(&self, account: &Account, expected_balance: Balance) {
         let real_balance = self.passive_reputation_balance(account);
-        
+
         assert!(
             is_balance_close_enough(expected_balance, *real_balance),
             "For account {:?} passive REP balance should be {:?} but is {:?}",

@@ -74,8 +74,8 @@ dao_errors!(
     InformalVotingNotStarted => 2111,
     VaOnboardedAlready => 2201,
     OnboardingAlreadyInProgress => 2202,
-    VaNotOnboarded => 2203,
-    VaNotKyced => 2204,
+    NotOnboarded => 2203,
+    NotKyced => 2204,
     UnexpectedOnboardingError => 2205,
     KycAlreadyInProgress => 2206,
     UserKycedAlready => 2207,
@@ -126,6 +126,7 @@ dao_errors!(
     OnlyJobPosterCanCancelJobOffer => 4030,
     JobOfferCannotBeYetCanceled => 4031,
     JobCannotBeYetCanceled => 4032,
+    FiatRateNotSet => 4033,
     // Reputation Token Errors.
     CannotStakeTwice => 4500,
     VotingStakeDoesntExists => 4501,

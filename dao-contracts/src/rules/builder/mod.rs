@@ -30,6 +30,10 @@ impl RulesBuilder {
     pub fn build(self) -> Rules {
         self.rules
     }
+
+    pub fn validate(self) {
+        self.rules.validate_generic_validations();
+    }
 }
 
 impl Default for RulesBuilder {

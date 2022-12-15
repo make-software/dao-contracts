@@ -89,7 +89,7 @@ impl VotingEngine {
         configuration: Configuration,
     ) -> VotingId {
         if configuration.only_va_can_create() && !self.is_va(creator) {
-            revert(Error::VaNotOnboarded)
+            revert(Error::NotOnboarded)
         }
 
         let should_cast_first_vote = configuration.should_cast_first_vote();

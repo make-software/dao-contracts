@@ -7,11 +7,9 @@ use casper_dao_utils::{
     Error,
 };
 use casper_types::U512;
-use casper_dao_utils::casper_contract::contract_api::runtime::print;
 
 use super::types::{BidId, JobId, JobOfferId};
-use crate::escrow::bid::Bid;
-use crate::voting::types::VotingId;
+use crate::{escrow::bid::Bid, voting::types::VotingId};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
