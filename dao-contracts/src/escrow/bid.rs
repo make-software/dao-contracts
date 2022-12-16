@@ -7,13 +7,17 @@ use casper_types::U512;
 
 use crate::{
     escrow::{
-        job_offer::AuctionState,
+        job::PickBidRequest,
+        job_offer::{AuctionState, JobOfferStatus},
         types::{BidId, JobOfferId},
         validation::rules::{
             can_be_onboarded::CanBeOnboarded,
+            can_bid_be_cancelled::CanBidBeCancelled,
             can_bid_on_auction_state::CanBidOnAuctionState,
             can_bid_on_own_job::CanBidOnOwnJob,
+            can_pick_bid::CanPickBid,
             does_proposed_payment_exceed_budget::DoesProposedPaymentExceedBudget,
+            has_permissions_to_cancel_bid::HasPermissionsToCancelBid,
         },
     },
     rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
@@ -28,7 +32,7 @@ pub enum BidAuctionTime {
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq, Clone)]
 pub enum BidStatus {
     Created,
-    Selected,
+    Picked,
     Rejected,
     Reclaimed,
     Canceled,
@@ -50,6 +54,13 @@ pub struct SubmitBidRequest {
     pub max_budget: U512,
     pub auction_state: AuctionState,
     pub va_can_bid_on_public_auction: bool,
+}
+
+pub struct CancelBidRequest {
+    pub caller: Address,
+    pub job_offer_status: JobOfferStatus,
+    pub block_time: BlockTime,
+    pub va_bid_acceptance_timeout: BlockTime,
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
@@ -114,7 +125,7 @@ impl Bid {
         self.status = BidStatus::Reclaimed;
 
         new_bid.bid_id = new_bid_id;
-        new_bid.status = BidStatus::Selected;
+        new_bid.status = BidStatus::Picked;
         new_bid.worker = new_worker;
         new_bid.timestamp = block_time;
         new_bid.reputation_stake = reputation_stake;
@@ -126,15 +137,35 @@ impl Bid {
         new_bid
     }
 
-    pub fn pick(&mut self) {
-        self.status = BidStatus::Selected;
+    pub fn picked(&mut self, request: &PickBidRequest) {
+        RulesBuilder::new()
+            .add_validation(CanPickBid::create(request.caller, request.poster))
+            .validate();
+
+        self.status = BidStatus::Picked;
     }
 
     pub fn reject(&mut self) {
         self.status = BidStatus::Rejected;
     }
 
-    pub fn cancel(&mut self) {
+    pub fn cancel(&mut self, request: CancelBidRequest) {
+        RulesBuilder::new()
+            .add_validation(HasPermissionsToCancelBid::create(
+                request.caller,
+                self.worker,
+            ))
+            .add_validation(CanBidBeCancelled::create(
+                request.job_offer_status,
+                request.block_time,
+                self.timestamp,
+                request.va_bid_acceptance_timeout,
+            ))
+            .validate();
+        self.status = BidStatus::Canceled;
+    }
+
+    pub fn cancel_without_validation(&mut self) {
         self.status = BidStatus::Canceled;
     }
 

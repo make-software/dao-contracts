@@ -1,7 +1,18 @@
-use casper_contract::{contract_api::system::{get_purse_balance, transfer_from_purse_to_purse, transfer_from_purse_to_account}, unwrap_or_revert::UnwrapOrRevert};
+use casper_contract::{
+    contract_api::system::{
+        get_purse_balance,
+        transfer_from_purse_to_account,
+        transfer_from_purse_to_purse,
+    },
+    unwrap_or_revert::UnwrapOrRevert,
+};
 use casper_types::{URef, U512};
 
-use crate::{casper_env::{self, revert}, Address, Error};
+use crate::{
+    casper_env::{self, revert},
+    Address,
+    Error,
+};
 
 pub fn deposit_cspr(cargo_purse: URef) -> U512 {
     let main_purse = casper_env::contract_main_purse();

@@ -9,7 +9,17 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
-use crate::{escrow::bid::Bid, voting::types::VotingId};
+use crate::{
+    escrow::{
+        bid::Bid,
+        validation::rules::{
+            can_pick_bid::CanPickBid,
+            does_proposed_payment_match_transferred::DoesProposedPaymentMatchTransferred,
+        },
+    },
+    rules::builder::RulesBuilder,
+    voting::types::VotingId,
+};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -26,6 +36,23 @@ impl Default for JobStatus {
     fn default() -> Self {
         JobStatus::Created
     }
+}
+
+pub struct PickBidRequest {
+    pub job_id: JobId,
+    pub job_offer_id: JobOfferId,
+    pub bid_id: BidId,
+    pub caller: Address,
+    pub poster: Address,
+    pub worker: Address,
+    pub is_worker_va: bool,
+    pub onboard: bool,
+    pub block_time: BlockTime,
+    pub timeframe: BlockTime,
+    pub payment: U512,
+    pub transferred_cspr: U512,
+    pub stake: U512,
+    pub external_worker_cspr_stake: U512,
 }
 
 /// Struct holding Job
@@ -51,34 +78,38 @@ pub struct Job {
 impl Job {
     /// Job constructor
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        job_id: JobId,
-        bid_id: BidId,
-        job_offer_id: JobOfferId,
-        start_time: BlockTime,
-        timeframe: BlockTime,
-        worker: Address,
-        worker_type: WorkerType,
-        poster: Address,
-        payment: U512,
-        stake: U512,
-        external_worker_cspr_stake: U512,
-    ) -> Self {
+    pub fn new(request: &PickBidRequest) -> Self {
+        RulesBuilder::new()
+            .add_validation(CanPickBid::create(request.caller, request.poster))
+            .add_validation(DoesProposedPaymentMatchTransferred::create(
+                request.payment,
+                request.transferred_cspr,
+            ))
+            .validate();
+
+        let worker_type = if request.is_worker_va {
+            WorkerType::Internal
+        } else if request.onboard {
+            WorkerType::ExternalToVA
+        } else {
+            WorkerType::External
+        };
+
         Job {
-            job_id,
-            bid_id,
-            job_offer_id,
+            job_id: request.job_id,
+            bid_id: request.bid_id,
+            job_offer_id: request.job_offer_id,
             voting_id: None,
             job_proof: None,
-            start_time,
-            time_for_job: timeframe,
+            start_time: request.block_time,
+            time_for_job: request.timeframe,
             status: JobStatus::Created,
-            worker,
+            worker: request.worker,
             worker_type,
-            poster,
-            payment,
-            stake,
-            external_worker_cspr_stake,
+            poster: request.poster,
+            payment: request.payment,
+            stake: request.stake,
+            external_worker_cspr_stake: request.external_worker_cspr_stake,
             followed_by: None,
         }
     }
@@ -93,19 +124,23 @@ impl Job {
             (false, false) => WorkerType::Internal,
         };
 
-        let mut new_job = Job::new(
-            new_job_id,
-            new_bid.bid_id,
-            new_bid.job_offer_id,
-            block_time,
-            new_bid.proposed_timeframe,
-            new_bid.worker,
+        let mut new_job = Job {
+            job_id: new_job_id,
+            bid_id: new_bid.bid_id,
+            job_offer_id: new_bid.job_offer_id,
+            voting_id: None,
+            job_proof: None,
+            start_time: block_time,
+            time_for_job: new_bid.proposed_timeframe,
+            status: JobStatus::Created,
+            worker: new_bid.worker,
             worker_type,
-            self.poster,
-            self.payment,
-            new_bid.reputation_stake,
-            new_bid.cspr_stake.unwrap_or_default(),
-        );
+            poster: self.poster,
+            payment: self.payment,
+            stake: new_bid.reputation_stake,
+            external_worker_cspr_stake: new_bid.cspr_stake.unwrap_or_default(),
+            followed_by: None,
+        };
 
         new_job.status = JobStatus::Submitted;
 
