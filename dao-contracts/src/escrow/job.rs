@@ -9,13 +9,7 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
-use crate::{
-    escrow::{
-        bid::Bid,
-        job::{JobStatus::Completed, WorkerType::ExternalToVA},
-    },
-    voting::types::VotingId,
-};
+use crate::{escrow::bid::Bid, voting::types::VotingId};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -42,7 +36,8 @@ pub struct Job {
     job_offer_id: JobOfferId,
     voting_id: Option<VotingId>,
     job_proof: Option<DocumentHash>,
-    finish_time: BlockTime,
+    start_time: BlockTime,
+    time_for_job: BlockTime,
     status: JobStatus,
     worker: Address,
     worker_type: WorkerType,
@@ -60,7 +55,8 @@ impl Job {
         job_id: JobId,
         bid_id: BidId,
         job_offer_id: JobOfferId,
-        finish_time: BlockTime,
+        start_time: BlockTime,
+        timeframe: BlockTime,
         worker: Address,
         worker_type: WorkerType,
         poster: Address,
@@ -74,7 +70,8 @@ impl Job {
             job_offer_id,
             voting_id: None,
             job_proof: None,
-            finish_time,
+            start_time,
+            time_for_job: timeframe,
             status: JobStatus::Created,
             worker,
             worker_type,
@@ -86,12 +83,12 @@ impl Job {
         }
     }
 
-    pub fn reclaim(&mut self, new_job_id: JobId, new_bid: &Bid) -> Job {
-        self.status = Completed;
+    pub fn reclaim(&mut self, new_job_id: JobId, new_bid: &Bid, block_time: BlockTime) -> Job {
+        self.status = JobStatus::Completed;
         self.followed_by = Some(new_job_id);
 
         let worker_type = match (new_bid.cspr_stake.is_some(), new_bid.onboard) {
-            (_, true) => ExternalToVA,
+            (_, true) => WorkerType::ExternalToVA,
             (true, false) => WorkerType::External,
             (false, false) => WorkerType::Internal,
         };
@@ -100,6 +97,7 @@ impl Job {
             new_job_id,
             new_bid.bid_id,
             new_bid.job_offer_id,
+            block_time,
             new_bid.proposed_timeframe,
             new_bid.worker,
             worker_type,
@@ -136,6 +134,18 @@ impl Job {
         false
     }
 
+    pub fn validate_cancel(&self, block_time: BlockTime) -> Result<(), Error> {
+        if self.status() != JobStatus::Created {
+            return Err(Error::CannotCancelJob);
+        }
+
+        if self.finish_time() + self.grace_period() >= block_time {
+            return Err(Error::JobCannotBeYetCanceled);
+        }
+
+        Ok(())
+    }
+
     /// Changes status to the Cancelled
     pub fn cancel(&mut self, caller: Address) -> Result<(), Error> {
         if self.status() != JobStatus::Created || self.poster() != caller {
@@ -157,11 +167,11 @@ impl Job {
     }
 
     pub fn has_time_ended(&self, block_time: BlockTime) -> bool {
-        self.finish_time <= block_time
+        self.start_time + self.time_for_job <= block_time
     }
 
     pub fn is_grace_period(&self, _block_time: BlockTime) -> bool {
-        // TODO: Implement
+        // TODO: Implement and use
         false
     }
 
@@ -220,7 +230,7 @@ impl Job {
 
     /// Get the job's finish time
     pub fn finish_time(&self) -> BlockTime {
-        self.finish_time
+        self.start_time + self.time_for_job
     }
 
     pub fn worker_type(&self) -> &WorkerType {
@@ -241,6 +251,10 @@ impl Job {
 
     pub fn job_id(&self) -> JobId {
         self.job_id
+    }
+
+    fn grace_period(&self) -> BlockTime {
+        self.time_for_job
     }
 }
 

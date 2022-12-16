@@ -5,7 +5,19 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::escrow::types::{BidId, JobOfferId};
+use crate::{
+    escrow::{
+        job_offer::AuctionState,
+        types::{BidId, JobOfferId},
+        validation::rules::{
+            can_be_onboarded::CanBeOnboarded,
+            can_bid_on_auction_state::CanBidOnAuctionState,
+            can_bid_on_own_job::CanBidOnOwnJob,
+            does_proposed_payment_exceed_budget::DoesProposedPaymentExceedBudget,
+        },
+    },
+    rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
+};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub enum BidAuctionTime {
@@ -20,6 +32,24 @@ pub enum BidStatus {
     Rejected,
     Reclaimed,
     Canceled,
+}
+
+pub struct SubmitBidRequest {
+    pub bid_id: BidId,
+    pub timestamp: BlockTime,
+    pub job_offer_id: JobOfferId,
+    pub proposed_timeframe: BlockTime,
+    pub proposed_payment: U512,
+    pub reputation_stake: U512,
+    pub cspr_stake: Option<U512>,
+    pub onboard: bool,
+    pub worker: Address,
+    pub worker_kyced: bool,
+    pub worker_is_va: bool,
+    pub job_poster: Address,
+    pub max_budget: U512,
+    pub auction_state: AuctionState,
+    pub va_can_bid_on_public_auction: bool,
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
@@ -38,28 +68,36 @@ pub struct Bid {
 
 impl Bid {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        bid_id: BidId,
-        timestamp: BlockTime,
-        job_offer_id: JobOfferId,
-        proposed_timeframe: BlockTime,
-        proposed_payment: U512,
-        reputation_stake: U512,
-        cspr_stake: Option<U512>,
-        onboard: bool,
-        worker: Address,
-    ) -> Self {
-        Self {
-            bid_id,
+    pub fn new(request: SubmitBidRequest) -> Bid {
+        RulesBuilder::new()
+            .add_validation(IsUserKyced::create(request.worker_kyced))
+            .add_validation(CanBidOnOwnJob::create(request.worker, request.job_poster))
+            .add_validation(CanBeOnboarded::create(
+                request.worker_is_va,
+                request.onboard,
+            ))
+            .add_validation(DoesProposedPaymentExceedBudget::create(
+                request.proposed_payment,
+                request.max_budget,
+            ))
+            .add_validation(CanBidOnAuctionState::create(
+                request.auction_state,
+                request.worker_is_va,
+                request.va_can_bid_on_public_auction,
+            ))
+            .validate();
+
+        Bid {
+            bid_id: request.bid_id,
             status: BidStatus::Created,
-            timestamp,
-            job_offer_id,
-            proposed_timeframe,
-            proposed_payment,
-            reputation_stake,
-            cspr_stake,
-            onboard,
-            worker,
+            timestamp: request.timestamp,
+            job_offer_id: request.job_offer_id,
+            proposed_timeframe: request.proposed_timeframe,
+            proposed_payment: request.proposed_payment,
+            reputation_stake: request.reputation_stake,
+            cspr_stake: request.cspr_stake,
+            onboard: request.onboard,
+            worker: request.worker,
         }
     }
 

@@ -301,7 +301,7 @@ mod test {
 
                         it "can unset the operator approval" {
                             token.as_account(token_owner).set_approval_for_all(operator, false).unwrap();
-                            assert_eq!(token.is_approved_for_all(token_owner, operator), false);
+                            assert!(!token.is_approved_for_all(token_owner, operator));
                         }
                     }
 

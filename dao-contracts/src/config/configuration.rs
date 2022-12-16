@@ -5,6 +5,7 @@ use casper_dao_utils::{
     Address,
     BlockTime,
     ContractCall,
+    Error,
 };
 use casper_types::U512;
 
@@ -18,6 +19,7 @@ pub struct Configuration {
     pub dao_configuration: DaoConfiguration,
     pub voting_configuration: VotingConfiguration,
     pub total_onboarded: U512,
+    pub fiat_rate: Option<U512>,
 }
 
 impl Configuration {
@@ -30,6 +32,7 @@ impl Configuration {
             dao_configuration,
             voting_configuration,
             total_onboarded,
+            fiat_rate: None,
         }
     }
 
@@ -187,5 +190,21 @@ impl Configuration {
     pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
         math::promils_of_u512(amount, self.dao_configuration.default_reputation_slash)
             .unwrap_or_revert()
+    }
+
+    pub fn fiat_rate(&self) -> Option<U512> {
+        self.fiat_rate
+    }
+
+    pub fn convert_to_fiat(&self, cspr_amount: U512) -> Result<U512, Error> {
+        if let Some(fiat_rate) = self.fiat_rate {
+            if let Some(fiat_amount) = cspr_amount.checked_div(fiat_rate) {
+                Ok(fiat_amount)
+            } else {
+                Err(Error::ArithmeticOverflow)
+            }
+        } else {
+            Err(Error::FiatRateNotSet)
+        }
     }
 }

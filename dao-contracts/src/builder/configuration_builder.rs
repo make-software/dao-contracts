@@ -1,7 +1,17 @@
 use std::collections::BTreeMap;
 
-use casper_dao_utils::{casper_env::revert, consts, Address, ContractCall, Error};
-use casper_types::bytesrepr::{Bytes, FromBytes};
+use casper_dao_utils::{
+    casper_env::{call_contract, revert},
+    consts,
+    Address,
+    ContractCall,
+    Error,
+};
+use casper_types::{
+    bytesrepr::{Bytes, FromBytes},
+    RuntimeArgs,
+    U512,
+};
 
 use crate::{
     config::{dao_configuration::DaoConfiguration, voting_configuration::VotingConfiguration},
@@ -139,6 +149,12 @@ impl ConfigurationBuilder {
     }
 
     pub fn is_bid_escrow(mut self, is_bid_escrow: bool) -> ConfigurationBuilder {
+        let rate: U512 = call_contract(
+            self.configuration.fiat_conversion_rate_address(),
+            "get_rate",
+            RuntimeArgs::new(),
+        );
+        self.configuration.fiat_rate = Some(rate);
         self.configuration.voting_configuration.is_bid_escrow = is_bid_escrow;
         self
     }

@@ -1,17 +1,18 @@
+use std::rc::Rc;
+
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
     BlockTime,
-    Error::{
-        AuctionNotRunning,
-        OnboardedWorkerCannotBid,
-        OnlyOnboardedWorkerCanBid,
-        PaymentExceedsMaxBudget,
-    },
+    Error,
 };
 use casper_types::U512;
 
-use crate::{escrow::types::JobOfferId, Configuration};
+use crate::{
+    escrow::{types::JobOfferId, validation::rules::is_dos_fee_enough::IsDosFeeEnough},
+    rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
+    Configuration,
+};
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
 pub enum JobOfferStatus {
@@ -20,13 +21,23 @@ pub enum JobOfferStatus {
     Cancelled,
 }
 
+#[derive(PartialEq)]
 pub enum AuctionState {
     None,
     Internal,
     Public,
 }
 
-pub struct JobOfferConfiguration {}
+pub struct PostJobOfferRequest {
+    pub job_offer_id: JobOfferId,
+    pub job_poster: Address,
+    pub job_poster_kyced: bool,
+    pub max_budget: U512,
+    pub expected_timeframe: BlockTime,
+    pub dos_fee: U512,
+    pub start_time: BlockTime,
+    pub configuration: Rc<Configuration>,
+}
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
 pub struct JobOffer {
@@ -41,24 +52,24 @@ pub struct JobOffer {
 }
 
 impl JobOffer {
-    pub fn new(
-        offer_id: JobOfferId,
-        job_poster: Address,
-        expected_timeframe: BlockTime,
-        max_budget: U512,
-        dos_fee: U512,
-        block_time: BlockTime,
-        dao_configuration: Configuration,
-    ) -> Self {
+    pub fn new(request: PostJobOfferRequest) -> JobOffer {
+        RulesBuilder::new()
+            .add_validation(IsUserKyced::create(request.job_poster_kyced))
+            .add_validation(IsDosFeeEnough::create(
+                request.configuration.clone(),
+                request.dos_fee,
+            ))
+            .validate();
+
         JobOffer {
-            job_offer_id: offer_id,
-            job_poster,
-            max_budget,
-            expected_timeframe,
-            dos_fee,
+            job_offer_id: request.job_offer_id,
+            job_poster: request.job_poster,
+            max_budget: request.max_budget,
+            expected_timeframe: request.expected_timeframe,
+            dos_fee: request.dos_fee,
             status: JobOfferStatus::Created,
-            start_time: block_time,
-            configuration: dao_configuration,
+            start_time: request.start_time,
+            configuration: (*request.configuration).clone(),
         }
     }
 
@@ -76,31 +87,13 @@ impl JobOffer {
         }
     }
 
-    pub fn validate_bid(
-        &self,
-        block_time: BlockTime,
-        worker_onboarded: bool,
-        proposed_payment: U512,
-    ) -> Result<(), casper_dao_utils::Error> {
-        // Payment
-        if proposed_payment > self.max_budget {
-            return Err(PaymentExceedsMaxBudget);
+    pub fn validate_cancel(&self, caller: Address, block_time: BlockTime) -> Result<(), Error> {
+        if caller != self.job_poster {
+            return Err(Error::OnlyJobPosterCanCancelJobOffer);
         }
 
-        match self.auction_state(block_time) {
-            AuctionState::None => {
-                return Err(AuctionNotRunning);
-            }
-            AuctionState::Internal => {
-                if !worker_onboarded {
-                    return Err(OnlyOnboardedWorkerCanBid);
-                }
-            }
-            AuctionState::Public => {
-                if worker_onboarded && !self.configuration.va_can_bid_on_public_auction() {
-                    return Err(OnboardedWorkerCannotBid);
-                }
-            }
+        if self.auction_state(block_time) != AuctionState::None {
+            return Err(Error::JobOfferCannotBeYetCanceled);
         }
 
         Ok(())
