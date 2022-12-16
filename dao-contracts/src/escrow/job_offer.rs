@@ -9,7 +9,14 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use crate::{
-    escrow::{types::JobOfferId, validation::rules::is_dos_fee_enough::IsDosFeeEnough},
+    escrow::{
+        job::PickBidRequest,
+        types::JobOfferId,
+        validation::rules::{
+            can_progress_job_offer::CanProgressJobOffer,
+            is_dos_fee_enough::IsDosFeeEnough,
+        },
+    },
     rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
     Configuration,
 };
@@ -17,7 +24,7 @@ use crate::{
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
 pub enum JobOfferStatus {
     Created,
-    Selected,
+    InProgress,
     Cancelled,
 }
 
@@ -71,6 +78,14 @@ impl JobOffer {
             start_time: request.start_time,
             configuration: (*request.configuration).clone(),
         }
+    }
+
+    pub fn in_progress(&mut self, request: &PickBidRequest) {
+        RulesBuilder::new()
+            .add_validation(CanProgressJobOffer::create(request.caller, self.job_poster))
+            .validate();
+
+        self.status = JobOfferStatus::InProgress;
     }
 
     pub fn auction_state(&self, block_time: BlockTime) -> AuctionState {

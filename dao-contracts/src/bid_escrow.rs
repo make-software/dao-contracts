@@ -311,94 +311,65 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn cancel_bid(&mut self, bid_id: BidId) {
-        let worker = caller();
-        let mut bid = self
-            .get_bid(bid_id)
-            .unwrap_or_revert_with(Error::BidNotFound);
+        let caller = caller();
+        let mut bid = self.job_storage.get_bid_or_revert(bid_id);
+        let job_offer = self.job_storage.get_job_offer_or_revert(bid.job_offer_id);
 
-        if bid.worker != worker {
-            revert(Error::CannotCancelNotOwnedBid);
-        }
+        let cancel_bid_request = CancelBidRequest {
+            caller,
+            job_offer_status: job_offer.status,
+            block_time: get_block_time(),
+            va_bid_acceptance_timeout: job_offer.configuration.va_bid_acceptance_timeout(),
+        };
 
-        let job_offer = self
-            .get_job_offer(bid.job_offer_id)
-            .unwrap_or_revert_with(Error::JobOfferNotFound);
+        bid.cancel(cancel_bid_request);
 
-        if job_offer.status != JobOfferStatus::Created {
-            revert(Error::CannotCancelBidOnCompletedJobOffer);
-        }
-
-        if get_block_time() < bid.timestamp + job_offer.configuration.va_bid_acceptance_timeout() {
-            revert(Error::CannotCancelBidBeforeAcceptanceTimeout);
-        }
-
-        bid.cancel();
-
-        match bid.cspr_stake {
-            None => {
-                self.reputation_token().unstake_bid(bid.worker, bid_id);
-            }
-            Some(cspr_stake) => {
-                transfer::withdraw_cspr(bid.worker, cspr_stake);
-            }
-        }
+        self.unstake_cspr_or_reputation_for_bid(&bid);
 
         // TODO: Implement Event
         self.job_storage.store_bid(bid);
     }
 
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef) {
-        let job_offer = self
-            .get_job_offer(job_offer_id)
-            .unwrap_or_revert_with(Error::JobOfferNotFound);
-        let job_poster = caller();
-
-        if job_offer.job_poster != job_poster {
-            revert(Error::OnlyJobPosterCanPickABid);
-        }
-
-        let mut bid = self
-            .get_bid(bid_id)
-            .unwrap_or_revert_with(Error::BidNotFound);
-
-        let cspr_amount = transfer::deposit_cspr(purse);
-
-        if cspr_amount != bid.proposed_payment {
-            revert(Error::PurseBalanceMismatch)
-        }
+        let mut job_offer = self.job_storage.get_job_offer_or_revert(job_offer_id);
+        let caller = caller();
+        let mut bid = self.job_storage.get_bid_or_revert(bid_id);
 
         // TODO: Unstake all bidders for the given job offer.
         self.unstake_not_picked(job_offer_id, bid_id);
 
-        let worker_type = if self.is_va(bid.worker) {
-            WorkerType::Internal
-        } else if bid.onboard {
-            WorkerType::ExternalToVA
-        } else {
-            WorkerType::External
+        let job_id = self.job_storage.next_job_id();
+        let pick_bid_request = PickBidRequest {
+            job_id,
+            job_offer_id,
+            bid_id,
+            caller,
+            poster: job_offer.job_poster,
+            worker: bid.worker,
+            is_worker_va: self.is_va(bid.worker),
+            onboard: bid.onboard,
+            block_time: get_block_time(),
+            timeframe: bid.proposed_timeframe,
+            payment: bid.proposed_payment,
+            transferred_cspr: transfer::deposit_cspr(purse),
+            stake: bid.reputation_stake,
+            external_worker_cspr_stake: bid.cspr_stake.unwrap_or_default(),
         };
 
-        let job_id = self.job_storage.next_job_id();
-        let job = Job::new(
-            job_id,
-            bid_id,
-            job_offer_id,
-            get_block_time(),
-            bid.proposed_timeframe,
-            bid.worker,
-            worker_type,
-            job_poster,
-            bid.proposed_payment,
-            bid.reputation_stake,
-            bid.cspr_stake.unwrap_or_default(),
-        );
+        let job = Job::new(&pick_bid_request);
+        bid.picked(&pick_bid_request);
+        job_offer.in_progress(&pick_bid_request);
+
+        self.job_storage
+            .store_active_job_offer_id(&job.poster(), job_offer_id);
 
         self.job_storage.store_job(job);
-        bid.pick();
+
         self.job_storage.store_bid(bid);
 
         self.job_storage
-            .store_active_job_offer_id(&job_poster, job_offer_id);
+            .store_active_job_offer_id(&job_offer.job_poster, job_offer_id);
+        self.job_storage.store_job_offer(job_offer);
         // TODO: Emit event.
     }
 
@@ -738,7 +709,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             revert(Error::CannotCancelBidOnCompletedJobOffer);
         }
 
-        bid.cancel();
+        bid.cancel_without_validation();
 
         self.reputation_token().unstake_bid(bid.worker, bid_id);
 
@@ -764,19 +735,10 @@ impl BidEscrowContract {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
-
-            match bid.cspr_stake {
-                None => {
-                    self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
-                }
-                Some(cspr_stake) => {
-                    transfer::withdraw_cspr(bid.worker, cspr_stake);
-                }
-            }
-            bid.cancel();
+            self.unstake_cspr_or_reputation_for_bid(&bid);
+            bid.cancel_without_validation();
             self.job_storage.store_bid(bid);
         }
-        self.return_job_offer_poster_dos_fee(job_offer_id);
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
@@ -1021,12 +983,26 @@ impl BidEscrowContract {
             }
         }
     }
+
+    fn unstake_cspr_or_reputation_for_bid(&mut self, bid: &Bid) {
+        match bid.cspr_stake {
+            None => {
+                self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
+            }
+            Some(cspr_stake) => {
+                transfer::withdraw_cspr(bid.worker, cspr_stake);
+            }
+        }
+    }
 }
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
 
-use crate::escrow::bid::SubmitBidRequest;
+use crate::escrow::{
+    bid::{CancelBidRequest, SubmitBidRequest},
+    job::PickBidRequest,
+};
 
 #[cfg(feature = "test-support")]
 impl BidEscrowContractTest {

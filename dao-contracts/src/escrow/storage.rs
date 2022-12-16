@@ -91,11 +91,17 @@ impl JobStorage {
     }
 
     pub fn get_job_offer_or_revert(&self, job_offer_id: JobOfferId) -> JobOffer {
-        self.get_job_offer(job_offer_id).unwrap_or_revert()
+        self.get_job_offer(job_offer_id)
+            .unwrap_or_revert_with(Error::JobOfferNotFound)
     }
 
     pub fn get_bid(&self, bid_id: BidId) -> Option<Bid> {
         self.bids.get_or_none(&bid_id)
+    }
+
+    pub fn get_bid_or_revert(&self, bid_id: BidId) -> Bid {
+        self.get_bid(bid_id)
+            .unwrap_or_revert_with(Error::BidNotFound)
     }
 
     pub fn get_nth_bid(&self, offer_id: JobOfferId, n: u32) -> Bid {
