@@ -1,4 +1,4 @@
-use casper_dao_contracts::{BidEscrowContractCaller, BidEscrowContractInterface};
+use casper_dao_contracts::{OnboardingContractCaller, OnboardingContractInterface};
 use casper_dao_utils::{
     casper_contract::{
         contract_api::{
@@ -22,7 +22,7 @@ fn call() {
     let cargo_purse: URef = create_purse();
     transfer_from_purse_to_purse(main_purse, cargo_purse, cspr_amount, None).unwrap_or_revert();
 
-    BidEscrowContractCaller::at(bid_escrow_address).submit_onboarding_request(
+    OnboardingContractCaller::at(bid_escrow_address).submit_onboarding_request(
         reason,
         cargo_purse,
     );

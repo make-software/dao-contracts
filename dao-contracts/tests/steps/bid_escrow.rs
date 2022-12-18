@@ -162,7 +162,6 @@ fn votes_are(w: &mut DaoWorld, step: &Step) {
         let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
         let stake = helpers::parse::<Balance>(row.get(2), "Couldn't parse balance");
 
-        dbg!(voter);
         let voter = w.get_address(&voter);
         w.bid_escrow
             .as_account(voter)
@@ -215,6 +214,13 @@ fn submit_onboarding_request(world: &mut DaoWorld, account: Account, cspr_stake:
     let _ = world.bid_escrow
         .as_account(account)
         .submit_onboarding_request_with_cspr_amount(DocumentHash::default(), *cspr_stake);
+    let all_voters = vec![world.get_address(&Account::VA(1)), world.get_address(&Account::VA(2))];
+    let (partial_supply, balances) = world.reputation_token.partial_balances(all_voters);
+    dbg!(partial_supply);
+    dbg!(balances);
+    // dbg!(world.bid_escrow.get_request(0).unwrap().stake);
+    // 100000000000
+    // 100_000_000_000
 }
 
 #[then(expr = "Formal voting does not start")]

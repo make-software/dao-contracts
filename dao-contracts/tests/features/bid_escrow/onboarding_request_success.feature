@@ -54,9 +54,17 @@ Feature: User who wants to become a VA without submitting a job
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 100          | 0            | 0          |
-      | Bob              | 300          | 70           | 0          |
-      | VA1              | 750          | 1015         | 0          |
-      | VA2              | 750          | 1015         | 0          |
+      | Bob              | 31.16        | 72.72        | 0          |
+      | VA1              | 434.41       | 1013.63      | 0          |
+      | VA2              | 434.41       | 1013.63      | 0          |
       | BidEscrow        | 0            | 0            | 0          |
     And total reputation is 2100
     And Bob is a VA
+
+
+
+      # | MultisigWallet   | 100          | 0            | 0          |
+      # | Bob              | 30           | 70           | 0          |
+      # | VA1              | 435          | 1015         | 0          |
+      # | VA2              | 435          | 1015         | 0          |
+      # | BidEscrow        | 0            | 0            | 0          |

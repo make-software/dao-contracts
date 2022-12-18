@@ -3,7 +3,9 @@ use std::rc::Rc;
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::system::get_purse_balance,
+        contract_api::system::{
+            get_purse_balance,
+        },
         unwrap_or_revert::UnwrapOrRevert,
     },
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -126,8 +128,6 @@ pub trait BidEscrowContractInterface {
         onboard: bool,
         purse: Option<URef>,
     );
-
-    fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
@@ -201,7 +201,6 @@ pub struct BidEscrowContract {
     kyc: KycInfo,
     onboarding_info: OnboardingInfo,
     access_control: AccessControl,
-    onboarding: Onboarding,
     job_storage: JobStorage,
 }
 
@@ -226,11 +225,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn remove_from_whitelist(&mut self, address: Address);
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
-        }
-
-        to self.onboarding {
-            #[call(submit_request)]
-            fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
         }
 
         to self.job_storage {
@@ -530,10 +524,10 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
+        let caller = caller();
         let job = self
             .job_storage
             .get_job_by_voting_id(voting_id);
-        let caller = caller();
 
         if caller == job.poster() || caller == job.worker() {
             revert(Error::CannotVoteOnOwnJob);

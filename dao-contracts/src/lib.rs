@@ -13,6 +13,7 @@ mod rate_provider;
 pub mod rules;
 mod slashing_voter;
 mod va_nft;
+mod onboarding;
 
 pub mod config;
 #[doc(hidden)]
@@ -97,4 +98,11 @@ pub use variable_repository::{
     VariableRepositoryContract,
     VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
+};
+#[cfg(feature = "test-support")]
+pub use onboarding::OnboardingContractTest;
+pub use onboarding::{
+    OnboardingContract,
+    OnboardingContractCaller,
+    OnboardingContractInterface,
 };
