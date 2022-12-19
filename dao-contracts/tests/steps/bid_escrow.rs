@@ -211,16 +211,10 @@ fn is_job_cancelled(w: &mut DaoWorld, job_id: u32, cancelled: String) {
 #[when(expr = "{account} submits an onboarding request with the stake of {balance} CSPR")]
 fn submit_onboarding_request(world: &mut DaoWorld, account: Account, cspr_stake: Balance) {
     let account = world.get_address(&account);
-    let _ = world.bid_escrow
+    let _ = world
+        .onboarding
         .as_account(account)
         .submit_onboarding_request_with_cspr_amount(DocumentHash::default(), *cspr_stake);
-    let all_voters = vec![world.get_address(&Account::VA(1)), world.get_address(&Account::VA(2))];
-    let (partial_supply, balances) = world.reputation_token.partial_balances(all_voters);
-    dbg!(partial_supply);
-    dbg!(balances);
-    // dbg!(world.bid_escrow.get_request(0).unwrap().stake);
-    // 100000000000
-    // 100_000_000_000
 }
 
 #[then(expr = "Formal voting does not start")]
@@ -252,6 +246,20 @@ fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amoun
 fn total_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
     let total_unbounded_stake = w
         .bid_escrow
+        .get_voting(voting_id)
+        .unwrap()
+        .total_unbounded_stake();
+    assert_eq!(
+        total_unbounded_stake, *amount,
+        "Total unbounded stake is {:?}, but should be {:?}",
+        total_unbounded_stake, amount
+    );
+}
+
+#[then(expr = "total onboarding unbounded stake for voting {int} is {balance} tokens")]
+fn total_onboarding_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
+    let total_unbounded_stake = w
+        .onboarding
         .get_voting(voting_id)
         .unwrap()
         .total_unbounded_stake();

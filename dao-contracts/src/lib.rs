@@ -9,11 +9,11 @@ pub mod escrow;
 mod ids;
 mod kyc_nft;
 mod kyc_voter;
+mod onboarding;
 mod rate_provider;
 pub mod rules;
 mod slashing_voter;
 mod va_nft;
-mod onboarding;
 
 pub mod config;
 #[doc(hidden)]
@@ -51,6 +51,9 @@ pub use mocks::mock_voter::{
     MockVoterContractCaller,
     MockVoterContractInterface,
 };
+#[cfg(feature = "test-support")]
+pub use onboarding::OnboardingContractTest;
+pub use onboarding::{OnboardingContract, OnboardingContractCaller, OnboardingContractInterface};
 #[cfg(feature = "test-support")]
 pub use rate_provider::CSPRRateProviderContractTest;
 pub use rate_provider::{
@@ -98,11 +101,4 @@ pub use variable_repository::{
     VariableRepositoryContract,
     VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
-};
-#[cfg(feature = "test-support")]
-pub use onboarding::OnboardingContractTest;
-pub use onboarding::{
-    OnboardingContract,
-    OnboardingContractCaller,
-    OnboardingContractInterface,
 };

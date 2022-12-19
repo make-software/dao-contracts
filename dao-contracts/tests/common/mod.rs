@@ -20,6 +20,7 @@ use casper_dao_contracts::{
     DaoIdsContractTest,
     KycNftContractTest,
     KycVoterContractTest,
+    OnboardingContractTest,
     RepoVoterContractTest,
     ReputationContractTest,
     ReputationVoterContractTest,
@@ -54,6 +55,7 @@ pub struct DaoWorld {
     pub simple_voter: SimpleVoterContractTest,
     pub admin: AdminContractTest,
     pub rate_provider: CSPRRateProviderContractTest,
+    pub onboarding: OnboardingContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -157,10 +159,19 @@ impl Default for DaoWorld {
 
         let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
 
+        let onboarding = OnboardingContractTest::new(
+            &env,
+            variable_repository.address(),
+            reputation_token.address(),
+            kyc_token.address(),
+            va_token.address(),
+        );
+
         // Setup DaoIds.
         let mut voting_ids = DaoIdsContractTest::new(&env);
         voting_ids.add_to_whitelist(kyc_voter.address()).unwrap();
         voting_ids.add_to_whitelist(bid_escrow.address()).unwrap();
+        voting_ids.add_to_whitelist(onboarding.address()).unwrap();
         voting_ids
             .add_to_whitelist(slashing_voter.address())
             .unwrap();
@@ -226,6 +237,11 @@ impl Default for DaoWorld {
         slashing_voter
             .update_bid_escrow_list(vec![bid_escrow.address()])
             .unwrap();
+        // Setup BidEscrow.
+        reputation_token
+            .add_to_whitelist(onboarding.address())
+            .unwrap();
+        va_token.add_to_whitelist(onboarding.address()).unwrap();
 
         // Build the DaoWorld!
         let mut dao = Self {
@@ -242,6 +258,7 @@ impl Default for DaoWorld {
             simple_voter,
             admin,
             rate_provider,
+            onboarding,
             balances: Default::default(),
             starting_balances: Default::default(),
             bids: Default::default(),

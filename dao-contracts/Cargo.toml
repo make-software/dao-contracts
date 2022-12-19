@@ -191,6 +191,13 @@ bench = false
 doctest = false
 test = false
 
+[[bin]]
+name = "onboarding_contract"
+path = "bin/onboarding.rs"
+bench = false
+doctest = false
+test = false
+
 [features]
 default = [ "test-support" ]
 test-support = [ "casper-dao-utils/test-support", "casper-dao-modules/test-support" ]

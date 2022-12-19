@@ -1,10 +1,6 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::{
-        contract_api::system::{
-            get_purse_balance,
-        },
-    },
+    casper_contract::contract_api::system::get_purse_balance,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
     Address,
@@ -15,7 +11,7 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    escrow::onboarding::Onboarding,
+    escrow::onboarding::{Onboarding, Request},
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
@@ -41,7 +37,6 @@ pub trait OnboardingContractInterface {
         kyc_token: Address,
         va_token: Address,
     );
-
 
     fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote over a job
@@ -86,6 +81,7 @@ pub trait OnboardingContractInterface {
     fn is_whitelisted(&self, address: Address) -> bool;
 
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+    fn get_request(&self, voting_id: VotingId) -> Option<Request>;
 }
 
 #[derive(Instance)]
@@ -123,6 +119,7 @@ impl OnboardingContractInterface for OnboardingContract {
         to self.onboarding {
             #[call(submit_request)]
             fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
+            fn get_request(&self, voting_id: VotingId) -> Option<Request>;
         }
     }
 
@@ -156,7 +153,6 @@ impl OnboardingContractInterface for OnboardingContract {
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine> {
         self.voting.get_voting(voting_id)
     }
-
 }
 
 #[cfg(feature = "test-support")]
@@ -164,7 +160,6 @@ use casper_dao_utils::TestContract;
 
 #[cfg(feature = "test-support")]
 impl OnboardingContractTest {
-    
     pub fn submit_onboarding_request_with_cspr_amount(
         &mut self,
         reason: DocumentHash,
@@ -174,7 +169,7 @@ impl OnboardingContractTest {
         self.env.deploy_wasm_file(
             "submit_onboarding_request.wasm",
             runtime_args! {
-                "bid_escrow_address" => self.address(),
+                "onboarding_address" => self.address(),
                 "reason" => reason,
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,

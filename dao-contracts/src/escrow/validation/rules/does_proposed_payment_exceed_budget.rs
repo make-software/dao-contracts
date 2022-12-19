@@ -1,9 +1,7 @@
-
-
-use casper_dao_utils::{Error};
+use casper_dao_utils::Error;
 use casper_types::U512;
 
-use crate::{rules::validation::Validation};
+use crate::rules::validation::Validation;
 
 pub struct DoesProposedPaymentExceedBudget {
     pub proposed_payment: U512,
