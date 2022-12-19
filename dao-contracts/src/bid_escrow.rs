@@ -3,11 +3,7 @@ use std::rc::Rc;
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::{
-        contract_api::system::{
-            get_purse_balance,
-            transfer_from_purse_to_account,
-            transfer_from_purse_to_purse,
-        },
+        contract_api::system::get_purse_balance,
         unwrap_or_revert::UnwrapOrRevert,
     },
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -15,7 +11,7 @@ use casper_dao_utils::{
     Address,
     BlockTime,
     DocumentHash,
-    Error,
+    Error, transfer,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
@@ -263,7 +259,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             job_poster: caller,
             max_budget,
             expected_timeframe,
-            dos_fee: self.deposit(purse),
+            dos_fee: transfer::deposit_cspr(purse),
             start_time: get_block_time(),
             configuration,
         };
@@ -345,7 +341,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 self.reputation_token().unstake_bid(bid.worker, bid_id);
             }
             Some(cspr_stake) => {
-                self.withdraw(bid.worker, cspr_stake);
+                transfer::withdraw_cspr(bid.worker, cspr_stake);
             }
         }
 
@@ -367,7 +363,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             .get_bid(bid_id)
             .unwrap_or_revert_with(Error::BidNotFound);
 
-        let cspr_amount = self.deposit(purse);
+        let cspr_amount = transfer::deposit_cspr(purse);
 
         if cspr_amount != bid.proposed_payment {
             revert(Error::PurseBalanceMismatch)
@@ -461,7 +457,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         onboard: bool,
         purse: Option<URef>,
     ) {
-        let cspr_stake = purse.map(|purse| self.deposit(purse));
+        let cspr_stake = purse.map(|purse| transfer::deposit_cspr(purse));
 
         if cspr_stake.is_none() && reputation_stake.is_zero() {
             revert(Error::ZeroStake);
@@ -778,39 +774,12 @@ impl BidEscrowContract {
                         .unstake_bid(bid.worker, bid.bid_id);
                 }
                 Some(cspr_stake) => {
-                    self.withdraw(bid.worker, cspr_stake);
+                    transfer::withdraw_cspr(bid.worker, cspr_stake);
                 }
             }
             bid.cancel();
             self.job_storage.store_bid(bid);
         }
-        self.return_job_offer_poster_dos_fee(job_offer_id);
-    }
-
-    fn deposit(&mut self, cargo_purse: URef) -> U512 {
-        let main_purse = casper_env::contract_main_purse();
-        let amount = get_purse_balance(cargo_purse).unwrap_or_revert_with(Error::PurseError);
-
-        if amount.is_zero() {
-            revert(Error::CannotDepositZeroAmount);
-        }
-
-        transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None)
-            .unwrap_or_revert_with(Error::TransferError);
-        amount
-    }
-
-    fn withdraw(&mut self, address: Address, amount: U512) {
-        let main_purse = casper_env::contract_main_purse();
-        transfer_from_purse_to_account(
-            main_purse,
-            *address
-                .as_account_hash()
-                .unwrap_or_revert_with(Error::InvalidAddress),
-            amount,
-            None,
-        )
-        .unwrap_or_revert_with(Error::TransferError);
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
@@ -836,7 +805,7 @@ impl BidEscrowContract {
         let to_worker = total_left - to_redistribute;
 
         // For External Worker
-        self.withdraw(job.worker(), to_worker);
+        transfer::withdraw_cspr(job.worker(), to_worker);
 
         let redistribute_to_all_vas = self
             .job_storage
@@ -859,7 +828,7 @@ impl BidEscrowContract {
         let (total_supply, balances) = self.reputation_token().all_balances();
         for (address, balance) in balances.balances {
             let amount = total_left * balance / total_supply;
-            self.withdraw(address, amount);
+            transfer::withdraw_cspr(address, amount);
         }
     }
 
@@ -868,7 +837,7 @@ impl BidEscrowContract {
 
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
-        self.withdraw(governance_wallet, governance_wallet_payment);
+        transfer::withdraw_cspr(governance_wallet, governance_wallet_payment);
 
         payment - governance_wallet_payment
     }
@@ -877,7 +846,7 @@ impl BidEscrowContract {
         let (total_supply, balances) = self.reputation_token().all_balances();
         for (address, balance) in balances.balances {
             let amount = to_redistribute * balance / total_supply;
-            self.withdraw(address, amount);
+            transfer::withdraw_cspr(address, amount);
         }
     }
 
@@ -889,27 +858,27 @@ impl BidEscrowContract {
         let (partial_supply, balances) = self.reputation_token().partial_balances(all_voters);
         for (address, balance) in balances.balances {
             let amount = to_redistribute * balance / partial_supply;
-            self.withdraw(address, amount);
+            transfer::withdraw_cspr(address, amount);
         }
     }
 
     fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
         let job_offer = self.job_storage.get_job_offer_or_revert(job.job_offer_id());
-        self.withdraw(job.poster(), job.payment() + job_offer.dos_fee);
+        transfer::withdraw_cspr(job.poster(), job.payment() + job_offer.dos_fee);
     }
 
     fn return_job_poster_dos_fee(&mut self, job: &Job) {
         let job_offer = self.job_storage.get_job_offer_or_revert(job.job_offer_id());
-        self.withdraw(job.poster(), job_offer.dos_fee);
+        transfer::withdraw_cspr(job.poster(), job_offer.dos_fee);
     }
 
     fn return_job_offer_poster_dos_fee(&mut self, job_offer_id: JobOfferId) {
         let job_offer = self.job_storage.get_job_offer_or_revert(job_offer_id);
-        self.withdraw(job_offer.job_poster, job_offer.dos_fee);
+        transfer::withdraw_cspr(job_offer.job_poster, job_offer.dos_fee);
     }
 
     fn return_external_worker_cspr_stake(&mut self, job: &Job) {
-        self.withdraw(job.worker(), job.external_worker_cspr_stake());
+        transfer::withdraw_cspr(job.worker(), job.external_worker_cspr_stake());
     }
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
@@ -1051,7 +1020,7 @@ impl BidEscrowContract {
                 None
             }
             Some(purse) => {
-                let cspr_stake = self.deposit(purse);
+                let cspr_stake = transfer::deposit_cspr(purse);
                 Some(cspr_stake)
             }
         }
