@@ -1,5 +1,5 @@
 use casper_dao_utils::{
-    casper_contract::{contract_api::runtime::revert, unwrap_or_revert::UnwrapOrRevert},
+    casper_contract::contract_api::runtime::revert,
     casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
     casper_env::caller,
     transfer,
@@ -27,8 +27,8 @@ use crate::{
 pub struct Request {
     creator: Address,
     reason: DocumentHash,
-    stake: U512,
-    cspr_stake: U512,
+    rep_stake: U512,
+    cspr_deposit: U512,
     voting_id: VotingId,
 }
 
@@ -57,29 +57,39 @@ impl Onboarding {
 
         let configuration = self.build_configuration();
 
-        let cspr_amount = transfer::deposit_cspr(purse);
-        let stake = configuration.apply_reputation_conversion_rate_to(cspr_amount);
+        let cspr_deposit = transfer::deposit_cspr(purse);
+        let rep_stake = configuration.apply_reputation_conversion_rate_to(cspr_deposit);
 
         // Create voting and cast creator's ballot
-        let voting_id = self.init_voting(candidate, configuration.clone(), stake);
+        let voting_id = self.init_voting(candidate, configuration.clone(), rep_stake);
 
         self.store_configuration(voting_id, configuration);
-        self.store_request(candidate, reason, stake, cspr_amount, voting_id);
+        self.store_request(candidate, reason, rep_stake, cspr_deposit, voting_id);
         // TODO: emit event
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
         let request = self.requests.get_or_revert(&voting_id);
-        let voting_summary = self
+        let summary = self
             .voting
             .finish_voting_without_token_redistribution(voting_id);
 
-        match voting_summary.voting_type() {
-            VotingType::Informal => {
-                self.finish_informal_voting(voting_id, &request, &voting_summary)
-            }
-            VotingType::Formal => self.finish_formal_voting(voting_id, &request, &voting_summary),
+        match summary.voting_type() {
+            VotingType::Informal => self.finish_informal_voting(voting_id, &request, &summary),
+            VotingType::Formal => self.finish_formal_voting(voting_id, &request, &summary),
         }
+    }
+
+    pub fn vote(
+        &mut self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        choice: Choice,
+        stake: U512,
+    ) {
+        // Add assertions
+        self.voting
+            .vote(caller(), voting_id, voting_type, choice, stake);
     }
 }
 
@@ -102,15 +112,14 @@ impl Onboarding {
     ) -> VotingId {
         let voting_id = self.voting.create_voting(creator, stake, configuration);
 
+        // passed config disables casting first votes, must be casted manually.
         self.voting.cast_ballot(
             creator,
             voting_id,
             Choice::InFavor,
             stake,
             true,
-            self.voting
-                .get_voting(voting_id)
-                .unwrap_or_revert_with(Error::VotingDoesNotExist),
+            self.voting.get_voting_or_revert(voting_id),
         );
 
         voting_id
@@ -120,15 +129,15 @@ impl Onboarding {
         &mut self,
         candidate: Address,
         reason: DocumentHash,
-        stake: U512,
-        cspr_stake: U512,
+        rep_stake: U512,
+        cspr_deposit: U512,
         voting_id: VotingId,
     ) {
         let request = Request {
             creator: candidate,
             reason,
-            stake,
-            cspr_stake,
+            rep_stake,
+            cspr_deposit,
             voting_id,
         };
 
@@ -139,6 +148,118 @@ impl Onboarding {
         self.configurations.set(&voting_id, configuration);
     }
 
+    fn create_formal_voting(&mut self, voting_id: VotingId) {
+        let voting = self
+            .voting
+            .get_voting_or_revert(voting_id);
+        if voting.voting_configuration().informal_stake_reputation() {
+            self.voting
+                .unstake_all_reputation(voting_id, VotingType::Informal);
+        }
+        self.voting
+            .recast_creators_ballot_from_informal_to_formal(voting_id);
+    }
+}
+
+// handling voting result
+impl Onboarding {
+    fn finish_informal_voting(
+        &mut self,
+        voting_id: VotingId,
+        request: &Request,
+        summary: &VotingSummary,
+    ) {
+        match summary.result() {
+            VotingResult::InFavor | VotingResult::Against => self.on_informal_voting_finished(voting_id),
+            VotingResult::QuorumNotReached => {
+                self.on_quorum_not_reached(voting_id, VotingType::Informal, request)
+            }
+            VotingResult::Canceled => Self::on_voting_canceled(),
+        }
+    }
+
+    fn finish_formal_voting(
+        &mut self,
+        voting_id: VotingId,
+        request: &Request,
+        summary: &VotingSummary,
+    ) {
+        match summary.result() {
+            VotingResult::InFavor => self.on_formal_voting_in_favor(voting_id, request),
+            VotingResult::Against => self.on_formal_voting_against(voting_id, request),
+            VotingResult::QuorumNotReached => self.on_quorum_not_reached(voting_id, VotingType::Formal, request),
+            VotingResult::Canceled => Self::on_voting_canceled(),
+        }
+    }
+
+    fn on_voting_canceled() {
+        revert(Error::VotingAlreadyCanceled)
+    }
+
+    fn on_quorum_not_reached(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        request: &Request,
+    ) {
+        let configuration = self.configurations.get_or_revert(&voting_id);
+
+        if configuration.informal_stake_reputation() && voting_type == VotingType::Informal
+            || voting_type == VotingType::Formal
+        {
+            self.voting
+                .return_reputation_of_yes_voters(voting_id, voting_type);
+            self.voting
+                .return_reputation_of_no_voters(voting_id, voting_type);
+        }
+
+        transfer::withdraw_cspr(request.creator, request.rep_stake);
+    }
+
+    fn on_informal_voting_finished(&mut self, voting_id: VotingId) {
+        self.create_formal_voting(voting_id);
+    }
+
+    fn on_formal_voting_in_favor(
+        &mut self,
+        voting_id: VotingId,
+        request: &Request,
+    
+    ) {
+        let configuration = self.configurations.get_or_revert(&voting_id);
+
+        // Make the user VA.
+        self.voting.va_token().mint(request.creator);
+
+        // Bound ballot for the requester - mint temporary reputation.
+        self.voting
+            .bound_ballot(voting_id, request.creator, VotingType::Formal);
+        self.redistribute_reputation_to_voters(voting_id, VotingType::Formal);
+        // Burn temporary reputation.
+        self.burn_requestor_reputation(&request);
+        self.mint_and_redistribute_reputation_for_requestor(voting_id, &request);
+        self.redistribute_cspr(&configuration, request.cspr_deposit);
+    }
+
+    fn on_formal_voting_against(
+        &self,
+        voting_id: VotingId,
+        request: &Request,
+    ) {
+        self.redistribute_reputation_to_voters(voting_id, VotingType::Formal);
+        transfer::withdraw_cspr(request.creator, request.rep_stake);
+    }
+
+    fn redistribute_reputation_to_voters(&self, voting_id: VotingId, voting_type: VotingType) {
+        self.voting
+            .return_reputation_of_yes_voters(voting_id, voting_type);
+        self.voting
+            .redistribute_reputation_of_no_voters(voting_id, voting_type);
+    }
+}
+
+// redistribution
+impl Onboarding {
     fn mint_and_redistribute_reputation_for_requestor(
         &mut self,
         voting_id: VotingId,
@@ -146,7 +267,7 @@ impl Onboarding {
     ) {
         let configuration = self.configurations.get_or_revert(&voting_id);
 
-        let reputation_to_mint = request.stake;
+        let reputation_to_mint = request.rep_stake;
         let reputation_to_redistribute =
             configuration.apply_default_policing_rate_to(reputation_to_mint);
 
@@ -161,16 +282,10 @@ impl Onboarding {
     }
 
     fn mint_reputation_for_voters(&mut self, voting_id: VotingId, amount: U512) {
-        let voting = self.voting.get_voting(voting_id).unwrap_or_revert();
+        let voting = self.voting.get_voting_or_revert(voting_id);
 
-        for i in 0..self
-            .voting
-            .voters()
-            .len((voting.voting_id(), VotingType::Formal))
-        {
-            let ballot = self
-                .voting
-                .get_ballot_at(voting.voting_id(), VotingType::Formal, i);
+        for i in 0..self.voting.voters_count(voting_id, VotingType::Formal) {
+            let ballot = self.voting.get_ballot_at(voting_id, VotingType::Formal, i);
             if ballot.unbounded {
                 continue;
             }
@@ -202,90 +317,9 @@ impl Onboarding {
         }
     }
 
-    fn burn_external_worker_reputation(&self, request: &Request) {
+    fn burn_requestor_reputation(&self, request: &Request) {
         self.voting
             .reputation_token()
-            .burn(request.creator, request.stake);
-    }
-
-    fn finish_informal_voting(
-        &mut self,
-        voting_id: VotingId,
-        request: &Request,
-        summary: &VotingSummary,
-    ) {
-        let configuration = self.configurations.get_or_revert(&voting_id);
-
-        match summary.result() {
-            VotingResult::InFavor | VotingResult::Against => {
-                self.create_formal_voting(voting_id);
-            }
-            VotingResult::QuorumNotReached => {
-                if configuration.informal_stake_reputation() {
-                    self.voting
-                        .return_reputation_of_yes_voters(voting_id, VotingType::Informal);
-                    self.voting
-                        .return_reputation_of_no_voters(voting_id, VotingType::Informal);
-                }
-                transfer::withdraw_cspr(request.creator, request.stake);
-            }
-            VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
-        }
-    }
-
-    fn finish_formal_voting(
-        &mut self,
-        voting_id: VotingId,
-        request: &Request,
-        summary: &VotingSummary,
-    ) {
-        let configuration = self.configurations.get_or_revert(&voting_id);
-
-        match summary.result() {
-            VotingResult::InFavor => {
-                // Make the  user VA.
-                self.voting.va_token().mint(request.creator);
-
-                // Bound ballot for the requester.
-                self.voting
-                    .bound_ballot(voting_id, request.creator, VotingType::Formal);
-
-                self.voting
-                    .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                self.voting
-                    .redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
-                self.burn_external_worker_reputation(&request);
-                self.mint_and_redistribute_reputation_for_requestor(voting_id, &request);
-                self.redistribute_cspr(&configuration, request.cspr_stake);
-            }
-            VotingResult::Against => {
-                self.voting
-                    .return_reputation_of_no_voters(voting_id, VotingType::Formal);
-                self.voting
-                    .redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                transfer::withdraw_cspr(request.creator, request.stake);
-            }
-            VotingResult::QuorumNotReached => {
-                self.voting
-                    .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                self.voting
-                    .return_reputation_of_no_voters(voting_id, VotingType::Formal);
-                transfer::withdraw_cspr(request.creator, request.stake);
-            }
-            VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
-        }
-    }
-
-    fn create_formal_voting(&mut self, voting_id: VotingId) {
-        let voting = self
-            .voting
-            .get_voting(voting_id)
-            .unwrap_or_revert_with(Error::VotingDoesNotExist);
-        if voting.voting_configuration().informal_stake_reputation() {
-            self.voting
-                .unstake_all_reputation(voting_id, VotingType::Informal);
-        }
-        self.voting
-            .recast_creators_ballot_from_informal_to_formal(voting_id);
+            .burn(request.creator, request.rep_stake);
     }
 }

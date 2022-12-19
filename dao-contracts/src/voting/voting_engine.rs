@@ -555,6 +555,10 @@ impl VotingEngine {
         &self.voters
     }
 
+    pub fn voters_count(&self, voting_id: VotingId, voting_type: VotingType) -> u32 {
+        self.voters().len((voting_id, voting_type))
+    }
+
     pub fn bound_ballot(&mut self, voting_id: u32, worker: Address, voting_type: VotingType) {
         let mut ballot = self
             .get_ballot(voting_id, voting_type, worker)

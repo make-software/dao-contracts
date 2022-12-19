@@ -11,8 +11,9 @@ use crate::common::{
         voting::{Choice, VotingType},
         Account,
         Balance,
+        Contract,
         Result,
-        TimeUnit, Contract,
+        TimeUnit,
     },
     DaoWorld,
 };
@@ -238,22 +239,33 @@ fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amoun
 
 //TODO: refactor
 #[then(expr = "ballot for onboarding voting {int} for {account} has {balance} unbounded tokens")]
-fn onboarding_ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amount: Balance) {
+fn onboarding_ballot_is_unbounded(
+    w: &mut DaoWorld,
+    voting_id: u32,
+    account: Account,
+    amount: Balance,
+) {
     assert_ballot_is_unbounded(w, voting_id, account, amount, Contract::Onboarding);
 }
 
 //TODO: refactor
-fn assert_ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amount: Balance, contract: Contract) {
+fn assert_ballot_is_unbounded(
+    w: &mut DaoWorld,
+    voting_id: u32,
+    account: Account,
+    amount: Balance,
+    contract: Contract,
+) {
     let voting_type = match contract {
         Contract::BidEscrow => w.bid_escrow.get_voting(voting_id).unwrap().voting_type(),
         Contract::Onboarding => w.onboarding.get_voting(voting_id).unwrap().voting_type(),
-        _ => panic!("invalid contract")
+        _ => panic!("invalid contract"),
     };
     let account = w.get_address(&account);
     let ballot = match contract {
         Contract::BidEscrow => w.bid_escrow.get_ballot(voting_id, voting_type, account),
         Contract::Onboarding => w.onboarding.get_ballot(voting_id, voting_type, account),
-        _ => panic!("invalid contract")
+        _ => panic!("invalid contract"),
     };
     let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
     assert_eq!(
@@ -292,7 +304,7 @@ fn assert_unbounded_stake(w: &mut DaoWorld, voting_id: u32, amount: Balance, con
             .get_voting(voting_id)
             .unwrap()
             .total_unbounded_stake(),
-        _ => panic!("invalid contract")
+        _ => panic!("invalid contract"),
     };
     assert_eq!(
         total_unbounded_stake, *amount,

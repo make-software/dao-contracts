@@ -5,13 +5,12 @@ use casper_dao_utils::{
     casper_env::{self, caller},
     Address,
     DocumentHash,
-    Error,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    escrow::onboarding::{Onboarding, Request},
+    escrow::onboarding::Onboarding,
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
@@ -44,7 +43,6 @@ pub trait OnboardingContractInterface {
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
 
     /// # Errors
-    /// Throws [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
@@ -69,6 +67,7 @@ pub trait OnboardingContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine)
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
 
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
@@ -80,8 +79,7 @@ pub trait OnboardingContractInterface {
     fn get_owner(&self) -> Option<Address>;
     fn is_whitelisted(&self, address: Address) -> bool;
 
-    fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-    fn get_request(&self, voting_id: VotingId) -> Option<Request>;
+    // Slashing
 }
 
 #[derive(Instance)]
@@ -106,6 +104,7 @@ impl OnboardingContractInterface for OnboardingContract {
                 address: Address,
             ) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
         }
 
         to self.access_control {
@@ -119,7 +118,8 @@ impl OnboardingContractInterface for OnboardingContract {
         to self.onboarding {
             #[call(submit_request)]
             fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
-            fn get_request(&self, voting_id: VotingId) -> Option<Request>;
+            fn finish_voting(&mut self, voting_id: VotingId);
+            fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
         }
     }
 
@@ -136,22 +136,8 @@ impl OnboardingContractInterface for OnboardingContract {
         self.access_control.init(caller());
     }
 
-    fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        // TODO: add some assertion
-        self.voting
-            .vote(caller(), voting_id, voting_type, choice, stake);
-    }
-
-    fn finish_voting(&mut self, voting_id: VotingId) {
-        self.onboarding.finish_voting(voting_id);
-    }
-
     fn get_cspr_balance(&self) -> U512 {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
-    }
-
-    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine> {
-        self.voting.get_voting(voting_id)
     }
 }
 
@@ -164,7 +150,7 @@ impl OnboardingContractTest {
         &mut self,
         reason: DocumentHash,
         cspr_amount: U512,
-    ) -> Result<(), Error> {
+    ) -> Result<(), casper_dao_utils::Error> {
         use casper_types::{runtime_args, RuntimeArgs};
         self.env.deploy_wasm_file(
             "submit_onboarding_request.wasm",
