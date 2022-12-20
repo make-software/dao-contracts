@@ -1,9 +1,9 @@
 use casper_dao_utils::{Address, TestContract};
 
-use crate::common::{
+use crate::{common::{
     params::{Account, Contract},
     DaoWorld,
-};
+}, on_contract};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -25,19 +25,6 @@ impl DaoWorld {
     }
 
     pub fn get_contract_address(&self, contract: &Contract) -> Address {
-        match contract {
-            Contract::KycToken => self.kyc_token.address(),
-            Contract::KycVoter => self.kyc_voter.address(),
-            Contract::VaToken => self.va_token.address(),
-            Contract::ReputationToken => self.reputation_token.address(),
-            Contract::BidEscrow => self.bid_escrow.address(),
-            Contract::VariableRepository => self.variable_repository.address(),
-            Contract::SlashingVoter => self.slashing_voter.address(),
-            Contract::Admin => self.admin.address(),
-            Contract::RepoVoter => self.repo_voter.address(),
-            Contract::SimpleVoter => self.simple_voter.address(),
-            Contract::ReputationVoter => self.reputation_voter.address(),
-            Contract::Onboarding => self.onboarding.address(),
-        }
+        on_contract!(self, contract, address())
     }
 }

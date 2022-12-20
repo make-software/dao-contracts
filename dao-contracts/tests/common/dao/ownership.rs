@@ -1,9 +1,9 @@
 use casper_dao_utils::{Address, TestContract};
 
-use crate::common::{
+use crate::{common::{
     params::{Account, Contract},
     DaoWorld,
-};
+}, on_contract};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -40,32 +40,11 @@ impl DaoWorld {
         let user = self.get_address(user);
         let caller = self.get_address(caller);
 
-        match contract {
-            Contract::KycToken => self
-                .kyc_token
-                .as_account(caller)
-                .remove_from_whitelist(user),
-            Contract::VaToken => self.va_token.as_account(caller).remove_from_whitelist(user),
-            Contract::ReputationToken => self
-                .reputation_token
-                .as_account(caller)
-                .remove_from_whitelist(user),
-            Contract::VariableRepository => self
-                .variable_repository
-                .as_account(caller)
-                .remove_from_whitelist(user),
-            _ => Err(casper_dao_utils::Error::Unknown),
-        }
+        on_contract!(self, caller, contract, remove_from_whitelist(user))
     }
 
     pub fn get_owner(&mut self, contract: &Contract) -> Option<Address> {
-        match contract {
-            Contract::KycToken => self.kyc_token.get_owner(),
-            Contract::VaToken => self.va_token.get_owner(),
-            Contract::ReputationToken => self.reputation_token.get_owner(),
-            Contract::VariableRepository => self.variable_repository.get_owner(),
-            _ => None,
-        }
+        on_contract!(self, contract, get_owner())
     }
 
     pub fn change_ownership(
@@ -77,34 +56,12 @@ impl DaoWorld {
         let new_owner = self.get_address(new_owner);
         let caller = self.get_address(caller);
 
-        match contract {
-            Contract::KycToken => self
-                .kyc_token
-                .as_account(caller)
-                .change_ownership(new_owner),
-            Contract::VaToken => self.va_token.as_account(caller).change_ownership(new_owner),
-            Contract::ReputationToken => self
-                .reputation_token
-                .as_account(caller)
-                .change_ownership(new_owner),
-            Contract::VariableRepository => self
-                .variable_repository
-                .as_account(caller)
-                .change_ownership(new_owner),
-            _ => Err(casper_dao_utils::Error::Unknown),
-        }
+        on_contract!(self, caller, contract, change_ownership(new_owner))
     }
 
     pub fn is_whitelisted(&mut self, contract: &Contract, account: &Account) -> bool {
         let account = self.get_address(account);
-
-        match contract {
-            Contract::KycToken => self.kyc_token.is_whitelisted(account),
-            Contract::VaToken => self.va_token.is_whitelisted(account),
-            Contract::ReputationToken => self.reputation_token.is_whitelisted(account),
-            Contract::VariableRepository => self.variable_repository.is_whitelisted(account),
-            _ => false,
-        }
+        on_contract!(self, contract, is_whitelisted(account))
     }
 
     fn whitelist(
@@ -113,18 +70,6 @@ impl DaoWorld {
         caller: Address,
         address: Address,
     ) -> Result<(), casper_dao_utils::Error> {
-        match contract {
-            Contract::KycToken => self.kyc_token.as_account(caller).add_to_whitelist(address),
-            Contract::VaToken => self.va_token.as_account(caller).add_to_whitelist(address),
-            Contract::ReputationToken => self
-                .reputation_token
-                .as_account(caller)
-                .add_to_whitelist(address),
-            Contract::VariableRepository => self
-                .variable_repository
-                .as_account(caller)
-                .add_to_whitelist(address),
-            _ => Err(casper_dao_utils::Error::Unknown),
-        }
+        on_contract!(self, caller, contract, add_to_whitelist(address))
     }
 }

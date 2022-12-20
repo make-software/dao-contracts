@@ -2,10 +2,10 @@ use casper_dao_contracts::voting::{BallotCast, VotingContractCreated, VotingCrea
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::TestContract;
 
-use crate::common::{
+use crate::{common::{
     params::{events::Event, Contract},
     DaoWorld,
-};
+}, on_contract};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -100,25 +100,6 @@ impl DaoWorld {
     where
         T: casper_types::bytesrepr::FromBytes + std::cmp::PartialEq + std::fmt::Debug,
     {
-        match contract {
-            Contract::KycToken => TestContract::assert_event_at(&self.kyc_token, idx, ev),
-            Contract::VaToken => TestContract::assert_event_at(&self.va_token, idx, ev),
-            Contract::ReputationToken => {
-                TestContract::assert_event_at(&self.reputation_token, idx, ev)
-            }
-            Contract::VariableRepository => {
-                TestContract::assert_event_at(&self.variable_repository, idx, ev)
-            }
-            Contract::BidEscrow => TestContract::assert_event_at(&self.bid_escrow, idx, ev),
-            Contract::SlashingVoter => TestContract::assert_event_at(&self.slashing_voter, idx, ev),
-            Contract::KycVoter => TestContract::assert_event_at(&self.kyc_voter, idx, ev),
-            Contract::Admin => TestContract::assert_event_at(&self.admin, idx, ev),
-            Contract::RepoVoter => TestContract::assert_event_at(&self.repo_voter, idx, ev),
-            Contract::SimpleVoter => TestContract::assert_event_at(&self.simple_voter, idx, ev),
-            Contract::ReputationVoter => {
-                TestContract::assert_event_at(&self.reputation_voter, idx, ev)
-            }
-            Contract::Onboarding => TestContract::assert_event_at(&self.onboarding, idx, ev),
-        }
+        on_contract!(self, contract, assert_event_at(idx, ev));
     }
 }
