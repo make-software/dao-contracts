@@ -1,9 +1,20 @@
-use casper_dao_utils::{casper_dao_macros::Instance, Mapping, SequenceGenerator, VecMapping, Address, casper_contract::unwrap_or_revert::UnwrapOrRevert, Error};
+use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::Instance,
+    Address,
+    Error,
+    Mapping,
+    SequenceGenerator,
+    VecMapping,
+};
 
+use super::{
+    bid::Bid,
+    job::Job,
+    job_offer::JobOffer,
+    types::{BidId, JobId, JobOfferId},
+};
 use crate::{voting::VotingId, Configuration};
-
-use super::{types::{JobId, JobOfferId, BidId}, job::Job, bid::Bid, job_offer::JobOffer};
-
 
 #[derive(Instance)]
 pub struct JobStorage {
@@ -19,16 +30,12 @@ pub struct JobStorage {
 }
 
 impl JobStorage {
-
     pub fn store_job_offer(&mut self, offer: JobOffer) {
         let poster = offer.job_poster;
         let offer_id = offer.job_offer_id;
         self.job_offers.set(&offer_id, offer);
 
-        let mut job_offers = self
-            .active_job_offers_ids
-            .get(&poster)
-            .unwrap_or_default();
+        let mut job_offers = self.active_job_offers_ids.get(&poster).unwrap_or_default();
         job_offers.push(offer_id);
         self.active_job_offers_ids.set(&poster, job_offers);
     }
@@ -43,10 +50,7 @@ impl JobStorage {
 
     pub fn store_active_job_offer_id(&mut self, poster: &Address, offer_id: JobOfferId) {
         // TODO: Filter in place.
-        let offers: Vec<JobOfferId> = self
-            .active_job_offers_ids
-            .get(poster)
-            .unwrap_or_default();
+        let offers: Vec<JobOfferId> = self.active_job_offers_ids.get(poster).unwrap_or_default();
         let offers: Vec<JobOfferId> = offers
             .iter()
             .filter(|id| id == &&offer_id)
@@ -70,7 +74,8 @@ impl JobStorage {
     }
 
     pub fn get_job_by_voting_id(&self, voting_id: VotingId) -> Job {
-        let job_id = self.jobs_for_voting
+        let job_id = self
+            .jobs_for_voting
             .get(&voting_id)
             .unwrap_or_revert_with(Error::VotingIdNotFound);
 
@@ -99,8 +104,7 @@ impl JobStorage {
             .get(offer_id, n)
             .unwrap_or_revert_with(Error::BidNotFound);
 
-        self
-            .get_bid(bid_id)
+        self.get_bid(bid_id)
             .unwrap_or_revert_with(Error::BidNotFound)
     }
 

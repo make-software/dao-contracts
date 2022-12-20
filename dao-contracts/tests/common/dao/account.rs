@@ -37,6 +37,7 @@ impl DaoWorld {
             Contract::RepoVoter => self.repo_voter.address(),
             Contract::SimpleVoter => self.simple_voter.address(),
             Contract::ReputationVoter => self.reputation_voter.address(),
+            Contract::Onboarding => self.onboarding.address(),
         }
     }
 }

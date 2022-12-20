@@ -2,16 +2,14 @@ use std::rc::Rc;
 
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::{
-        contract_api::system::get_purse_balance,
-        unwrap_or_revert::UnwrapOrRevert,
-    },
+    casper_contract::{contract_api::system::get_purse_balance, unwrap_or_revert::UnwrapOrRevert},
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller, get_block_time, revert},
+    transfer,
     Address,
     BlockTime,
     DocumentHash,
-    Error, transfer,
+    Error,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
@@ -21,7 +19,8 @@ use crate::{
         bid::{Bid, BidStatus},
         job::{Job, JobStatus, WorkerType},
         job_offer::{JobOffer, JobOfferStatus, PostJobOfferRequest},
-        types::{BidId, JobId, JobOfferId}, storage::JobStorage,
+        storage::JobStorage,
+        types::{BidId, JobId, JobOfferId},
     },
     voting::{
         kyc_info::KycInfo,
@@ -126,7 +125,6 @@ pub trait BidEscrowContractInterface {
         onboard: bool,
         purse: Option<URef>,
     );
-
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
@@ -399,7 +397,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         bid.pick();
         self.job_storage.store_bid(bid);
 
-        self.job_storage.store_active_job_offer_id(&job_poster, job_offer_id);
+        self.job_storage
+            .store_active_job_offer_id(&job_poster, job_offer_id);
         // TODO: Emit event.
     }
 
@@ -429,7 +428,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_id = self
             .voting
             .create_voting(worker, U512::zero(), voting_configuration);
-        
+
         self.job_storage.store_job_for_voting(voting_id, job_id);
 
         let is_unbounded = job.worker_type() != &WorkerType::Internal;
@@ -523,10 +522,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        let job = self
-            .job_storage
-            .get_job_by_voting_id(voting_id);
         let caller = caller();
+        let job = self.job_storage.get_job_by_voting_id(voting_id);
 
         if caller == job.poster() || caller == job.worker() {
             revert(Error::CannotVoteOnOwnJob);
@@ -770,8 +767,7 @@ impl BidEscrowContract {
 
             match bid.cspr_stake {
                 None => {
-                    self.reputation_token()
-                        .unstake_bid(bid.worker, bid.bid_id);
+                    self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
                 }
                 Some(cspr_stake) => {
                     transfer::withdraw_cspr(bid.worker, cspr_stake);
@@ -953,10 +949,9 @@ impl BidEscrowContract {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
-            
+
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
-                self.reputation_token()
-                    .unstake_bid(bid.worker, bid.bid_id);
+                self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
                 bid.reject();
                 self.job_storage.store_bid(bid);
             }
@@ -1114,23 +1109,6 @@ impl BidEscrowContractTest {
                 "proof" => proof,
                 "reputation_stake" => reputation_stake,
                 "onboard" => onboard,
-                "cspr_amount" => cspr_amount,
-                "amount" => cspr_amount,
-            },
-        )
-    }
-
-    pub fn submit_onboarding_request_with_cspr_amount(
-        &mut self,
-        reason: DocumentHash,
-        cspr_amount: U512,
-    ) -> Result<(), Error> {
-        use casper_types::{runtime_args, RuntimeArgs};
-        self.env.deploy_wasm_file(
-            "submit_onboarding_request.wasm",
-            runtime_args! {
-                "bid_escrow_address" => self.address(),
-                "reason" => reason,
                 "cspr_amount" => cspr_amount,
                 "amount" => cspr_amount,
             },

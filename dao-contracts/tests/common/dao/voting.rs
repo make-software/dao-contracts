@@ -140,6 +140,11 @@ impl DaoWorld {
                     .as_account(voter)
                     .vote(voting_id, voting_type, choice, stake)
             }
+            Contract::Onboarding => {
+                self.onboarding
+                    .as_account(voter)
+                    .vote(voting_id, voting_type, choice, stake)
+            }
 
             contract => panic!("{:?} is not a voting contract", contract),
         }

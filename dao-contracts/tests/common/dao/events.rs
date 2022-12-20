@@ -118,6 +118,7 @@ impl DaoWorld {
             Contract::ReputationVoter => {
                 TestContract::assert_event_at(&self.reputation_voter, idx, ev)
             }
+            Contract::Onboarding => TestContract::assert_event_at(&self.onboarding, idx, ev),
         }
     }
 }

@@ -22,6 +22,7 @@ fn assert_event(world: &mut DaoWorld, step: &Step, contract: Contract) {
         Contract::RepoVoter => world.repo_voter.events_count(),
         Contract::SimpleVoter => world.simple_voter.events_count(),
         Contract::ReputationVoter => world.reputation_voter.events_count(),
+        Contract::Onboarding => world.onboarding.events_count(),
     };
     let expected_events_count = table.len() as i32;
     // In a scenario are given last n events, so we need to skip first #events-n events.

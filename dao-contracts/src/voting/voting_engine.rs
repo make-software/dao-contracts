@@ -289,7 +289,7 @@ impl VotingEngine {
         choice: Choice,
         stake: U512,
     ) {
-        let voting = self.get_voting(voting_id).unwrap_or_revert();
+        let voting = self.get_voting_or_revert(voting_id);
         self.assert_voting_type(&voting, voting_type);
         voting.guard_vote(get_block_time());
         self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);
@@ -553,6 +553,10 @@ impl VotingEngine {
     /// Get a reference to the governance voting's voters.
     pub fn voters(&self) -> &VecMapping<(VotingId, VotingType), Address> {
         &self.voters
+    }
+
+    pub fn voters_count(&self, voting_id: VotingId, voting_type: VotingType) -> u32 {
+        self.voters().len((voting_id, voting_type))
     }
 
     pub fn bound_ballot(&mut self, voting_id: u32, worker: Address, voting_type: VotingType) {
