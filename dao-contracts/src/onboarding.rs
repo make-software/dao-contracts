@@ -12,8 +12,6 @@ use delegate::delegate;
 use crate::{
     escrow::onboarding::Onboarding,
     voting::{
-        kyc_info::KycInfo,
-        onboarding_info::OnboardingInfo,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
@@ -85,8 +83,6 @@ pub trait OnboardingContractInterface {
 #[derive(Instance)]
 pub struct OnboardingContract {
     voting: VotingEngine,
-    kyc: KycInfo,
-    onboarding_info: OnboardingInfo,
     access_control: AccessControl,
     onboarding: Onboarding,
 }
@@ -131,8 +127,7 @@ impl OnboardingContractInterface for OnboardingContract {
         va_token: Address,
     ) {
         self.voting.init(variable_repo, reputation_token, va_token);
-        self.kyc.init(kyc_token);
-        self.onboarding_info.init(va_token);
+        self.onboarding.init(va_token, kyc_token);
         self.access_control.init(caller());
     }
 

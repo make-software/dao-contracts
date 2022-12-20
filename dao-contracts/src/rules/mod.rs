@@ -17,18 +17,16 @@ pub struct Rules {
 impl Rules {
     pub fn validate_generic_validations(&self) {
         for validation in &self.validations {
-            let result = validation.validate();
-            if result.is_err() {
-                revert(result.err().unwrap());
+            if let Err(error) = validation.validate() {
+                revert(error)
             }
         }
     }
 
     pub fn validate_voting_validations(&self, voting_state_machine: &VotingStateMachine) {
         for validation in &self.voting_validations {
-            let result = validation.validate(voting_state_machine);
-            if result.is_err() {
-                revert(result.err().unwrap());
+            if let Err(error) = validation.validate(voting_state_machine) {
+                revert(error)
             }
         }
     }

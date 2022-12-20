@@ -289,7 +289,7 @@ impl VotingEngine {
         choice: Choice,
         stake: U512,
     ) {
-        let voting = self.get_voting(voting_id).unwrap_or_revert();
+        let voting = self.get_voting_or_revert(voting_id);
         self.assert_voting_type(&voting, voting_type);
         voting.guard_vote(get_block_time());
         self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);

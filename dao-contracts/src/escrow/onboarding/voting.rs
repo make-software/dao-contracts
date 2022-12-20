@@ -1,6 +1,6 @@
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
-    casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
+    casper_dao_macros::Instance,
     casper_env::caller,
     transfer,
     Address,
@@ -10,8 +10,11 @@ use casper_dao_utils::{
 };
 use casper_types::{URef, U512};
 
+use super::request::{OnboardingRequest, Request};
 use crate::{
     voting::{
+        kyc_info::KycInfo,
+        onboarding_info::OnboardingInfo,
         voting_state_machine::{VotingResult, VotingSummary, VotingType},
         Choice,
         VotingEngine,
@@ -23,48 +26,55 @@ use crate::{
     VaNftContractInterface,
 };
 
-#[derive(CLTyped, ToBytes, FromBytes, Debug)]
-pub struct Request {
-    creator: Address,
-    reason: DocumentHash,
-    rep_stake: U512,
-    cspr_deposit: U512,
-    voting_id: VotingId,
-}
-
 #[derive(Instance)]
 pub struct Onboarding {
     requests: Mapping<VotingId, Request>,
     configurations: Mapping<VotingId, Configuration>,
+    ids: Mapping<Address, VotingId>,
     #[scoped = "contract"]
     voting: VotingEngine,
+    kyc: KycInfo,
+    info: OnboardingInfo,
 }
 
 impl Onboarding {
+    pub fn init(&mut self, va_token: Address, kyc_token: Address) {
+        self.info.init(va_token);
+        self.kyc.init(kyc_token);
+    }
+
     pub fn get_request(&self, voting_id: VotingId) -> Option<Request> {
         self.requests.get_or_none(&voting_id)
     }
 
     pub fn submit_request(&mut self, reason: DocumentHash, purse: URef) {
-        let candidate = caller();
-
-        // Check if is not a VA
-
-        // Check if a request already exists.
-        // if self.requests.get(&candidate).is_some() {
-        //     revert(0) // request already submitted.
-        // }
+        let requestor = caller();
 
         let configuration = self.build_configuration();
-
         let cspr_deposit = transfer::deposit_cspr(purse);
         let rep_stake = configuration.apply_reputation_conversion_rate_to(cspr_deposit);
+        let exists_ongoing_voting = self
+            .ids
+            .get_or_none(&requestor)
+            .and_then(|voting_id| self.voting.get_voting(voting_id))
+            .map(|v| v.completed())
+            .unwrap_or_default();
+
+        let request = OnboardingRequest {
+            requestor,
+            reason,
+            rep_stake,
+            cspr_deposit,
+            is_va: self.info.is_onboarded(&requestor),
+            exists_ongoing_voting,
+            is_kyced: self.kyc.is_kycd(&requestor),
+        };
 
         // Create voting and cast creator's ballot
-        let voting_id = self.init_voting(candidate, configuration.clone(), rep_stake);
+        let voting_id = self.init_voting(requestor, configuration.clone(), rep_stake);
 
+        self.store_request(request, voting_id);
         self.store_configuration(voting_id, configuration);
-        self.store_request(candidate, reason, rep_stake, cspr_deposit, voting_id);
         // TODO: emit event
     }
 
@@ -87,7 +97,6 @@ impl Onboarding {
         choice: Choice,
         stake: U512,
     ) {
-        // Add assertions
         self.voting
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
@@ -121,26 +130,13 @@ impl Onboarding {
             true,
             self.voting.get_voting_or_revert(voting_id),
         );
+        self.ids.set(&creator, voting_id);
 
         voting_id
     }
 
-    fn store_request(
-        &mut self,
-        candidate: Address,
-        reason: DocumentHash,
-        rep_stake: U512,
-        cspr_deposit: U512,
-        voting_id: VotingId,
-    ) {
-        let request = Request {
-            creator: candidate,
-            reason,
-            rep_stake,
-            cspr_deposit,
-            voting_id,
-        };
-
+    fn store_request(&mut self, request: OnboardingRequest, voting_id: VotingId) {
+        let request = Request::new(request);
         self.requests.set(&voting_id, request);
     }
 
@@ -149,9 +145,7 @@ impl Onboarding {
     }
 
     fn create_formal_voting(&mut self, voting_id: VotingId) {
-        let voting = self
-            .voting
-            .get_voting_or_revert(voting_id);
+        let voting = self.voting.get_voting_or_revert(voting_id);
         if voting.voting_configuration().informal_stake_reputation() {
             self.voting
                 .unstake_all_reputation(voting_id, VotingType::Informal);
@@ -170,7 +164,9 @@ impl Onboarding {
         summary: &VotingSummary,
     ) {
         match summary.result() {
-            VotingResult::InFavor | VotingResult::Against => self.on_informal_voting_finished(voting_id),
+            VotingResult::InFavor | VotingResult::Against => {
+                self.on_informal_voting_finished(voting_id)
+            }
             VotingResult::QuorumNotReached => {
                 self.on_quorum_not_reached(voting_id, VotingType::Informal, request)
             }
@@ -187,7 +183,9 @@ impl Onboarding {
         match summary.result() {
             VotingResult::InFavor => self.on_formal_voting_in_favor(voting_id, request),
             VotingResult::Against => self.on_formal_voting_against(voting_id, request),
-            VotingResult::QuorumNotReached => self.on_quorum_not_reached(voting_id, VotingType::Formal, request),
+            VotingResult::QuorumNotReached => {
+                self.on_quorum_not_reached(voting_id, VotingType::Formal, request)
+            }
             VotingResult::Canceled => Self::on_voting_canceled(),
         }
     }
@@ -213,41 +211,32 @@ impl Onboarding {
                 .return_reputation_of_no_voters(voting_id, voting_type);
         }
 
-        transfer::withdraw_cspr(request.creator, request.rep_stake);
+        transfer::withdraw_cspr(request.creator(), request.rep_stake());
     }
 
     fn on_informal_voting_finished(&mut self, voting_id: VotingId) {
         self.create_formal_voting(voting_id);
     }
 
-    fn on_formal_voting_in_favor(
-        &mut self,
-        voting_id: VotingId,
-        request: &Request,
-    
-    ) {
+    fn on_formal_voting_in_favor(&mut self, voting_id: VotingId, request: &Request) {
         let configuration = self.configurations.get_or_revert(&voting_id);
 
         // Make the user VA.
-        self.voting.va_token().mint(request.creator);
+        self.voting.va_token().mint(request.creator());
 
         // Bound ballot for the requester - mint temporary reputation.
         self.voting
-            .bound_ballot(voting_id, request.creator, VotingType::Formal);
+            .bound_ballot(voting_id, request.creator(), VotingType::Formal);
         self.redistribute_reputation_to_voters(voting_id, VotingType::Formal);
         // Burn temporary reputation.
         self.burn_requestor_reputation(&request);
         self.mint_and_redistribute_reputation_for_requestor(voting_id, &request);
-        self.redistribute_cspr(&configuration, request.cspr_deposit);
+        self.redistribute_cspr(&configuration, request.cspr_deposit());
     }
 
-    fn on_formal_voting_against(
-        &self,
-        voting_id: VotingId,
-        request: &Request,
-    ) {
+    fn on_formal_voting_against(&self, voting_id: VotingId, request: &Request) {
         self.redistribute_reputation_to_voters(voting_id, VotingType::Formal);
-        transfer::withdraw_cspr(request.creator, request.rep_stake);
+        transfer::withdraw_cspr(request.creator(), request.rep_stake());
     }
 
     fn redistribute_reputation_to_voters(&self, voting_id: VotingId, voting_type: VotingType) {
@@ -267,13 +256,13 @@ impl Onboarding {
     ) {
         let configuration = self.configurations.get_or_revert(&voting_id);
 
-        let reputation_to_mint = request.rep_stake;
+        let reputation_to_mint = request.rep_stake();
         let reputation_to_redistribute =
             configuration.apply_default_policing_rate_to(reputation_to_mint);
 
         // Worker
         self.voting.reputation_token().mint(
-            request.creator,
+            request.creator(),
             reputation_to_mint - reputation_to_redistribute,
         );
 
@@ -320,6 +309,6 @@ impl Onboarding {
     fn burn_requestor_reputation(&self, request: &Request) {
         self.voting
             .reputation_token()
-            .burn(request.creator, request.rep_stake);
+            .burn(request.creator(), request.rep_stake());
     }
 }

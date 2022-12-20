@@ -1,10 +1,9 @@
 use casper_dao_erc721::TokenId;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{CLTyped, FromBytes, Instance, ToBytes},
+    casper_dao_macros::Instance,
     Address,
     Error,
-    Mapping,
     Variable,
 };
 
@@ -14,7 +13,6 @@ use crate::{VaNftContractCaller, VaNftContractInterface};
 #[derive(Instance)]
 pub struct OnboardingInfo {
     va_token: Variable<Address>,
-    votings: Mapping<Address, bool>,
 }
 
 impl OnboardingInfo {
@@ -30,21 +28,6 @@ impl OnboardingInfo {
         self.va_token
             .get()
             .unwrap_or_revert_with(Error::VariableValueNotSet)
-    }
-
-    /// Sets a flag indicating there is ongoing voting for the given `address`.
-    pub fn set_voting(&mut self, address: &Address) {
-        self.votings.set(address, true);
-    }
-
-    /// Clears the flag indicating there is ongoing voting for the given `address`.
-    pub fn clear_voting(&mut self, address: &Address) {
-        self.votings.set(address, false);
-    }
-
-    /// Indicates whether there is ongoing voting for the given `address`.
-    pub fn exists_ongoing_voting(&self, address: &Address) -> bool {
-        self.votings.get(address).unwrap_or(false)
     }
 
     /// Returns true if the `address` has a non-zero balance of va token, false otherwise.
@@ -71,10 +54,4 @@ impl OnboardingInfo {
     fn va_nft_contract(&self) -> VaNftContractCaller {
         VaNftContractCaller::at(self.get_va_token_address())
     }
-}
-
-#[derive(ToBytes, FromBytes, CLTyped)]
-pub enum OnboardingAction {
-    Add,
-    Remove,
 }
