@@ -158,6 +158,10 @@ fn voting_ends(w: &mut DaoWorld) {
 fn onboarding_voting_ends(w: &mut DaoWorld) {
     w.env.advance_block_time_by(Duration::from_secs(432005u64));
     w.onboarding.finish_voting(0).unwrap();
+
+    // let  v = w.onboarding.get_voting(0).unwrap();
+    // dbg!(v.get_quorum());
+    // dbg!(v.voting_configuration());
 }
 
 #[when(expr = "votes are")]

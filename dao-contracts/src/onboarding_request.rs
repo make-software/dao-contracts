@@ -21,7 +21,7 @@ use crate::{
 };
 
 #[casper_contract_interface]
-pub trait OnboardingContractInterface {
+pub trait OnboardingRequestContractInterface {
     /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract), [Variable Repo](crate::VariableRepositoryContract)
     /// KYC Token and VA Token
     ///
@@ -81,13 +81,13 @@ pub trait OnboardingContractInterface {
 }
 
 #[derive(Instance)]
-pub struct OnboardingContract {
+pub struct OnboardingRequestContract {
     voting: VotingEngine,
     access_control: AccessControl,
     onboarding: Onboarding,
 }
 
-impl OnboardingContractInterface for OnboardingContract {
+impl OnboardingRequestContractInterface for OnboardingRequestContract {
     delegate! {
         to self.voting {
             fn variable_repo_address(&self) -> Address;
@@ -140,7 +140,7 @@ impl OnboardingContractInterface for OnboardingContract {
 use casper_dao_utils::TestContract;
 
 #[cfg(feature = "test-support")]
-impl OnboardingContractTest {
+impl OnboardingRequestContractTest {
     pub fn submit_onboarding_request_with_cspr_amount(
         &mut self,
         reason: DocumentHash,

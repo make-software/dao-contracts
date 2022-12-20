@@ -20,7 +20,7 @@ use casper_dao_contracts::{
     DaoIdsContractTest,
     KycNftContractTest,
     KycVoterContractTest,
-    OnboardingContractTest,
+    OnboardingRequestContractTest,
     RepoVoterContractTest,
     ReputationContractTest,
     ReputationVoterContractTest,
@@ -55,7 +55,7 @@ pub struct DaoWorld {
     pub simple_voter: SimpleVoterContractTest,
     pub admin: AdminContractTest,
     pub rate_provider: CSPRRateProviderContractTest,
-    pub onboarding: OnboardingContractTest,
+    pub onboarding: OnboardingRequestContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -159,7 +159,7 @@ impl Default for DaoWorld {
 
         let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
 
-        let onboarding = OnboardingContractTest::new(
+        let onboarding = OnboardingRequestContractTest::new(
             &env,
             variable_repository.address(),
             reputation_token.address(),

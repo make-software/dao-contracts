@@ -192,8 +192,8 @@ doctest = false
 test = false
 
 [[bin]]
-name = "onboarding_contract"
-path = "bin/onboarding.rs"
+name = "onboarding_request_contract"
+path = "bin/onboarding_request.rs"
 bench = false
 doctest = false
 test = false
