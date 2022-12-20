@@ -64,8 +64,6 @@ impl DaoWorld {
         let result = self.bid_escrow.as_account(worker).cancel_bid(bid_id);
         if result.is_ok() {
             self.bids.remove(&(job_offer_id, worker));
-        } else {
-            dbg!(result);
         }
     }
 

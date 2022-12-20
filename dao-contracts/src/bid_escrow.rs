@@ -914,7 +914,7 @@ impl BidEscrowContract {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
-                self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
+                self.unstake_cspr_or_reputation_for_bid(&bid);
                 bid.reject();
                 self.job_storage.store_bid(bid);
             }
