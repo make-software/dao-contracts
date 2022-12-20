@@ -1,10 +1,11 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct CanBeOnboarded {
-    pub is_va: bool,
-    pub onboard: bool,
+    is_va: bool,
+    onboard: bool,
 }
 
 impl Validation for CanBeOnboarded {
@@ -13,11 +14,5 @@ impl Validation for CanBeOnboarded {
             return Err(Error::VaOnboardedAlready);
         }
         Ok(())
-    }
-}
-
-impl CanBeOnboarded {
-    pub fn create(is_va: bool, onboard: bool) -> Box<CanBeOnboarded> {
-        Box::new(Self { is_va, onboard })
     }
 }

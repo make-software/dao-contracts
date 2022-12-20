@@ -1,13 +1,14 @@
 use std::rc::Rc;
 
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 use casper_types::U512;
 
 use crate::{rules::validation::Validation, Configuration};
 
+#[derive(Rule)]
 pub struct IsDosFeeEnough {
-    pub configuration: Rc<Configuration>,
-    pub dos_fee: U512,
+    configuration: Rc<Configuration>,
+    dos_fee: U512,
 }
 
 impl Validation for IsDosFeeEnough {
@@ -18,14 +19,5 @@ impl Validation for IsDosFeeEnough {
         };
 
         Ok(())
-    }
-}
-
-impl IsDosFeeEnough {
-    pub fn create(configuration: Rc<Configuration>, dos_fee: U512) -> Box<IsDosFeeEnough> {
-        Box::new(Self {
-            configuration,
-            dos_fee,
-        })
     }
 }

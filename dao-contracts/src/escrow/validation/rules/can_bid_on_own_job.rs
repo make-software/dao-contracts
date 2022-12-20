@@ -1,10 +1,11 @@
-use casper_dao_utils::{Address, Error};
+use casper_dao_utils::{casper_dao_macros::Rule, Address, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct CanBidOnOwnJob {
-    pub worker: Address,
-    pub job_poster: Address,
+    worker: Address,
+    job_poster: Address,
 }
 
 impl Validation for CanBidOnOwnJob {
@@ -13,11 +14,5 @@ impl Validation for CanBidOnOwnJob {
             return Err(Error::CannotBidOnOwnJob);
         }
         Ok(())
-    }
-}
-
-impl CanBidOnOwnJob {
-    pub fn create(worker: Address, job_poster: Address) -> Box<CanBidOnOwnJob> {
-        Box::new(Self { worker, job_poster })
     }
 }

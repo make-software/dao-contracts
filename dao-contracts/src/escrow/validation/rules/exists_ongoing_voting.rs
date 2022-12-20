@@ -1,9 +1,10 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct ExistsOngoingVoting {
-    is_ongoing_voting: bool,
+    pub is_ongoing_voting: bool,
 }
 
 impl Validation for ExistsOngoingVoting {
@@ -13,11 +14,5 @@ impl Validation for ExistsOngoingVoting {
         };
 
         Ok(())
-    }
-}
-
-impl ExistsOngoingVoting {
-    pub fn create(is_ongoing_voting: bool) -> Box<ExistsOngoingVoting> {
-        Box::new(Self { is_ongoing_voting })
     }
 }

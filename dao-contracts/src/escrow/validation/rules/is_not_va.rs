@@ -1,9 +1,10 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct IsNotVa {
-    pub is_va: bool,
+    is_va: bool,
 }
 
 impl Validation for IsNotVa {
@@ -13,11 +14,5 @@ impl Validation for IsNotVa {
         };
 
         Ok(())
-    }
-}
-
-impl IsNotVa {
-    pub fn create(is_va: bool) -> Box<IsNotVa> {
-        Box::new(Self { is_va })
     }
 }
