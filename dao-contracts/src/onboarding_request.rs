@@ -35,6 +35,7 @@ pub trait OnboardingRequestContractInterface {
         va_token: Address,
     );
 
+    /// Submits onboarding request. If the request is valid voting starts.
     fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote over a job
     /// # Events
@@ -44,7 +45,7 @@ pub trait OnboardingRequestContractInterface {
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
-    /// with a refund or pay the worker.
+    /// with a refund or convert the requestor to a VA.
     /// # Events
     /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
