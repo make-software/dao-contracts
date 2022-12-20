@@ -159,13 +159,15 @@ impl Default for DaoWorld {
 
         let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
 
-        let onboarding = OnboardingRequestContractTest::new(
+        let mut onboarding = OnboardingRequestContractTest::new(
             &env,
             variable_repository.address(),
             reputation_token.address(),
             kyc_token.address(),
             va_token.address(),
         );
+
+        onboarding.add_to_whitelist(slashing_voter.address()).unwrap();
 
         // Setup DaoIds.
         let mut voting_ids = DaoIdsContractTest::new(&env);

@@ -78,6 +78,7 @@ pub trait OnboardingRequestContractInterface {
     fn is_whitelisted(&self, address: Address) -> bool;
 
     // Slashing
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
 #[derive(Instance)]
@@ -133,6 +134,11 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
 
     fn get_cspr_balance(&self) -> U512 {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
+    }
+
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
+        self.access_control.ensure_whitelisted();
+        self.voting.slash_voter(voter, voting_id);
     }
 }
 
