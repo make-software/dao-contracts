@@ -4,7 +4,7 @@ use syn::{Data, DataStruct, DeriveInput, Fields};
 
 pub fn expand_derive_events(input: DeriveInput) -> TokenStream {
     let struct_ident = input.ident.clone();
-    let fields = match named_fields(input) {
+    let fields = match named_fields_with_types(input) {
         Ok(fields) => fields,
         Err(error_stream) => return error_stream,
     };
@@ -15,27 +15,27 @@ pub fn expand_derive_events(input: DeriveInput) -> TokenStream {
     });
 
     let mut deserialize_fields = TokenStream::new();
-    deserialize_fields.append_all(fields.iter().map(|ident| {
+    deserialize_fields.append_all(fields.iter().map(|(ident, _)| {
         quote! {
           let (#ident, bytes) = casper_types::bytesrepr::FromBytes::from_bytes(bytes)?;
         }
     }));
 
     let mut construct_struct = TokenStream::new();
-    construct_struct.append_all(fields.iter().map(|ident| quote! { #ident, }));
+    construct_struct.append_all(fields.iter().map(|(ident, _)| quote! { #ident, }));
 
     let mut sum_serialized_lengths = TokenStream::new();
     sum_serialized_lengths.append_all(quote! {
       size += #name_literal.serialized_length();
     });
-    sum_serialized_lengths.append_all(fields.iter().map(|ident| {
+    sum_serialized_lengths.append_all(fields.iter().map(|(ident, _)| {
         quote! {
           size += self.#ident.serialized_length();
         }
     }));
 
     let mut append_bytes = TokenStream::new();
-    append_bytes.append_all(fields.iter().map(|ident| {
+    append_bytes.append_all(fields.iter().map(|(ident, _)| {
         quote! {
           vec.extend(self.#ident.to_bytes()?);
         }
@@ -48,6 +48,16 @@ pub fn expand_derive_events(input: DeriveInput) -> TokenStream {
           return core::result::Result::Err(casper_types::bytesrepr::Error::Formatting)
       }
     });
+
+    let mut event_def = TokenStream::new();
+    event_def.append_all(quote! {
+      casper_dao_utils::definitions::EventDef::new(stringify!(#struct_ident))
+    });
+    event_def.append_all(fields.iter().map(|(ident, ty)| {
+        quote! {
+          .with_field(casper_dao_utils::definitions::ElemDef::new::<#ty>(stringify!(#ident)))
+        }
+    }));
 
     quote! {
       impl #struct_ident {
@@ -81,10 +91,18 @@ pub fn expand_derive_events(input: DeriveInput) -> TokenStream {
           Ok(vec)
         }
       }
+
+      impl casper_dao_utils::definitions::EventDefinition for #struct_ident {
+        fn event_def() -> casper_dao_utils::definitions::EventDef {
+            #event_def
+        }
+      }
     }
 }
 
-fn named_fields(input: DeriveInput) -> Result<Vec<proc_macro2::Ident>, TokenStream> {
+fn named_fields_with_types(
+    input: DeriveInput,
+) -> Result<Vec<(proc_macro2::Ident, syn::Type)>, TokenStream> {
     let fields = match input.data {
         Data::Struct(DataStruct {
             fields: Fields::Named(named_fields),
@@ -92,9 +110,13 @@ fn named_fields(input: DeriveInput) -> Result<Vec<proc_macro2::Ident>, TokenStre
         }) => named_fields
             .named
             .into_iter()
-            .map(|x| x.ident.unwrap())
+            .map(|x| (x.ident.unwrap(), x.ty))
             .collect::<Vec<_>>(),
-        _ => return Err(quote! { compile_error!("Expected a struct with named fields."); }),
+        _ => {
+            return Err(
+                quote! { compile_error!("Expected a struct with named fields and types."); },
+            )
+        }
     };
     Ok(fields)
 }

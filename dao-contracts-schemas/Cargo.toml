@@ -1,0 +1,14 @@
+[package]
+name = "dao-contracts-schemas"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+casper-types = "1.5.0"
+casper-dao-utils = { path = "../dao-utils", default-features = false }
+casper-dao-contracts = { path = "../dao-contracts", default-features = false }
+casper-dao-modules = { path = "../dao-modules", default-features = false }
+
+[[bin]]
+name = "update-schemas"
+path = "bin/update_schemas.rs"

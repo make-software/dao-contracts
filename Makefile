@@ -67,6 +67,9 @@ clean:
 docs:
 	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
 
+update-schemas:
+	cargo run -p dao-contracts-schemas --bin update-schemas
+
 run-e2e-tests:
 	cd client && ./run-e2e-tests.sh
 

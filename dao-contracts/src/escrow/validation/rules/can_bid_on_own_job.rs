@@ -1,9 +1,6 @@
-
-
 use casper_dao_utils::{Address, Error};
 
-
-use crate::{rules::validation::Validation};
+use crate::rules::validation::Validation;
 
 pub struct CanBidOnOwnJob {
     pub worker: Address,

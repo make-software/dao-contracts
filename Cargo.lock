@@ -628,6 +628,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dao-contracts-schemas"
+version = "0.1.0"
+dependencies = [
+ "casper-dao-contracts",
+ "casper-dao-modules",
+ "casper-dao-utils",
+ "casper-types",
+]
+
+[[package]]
 name = "datasize"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
