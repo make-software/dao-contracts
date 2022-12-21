@@ -1,11 +1,12 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 use casper_types::U512;
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct DoesProposedPaymentExceedBudget {
-    pub proposed_payment: U512,
-    pub max_budget: U512,
+    proposed_payment: U512,
+    max_budget: U512,
 }
 
 impl Validation for DoesProposedPaymentExceedBudget {
@@ -15,17 +16,5 @@ impl Validation for DoesProposedPaymentExceedBudget {
         }
 
         Ok(())
-    }
-}
-
-impl DoesProposedPaymentExceedBudget {
-    pub fn create(
-        proposed_payment: U512,
-        max_budget: U512,
-    ) -> Box<DoesProposedPaymentExceedBudget> {
-        Box::new(Self {
-            proposed_payment,
-            max_budget,
-        })
     }
 }

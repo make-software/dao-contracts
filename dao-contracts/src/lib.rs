@@ -53,7 +53,11 @@ pub use mocks::mock_voter::{
 };
 #[cfg(feature = "test-support")]
 pub use onboarding_request::OnboardingRequestContractTest;
-pub use onboarding_request::{OnboardingRequestContract, OnboardingRequestContractCaller, OnboardingRequestContractInterface};
+pub use onboarding_request::{
+    OnboardingRequestContract,
+    OnboardingRequestContractCaller,
+    OnboardingRequestContractInterface,
+};
 #[cfg(feature = "test-support")]
 pub use rate_provider::CSPRRateProviderContractTest;
 pub use rate_provider::{

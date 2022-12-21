@@ -9,6 +9,7 @@ use syn::{parse_macro_input, DeriveInput};
 mod contract;
 mod event;
 mod instance;
+mod rule;
 mod serialization;
 
 /// Derive events on top of any struct.
@@ -60,4 +61,10 @@ pub fn derive_to_bytes(input: TokenStream) -> TokenStream {
             TokenStream::from(quote! { compile_error!("Union types are not supported."); })
         }
     }
+}
+
+#[proc_macro_derive(Rule)]
+pub fn derive_rule(input: TokenStream) -> TokenStream {
+    let derived_input = parse_macro_input!(input as DeriveInput);
+    rule::expand_derive_rule(derived_input).into()
 }

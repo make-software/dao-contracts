@@ -167,7 +167,9 @@ impl Default for DaoWorld {
             va_token.address(),
         );
 
-        onboarding.add_to_whitelist(slashing_voter.address()).unwrap();
+        onboarding
+            .add_to_whitelist(slashing_voter.address())
+            .unwrap();
 
         // Setup DaoIds.
         let mut voting_ids = DaoIdsContractTest::new(&env);

@@ -15,7 +15,7 @@ use crate::{
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
-        voting_state_machine::{VotingResult, VotingSummary, VotingType, VotingStateMachine},
+        voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
         VotingEngine,
         VotingId,
@@ -53,7 +53,8 @@ impl Onboarding {
         let configuration = self.build_configuration();
         let cspr_deposit = transfer::deposit_cspr(purse);
         let rep_stake = configuration.apply_reputation_conversion_rate_to(cspr_deposit);
-        let exists_ongoing_voting = self.get_user_voting(&requestor)
+        let exists_ongoing_voting = self
+            .get_user_voting(&requestor)
             .map(|v| !v.completed())
             .unwrap_or_default();
 
@@ -99,8 +100,7 @@ impl Onboarding {
     }
 
     fn get_user_voting(&self, address: &Address) -> Option<VotingStateMachine> {
-        self
-            .ids
+        self.ids
             .get_or_none(address)
             .and_then(|voting_id| self.voting.get_voting(voting_id))
     }
@@ -231,8 +231,10 @@ impl Onboarding {
         // Bound ballot for the requester - mint temporary reputation.
         self.voting
             .bound_ballot(voting_id, request.creator(), VotingType::Formal);
-        self.voting.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-        self.voting.redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+        self.voting
+            .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+        self.voting
+            .redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
         // Burn temporary reputation.
         self.burn_requestor_reputation(&request);
         self.mint_and_redistribute_reputation_for_requestor(voting_id, &request);
@@ -242,8 +244,10 @@ impl Onboarding {
     fn on_formal_voting_against(&mut self, voting_id: VotingId, request: &Request) {
         let configuration = self.configurations.get_or_revert(&voting_id);
 
-        self.voting.return_reputation_of_no_voters(voting_id, VotingType::Formal);
-        self.voting.redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
+        self.voting
+            .return_reputation_of_no_voters(voting_id, VotingType::Formal);
+        self.voting
+            .redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
         let amount = self.redistribute_to_governance(&configuration, request.cspr_deposit());
         transfer::withdraw_cspr(request.creator(), amount);
     }
