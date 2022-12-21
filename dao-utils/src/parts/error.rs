@@ -123,7 +123,7 @@ dao_errors!(
     CannotCancelNotOwnedBid => 4027,
     CannotSubmitJobProof => 4028,
     GracePeriodNotStarted => 4029,
-    OnlyJobPosterCanCancelJobOffer => 4030,
+    CannotCancelNotOwnedJobOffer => 4030,
     JobOfferCannotBeYetCanceled => 4031,
     JobCannotBeYetCanceled => 4032,
     FiatRateNotSet => 4033,

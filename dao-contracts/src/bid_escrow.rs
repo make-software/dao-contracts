@@ -450,12 +450,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         // burn original reputation stake
-        if old_bid.reputation_stake > U512::zero() {
-            self.reputation_token()
-                .unstake_bid(old_bid.worker, old_bid.bid_id());
-            self.reputation_token()
-                .burn(old_bid.worker, old_bid.reputation_stake);
-        }
+        self.burn_reputation_stake(&old_bid);
 
         // slash original worker
         if self.is_va(old_bid.worker) {
@@ -637,13 +632,15 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
         let mut job_offer = self.job_storage.get_job_offer_or_revert(job_offer_id);
-        if let Err(e) = job_offer.validate_cancel(caller(), get_block_time()) {
-            revert(e);
-        }
+        let cancel_job_offer_request = CancelJobOfferRequest {
+            caller: caller(),
+            block_time: get_block_time(),
+        };
+
+        job_offer.cancel(&cancel_job_offer_request);
+
         self.cancel_all_bids(job_offer_id);
         self.return_job_offer_poster_dos_fee(job_offer_id);
-
-        job_offer.status = JobOfferStatus::Cancelled;
 
         // TODO: implement in jobstorage
         self.job_storage.job_offers.set(&job_offer_id, job_offer);
@@ -668,12 +665,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         // burn reputation stake
-        if bid.reputation_stake > U512::zero() {
-            self.reputation_token()
-                .unstake_bid(bid.worker, bid.bid_id());
-            self.reputation_token()
-                .burn(bid.worker, bid.reputation_stake);
-        }
+        self.burn_reputation_stake(&bid);
 
         // slash worker
         if self.is_va(bid.worker) {
@@ -994,6 +986,15 @@ impl BidEscrowContract {
             }
         }
     }
+
+    fn burn_reputation_stake(&mut self, bid: &Bid) {
+        if bid.reputation_stake > U512::zero() {
+            self.reputation_token()
+                .unstake_bid(bid.worker, bid.bid_id());
+            self.reputation_token()
+                .burn(bid.worker, bid.reputation_stake);
+        }
+    }
 }
 
 #[cfg(feature = "test-support")]
@@ -1002,6 +1003,7 @@ use casper_dao_utils::TestContract;
 use crate::escrow::{
     bid::{CancelBidRequest, SubmitBidRequest},
     job::PickBidRequest,
+    job_offer::CancelJobOfferRequest,
 };
 
 #[cfg(feature = "test-support")]
