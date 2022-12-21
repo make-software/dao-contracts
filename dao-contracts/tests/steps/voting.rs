@@ -1,7 +1,7 @@
 use casper_dao_utils::Error;
 use cucumber::{gherkin::Step, given, then, when};
 
-use crate::common::{
+use crate::{common::{
     params::{
         voting::{BallotBuilder, Voting, VotingType, Choice, Ballot},
         Account,
@@ -10,7 +10,7 @@ use crate::common::{
         Result
     },
     DaoWorld, helpers,
-};
+}, on_voting_contract};
 
 #[when(expr = "{account} starts voting with the following config")]
 #[given(expr = "{account} starts voting with the following config")]
@@ -129,13 +129,41 @@ fn assert_vote(
     };
 
     assert_eq!(*expected_result, world.checked_vote(&contract, &ballot).is_ok());
+}
 
-    // let voter = w.get_address(&voter);
-    // let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
-    // let vote_result = w
-    //     .bid_escrow
-    //     .as_account(voter)
-    //     .vote(0, voting_type, choice.into(), *stake);
+#[then(expr = "{contract} ballot for voting {int} for {account} has {balance} unbounded tokens")]
+fn assert_ballot_is_unbounded(
+    w: &mut DaoWorld,
+    contract: Contract,
+    voting_id: u32,
+    account: Account,
+    amount: Balance,
+) {
+    let voting = on_voting_contract!(w, contract, get_voting(voting_id)).unwrap();
+    let voting_type = voting.voting_type();
+    let account = w.get_address(&account);
+    let ballot = on_voting_contract!(w, contract, get_ballot(voting_id, voting_type, account))
+        .unwrap_or_else(|| panic!("Ballot doesn't exists"));
+    assert_eq!(
+        ballot.choice,
+        Choice::InFavor.into(),
+        "Ballot choice not in favor"
+    );
+    assert!(ballot.unbounded, "Ballot is not unbounded");
+    assert_eq!(
+        ballot.stake, *amount,
+        "Ballot has stake {:?}, but should be {:?}",
+        ballot.stake, amount
+    );
+}
 
-    // assert_eq!(*expected_result, vote_result.is_ok());
+#[then(expr = "{contract} total unbounded stake for voting {int} is {balance} tokens")]
+fn assert_unbounded_stake(w: &mut DaoWorld, contract: Contract, voting_id: u32, amount: Balance) {
+    let voting = on_voting_contract!(w, contract, get_voting(voting_id)).unwrap();
+    let total_unbounded_stake = voting.total_unbounded_stake();
+    assert_eq!(
+        total_unbounded_stake, *amount,
+        "Total unbounded stake is {:?}, but should be {:?}",
+        total_unbounded_stake, amount
+    );
 }

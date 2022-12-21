@@ -81,6 +81,8 @@ pub trait KycVoterContractInterface {
     fn remove_from_whitelist(&mut self, address: Address);
     fn get_owner(&self) -> Option<Address>;
     fn is_whitelisted(&self, address: Address) -> bool;
+
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
 }
 
 /// KycVoterContract
@@ -112,6 +114,7 @@ impl KycVoterContractInterface for KycVoterContract {
                 address: Address,
             ) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
         }
 
         to self.access_control {
