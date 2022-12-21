@@ -29,7 +29,7 @@ Feature: Internal Flow
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    When InternalWorker submits the JobProof
+    When InternalWorker submits the JobProof of Job 0
     And voters vote in BidEscrow informal voting with id 0
       | account          | REP stake | choice |
      #| InternalWorker   | 100       | Yes    | - automatically voted by the system

@@ -19,7 +19,7 @@ Feature: Voting clearness delta
     And JobPoster picked the Bid of InternalWorker
 
   Scenario: Results are far away - time between votings stays the same
-    When InternalWorker submits the JobProof
+    When InternalWorker submits the JobProof of Job 0
     And voters vote in BidEscrow informal voting with id 0
       | account          | REP stake | choice |
      #| InternalWorker   | 100       | Yes    | - automatically voted by the system
@@ -28,10 +28,12 @@ Feature: Voting clearness delta
     And 6 days passed
     And informal voting with id 0 ends in BidEscrow contract
     Then VA1 yes vote of 500 REP fails
+      | BidEscrow | 0 | formal |
     When 1 day passed
     Then VA1 yes vote of 500 REP succeeds
+      | BidEscrow | 0 | formal |
   Scenario: Results are close - time between votings is doubled
-    When InternalWorker submits the JobProof
+    When InternalWorker submits the JobProof of Job 0
     And voters vote in BidEscrow formal voting with id 0
       | account          | REP stake | choice |
      #| InternalWorker   | 100       | Yes    | - automatically voted by the system
@@ -41,5 +43,7 @@ Feature: Voting clearness delta
     And informal voting with id 0 ends in BidEscrow contract
     And 1 day passed
     Then VA1 yes vote of 500 REP fails
+      | BidEscrow | 0 | formal |
     When 1 day passed
     Then VA1 yes vote of 500 REP succeeds
+      | BidEscrow | 0 | formal |

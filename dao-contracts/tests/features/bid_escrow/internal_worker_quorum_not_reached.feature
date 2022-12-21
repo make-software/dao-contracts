@@ -24,7 +24,7 @@ Feature: Internal Flow
     And JobPoster picked the Bid of InternalWorker
 
   Scenario: Informal voting does not reach quorum
-    When InternalWorker submits the JobProof
+    When InternalWorker submits the JobProof of Job 0
     And voters vote in BidEscrow informal voting with id 0
       | account          | REP stake | choice |
      #| InternalWorker   | 100       | Yes    | - automatically voted by the system
@@ -39,10 +39,10 @@ Feature: Internal Flow
       | InternalWorker   | 0            | 1000         | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    And Formal voting does not start
+    And formal voting with id 0 in BidEscrow contract does not start
 
   Scenario: Formal voting does not reach quorum
-    When InternalWorker submits the JobProof
+    When InternalWorker submits the JobProof of Job 0
     And voters vote in BidEscrow informal voting with id 0
       | account          | REP stake | choice |
      #| InternalWorker   | 100       | Yes    | - automatically voted by the system

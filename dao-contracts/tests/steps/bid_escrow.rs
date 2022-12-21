@@ -1,4 +1,4 @@
-use casper_dao_contracts::escrow::{job::JobStatus, job_offer::JobOfferStatus};
+use casper_dao_contracts::escrow::{job::JobStatus, job_offer::JobOfferStatus, types::JobId};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
 use cucumber::{then, when};
@@ -6,11 +6,10 @@ use cucumber::{then, when};
 use crate::common::{
     helpers::{self, parse_bool},
     params::{
-        voting::{Choice, VotingType},
+        voting::Choice,
         Account,
         Balance,
         Contract,
-        Result,
         TimeUnit,
     },
     DaoWorld,
@@ -94,51 +93,51 @@ fn bid_picked(w: &mut DaoWorld, job_poster: Account, worker: Account) {
     w.pick_bid(job_poster, worker);
 }
 
-#[when(expr = "{account} submits the JobProof")]
-fn submit_job_proof(w: &mut DaoWorld, worker: Account) {
-    // TODO: Use bid_ids from the storage.
+#[when(expr = "{account} submits the JobProof of Job {int}")]
+fn submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
-        .submit_job_proof(0, DocumentHash::from(b"Job Proof".to_vec()))
+        .submit_job_proof(job_id, DocumentHash::from(b"Job Proof".to_vec()))
         .unwrap();
 }
 
-#[when(expr = "{account} submits the JobProof with {balance} CSPR stake {word} onboarding")]
+#[when(expr = "{account} submits the JobProof of Job {int} with {balance} CSPR stake {word} onboarding")]
 fn submit_job_proof_during_grace_period_external(
     w: &mut DaoWorld,
     worker: Account,
+    job_id: JobId,
     cspr_stake: Balance,
     onboarding: String,
 ) {
     let onboarding = parse_bool(onboarding);
-    // TODO: Use bid_ids from the storage.
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
         .submit_job_proof_during_grace_period_with_cspr_amount(
-            0,
+            job_id,
             DocumentHash::from(b"Job Proof".to_vec()),
             U512::zero(),
             onboarding,
-            cspr_stake.0,
+            *cspr_stake,
         )
         .unwrap();
 }
 
-#[when(expr = "{account} submits the JobProof with {balance} REP stake")]
+#[when(expr = "{account} submits the JobProof of Job {int} with {balance} REP stake")]
 fn submit_job_proof_during_grace_period_internal(
     w: &mut DaoWorld,
     worker: Account,
+    job_id: JobId,
     rep_stake: Balance,
 ) {
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
         .submit_job_proof_during_grace_period(
-            0,
+            job_id,
             DocumentHash::from(b"Job Proof".to_vec()),
-            rep_stake.0,
+            *rep_stake,
             false,
             None,
         )
@@ -190,12 +189,6 @@ fn submit_onboarding_request(world: &mut DaoWorld, account: Account, cspr_stake:
         .onboarding
         .as_account(account)
         .submit_onboarding_request_with_cspr_amount(DocumentHash::default(), *cspr_stake);
-}
-
-#[then(expr = "Formal voting does not start")]
-fn formal_does_not_start(w: &mut DaoWorld) {
-    let voting = w.bid_escrow.get_voting(0).unwrap();
-    assert_eq!(voting.voting_type(), VotingType::Informal.into());
 }
 
 //TODO: refactor
@@ -280,31 +273,11 @@ fn assert_unbounded_stake(w: &mut DaoWorld, voting_id: u32, amount: Balance, con
     );
 }
 
-#[then(expr = "{account} {choice} vote of {balance} REP {result}")]
-fn cannot_vote(
-    w: &mut DaoWorld,
-    voter: Account,
-    choice: Choice,
-    stake: Balance,
-    expected_result: Result,
-) {
-    let voter = w.get_address(&voter);
-    let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
-    let vote_result = w
-        .bid_escrow
-        .as_account(voter)
-        .vote(0, voting_type, choice.into(), *stake);
-
-    assert_eq!(*expected_result, vote_result.is_ok());
-}
-
 #[then(expr = "the JobOffer by {account} {word} posted")]
 fn assert_job_offer_status(world: &mut DaoWorld, job_poster: Account, job_offer_status: String) {
-    match job_offer_status.as_str() {
-        "is" => assert!(world.get_job_offer_id(&job_poster).is_some()),
-        "isn't" => assert!(world.get_job_offer_id(&job_poster).is_none()),
-        _ => {
-            panic!("Unknown job offer option");
-        }
+    let offer_id = world.get_job_offer_id(&job_poster);
+    match parse_bool(job_offer_status) {
+        true => assert!(offer_id.is_some()),
+        false => assert!(offer_id.is_none()),
     };
 }

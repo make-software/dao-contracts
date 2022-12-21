@@ -3,12 +3,13 @@ use cucumber::{gherkin::Step, given, then, when};
 
 use crate::common::{
     params::{
-        voting::{BallotBuilder, Voting, VotingType},
+        voting::{BallotBuilder, Voting, VotingType, Choice, Ballot},
         Account,
         Balance,
         Contract,
+        Result
     },
-    DaoWorld,
+    DaoWorld, helpers,
 };
 
 #[when(expr = "{account} starts voting with the following config")]
@@ -76,7 +77,7 @@ fn assert_formal_voting_starts(world: &mut DaoWorld, voting_id: u32, contract: C
     assert!(voting_exists);
 }
 
-#[then(expr = "votes in {contract}'s     {voting_type} voting with id {int} fail")]
+#[then(expr = "votes in {contract}'s {voting_type} voting with id {int} fail")]
 fn assert_vote_fails(
     world: &mut DaoWorld,
     step: &Step,
@@ -103,4 +104,38 @@ fn assert_vote_fails(
         "ZeroStake" => assert_eq!(Error::ZeroStake, result.unwrap_err()),
         unknown => panic!("Unknown error {}", unknown),
     });
+}
+
+#[then(expr = "{account} {choice} vote of {balance} REP {result}")]
+fn assert_vote(
+    world: &mut DaoWorld,
+    step: &Step,
+    voter: Account,
+    choice: Choice,
+    stake: Balance,
+    expected_result: Result,
+) {
+    let voting = step.table.as_ref().unwrap().rows.first().unwrap();
+    let contract = helpers::parse::<Contract>(voting.get(0), "Couldn't parse contract");
+    let voting_id = helpers::parse_or_default::<u32>(voting.get(1));
+    let voting_type = helpers::parse_or_default::<VotingType>(voting.get(2));
+
+    let ballot = Ballot {
+        voting_id,
+        voting_type,
+        voter,
+        choice,
+        stake
+    };
+
+    assert_eq!(*expected_result, world.checked_vote(&contract, &ballot).is_ok());
+
+    // let voter = w.get_address(&voter);
+    // let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
+    // let vote_result = w
+    //     .bid_escrow
+    //     .as_account(voter)
+    //     .vote(0, voting_type, choice.into(), *stake);
+
+    // assert_eq!(*expected_result, vote_result.is_ok());
 }

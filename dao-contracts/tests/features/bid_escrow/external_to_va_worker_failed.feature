@@ -32,7 +32,7 @@ Feature: External Worker who wants to become a VA submits job
       | ExternalWorker   | 0            | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    When ExternalWorker submits the JobProof
+    When ExternalWorker submits the JobProof of Job 0
     And voters vote in BidEscrow informal voting with id 0
       | account          | REP stake | choice |
      #| ExternalWorker   | 50        | Yes   | - automatically voted by the system - 500CSPR converted to 50 Reputation
