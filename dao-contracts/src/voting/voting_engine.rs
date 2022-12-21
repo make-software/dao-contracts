@@ -98,16 +98,16 @@ impl VotingEngine {
 
         let voting_ids_address = configuration.voting_ids_address();
         let voting_id = ids::get_next_voting_id(voting_ids_address);
-        let voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
+        let mut voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
 
         let mut used_stake = None;
         if should_cast_first_vote {
-            self.vote(
+            self.cast_vote(
                 creator,
-                voting_id,
                 VotingType::Informal,
                 Choice::InFavor,
                 stake,
+                &mut voting
             );
             used_stake = Some(stake);
         }
@@ -172,7 +172,7 @@ impl VotingEngine {
                 match voting_result.result() {
                     VotingResult::InFavor | VotingResult::Against => {
                         // It emits BallotCast event, so no need to capture it in VotingEnded event.
-                        self.recast_creators_ballot_from_informal_to_formal(voting_id);
+                        self.recast_creators_ballot_from_informal_to_formal(&mut voting);
                     }
                     VotingResult::QuorumNotReached => {}
                     VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
@@ -319,7 +319,13 @@ impl VotingEngine {
         choice: Choice,
         stake: U512,
     ) {
-        let voting = self.get_voting(voting_id).unwrap_or_revert();
+        let mut voting = self.get_voting_or_revert(voting_id);
+        self.cast_vote(voter, voting_type, choice, stake, &mut voting);
+        self.set_voting(voting);
+    }
+
+    fn cast_vote(&mut self, voter: Address, voting_type: VotingType, choice: Choice, stake: U512, voting: &mut VotingStateMachine) {
+        let voting_id = voting.voting_id();
         self.assert_voting_type(&voting, voting_type);
         voting.guard_vote(get_block_time());
         self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);
@@ -353,7 +359,7 @@ impl VotingEngine {
         choice: Choice,
         stake: U512,
         unbounded: bool,
-        mut voting: VotingStateMachine,
+        voting: &mut VotingStateMachine,
     ) {
         if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
@@ -386,7 +392,6 @@ impl VotingEngine {
         } else {
             voting.add_stake(stake, choice);
         }
-        self.set_voting(voting);
     }
 
     /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
@@ -448,7 +453,7 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::VotingDoesNotExist)
     }
 
-    fn set_voting(&self, voting: VotingStateMachine) {
+    pub fn set_voting(&self, voting: VotingStateMachine) {
         self.voting_states.set(&voting.voting_id(), Some(voting))
     }
 
@@ -478,8 +483,8 @@ impl VotingEngine {
         transfers
     }
 
-    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting_id: VotingId) {
-        let voting = self.get_voting_or_revert(voting_id);
+    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting: &mut VotingStateMachine) {
+        let voting_id = voting.voting_id();
         let creator = voting.creator();
         let creator_ballot = self
             .get_ballot(voting_id, VotingType::Informal, *creator)
@@ -602,6 +607,10 @@ impl VotingEngine {
     /// Get a reference to the governance voting's voters.
     pub fn voters(&self) -> &VecMapping<(VotingId, VotingType), Address> {
         &self.voters
+    }
+
+    pub fn voters_count(&self, voting_id: VotingId, voting_type: VotingType) -> u32 {
+        self.voters().len((voting_id, voting_type))
     }
 
     pub fn bound_ballot(&mut self, voting_id: u32, worker: Address, voting_type: VotingType) {

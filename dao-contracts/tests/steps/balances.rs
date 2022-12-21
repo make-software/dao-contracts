@@ -22,7 +22,7 @@ fn assert_balances(world: &mut DaoWorld, step: &Step) {
     let labels = step
         .table
         .as_ref()
-        .unwrap()
+        .expect("Missing labels")
         .rows
         .first()
         .expect("Missing labels");

@@ -16,6 +16,7 @@ pub enum Contract {
     SimpleVoter,
     ReputationVoter,
     BidEscrow,
+    Onboarding,
 }
 
 impl FromStr for Contract {
@@ -34,6 +35,7 @@ impl FromStr for Contract {
             "SimpleVoter" => Self::SimpleVoter,
             "ReputationVoter" => Self::ReputationVoter,
             "BidEscrow" => Self::BidEscrow,
+            "Onboarding" => Self::Onboarding,
             invalid => return Err(format!("Unknown contract {}", invalid)),
         };
         Ok(contract)

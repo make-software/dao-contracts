@@ -1,11 +1,12 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::{escrow::job_offer::AuctionState, rules::validation::Validation};
 
+#[derive(Rule)]
 pub struct CanBidOnAuctionState {
-    pub auction_state: AuctionState,
-    pub is_worker_va: bool,
-    pub va_can_bid_on_public_auction: bool,
+    auction_state: AuctionState,
+    is_worker_va: bool,
+    va_can_bid_on_public_auction: bool,
 }
 
 impl Validation for CanBidOnAuctionState {
@@ -26,19 +27,5 @@ impl Validation for CanBidOnAuctionState {
             }
         }
         Ok(())
-    }
-}
-
-impl CanBidOnAuctionState {
-    pub fn create(
-        auction_state: AuctionState,
-        is_va: bool,
-        va_can_bid_on_public_auction: bool,
-    ) -> Box<CanBidOnAuctionState> {
-        Box::new(Self {
-            auction_state,
-            is_worker_va: is_va,
-            va_can_bid_on_public_auction,
-        })
     }
 }

@@ -103,7 +103,7 @@ impl From<Choice> for casper_dao_contracts::voting::Choice {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Ballot {
     pub voter: Account,
     pub stake: Balance,

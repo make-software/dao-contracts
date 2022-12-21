@@ -12,6 +12,7 @@ pub mod conversions;
 pub mod cspr_rate;
 pub mod definitions;
 pub mod math;
+pub mod transfer;
 
 #[cfg(feature = "test-support")]
 pub use conversions::BytesConversion;

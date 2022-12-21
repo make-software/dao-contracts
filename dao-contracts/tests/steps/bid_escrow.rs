@@ -11,6 +11,7 @@ use crate::common::{
         voting::{Choice, VotingType},
         Account,
         Balance,
+        Contract,
         Result,
         TimeUnit,
     },
@@ -152,10 +153,22 @@ fn voting_ends(w: &mut DaoWorld) {
     w.bid_escrow.finish_voting(0).unwrap();
 }
 
+// TODO: refactor
+#[when(expr = "Formal/Informal onboarding voting ends")]
+fn onboarding_voting_ends(w: &mut DaoWorld) {
+    w.env.advance_block_time_by(Duration::from_secs(432005u64));
+    w.onboarding.finish_voting(0).unwrap();
+
+    // let  v = w.onboarding.get_voting(0).unwrap();
+    // dbg!(v.get_quorum());
+    // dbg!(v.voting_configuration());
+}
+
 #[when(expr = "votes are")]
 fn votes_are(w: &mut DaoWorld, step: &Step) {
     let table = step.table.as_ref().unwrap().rows.iter().skip(1);
-    let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
+    let voting_id = 0;
+    let voting_type = w.bid_escrow.get_voting(voting_id).unwrap().voting_type();
     for row in table {
         let voter = helpers::parse(row.get(0), "Couldn't parse account");
         let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
@@ -164,7 +177,7 @@ fn votes_are(w: &mut DaoWorld, step: &Step) {
         let voter = w.get_address(&voter);
         w.bid_escrow
             .as_account(voter)
-            .vote(0, voting_type, choice.into(), *stake)
+            .vote(voting_id, voting_type, choice.into(), *stake)
             .unwrap();
     }
 }
@@ -207,17 +220,57 @@ fn is_job_cancelled(w: &mut DaoWorld, job_id: u32, cancelled: String) {
     }
 }
 
+#[when(expr = "{account} submits an onboarding request with the stake of {balance} CSPR")]
+fn submit_onboarding_request(world: &mut DaoWorld, account: Account, cspr_stake: Balance) {
+    let account = world.get_address(&account);
+    let _ = world
+        .onboarding
+        .as_account(account)
+        .submit_onboarding_request_with_cspr_amount(DocumentHash::default(), *cspr_stake);
+}
+
 #[then(expr = "Formal voting does not start")]
 fn formal_does_not_start(w: &mut DaoWorld) {
     let voting = w.bid_escrow.get_voting(0).unwrap();
     assert_eq!(voting.voting_type(), VotingType::Informal.into());
 }
 
+//TODO: refactor
 #[then(expr = "ballot for voting {int} for {account} has {balance} unbounded tokens")]
 fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amount: Balance) {
-    let voting_type = w.bid_escrow.get_voting(voting_id).unwrap().voting_type();
+    assert_ballot_is_unbounded(w, voting_id, account, amount, Contract::BidEscrow);
+}
+
+//TODO: refactor
+#[then(expr = "ballot for onboarding voting {int} for {account} has {balance} unbounded tokens")]
+fn onboarding_ballot_is_unbounded(
+    w: &mut DaoWorld,
+    voting_id: u32,
+    account: Account,
+    amount: Balance,
+) {
+    assert_ballot_is_unbounded(w, voting_id, account, amount, Contract::Onboarding);
+}
+
+//TODO: refactor
+fn assert_ballot_is_unbounded(
+    w: &mut DaoWorld,
+    voting_id: u32,
+    account: Account,
+    amount: Balance,
+    contract: Contract,
+) {
+    let voting_type = match contract {
+        Contract::BidEscrow => w.bid_escrow.get_voting(voting_id).unwrap().voting_type(),
+        Contract::Onboarding => w.onboarding.get_voting(voting_id).unwrap().voting_type(),
+        _ => panic!("invalid contract"),
+    };
     let account = w.get_address(&account);
-    let ballot = w.bid_escrow.get_ballot(voting_id, voting_type, account);
+    let ballot = match contract {
+        Contract::BidEscrow => w.bid_escrow.get_ballot(voting_id, voting_type, account),
+        Contract::Onboarding => w.onboarding.get_ballot(voting_id, voting_type, account),
+        _ => panic!("invalid contract"),
+    };
     let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
     assert_eq!(
         ballot.choice,
@@ -232,13 +285,31 @@ fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amoun
     );
 }
 
+//TODO: refactor
 #[then(expr = "total unbounded stake for voting {int} is {balance} tokens")]
 fn total_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
-    let total_unbounded_stake = w
-        .bid_escrow
-        .get_voting(voting_id)
-        .unwrap()
-        .total_unbounded_stake();
+    assert_unbounded_stake(w, voting_id, amount, Contract::BidEscrow);
+}
+//TODO: refactor
+#[then(expr = "total onboarding unbounded stake for voting {int} is {balance} tokens")]
+fn total_onboarding_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
+    assert_unbounded_stake(w, voting_id, amount, Contract::Onboarding);
+}
+//TODO: refactor
+fn assert_unbounded_stake(w: &mut DaoWorld, voting_id: u32, amount: Balance, contract: Contract) {
+    let total_unbounded_stake = match contract {
+        Contract::BidEscrow => w
+            .bid_escrow
+            .get_voting(voting_id)
+            .unwrap()
+            .total_unbounded_stake(),
+        Contract::Onboarding => w
+            .onboarding
+            .get_voting(voting_id)
+            .unwrap()
+            .total_unbounded_stake(),
+        _ => panic!("invalid contract"),
+    };
     assert_eq!(
         total_unbounded_stake, *amount,
         "Total unbounded stake is {:?}, but should be {:?}",
