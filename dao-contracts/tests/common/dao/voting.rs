@@ -1,7 +1,7 @@
 use casper_dao_utils::{DocumentHash, Error, TestContract};
 use casper_types::{bytesrepr::Bytes, U512};
 
-use crate::common::{
+use crate::{common::{
     params::{
         voting::{Ballot, Voting, VotingType},
         Account,
@@ -9,7 +9,7 @@ use crate::common::{
         Contract,
     },
     DaoWorld,
-};
+}, on_voting_contract};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -104,50 +104,7 @@ impl DaoWorld {
         let stake = ballot.stake.0;
         let voting_type = ballot.voting_type.into();
 
-        match contract {
-            Contract::KycVoter => {
-                self.kyc_voter
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::BidEscrow => {
-                self.bid_escrow
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::SlashingVoter => {
-                self.slashing_voter
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::RepoVoter => {
-                self.repo_voter
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::Admin => {
-                self.admin
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::SimpleVoter => {
-                self.simple_voter
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::ReputationVoter => {
-                self.reputation_voter
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-            Contract::Onboarding => {
-                self.onboarding
-                    .as_account(voter)
-                    .vote(voting_id, voting_type, choice, stake)
-            }
-
-            contract => panic!("{:?} is not a voting contract", contract),
-        }
+        on_voting_contract!(self, voter, contract, vote(voting_id, voting_type, choice, stake))
     }
 
     pub fn finish_voting(
@@ -171,7 +128,6 @@ impl DaoWorld {
                 .slashing_voter
                 .finish_voting(voting_id, voting_type)
                 .expect("Couldn't finish SlashingVoting voting"),
-
             Contract::RepoVoter => self
                 .repo_voter
                 .finish_voting(voting_id, voting_type)
@@ -188,7 +144,10 @@ impl DaoWorld {
                 .reputation_voter
                 .finish_voting(voting_id, voting_type)
                 .expect("Couldn't finish ReputationVoter voting"),
-
+            Contract::Onboarding => self
+                .onboarding
+                .finish_voting(voting_id)
+                .expect("Couldn't finish Onboarding voting"),
             invalid => panic!("{:?} is not a voting contract", invalid),
         };
     }
@@ -200,49 +159,12 @@ impl DaoWorld {
         voting_type: VotingType,
     ) -> bool {
         let voting_type = voting_type.into();
-        match contract {
-            Contract::KycVoter => self.kyc_voter.voting_exists(voting_id, voting_type),
-            Contract::RepoVoter => self.repo_voter.voting_exists(voting_id, voting_type),
-            Contract::BidEscrow => self.bid_escrow.voting_exists(voting_id, voting_type),
-            Contract::SlashingVoter => self.slashing_voter.voting_exists(voting_id, voting_type),
-            Contract::Admin => self.admin.voting_exists(voting_id, voting_type),
-            Contract::SimpleVoter => self.simple_voter.voting_exists(voting_id, voting_type),
-            Contract::ReputationVoter => {
-                self.reputation_voter.voting_exists(voting_id, voting_type)
-            }
-            invalid => panic!("{:?} is not a voting contract", invalid),
-        }
+        on_voting_contract!(self, contract, voting_exists(voting_id, voting_type))
     }
 
     pub fn checked_slash_voter(&mut self, contract: Contract, voter: Account, voting_id: u32) {
         let voter = self.get_address(&voter);
-        match contract {
-            Contract::KycVoter => self
-                .kyc_voter
-                .slash_voter(voter, voting_id)
-                .expect("Couldn't slash voter in KycVoter"),
-            Contract::RepoVoter => self
-                .repo_voter
-                .slash_voter(voter, voting_id)
-                .expect("Couldn't slash voter in RepoVoter"),
-            Contract::Admin => self
-                .admin
-                .slash_voter(voter, voting_id)
-                .expect("Couldn't slash voter in RepoVoter"),
-            Contract::SlashingVoter => self
-                .slashing_voter
-                .slash_voter(voter, voting_id)
-                .expect("Couldn't slash voter in RepoVoter"),
-            Contract::SimpleVoter => self
-                .simple_voter
-                .slash_voter(voter, voting_id)
-                .expect("Couldn't slash voter in RepoVoter"),
-            Contract::ReputationVoter => self
-                .reputation_voter
-                .slash_voter(voter, voting_id)
-                .expect("Couldn't slash voter in RepoVoter"),
-
-            invalid => panic!("{:?} is not a voting contract", invalid),
-        }
+        let result = on_voting_contract!(self, contract, slash_voter(voter, voting_id));
+        result.expect(&format!("Couldn't slash voter in {:?}", contract));
     }
 }
