@@ -1,9 +1,7 @@
-use std::time::Duration;
-
 use casper_dao_contracts::escrow::{job::JobStatus, job_offer::JobOfferStatus};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
-use cucumber::{gherkin::Step, then, when};
+use cucumber::{then, when};
 
 use crate::common::{
     helpers::{self, parse_bool},
@@ -145,41 +143,6 @@ fn submit_job_proof_during_grace_period_internal(
             None,
         )
         .unwrap();
-}
-
-#[when(expr = "Formal/Informal voting ends")]
-fn voting_ends(w: &mut DaoWorld) {
-    w.env.advance_block_time_by(Duration::from_secs(432005u64));
-    w.bid_escrow.finish_voting(0).unwrap();
-}
-
-// TODO: refactor
-#[when(expr = "Formal/Informal onboarding voting ends")]
-fn onboarding_voting_ends(w: &mut DaoWorld) {
-    w.env.advance_block_time_by(Duration::from_secs(432005u64));
-    w.onboarding.finish_voting(0).unwrap();
-
-    // let  v = w.onboarding.get_voting(0).unwrap();
-    // dbg!(v.get_quorum());
-    // dbg!(v.voting_configuration());
-}
-
-#[when(expr = "votes are")]
-fn votes_are(w: &mut DaoWorld, step: &Step) {
-    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
-    let voting_id = 0;
-    let voting_type = w.bid_escrow.get_voting(voting_id).unwrap().voting_type();
-    for row in table {
-        let voter = helpers::parse(row.get(0), "Couldn't parse account");
-        let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
-        let stake = helpers::parse::<Balance>(row.get(2), "Couldn't parse balance");
-
-        let voter = w.get_address(&voter);
-        w.bid_escrow
-            .as_account(voter)
-            .vote(voting_id, voting_type, choice.into(), *stake)
-            .unwrap();
-    }
 }
 
 #[when(expr = "{account} cancels the Bid for {account}")]

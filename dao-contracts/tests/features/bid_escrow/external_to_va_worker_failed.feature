@@ -33,11 +33,11 @@ Feature: External Worker who wants to become a VA submits job
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     When ExternalWorker submits the JobProof
-    And votes are
-      | account          | vote | stake |
-     #| ExternalWorker   | Yes  | 50   | - automatically voted by the system - 500CSPR converted to 50 Reputation
-      | VA1              | No  | 500   |
-      | VA2              | No   | 500   |
+    And voters vote in BidEscrow informal voting with id 0
+      | account          | REP stake | choice |
+     #| ExternalWorker   | 50        | Yes   | - automatically voted by the system - 500CSPR converted to 50 Reputation
+      | VA1              | 500       | No    |
+      | VA2              | 500       | No    |
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 1400         | 0            | 0          |
@@ -49,7 +49,8 @@ Feature: External Worker who wants to become a VA submits job
       | VA2              | 0            | 1000         | 500        |
     And total unbounded stake for voting 0 is 50 tokens
     And ballot for voting 0 for ExternalWorker has 50 unbounded tokens
-    When Informal voting ends
+    When 6 days passed
+    And informal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 1400         | 0            | 0          |
@@ -61,12 +62,14 @@ Feature: External Worker who wants to become a VA submits job
       | VA2              | 0            | 1000         | 0          |
     And total unbounded stake for voting 0 is 50 tokens
     And ballot for voting 0 for ExternalWorker has 50 unbounded tokens
-    When votes are
-      | account          | vote | stake |
-     #| ExternalWorker   | Yes  | 50    | - automatically voted by the system
-      | VA1              | No   | 500   |
-      | VA2              | No   | 500   |
-    And Formal voting ends
+    When voters vote in BidEscrow formal voting with id 0
+    
+      | account          | REP stake | choice |
+     #| ExternalWorker   | 50        | Yes    | - automatically voted by the system
+      | VA1              | 500       | No     |
+      | VA2              | 500       | No     |
+    And 6 days passed
+    And formal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 50           | 0            | 0          |

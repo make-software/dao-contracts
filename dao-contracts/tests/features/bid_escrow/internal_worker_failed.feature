@@ -30,12 +30,13 @@ Feature: Internal Flow
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     When InternalWorker submits the JobProof
-    And votes are
-      | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-      | VA1              | No   | 500   |
-      | VA2              | No   | 500   |
-    And Informal voting ends
+    And voters vote in BidEscrow informal voting with id 0
+      | account          | REP stake | choice |
+     #| InternalWorker   | 100       | Yes    | - automatically voted by the system
+      | VA1              | 500       | No     |
+      | VA2              | 500       | No     |
+    And 6 days passed
+    And informal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 900          | 0            | 0          |
@@ -44,12 +45,13 @@ Feature: Internal Flow
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    When votes are
-      | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-      | VA1              | No   | 500   |
-      | VA2              | No   | 500   |
-    And Formal voting ends
+    When voters vote in BidEscrow formal voting with id 0
+      | account          | REP stake | choice |
+     #| InternalWorker   | 100       | Yes    | - automatically voted by the system
+      | VA1              | 500       | No     |
+      | VA2              | 500       | No     |
+    And 6 days passed
+    And formal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 0            | 0            | 0          |

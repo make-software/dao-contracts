@@ -29,11 +29,11 @@ Feature: InformalStakeReputation variable
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     When InternalWorker submits the JobProof
-    And votes are
-      | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-      | VA1              | Yes  | 500   |
-      | VA2              | Yes  | 500   |
+    And voters vote in BidEscrow informal voting with id 0
+      | account          | REP stake | choice |
+     #| InternalWorker   | 100       | Yes    | - automatically voted by the system
+      | VA1              | 500       | Yes    |
+      | VA2              | 500       | Yes    |
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 900          | 0            | 0          |
@@ -42,7 +42,8 @@ Feature: InformalStakeReputation variable
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    When Informal voting ends
+    When 6 days passed
+    And informal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 900          | 0            | 0          |
@@ -51,11 +52,11 @@ Feature: InformalStakeReputation variable
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
-    When votes are
-      | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-      | VA1              | Yes  | 500   |
-      | VA2              | No   | 500   |
+    When voters vote in BidEscrow formal voting with id 0
+      | account          | REP stake | choice |
+     #| InternalWorker   | 100       | Yes    | - automatically voted by the system
+      | VA1              | 500       | Yes    |
+      | VA2              | 500       | No     |
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 900          | 0            | 0          |
@@ -64,7 +65,8 @@ Feature: InformalStakeReputation variable
       | InternalWorker   | 0            | 1000         | 100        |
       | VA1              | 0            | 1000         | 500        |
       | VA2              | 0            | 1000         | 500        |
-    When Formal voting ends
+    When 6 days passed
+    And formal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 50           | 0            | 0          |

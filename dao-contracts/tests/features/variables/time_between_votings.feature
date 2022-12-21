@@ -19,21 +19,23 @@ Feature: TimeBetweenInformalAndFormalVoting Variable
 
     Scenario: Voting for formal voting is not possible before 24 hours after informal voting
       When InternalWorker submits the JobProof
-      And votes are
-        | account          | vote | stake |
-      # | InternalWorker   | Yes  | 100   | - automatically voted by the system
-        | VA1              | Yes  | 500   |
-        | VA2              | Yes  | 500   |
-      And Informal voting ends
+      And voters vote in BidEscrow informal voting with id 0
+        | account          | REP stake | choice |
+      # | InternalWorker   | 100       | Yes    | - automatically voted by the system
+        | VA1              | 500       | Yes    |
+        | VA2              | 500       | Yes    |
+      And 6 days passed
+      And informal voting with id 0 ends in BidEscrow contract
       Then VA1 yes vote of 500 REP fails
 
     Scenario: Voting for formal voting is possible before 24 hours after informal voting
       When InternalWorker submits the JobProof
-      And votes are
-        | account          | vote | stake |
-       #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-        | VA1              | Yes  | 500   |
-        | VA2              | Yes  | 500   |
-      And Informal voting ends
+      And voters vote in BidEscrow formal voting with id 0
+        | account          | REP stake | choice |
+       #| InternalWorker   | 100       | Yes  | - automatically voted by the system
+        | VA1              | 500       | Yes  |
+        | VA2              | 500       | Yes  |
+      And 6 days passed
+      And informal voting with id 0 ends in BidEscrow contract
       And 2 days passed
       Then VA1 yes vote of 500 REP succeeds
