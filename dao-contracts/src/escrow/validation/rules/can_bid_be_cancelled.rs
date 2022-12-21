@@ -1,7 +1,8 @@
-use casper_dao_utils::{BlockTime, Error};
+use casper_dao_utils::{casper_dao_macros::Rule, BlockTime, Error};
 
 use crate::{escrow::job_offer::JobOfferStatus, rules::validation::Validation};
 
+#[derive(Rule)]
 pub struct CanBidBeCancelled {
     pub job_offer_status: JobOfferStatus,
     pub block_time: BlockTime,
@@ -20,21 +21,5 @@ impl Validation for CanBidBeCancelled {
         }
 
         Ok(())
-    }
-}
-
-impl CanBidBeCancelled {
-    pub fn create(
-        job_offer_status: JobOfferStatus,
-        block_time: BlockTime,
-        bid_timestamp: BlockTime,
-        va_bid_acceptance_timeout: BlockTime,
-    ) -> Box<CanBidBeCancelled> {
-        Box::new(Self {
-            job_offer_status,
-            block_time,
-            bid_timestamp,
-            va_bid_acceptance_timeout,
-        })
     }
 }

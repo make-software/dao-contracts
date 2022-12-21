@@ -1,7 +1,8 @@
-use casper_dao_utils::{Address, Error};
+use casper_dao_utils::{casper_dao_macros::Rule, Address, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct CanPickBid {
     pub caller: Address,
     pub job_poster: Address,
@@ -13,11 +14,5 @@ impl Validation for CanPickBid {
             return Err(Error::OnlyJobPosterCanPickABid);
         }
         Ok(())
-    }
-}
-
-impl CanPickBid {
-    pub fn create(caller: Address, job_poster: Address) -> Box<CanPickBid> {
-        Box::new(Self { caller, job_poster })
     }
 }

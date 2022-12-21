@@ -1,7 +1,8 @@
-use casper_dao_utils::{Address, Error};
+use casper_dao_utils::{casper_dao_macros::Rule, Address, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct HasPermissionsToCancelJobOffer {
     pub canceller: Address,
     pub job_offer_poster: Address,
@@ -13,17 +14,5 @@ impl Validation for HasPermissionsToCancelJobOffer {
             return Err(Error::CannotCancelNotOwnedJobOffer);
         }
         Ok(())
-    }
-}
-
-impl HasPermissionsToCancelJobOffer {
-    pub fn create(
-        canceller: Address,
-        job_offer_poster: Address,
-    ) -> Box<HasPermissionsToCancelJobOffer> {
-        Box::new(Self {
-            canceller,
-            job_offer_poster,
-        })
     }
 }

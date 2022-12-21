@@ -1,7 +1,8 @@
-use casper_dao_utils::Error;
+use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::{escrow::job_offer::AuctionState, rules::validation::Validation};
 
+#[derive(Rule)]
 pub struct CanJobOfferBeCancelled {
     pub auction_state: AuctionState,
 }
@@ -13,11 +14,5 @@ impl Validation for CanJobOfferBeCancelled {
         }
 
         Ok(())
-    }
-}
-
-impl CanJobOfferBeCancelled {
-    pub fn create(auction_state: AuctionState) -> Box<CanJobOfferBeCancelled> {
-        Box::new(Self { auction_state })
     }
 }

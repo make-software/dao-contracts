@@ -1,7 +1,8 @@
-use casper_dao_utils::{Address, Error};
+use casper_dao_utils::{casper_dao_macros::Rule, Address, Error};
 
 use crate::rules::validation::Validation;
 
+#[derive(Rule)]
 pub struct HasPermissionsToCancelBid {
     pub canceller: Address,
     pub bidder: Address,
@@ -13,11 +14,5 @@ impl Validation for HasPermissionsToCancelBid {
             return Err(Error::CannotCancelNotOwnedBid);
         }
         Ok(())
-    }
-}
-
-impl HasPermissionsToCancelBid {
-    pub fn create(canceller: Address, bidder: Address) -> Box<HasPermissionsToCancelBid> {
-        Box::new(Self { canceller, bidder })
     }
 }
