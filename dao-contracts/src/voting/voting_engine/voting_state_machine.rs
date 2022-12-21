@@ -22,14 +22,14 @@ pub enum VotingResult {
 }
 
 /// Type of Voting (Formal or Informal)
-#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, Copy, Hash, PartialEq)]
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum VotingType {
     Informal,
     Formal,
 }
 
 /// State of Voting
-#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq, Eq)]
 pub enum VotingState {
     Created,
     Informal,
@@ -39,7 +39,7 @@ pub enum VotingState {
     Canceled,
 }
 
-#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq)]
+#[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq, Eq)]
 pub enum VotingStateInTime {
     BeforeInformal,
     Informal,
@@ -74,7 +74,7 @@ impl VotingSummary {
     }
 
     pub fn is_formal(&self) -> bool {
-        self.voting_type() == &VotingType::Formal
+        self.voting_type() == VotingType::Formal
     }
 
     fn is_rejected(&self) -> bool {
@@ -86,19 +86,19 @@ impl VotingSummary {
     }
 
     /// Get a reference to the voting summary's ty.
-    pub fn voting_type(&self) -> &VotingType {
-        &self.ty
+    pub fn voting_type(&self) -> VotingType {
+        self.ty.clone()
     }
 }
 
 #[derive(Debug, Clone, Default, CLTyped, ToBytes, FromBytes)]
 pub struct Stats {
-    stake_in_favor: U512,
-    stake_against: U512,
-    unbounded_stake_in_favor: U512,
-    unbounded_stake_against: U512,
-    votes_in_favor: u32,
-    votes_against: u32,
+    pub stake_in_favor: U512,
+    pub stake_against: U512,
+    pub unbounded_stake_in_favor: U512,
+    pub unbounded_stake_against: U512,
+    pub votes_in_favor: u32,
+    pub votes_against: u32,
 }
 
 /// Voting struct
@@ -441,5 +441,13 @@ impl VotingStateMachine {
         } else {
             VotingState::Finished
         }
+    }
+
+    pub fn informal_stats(&self) -> &Stats {
+        &self.informal_stats
+    }
+
+    pub fn formal_stats(&self) -> &Stats {
+        &self.formal_stats
     }
 }

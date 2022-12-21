@@ -1,11 +1,19 @@
 use casper_dao_contracts::{
-    voting::BallotCast,
+    repo_voter::RepoVotingCreated,
+    reputation_voter::ReputationVotingCreated,
+    simple_voter::SimpleVotingCreated,
+    slashing_voter::SlashingVotingCreated,
+    voting::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
     AdminContract,
+    AdminVotingCreated,
     BidEscrowContract,
     KycNftContract,
     KycVoterContract,
+    KycVotingCreated,
     RepoVoterContract,
     ReputationContract,
+    ReputationVoterContract,
+    SimpleVoterContract,
     SlashingVoterContract,
     VaNftContract,
     VariableRepositoryContract,
@@ -20,15 +28,19 @@ use casper_dao_utils::definitions::{ContractDef, ContractDefinition};
 
 pub fn all_contracts() -> Vec<ContractDef> {
     let mut contracts = vec![
+        // Core contracts.
         ReputationContract::contract_def(),
         variable_repository(),
-        KycNftContract::contract_def(),
-        VaNftContract::contract_def(),
-        AdminContract::contract_def(),
-        KycVoterContract::contract_def(),
-        RepoVoterContract::contract_def(),
-        ReputationContract::contract_def(),
-        SlashingVoterContract::contract_def(),
+        kyc_token(),
+        va_token(),
+        // Voters.
+        admin(),
+        kyc_voter(),
+        repo_voter(),
+        reputation_voter(),
+        slashing_voter(),
+        simple_voter(),
+        // Bid Escrow.
         BidEscrowContract::contract_def(),
     ];
     with_access_control_events(&mut contracts);
@@ -49,14 +61,56 @@ fn with_access_control_events(contracts: &mut Vec<ContractDef>) {
 fn with_voting_events(contracts: &mut Vec<ContractDef>) {
     for contract in contracts.iter_mut() {
         contract.add_event::<BallotCast>("vote");
+        contract.add_event::<BallotCanceled>("slash_voter");
+        contract.add_event::<VotingCanceled>("slash_voter");
+        contract.add_event::<VotingEnded>("finish_voting");
     }
 }
 
+// Core Contracts
+
 fn variable_repository() -> ContractDef {
-    let mut contract = VariableRepositoryContract::contract_def();
-    contract.add_event::<ValueUpdated>("init");
-    contract.add_event::<ValueUpdated>("update_at");
-    contract
+    VariableRepositoryContract::contract_def()
+        .with_event::<ValueUpdated>("init")
+        .with_event::<ValueUpdated>("update_at")
+}
+
+fn kyc_token() -> ContractDef {
+    KycNftContract::contract_def()
+        .with_event::<casper_dao_erc721::events::Transfer>("mint")
+        .with_event::<casper_dao_erc721::events::Transfer>("burn")
+}
+
+fn va_token() -> ContractDef {
+    VaNftContract::contract_def()
+        .with_event::<casper_dao_erc721::events::Transfer>("mint")
+        .with_event::<casper_dao_erc721::events::Transfer>("burn")
+}
+
+// Voters
+
+fn admin() -> ContractDef {
+    AdminContract::contract_def().with_event::<AdminVotingCreated>("create_voting")
+}
+
+fn kyc_voter() -> ContractDef {
+    KycVoterContract::contract_def().with_event::<KycVotingCreated>("create_voting")
+}
+
+fn repo_voter() -> ContractDef {
+    RepoVoterContract::contract_def().with_event::<RepoVotingCreated>("create_voting")
+}
+
+fn reputation_voter() -> ContractDef {
+    ReputationVoterContract::contract_def().with_event::<ReputationVotingCreated>("create_voting")
+}
+
+fn slashing_voter() -> ContractDef {
+    SlashingVoterContract::contract_def().with_event::<SlashingVotingCreated>("create_voting")
+}
+
+fn simple_voter() -> ContractDef {
+    SimpleVoterContract::contract_def().with_event::<SimpleVotingCreated>("create_voting")
 }
 
 pub fn print_all_contracts() {

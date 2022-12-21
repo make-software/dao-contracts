@@ -40,6 +40,10 @@ impl Configuration {
         self.voting_configuration.double_time_between_votings = true
     }
 
+    pub fn should_double_time_between_votings(&self) -> bool {
+        self.voting_configuration.double_time_between_votings
+    }
+
     pub fn fiat_conversion_rate_address(&self) -> Address {
         self.dao_configuration.fiat_conversion_rate_address
     }

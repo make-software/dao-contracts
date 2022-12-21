@@ -632,6 +632,7 @@ name = "dao-contracts-schemas"
 version = "0.1.0"
 dependencies = [
  "casper-dao-contracts",
+ "casper-dao-erc721",
  "casper-dao-modules",
  "casper-dao-utils",
  "casper-types",

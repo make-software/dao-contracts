@@ -1,5 +1,3 @@
-use core::panic;
-
 use casper_types::{CLType, CLTyped};
 
 pub trait ContractDefinition {
@@ -32,6 +30,11 @@ impl ContractDef {
         self.method_mut(method_ident).map(|method| {
             method.add_event(T::event_def());
         });
+    }
+
+    pub fn with_event<T: EventDefinition>(mut self, method_ident: &'static str) -> Self {
+        self.add_event::<T>(method_ident);
+        self
     }
 
     pub fn mutable_methods(&self) -> Vec<MethodDef> {

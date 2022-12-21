@@ -4,6 +4,7 @@ use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
     casper_env::caller,
     Address,
+    BlockTime,
     DocumentHash,
     Error,
     Mapping,
@@ -17,6 +18,7 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
     },
     ConfigurationBuilder,
@@ -61,13 +63,6 @@ pub trait SimpleVoterContractInterface {
     fn remove_from_whitelist(&mut self, address: Address);
     fn get_owner(&self) -> Option<Address>;
     fn is_whitelisted(&self, address: Address) -> bool;
-}
-
-/// Event thrown after SimpleVoting is created
-#[derive(Debug, PartialEq, Eq, Event)]
-pub struct SimpleVotingCreated {
-    pub document_hash: DocumentHash,
-    pub voting_id: VotingId,
 }
 
 /// SimpleVoterContract
@@ -122,17 +117,14 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         )
         .build();
 
-        let voting_id = self
+        let info = self
             .voting
             .create_voting(caller(), stake, voting_configuration);
 
-        self.simple_votings.set(&voting_id, document_hash.clone());
+        self.simple_votings
+            .set(&info.voting_id, document_hash.clone());
 
-        SimpleVotingCreated {
-            document_hash,
-            voting_id,
-        }
-        .emit();
+        SimpleVotingCreated::new(document_hash, info).emit();
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
@@ -166,5 +158,41 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
         self.voting.slash_voter(voter, voting_id);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct SimpleVotingCreated {
+    document_hash: DocumentHash,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl SimpleVotingCreated {
+    pub fn new(document_hash: DocumentHash, info: VotingCreatedInfo) -> Self {
+        Self {
+            document_hash,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
+        }
     }
 }
