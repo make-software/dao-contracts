@@ -18,7 +18,7 @@ use crate::{
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
         VotingEngine,
-        VotingId,
+        VotingId, VotingCreatedInfo,
     },
     Configuration,
     ConfigurationBuilder,
@@ -47,11 +47,10 @@ impl Onboarding {
         self.requests.get_or_none(&voting_id)
     }
 
-    pub fn submit_request(&mut self, reason: DocumentHash, purse: URef) {
+    pub fn submit_request(&mut self, reason: DocumentHash, cspr_deposit: U512) -> VotingCreatedInfo {
         let requestor = caller();
 
         let configuration = self.build_configuration();
-        let cspr_deposit = transfer::deposit_cspr(purse);
         let rep_stake = configuration.apply_reputation_conversion_rate_to(cspr_deposit);
         let exists_ongoing_voting = self
             .get_user_voting(&requestor)
@@ -69,11 +68,13 @@ impl Onboarding {
         };
 
         // Create voting and cast creator's ballot
-        let voting_id = self.init_voting(requestor, configuration.clone(), rep_stake);
+        let voting_info = self.init_voting(requestor, configuration.clone(), rep_stake);
+        let voting_id = voting_info.voting_id;
 
         self.store_request(request, voting_id);
         self.store_configuration(voting_id, configuration);
-        // TODO: emit event
+
+        voting_info
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
@@ -122,7 +123,7 @@ impl Onboarding {
         creator: Address,
         configuration: Configuration,
         stake: U512,
-    ) -> VotingId {
+    ) -> VotingCreatedInfo {
         let voting_info = self.voting.create_voting(creator, stake, configuration);
         let voting_id = voting_info.voting_id;
         let mut voting = self.voting.get_voting_or_revert(voting_id);
@@ -138,7 +139,7 @@ impl Onboarding {
         );
         self.ids.set(&creator, voting_id);
         self.voting.set_voting(voting);
-        voting_id
+        voting_info
     }
 
     fn store_request(&mut self, request: OnboardingRequest, voting_id: VotingId) {

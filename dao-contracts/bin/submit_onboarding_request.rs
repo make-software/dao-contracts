@@ -23,7 +23,7 @@ fn call() {
     transfer_from_purse_to_purse(main_purse, cargo_purse, cspr_amount, None).unwrap_or_revert();
 
     OnboardingRequestContractCaller::at(onboarding_address)
-        .submit_onboarding_request(reason, cargo_purse);
+        .create_voting(reason, cargo_purse);
 }
 
 fn main() {}

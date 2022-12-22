@@ -1,4 +1,5 @@
 use casper_types::{CLType, CLTyped};
+use serde::Serialize;
 
 pub trait ContractDefinition {
     fn contract_def() -> ContractDef;
@@ -8,46 +9,46 @@ pub trait EventDefinition {
     fn event_def() -> EventDef;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ContractDef {
-    pub ident: &'static str,
-    pub methods: Vec<MethodDef>,
+    pub name: &'static str,
+    pub entry_points: Vec<MethodDef>,
 }
 
 impl ContractDef {
-    pub fn new(ident: &'static str) -> Self {
+    pub fn new(name: &'static str) -> Self {
         Self {
-            ident,
-            methods: Vec::new(),
+            name,
+            entry_points: Vec::new(),
         }
     }
 
     pub fn add_method(&mut self, method: MethodDef) {
-        self.methods.push(method);
+        self.entry_points.push(method);
     }
 
-    pub fn add_event<T: EventDefinition>(&mut self, method_ident: &'static str) {
-        self.method_mut(method_ident).map(|method| {
+    pub fn add_event<T: EventDefinition>(&mut self, method_name: &'static str) {
+        self.method_mut(method_name).map(|method| {
             method.add_event(T::event_def());
         });
     }
 
-    pub fn with_event<T: EventDefinition>(mut self, method_ident: &'static str) -> Self {
-        self.add_event::<T>(method_ident);
+    pub fn with_event<T: EventDefinition>(mut self, method_name: &'static str) -> Self {
+        self.add_event::<T>(method_name);
         self
     }
 
     pub fn mutable_methods(&self) -> Vec<MethodDef> {
-        self.methods
+        self.entry_points
             .clone()
             .into_iter()
             .filter(|m| m.is_mutable)
             .collect()
     }
 
-    fn method_mut(&mut self, method_ident: &'static str) -> Option<&mut MethodDef> {
-        for method in &mut self.methods {
-            if method.ident == method_ident {
+    fn method_mut(&mut self, method_name: &'static str) -> Option<&mut MethodDef> {
+        for method in &mut self.entry_points {
+            if method.name == method_name {
                 return Some(method);
             }
         }
@@ -55,9 +56,9 @@ impl ContractDef {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MethodDef {
-    pub ident: &'static str,
+    pub name: &'static str,
     pub is_mutable: bool,
     pub args: Vec<ElemDef>,
     pub return_ty: CLType,
@@ -65,9 +66,9 @@ pub struct MethodDef {
 }
 
 impl MethodDef {
-    pub fn new<T: CLTyped>(ident: &'static str, is_mutable: bool) -> Self {
+    pub fn new<T: CLTyped>(name: &'static str, is_mutable: bool) -> Self {
         MethodDef {
-            ident,
+            name,
             is_mutable,
             args: Vec::new(),
             return_ty: T::cl_type(),
@@ -84,31 +85,31 @@ impl MethodDef {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct EventDef {
-    pub ident: &'static str,
+    pub name: &'static str,
     pub fields: Vec<ElemDef>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ElemDef {
-    pub ident: &'static str,
+    pub name: &'static str,
     pub ty: CLType,
 }
 
 impl ElemDef {
-    pub fn new<T: CLTyped>(ident: &'static str) -> Self {
+    pub fn new<T: CLTyped>(name: &'static str) -> Self {
         ElemDef {
-            ident,
+            name,
             ty: T::cl_type(),
         }
     }
 }
 
 impl EventDef {
-    pub fn new(ident: &'static str) -> Self {
+    pub fn new(name: &'static str) -> Self {
         Self {
-            ident,
+            name,
             fields: Vec::new(),
         }
     }

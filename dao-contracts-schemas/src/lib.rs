@@ -16,7 +16,7 @@ use casper_dao_contracts::{
     SimpleVoterContract,
     SlashingVoterContract,
     VaNftContract,
-    VariableRepositoryContract,
+    VariableRepositoryContract, DaoIdsContract, OnboardingRequestContract, OnboardingVotingCreated,
 };
 use casper_dao_modules::events::{
     AddedToWhitelist,
@@ -33,6 +33,7 @@ pub fn all_contracts() -> Vec<ContractDef> {
         variable_repository(),
         kyc_token(),
         va_token(),
+        DaoIdsContract::contract_def(),
         // Voters.
         admin(),
         kyc_voter(),
@@ -40,6 +41,7 @@ pub fn all_contracts() -> Vec<ContractDef> {
         reputation_voter(),
         slashing_voter(),
         simple_voter(),
+        onboarding_request_voter(),
         // Bid Escrow.
         BidEscrowContract::contract_def(),
     ];
@@ -113,16 +115,20 @@ fn simple_voter() -> ContractDef {
     SimpleVoterContract::contract_def().with_event::<SimpleVotingCreated>("create_voting")
 }
 
+fn onboarding_request_voter() -> ContractDef {
+    OnboardingRequestContract::contract_def().with_event::<OnboardingVotingCreated>("create_voting")
+}
+
 pub fn print_all_contracts() {
     let contracts = all_contracts();
 
     for contract in contracts {
         let methods = contract.mutable_methods();
-        println!("\n{} ({})", contract.ident, methods.len());
+        println!("\n{} ({})", contract.name, methods.len());
         for method in methods {
-            println!("    - {} ({})", method.ident, method.events.len());
+            println!("    - {} ({})", method.name, method.events.len());
             for event in method.events {
-                println!("        - {}", event.ident);
+                println!("        - {}", event.name);
             }
         }
     }

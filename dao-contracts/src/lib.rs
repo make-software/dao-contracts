@@ -62,6 +62,7 @@ pub use onboarding_request::{
     OnboardingRequestContract,
     OnboardingRequestContractCaller,
     OnboardingRequestContractInterface,
+    OnboardingVotingCreated
 };
 #[cfg(feature = "test-support")]
 pub use rate_provider::CSPRRateProviderContractTest;
