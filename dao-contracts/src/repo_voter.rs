@@ -1,8 +1,9 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
     casper_env::caller,
     Address,
+    BlockTime,
     ContractCall,
 };
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U512};
@@ -14,6 +15,7 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
     },
     ConfigurationBuilder,
@@ -128,15 +130,18 @@ impl RepoVoterContractInterface for RepoVoterContract {
             address: variable_repo_to_edit,
             entry_point: "update_at".into(),
             runtime_args: runtime_args! {
-                "key" => key,
-                "value" => value,
+                "key" => key.clone(),
+                "value" => value.clone(),
                 "activation_time" => activation_time,
             },
         })
         .build();
 
-        self.voting
+        let info = self
+            .voting
             .create_voting(caller(), stake, voting_configuration);
+
+        RepoVotingCreated::new(variable_repo_to_edit, key, value, activation_time, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -147,5 +152,53 @@ impl RepoVoterContractInterface for RepoVoterContract {
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
         self.voting.slash_voter(voter, voting_id);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct RepoVotingCreated {
+    variable_repo_to_edit: Address,
+    key: String,
+    value: Bytes,
+    activation_time: Option<u64>,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl RepoVotingCreated {
+    pub fn new(
+        variable_repo_to_edit: Address,
+        key: String,
+        value: Bytes,
+        activation_time: Option<u64>,
+        info: VotingCreatedInfo,
+    ) -> Self {
+        Self {
+            variable_repo_to_edit,
+            key,
+            value,
+            activation_time,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
+        }
     }
 }

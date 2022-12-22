@@ -1,8 +1,9 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
     casper_env::caller,
     Address,
+    BlockTime,
     ContractCall,
 };
 use casper_types::{runtime_args, RuntimeArgs, U512};
@@ -15,6 +16,7 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
     },
     ConfigurationBuilder,
@@ -132,8 +134,11 @@ impl AdminContractInterface for AdminContract {
         })
         .build();
 
-        self.voting
+        let info = self
+            .voting
             .create_voting(caller(), stake, voting_configuration);
+
+        AdminVotingCreated::new(contract_to_update, action, address, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -148,5 +153,50 @@ impl AdminContractInterface for AdminContract {
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
         self.voting.slash_voter(voter, voting_id);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct AdminVotingCreated {
+    contract_to_update: Address,
+    action: Action,
+    address: Address,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl AdminVotingCreated {
+    pub fn new(
+        contract_to_update: Address,
+        action: Action,
+        address: Address,
+        info: VotingCreatedInfo,
+    ) -> Self {
+        Self {
+            contract_to_update,
+            action,
+            address,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
+        }
     }
 }

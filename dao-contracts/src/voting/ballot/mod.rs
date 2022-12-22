@@ -4,6 +4,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
+use super::voting_state_machine::VotingType;
 use crate::voting::VotingId;
 
 /// Choice enum, can be converted to bool using `is_in_favor()`
@@ -31,10 +32,33 @@ impl Choice {
 pub struct Ballot {
     pub voter: Address,
     pub voting_id: VotingId,
+    pub voting_type: VotingType,
     pub choice: Choice,
     pub stake: U512,
     pub unbounded: bool,
     pub canceled: bool,
+}
+
+impl Ballot {
+    pub fn new(
+        voter: Address,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        choice: Choice,
+        stake: U512,
+        unbounded: bool,
+        canceled: bool,
+    ) -> Self {
+        Self {
+            voter,
+            voting_id,
+            voting_type,
+            choice,
+            stake,
+            unbounded,
+            canceled,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -49,6 +73,7 @@ fn test_vote_serialization() {
     let vote = Ballot {
         voter: address,
         voting_id: 123,
+        voting_type: VotingType::Formal,
         choice: Choice::InFavor,
         stake: U512::from(456),
         unbounded: false,

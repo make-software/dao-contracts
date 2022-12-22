@@ -1,9 +1,10 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
-    casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
+    casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
     casper_env::caller,
     Address,
+    BlockTime,
     ContractCall,
     Error,
     Mapping,
@@ -18,6 +19,7 @@ use crate::{
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
     },
     ConfigurationBuilder,
@@ -124,7 +126,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         .build();
 
         let creator = caller();
-        let voting_id = self
+        let info = self
             .voting
             .create_voting(creator, stake, voting_configuration);
 
@@ -133,7 +135,9 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             ratio: slash_ratio,
             reputation_at_voting_creation: current_reputation,
         };
-        self.tasks.set(&voting_id, task);
+        self.tasks.set(&info.voting_id, task);
+
+        SlashingVotingCreated::new(address_to_slash, slash_ratio, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -225,4 +229,42 @@ struct SlashTask {
     pub subject: Address,
     pub ratio: u32,
     pub reputation_at_voting_creation: U512,
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct SlashingVotingCreated {
+    address_to_slash: Address,
+    slash_ratio: u32,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl SlashingVotingCreated {
+    pub fn new(address_to_slash: Address, slash_ratio: u32, info: VotingCreatedInfo) -> Self {
+        Self {
+            address_to_slash,
+            slash_ratio,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
+        }
+    }
 }

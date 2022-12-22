@@ -1,10 +1,11 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
     casper_env::{self, caller},
     consts,
     Address,
+    BlockTime,
     ContractCall,
     DocumentHash,
     Error,
@@ -19,6 +20,7 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
     },
     ConfigurationBuilder,
@@ -138,7 +140,7 @@ impl KycVoterContractInterface for KycVoterContract {
     fn create_voting(
         &mut self,
         subject_address: Address,
-        _document_hash: DocumentHash,
+        document_hash: DocumentHash,
         stake: U512,
     ) {
         self.assert_no_ongoing_voting(&subject_address);
@@ -159,18 +161,21 @@ impl KycVoterContractInterface for KycVoterContract {
         })
         .build();
 
-        self.voting
+        let info = self
+            .voting
             .create_voting(creator, stake, voting_configuration);
+
+        KycVotingCreated::new(subject_address, document_hash, info).emit();
 
         self.kyc.set_voting(&subject_address);
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        let voter = caller();
         self.voting
-            .vote(voter, voting_id, voting_type, choice, stake);
+            .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
+    // TODO: Store action in Mapping instead of extracting it from args of the call.
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let summary = self.voting.finish_voting(voting_id, voting_type);
         // The voting is ended when:
@@ -220,6 +225,48 @@ impl KycVoterContract {
     fn assert_no_ongoing_voting(&self, address: &Address) {
         if self.kyc.exists_ongoing_voting(address) {
             casper_env::revert(Error::KycAlreadyInProgress);
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct KycVotingCreated {
+    subject_address: Address,
+    document_hash: DocumentHash,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl KycVotingCreated {
+    pub fn new(
+        subject_address: Address,
+        document_hash: DocumentHash,
+        info: VotingCreatedInfo,
+    ) -> Self {
+        Self {
+            subject_address,
+            document_hash,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
         }
     }
 }

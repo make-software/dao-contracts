@@ -1,0 +1,266 @@
+{
+  "name": "VariableRepositoryContract",
+  "entry_points": [
+    {
+      "name": "init",
+      "is_mutable": true,
+      "args": [],
+      "return_ty": "Unit",
+      "events": [
+        {
+          "name": "ValueUpdated",
+          "fields": [
+            {
+              "name": "key",
+              "ty": "String"
+            },
+            {
+              "name": "value",
+              "ty": {
+                "List": "U8"
+              }
+            },
+            {
+              "name": "activation_time",
+              "ty": {
+                "Option": "U64"
+              }
+            }
+          ]
+        },
+        {
+          "name": "AddedToWhitelist",
+          "fields": [
+            {
+              "name": "address",
+              "ty": "Key"
+            }
+          ]
+        },
+        {
+          "name": "OwnerChanged",
+          "fields": [
+            {
+              "name": "new_owner",
+              "ty": "Key"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "change_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit",
+      "events": [
+        {
+          "name": "OwnerChanged",
+          "fields": [
+            {
+              "name": "new_owner",
+              "ty": "Key"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add_to_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit",
+      "events": [
+        {
+          "name": "AddedToWhitelist",
+          "fields": [
+            {
+              "name": "address",
+              "ty": "Key"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "remove_from_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit",
+      "events": [
+        {
+          "name": "RemovedFromWhitelist",
+          "fields": [
+            {
+              "name": "address",
+              "ty": "Key"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "update_at",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "key",
+          "ty": "String"
+        },
+        {
+          "name": "value",
+          "ty": {
+            "List": "U8"
+          }
+        },
+        {
+          "name": "activation_time",
+          "ty": {
+            "Option": "U64"
+          }
+        }
+      ],
+      "return_ty": "Unit",
+      "events": [
+        {
+          "name": "ValueUpdated",
+          "fields": [
+            {
+              "name": "key",
+              "ty": "String"
+            },
+            {
+              "name": "value",
+              "ty": {
+                "List": "U8"
+              }
+            },
+            {
+              "name": "activation_time",
+              "ty": {
+                "Option": "U64"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "get",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "key",
+          "ty": "String"
+        }
+      ],
+      "return_ty": {
+        "Option": {
+          "List": "U8"
+        }
+      },
+      "events": []
+    },
+    {
+      "name": "get_full_value",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "key",
+          "ty": "String"
+        }
+      ],
+      "return_ty": {
+        "Option": {
+          "Tuple2": [
+            {
+              "List": "U8"
+            },
+            {
+              "Option": {
+                "Tuple2": [
+                  {
+                    "List": "U8"
+                  },
+                  "U64"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "events": []
+    },
+    {
+      "name": "get_key_at",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "index",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": {
+        "Option": "String"
+      },
+      "events": []
+    },
+    {
+      "name": "keys_count",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "U32",
+      "events": []
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "events": []
+    },
+    {
+      "name": "is_whitelisted",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Bool",
+      "events": []
+    },
+    {
+      "name": "all_variables",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Map": {
+          "key": "String",
+          "value": {
+            "List": "U8"
+          }
+        }
+      },
+      "events": []
+    }
+  ]
+}

@@ -7,6 +7,7 @@ members = [
     "dao-contracts",
     "dao-erc20",
     "dao-erc721",
+    "dao-contracts-schemas"
 ]
 
 [profile.release]

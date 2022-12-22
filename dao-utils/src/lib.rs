@@ -10,6 +10,7 @@ mod parts;
 pub use casper_dao_macros;
 pub mod conversions;
 pub mod cspr_rate;
+pub mod definitions;
 pub mod math;
 pub mod transfer;
 
