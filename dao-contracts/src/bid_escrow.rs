@@ -17,7 +17,7 @@ use delegate::delegate;
 use crate::{
     escrow::{
         bid::{Bid, BidStatus},
-        job::{Job, JobStatus, WorkerType},
+        job::{Job, WorkerType},
         job_offer::{JobOffer, JobOfferStatus, PostJobOfferRequest},
         storage::JobStorage,
         types::{BidId, JobId, JobOfferId},
@@ -428,16 +428,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
         purse: Option<URef>,
     ) {
         let cspr_stake = purse.map(|purse| transfer::deposit_cspr(purse));
-
-        if cspr_stake.is_none() && reputation_stake.is_zero() {
-            revert(Error::ZeroStake);
-        }
-
         let new_worker = caller();
+        let caller = new_worker;
         let mut old_job: Job = self.job_storage.get_job_or_revert(job_id);
-
-        Self::validate_grace_period_job_proof_to_move(&mut old_job);
-
         let mut old_bid = self
             .job_storage
             .get_bid(old_job.bid_id())
@@ -457,15 +450,22 @@ impl BidEscrowContractInterface for BidEscrowContract {
             self.slash_worker(&old_job);
         }
 
-        // Create new job and bid
-        let new_bid = old_bid.reclaim(
-            self.job_storage.next_bid_id(),
-            new_worker,
-            get_block_time(),
-            reputation_stake,
+        let reclaim_bid_request = ReclaimBidRequest {
+            new_bid_id: self.job_storage.next_bid_id(),
+            caller,
             cspr_stake,
+            reputation_stake,
+            new_worker,
+            is_new_worker_va: self.is_va(new_worker),
+            job_poster: old_job.poster(),
             onboard,
-        );
+            block_time: get_block_time(),
+            job_status: old_job.status(),
+            job_finish_time: old_job.finish_time(),
+        };
+
+        // Create new job and bid
+        let new_bid = old_bid.reclaim(&reclaim_bid_request);
         let new_job = old_job.reclaim(self.job_storage.next_job_id(), &new_bid, get_block_time());
         let new_job_id = new_job.job_id();
 
@@ -907,7 +907,7 @@ impl BidEscrowContract {
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
                 self.unstake_cspr_or_reputation_for_bid(&bid);
-                bid.reject();
+                bid.reject_without_validation();
                 self.job_storage.store_bid(bid);
             }
         }
@@ -931,16 +931,6 @@ impl BidEscrowContract {
 
         let stake = config.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake());
         self.reputation_token().burn(job.worker(), stake);
-    }
-
-    fn validate_grace_period_job_proof_to_move(job: &mut Job) {
-        if job.status() != JobStatus::Created {
-            revert(Error::CannotSubmitJobProof);
-        }
-
-        if job.finish_time() >= get_block_time() {
-            revert(Error::GracePeriodNotStarted);
-        }
     }
 
     /// Builds Configuration for a Bid Escrow Entities
@@ -1001,7 +991,7 @@ impl BidEscrowContract {
 use casper_dao_utils::TestContract;
 
 use crate::escrow::{
-    bid::{CancelBidRequest, SubmitBidRequest},
+    bid::{CancelBidRequest, ReclaimBidRequest, SubmitBidRequest},
     job::PickBidRequest,
     job_offer::CancelJobOfferRequest,
 };

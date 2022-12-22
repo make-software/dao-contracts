@@ -11,4 +11,6 @@ pub mod exists_ongoing_voting;
 pub mod has_permissions_to_cancel_bid;
 pub mod has_permissions_to_cancel_job_offer;
 pub mod is_dos_fee_enough;
+pub mod is_grace_period;
 pub mod is_not_va;
+pub mod is_stake_non_zero;

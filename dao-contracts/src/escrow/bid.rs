@@ -7,7 +7,7 @@ use casper_types::U512;
 
 use crate::{
     escrow::{
-        job::PickBidRequest,
+        job::{JobStatus, PickBidRequest},
         job_offer::{AuctionState, JobOfferStatus},
         types::{BidId, JobOfferId},
         validation::rules::{
@@ -18,6 +18,8 @@ use crate::{
             can_pick_bid::CanPickBid,
             does_proposed_payment_exceed_budget::DoesProposedPaymentExceedBudget,
             has_permissions_to_cancel_bid::HasPermissionsToCancelBid,
+            is_grace_period::IsGracePeriod,
+            is_stake_non_zero::IsStakeNonZero,
         },
     },
     rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
@@ -61,6 +63,20 @@ pub struct CancelBidRequest {
     pub job_offer_status: JobOfferStatus,
     pub block_time: BlockTime,
     pub va_bid_acceptance_timeout: BlockTime,
+}
+
+pub struct ReclaimBidRequest {
+    pub new_bid_id: BidId,
+    pub caller: Address,
+    pub cspr_stake: Option<U512>,
+    pub reputation_stake: U512,
+    pub new_worker: Address,
+    pub is_new_worker_va: bool,
+    pub job_poster: Address,
+    pub onboard: bool,
+    pub block_time: BlockTime,
+    pub job_status: JobStatus,
+    pub job_finish_time: BlockTime,
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
@@ -112,27 +128,39 @@ impl Bid {
         }
     }
 
-    pub fn reclaim(
-        &mut self,
-        new_bid_id: BidId,
-        new_worker: Address,
-        block_time: BlockTime,
-        reputation_stake: U512,
-        cspr_stake: Option<U512>,
-        onboard: bool,
-    ) -> Bid {
+    pub fn reclaim(&mut self, request: &ReclaimBidRequest) -> Bid {
+        RulesBuilder::new()
+            .add_validation(CanBidOnOwnJob::create(
+                request.new_worker,
+                request.job_poster,
+            ))
+            .add_validation(CanBeOnboarded::create(
+                request.is_new_worker_va,
+                request.onboard,
+            ))
+            .add_validation(IsStakeNonZero::create(
+                request.reputation_stake,
+                request.cspr_stake,
+            ))
+            .add_validation(IsGracePeriod::create(
+                request.job_status,
+                request.job_finish_time,
+                request.block_time,
+            ))
+            .validate();
+
         let mut new_bid = self.clone();
         self.status = BidStatus::Reclaimed;
 
-        new_bid.bid_id = new_bid_id;
+        new_bid.bid_id = request.new_bid_id;
         new_bid.status = BidStatus::Picked;
-        new_bid.worker = new_worker;
-        new_bid.timestamp = block_time;
-        new_bid.reputation_stake = reputation_stake;
+        new_bid.worker = request.new_worker;
+        new_bid.timestamp = request.block_time;
+        new_bid.reputation_stake = request.reputation_stake;
         new_bid.proposed_timeframe =
             self.timestamp + self.proposed_timeframe + self.proposed_timeframe;
-        new_bid.cspr_stake = cspr_stake;
-        new_bid.onboard = onboard;
+        new_bid.cspr_stake = request.cspr_stake;
+        new_bid.onboard = request.onboard;
 
         new_bid
     }
@@ -145,7 +173,7 @@ impl Bid {
         self.status = BidStatus::Picked;
     }
 
-    pub fn reject(&mut self) {
+    pub fn reject_without_validation(&mut self) {
         self.status = BidStatus::Rejected;
     }
 
