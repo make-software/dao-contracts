@@ -336,7 +336,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         match bid.cspr_stake {
             None => {
-                self.reputation_token().unstake_bid(bid.worker, bid_id);
+                self.reputation_token().unstake_bid(bid.clone());
             }
             Some(cspr_stake) => {
                 transfer::withdraw_cspr(bid.worker, cspr_stake);
@@ -413,7 +413,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let job_offer = self.job_storage.get_job_offer_or_revert(job.job_offer_id());
 
         if job.stake() != U512::zero() && job_offer.configuration.informal_stake_reputation() {
-            self.reputation_token().unstake_bid(worker, job.bid_id());
+            let bid = self.job_storage.get_bid(job.bid_id()).unwrap();
+            self.reputation_token().unstake_bid(bid);
         }
 
         let voting_configuration = job_offer.configuration;
@@ -482,8 +483,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         // burn original reputation stake
         if old_bid.reputation_stake > U512::zero() {
-            self.reputation_token()
-                .unstake_bid(old_bid.worker, old_bid.bid_id());
+            self.reputation_token().unstake_bid(old_bid.clone());
             self.reputation_token()
                 .burn(old_bid.worker, old_bid.reputation_stake);
         }
@@ -540,19 +540,20 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_summary = self
             .voting
             .finish_voting_without_token_redistribution(voting_id);
+
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        self.reputation_token()
-                            .unstake_bid(job.worker(), job.bid_id());
+                        let bid = self.job_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        self.reputation_token().unstake_bid(bid);
                     }
                     self.create_formal_voting(voting_id);
                 }
                 VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        self.reputation_token()
-                            .unstake_bid(job.worker(), job.bid_id());
+                        let bid = self.job_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        self.reputation_token().unstake_bid(bid);
                     }
                     self.create_formal_voting(voting_id);
                 }
@@ -700,8 +701,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         // burn reputation stake
         if bid.reputation_stake > U512::zero() {
-            self.reputation_token()
-                .unstake_bid(bid.worker, bid.bid_id());
+            self.reputation_token().unstake_bid(bid.clone());
             self.reputation_token()
                 .burn(bid.worker, bid.reputation_stake);
         }
@@ -742,7 +742,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         bid.cancel();
 
-        self.reputation_token().unstake_bid(bid.worker, bid_id);
+        self.reputation_token().unstake_bid(bid.clone());
 
         // TODO: Implement Event
         self.job_storage.store_bid(bid);
@@ -769,7 +769,7 @@ impl BidEscrowContract {
 
             match bid.cspr_stake {
                 None => {
-                    self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
+                    self.reputation_token().unstake_bid(bid.clone());
                 }
                 Some(cspr_stake) => {
                     transfer::withdraw_cspr(bid.worker, cspr_stake);
@@ -823,10 +823,12 @@ impl BidEscrowContract {
         let total_left = self.redistribute_to_governance(job, job.external_worker_cspr_stake());
 
         // For VA's
-        let (total_supply, balances) = self.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.voting.reputation_token().all_balances();
+        let total_supply = all_balances.partial_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = total_left * balance / total_supply;
-            transfer::withdraw_cspr(address, amount);
+            transfer::withdraw_cspr(*address, amount);
         }
     }
 
@@ -841,10 +843,12 @@ impl BidEscrowContract {
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let (total_supply, balances) = self.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.voting.reputation_token().all_balances();
+        let total_supply = all_balances.partial_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            transfer::withdraw_cspr(address, amount);
+            transfer::withdraw_cspr(*address, amount);
         }
     }
 
@@ -853,10 +857,12 @@ impl BidEscrowContract {
             .voting_id()
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
         let all_voters = self.voting.all_voters(voting_id, VotingType::Formal);
-        let (partial_supply, balances) = self.reputation_token().partial_balances(all_voters);
-        for (address, balance) in balances.balances {
+
+        let balances = self.voting.reputation_token().partial_balances(all_voters);
+        let partial_supply = balances.partial_supply();
+        for (address, balance) in balances.balances() {
             let amount = to_redistribute * balance / partial_supply;
-            transfer::withdraw_cspr(address, amount);
+            transfer::withdraw_cspr(*address, amount);
         }
     }
 
@@ -953,7 +959,7 @@ impl BidEscrowContract {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
-                self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
+                self.reputation_token().unstake_bid(bid.clone());
                 bid.reject();
                 self.job_storage.store_bid(bid);
             }

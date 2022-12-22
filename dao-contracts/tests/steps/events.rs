@@ -1,10 +1,13 @@
 use casper_dao_utils::TestContract;
 use cucumber::{gherkin::Step, then};
 
-use crate::{common::{
-    params::{events::Event, Contract},
-    DaoWorld,
-}, on_contract};
+use crate::{
+    common::{
+        params::{events::Event, Contract},
+        DaoWorld,
+    },
+    on_contract,
+};
 
 #[then(expr = "{contract} contract emits events")]
 fn assert_event(world: &mut DaoWorld, step: &Step, contract: Contract) {

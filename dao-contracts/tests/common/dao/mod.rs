@@ -1,6 +1,6 @@
 use casper_dao_utils::TestContract;
 
-use super::{DaoWorld, params::Contract};
+use super::{params::Contract, DaoWorld};
 
 mod account;
 mod bid_escrow;

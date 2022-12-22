@@ -28,7 +28,7 @@ impl Choice {
 }
 
 /// Ballot struct
-#[derive(Debug, FromBytes, ToBytes, CLTyped)]
+#[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
 pub struct Ballot {
     pub voter: Address,
     pub voting_id: VotingId,

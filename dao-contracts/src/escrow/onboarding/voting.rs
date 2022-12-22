@@ -309,10 +309,12 @@ impl Onboarding {
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let (total_supply, balances) = self.voting.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.voting.reputation_token().all_balances();
+        let total_supply = all_balances.partial_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            casper_dao_utils::transfer::withdraw_cspr(address, amount);
+            casper_dao_utils::transfer::withdraw_cspr(*address, amount);
         }
     }
 

@@ -1,4 +1,4 @@
-use std::{fmt::Debug, hash::Hash};
+use std::{fmt::Debug, hash::Hash, ops::Range};
 
 use casper_contract::unwrap_or_revert::UnwrapOrRevert;
 use casper_types::{
@@ -45,10 +45,6 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
         self.values.get(index)
     }
 
-    pub fn size(&self) -> u32 {
-        self.length.get().unwrap_or(0)
-    }
-
     fn move_item(&mut self, from: u32, to: u32) {
         let value = self.values.get(from);
         self.values.set(to, value.unwrap_or_revert());
@@ -59,6 +55,17 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
         let length = self.size();
         self.values.set(length, item);
         self.length.set(length + 1);
+    }
+
+    /// Returns an iterator.
+    pub fn iter(&self) -> Iter<T> {
+        Iter::new(self)
+    }
+}
+
+impl<T> OrderedCollection<T> {
+    pub fn size(&self) -> u32 {
+        self.length.get().unwrap_or(0)
     }
 }
 
@@ -90,5 +97,68 @@ impl<T: FromBytes + ToBytes + CLTyped> Instanced for OrderedCollection<T> {
             values: Instanced::instance(&format!("{}:{}", namespace, "values")),
             length: Instanced::instance(&format!("{}:{}", namespace, "length")),
         }
+    }
+}
+
+pub struct Iter<'a, T> {
+    collection: &'a OrderedCollection<T>,
+    range: Range<u32>,
+}
+
+impl<'a, T> Iter<'a, T> {
+    /// Returns a new instance of Iter.
+    fn new(collection: &'a OrderedCollection<T>) -> Self {
+        Self {
+            collection,
+            range: Range {
+                start: 0,
+                end: collection.size(),
+            },
+        }
+    }
+
+    /// Returns number of elements left to iterate.
+    fn remaining(&self) -> usize {
+        (self.range.end - self.range.start) as usize
+    }
+}
+
+impl<'a, T> core::iter::Iterator for Iter<'a, T>
+where
+    T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        <Self as Iterator>::nth(self, 0)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.remaining();
+        (remaining, Some(remaining))
+    }
+
+    fn count(self) -> usize {
+        self.remaining()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let index = self.range.nth(n)?;
+        self.collection.get(index)
+    }
+}
+
+impl<'a, T> core::iter::ExactSizeIterator for Iter<'a, T> where
+    T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash
+{
+}
+
+impl<'a, T> core::iter::DoubleEndedIterator for Iter<'a, T>
+where
+    T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let index = self.range.nth_back(0)?;
+        self.collection.get(index)
     }
 }
