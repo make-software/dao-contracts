@@ -10,12 +10,9 @@ use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
 use crate::{
-    escrow::{
-        bid::Bid,
-        validation::rules::{
-            can_pick_bid::CanPickBid,
-            does_proposed_payment_match_transferred::DoesProposedPaymentMatchTransferred,
-        },
+    escrow::validation::rules::{
+        can_pick_bid::CanPickBid,
+        does_proposed_payment_match_transferred::DoesProposedPaymentMatchTransferred,
     },
     rules::builder::RulesBuilder,
     voting::types::VotingId,
@@ -53,6 +50,17 @@ pub struct PickBidRequest {
     pub transferred_cspr: U512,
     pub stake: U512,
     pub external_worker_cspr_stake: U512,
+}
+
+pub struct ReclaimJobRequest {
+    pub new_job_id: JobId,
+    pub new_bid_id: BidId,
+    pub proposed_timeframe: BlockTime,
+    pub worker: Address,
+    pub cspr_stake: Option<U512>,
+    pub reputation_stake: U512,
+    pub onboard: bool,
+    pub block_time: BlockTime,
 }
 
 /// Struct holding Job
@@ -114,31 +122,31 @@ impl Job {
         }
     }
 
-    pub fn reclaim(&mut self, new_job_id: JobId, new_bid: &Bid, block_time: BlockTime) -> Job {
+    pub fn reclaim(&mut self, request: ReclaimJobRequest) -> Job {
         self.status = JobStatus::Completed;
-        self.followed_by = Some(new_job_id);
+        self.followed_by = Some(request.new_job_id);
 
-        let worker_type = match (new_bid.cspr_stake.is_some(), new_bid.onboard) {
+        let worker_type = match (request.cspr_stake.is_some(), request.onboard) {
             (_, true) => WorkerType::ExternalToVA,
             (true, false) => WorkerType::External,
             (false, false) => WorkerType::Internal,
         };
 
         let mut new_job = Job {
-            job_id: new_job_id,
-            bid_id: new_bid.bid_id,
-            job_offer_id: new_bid.job_offer_id,
+            job_id: request.new_job_id,
+            bid_id: request.new_bid_id,
+            job_offer_id: self.job_offer_id,
             voting_id: None,
             job_proof: None,
-            start_time: block_time,
-            time_for_job: new_bid.proposed_timeframe,
+            start_time: request.block_time,
+            time_for_job: request.proposed_timeframe,
             status: JobStatus::Created,
-            worker: new_bid.worker,
+            worker: request.worker,
             worker_type,
             poster: self.poster,
             payment: self.payment,
-            stake: new_bid.reputation_stake,
-            external_worker_cspr_stake: new_bid.cspr_stake.unwrap_or_default(),
+            stake: request.reputation_stake,
+            external_worker_cspr_stake: request.cspr_stake.unwrap_or_default(),
             followed_by: None,
         };
 

@@ -71,7 +71,8 @@ pub struct ReclaimBidRequest {
     pub cspr_stake: Option<U512>,
     pub reputation_stake: U512,
     pub new_worker: Address,
-    pub is_new_worker_va: bool,
+    pub new_worker_va: bool,
+    pub new_worker_kyced: bool,
     pub job_poster: Address,
     pub onboard: bool,
     pub block_time: BlockTime,
@@ -130,12 +131,13 @@ impl Bid {
 
     pub fn reclaim(&mut self, request: &ReclaimBidRequest) -> Bid {
         RulesBuilder::new()
+            .add_validation(IsUserKyced::create(request.new_worker_kyced))
             .add_validation(CanBidOnOwnJob::create(
                 request.new_worker,
                 request.job_poster,
             ))
             .add_validation(CanBeOnboarded::create(
-                request.is_new_worker_va,
+                request.new_worker_va,
                 request.onboard,
             ))
             .add_validation(IsStakeNonZero::create(

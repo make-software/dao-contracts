@@ -430,6 +430,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let cspr_stake = purse.map(|purse| transfer::deposit_cspr(purse));
         let new_worker = caller();
         let caller = new_worker;
+        let block_time = get_block_time();
+
         let mut old_job: Job = self.job_storage.get_job_or_revert(job_id);
         let mut old_bid = self
             .job_storage
@@ -456,17 +458,30 @@ impl BidEscrowContractInterface for BidEscrowContract {
             cspr_stake,
             reputation_stake,
             new_worker,
-            is_new_worker_va: self.is_va(new_worker),
+            new_worker_va: self.is_va(new_worker),
+            new_worker_kyced: self.kyc.is_kycd(&new_worker),
             job_poster: old_job.poster(),
             onboard,
-            block_time: get_block_time(),
+            block_time,
             job_status: old_job.status(),
             job_finish_time: old_job.finish_time(),
         };
 
-        // Create new job and bid
         let new_bid = old_bid.reclaim(&reclaim_bid_request);
-        let new_job = old_job.reclaim(self.job_storage.next_job_id(), &new_bid, get_block_time());
+
+        let reclaim_job_request = ReclaimJobRequest {
+            new_job_id: self.job_storage.next_job_id(),
+            new_bid_id: new_bid.bid_id(),
+            proposed_timeframe: new_bid.proposed_timeframe,
+            worker: new_bid.worker,
+            cspr_stake,
+            reputation_stake,
+            onboard,
+            block_time,
+        };
+
+        let new_job = old_job.reclaim(reclaim_job_request);
+
         let new_job_id = new_job.job_id();
 
         // Stake new bid
@@ -992,7 +1007,7 @@ use casper_dao_utils::TestContract;
 
 use crate::escrow::{
     bid::{CancelBidRequest, ReclaimBidRequest, SubmitBidRequest},
-    job::PickBidRequest,
+    job::{PickBidRequest, ReclaimJobRequest},
     job_offer::CancelJobOfferRequest,
 };
 
