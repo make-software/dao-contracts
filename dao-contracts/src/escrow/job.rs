@@ -63,6 +63,10 @@ pub struct ReclaimJobRequest {
     pub block_time: BlockTime,
 }
 
+pub struct SubmitJobProofRequest {
+    pub proof: DocumentHash,
+}
+
 /// Struct holding Job
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
 pub struct Job {
@@ -218,12 +222,12 @@ impl Job {
         false
     }
 
-    pub fn submit_proof(&mut self, job_proof: DocumentHash) {
+    pub fn submit_proof(&mut self, request: SubmitJobProofRequest)  {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);
         }
 
-        self.job_proof = Some(job_proof);
+        self.job_proof = Some(request.proof);
         self.status = JobStatus::Submitted;
     }
 

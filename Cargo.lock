@@ -233,6 +233,7 @@ dependencies = [
  "hex",
  "lazy_static",
  "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -453,6 +454,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb4a24b1aaf0fd0ce8b45161144d6f42cd91677fd5940fd431183eb023b3a2b8"
 
 [[package]]
+name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -625,6 +635,19 @@ dependencies = [
  "proc-macro2 1.0.47",
  "quote 1.0.21",
  "syn 1.0.102",
+]
+
+[[package]]
+name = "dao-contracts-schemas"
+version = "0.1.0"
+dependencies = [
+ "casper-dao-contracts",
+ "casper-dao-erc721",
+ "casper-dao-modules",
+ "casper-dao-utils",
+ "casper-types",
+ "convert_case 0.6.0",
+ "serde_json",
 ]
 
 [[package]]

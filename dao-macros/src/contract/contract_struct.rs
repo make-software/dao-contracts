@@ -7,10 +7,12 @@ use super::{parser::CasperContractItem, utils};
 pub fn generate_code(input: &CasperContractItem) -> Result<TokenStream, syn::Error> {
     let contract_install = generate_install(input)?;
     let contract_entry_points = generate_entry_points(input);
+    let contract_def = generate_contract_definiton(input);
 
     Ok(quote! {
         #contract_install
         #contract_entry_points
+        #contract_def
     })
 }
 
@@ -114,6 +116,72 @@ fn build_entry_point_params(method: &TraitItemMethod) -> TokenStream {
             params
         }
     }
+}
+
+fn generate_contract_definiton(input: &CasperContractItem) -> TokenStream {
+    let contract_ident = &input.contract_ident;
+
+    let mut stream = TokenStream::new();
+    stream.append_all(quote!{
+        let mut contract_def = casper_dao_utils::definitions::ContractDef::new(stringify!(#contract_ident));
+    });
+
+    stream.append_all(input.trait_methods.iter().map(build_method_definiton));
+
+    quote! {
+        impl casper_dao_utils::definitions::ContractDefinition for #contract_ident {
+            fn contract_def() -> casper_dao_utils::definitions::ContractDef {
+                #stream
+                contract_def
+            }
+        }
+    }
+}
+
+fn build_method_definiton(method: &TraitItemMethod) -> TokenStream {
+    // Extract method name.
+    let ident = &method.sig.ident;
+
+    // Check mutablility.
+    let is_mutable: bool = method
+        .sig
+        .inputs
+        .first()
+        .map(|arg| match arg {
+            syn::FnArg::Receiver(rec) => rec.mutability.is_some(),
+            syn::FnArg::Typed(_) => false,
+        })
+        .unwrap();
+
+    // Get return type.
+    let return_ty = match &method.sig.output {
+        syn::ReturnType::Default => quote! { () },
+        syn::ReturnType::Type(_, ty) => quote! { #ty },
+    };
+
+    // Extreact arguments.
+    let type_paths = utils::collect_type_paths(method);
+    let method_idents = utils::collect_arg_idents(method);
+
+    let mut stream = quote! {
+        let mut method_def = casper_dao_utils::definitions::MethodDef::new::<#return_ty>(stringify!(#ident), #is_mutable);
+    };
+
+    for i in 0..method_idents.len() {
+        let method_ident = method_idents.get(i).unwrap();
+        let type_path = type_paths.get(i).unwrap();
+        stream.extend(quote! {
+            method_def.add_arg(casper_dao_utils::definitions::ElemDef::new::<#type_path>(stringify!(#method_ident)));
+        });
+    }
+
+    // Add method to contract.
+    stream.append_all(quote! {
+        contract_def.add_method(method_def);
+    });
+
+    // Return stream.
+    stream
 }
 
 pub mod interface {

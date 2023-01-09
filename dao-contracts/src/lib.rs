@@ -2,7 +2,7 @@
 
 #[doc(hidden)]
 pub mod action;
-mod admin;
+pub mod admin;
 mod bid_escrow;
 mod builder;
 pub mod escrow;
@@ -12,7 +12,7 @@ mod kyc_voter;
 mod onboarding_request;
 mod rate_provider;
 pub mod rules;
-mod slashing_voter;
+pub mod slashing_voter;
 mod va_nft;
 
 pub mod config;
@@ -28,7 +28,7 @@ pub mod voting;
 #[doc(hidden)]
 #[cfg(feature = "test-support")]
 pub use admin::AdminContractTest;
-pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface};
+pub use admin::{AdminContract, AdminContractCaller, AdminContractInterface, AdminVotingCreated};
 #[cfg(feature = "test-support")]
 pub use bid_escrow::BidEscrowContractTest;
 pub use bid_escrow::{BidEscrowContract, BidEscrowContractCaller, BidEscrowContractInterface};
@@ -42,7 +42,12 @@ pub use kyc_nft::KycNftContractTest;
 pub use kyc_nft::{KycNftContract, KycNftContractCaller, KycNftContractInterface};
 #[cfg(feature = "test-support")]
 pub use kyc_voter::KycVoterContractTest;
-pub use kyc_voter::{KycVoterContract, KycVoterContractCaller, KycVoterContractInterface};
+pub use kyc_voter::{
+    KycVoterContract,
+    KycVoterContractCaller,
+    KycVoterContractInterface,
+    KycVotingCreated,
+};
 #[cfg(feature = "test-support")]
 pub use mocks::mock_voter::MockVoterContractTest;
 #[doc(hidden)]
@@ -57,6 +62,7 @@ pub use onboarding_request::{
     OnboardingRequestContract,
     OnboardingRequestContractCaller,
     OnboardingRequestContractInterface,
+    OnboardingVotingCreated
 };
 #[cfg(feature = "test-support")]
 pub use rate_provider::CSPRRateProviderContractTest;

@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{get_block_time, revert, self_address},
+    casper_env::{get_block_time, revert},
     Address,
     Error,
     Mapping,
@@ -18,10 +18,19 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use self::{
-    events::{BallotCast, VotingContractCreated, VotingCreated},
+    events::{BallotCast, VotingCreatedInfo},
     voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
 };
-use super::{ballot::Choice, ids, types::VotingId, Ballot};
+use super::{
+    ballot::Choice,
+    ids,
+    types::VotingId,
+    Ballot,
+    BallotCanceled,
+    Reason,
+    VotingCanceled,
+    VotingEnded,
+};
 use crate::{
     Configuration,
     ReputationContractCaller,
@@ -29,6 +38,8 @@ use crate::{
     VaNftContractCaller,
     VaNftContractInterface,
 };
+use crate::rules::builder::RulesBuilder;
+use crate::voting::validation::rules::can_create_voting::CanCreateVoting;
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
 /// 1. Informal voting
@@ -61,13 +72,6 @@ impl VotingEngine {
         self.variable_repo.set(variable_repo);
         self.reputation_token.set(reputation_token);
         self.va_token.set(va_token);
-
-        VotingContractCreated {
-            variable_repo,
-            reputation_token,
-            voter_contract: self_address(),
-        }
-        .emit();
     }
 
     /// Creates new informal [Voting](VotingStateMachine).
@@ -87,32 +91,37 @@ impl VotingEngine {
         creator: Address,
         stake: U512,
         configuration: Configuration,
-    ) -> VotingId {
-        if configuration.only_va_can_create() && !self.is_va(creator) {
-            revert(Error::NotOnboarded)
-        }
+    ) -> VotingCreatedInfo {
+        RulesBuilder::new()
+            .add_validation(CanCreateVoting::create(self.is_va(creator), configuration.only_va_can_create()))
+            .validate();
 
         let should_cast_first_vote = configuration.should_cast_first_vote();
 
         let voting_ids_address = configuration.voting_ids_address();
         let voting_id = ids::get_next_voting_id(voting_ids_address);
+        let mut voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
 
-        VotingCreated::new(&creator, voting_id, voting_id, None, &configuration).emit();
-
-        let voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
-        self.set_voting(voting);
-
+        let mut used_stake = None;
         if should_cast_first_vote {
-            self.vote(
+            self.cast_vote(
                 creator,
-                voting_id,
                 VotingType::Informal,
                 Choice::InFavor,
                 stake,
+                &mut voting
             );
+            used_stake = Some(stake);
         }
 
-        voting_id
+        let info = VotingCreatedInfo::new(
+            creator,
+            voting_id,
+            used_stake,
+            voting.voting_configuration(),
+        );
+        self.set_voting(voting);
+        info
     }
 
     /// Finishes voting.
@@ -137,7 +146,7 @@ impl VotingEngine {
     ///
     /// Throws [`ArithmeticOverflow`](Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
-        let voting = self
+        let mut voting = self
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
@@ -147,53 +156,91 @@ impl VotingEngine {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
-        let informal_without_stake = voting.is_informal_without_stake();
-        match voting.voting_type() {
+        let mut rep_unstakes = BTreeMap::new();
+        let mut rep_burns = BTreeMap::new();
+        let mut rep_mints = BTreeMap::new();
+
+        let summary = match voting.voting_type() {
             VotingType::Informal => {
-                let voting_result = self.finish_informal_voting(voting);
+                let informal_without_stake = voting.is_informal_without_stake();
+                let voting_result = self.finish_informal_voting(&mut voting);
                 if !informal_without_stake {
-                    self.return_reputation_of_yes_voters(voting_id, VotingType::Informal);
-                    self.return_reputation_of_no_voters(voting_id, VotingType::Informal);
+                    let yes_unstakes = self.return_yes_voters_rep(voting_id, VotingType::Informal);
+                    let no_unstakes = self.return_no_voters_rep(voting_id, VotingType::Informal);
+                    add_to_map(&mut rep_unstakes, Reason::InformalFinished, yes_unstakes);
+                    add_to_map(&mut rep_unstakes, Reason::InformalFinished, no_unstakes);
                 }
 
                 match voting_result.result() {
                     VotingResult::InFavor | VotingResult::Against => {
-                        self.recast_creators_ballot_from_informal_to_formal(voting_id);
+                        // It emits BallotCast event, so no need to capture it in VotingEnded event.
+                        self.recast_creators_ballot_from_informal_to_formal(&mut voting);
                     }
-                    VotingResult::QuorumNotReached => {
-                        // TODO: Emit events
-                    }
+                    VotingResult::QuorumNotReached => {}
                     VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
                 }
                 voting_result
             }
             VotingType::Formal => {
-                let voting_result = self.finish_formal_voting(voting);
+                let voting_result = self.finish_formal_voting(&mut voting);
                 match voting_result.result() {
                     VotingResult::InFavor => {
-                        self.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                        self.redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+                        let yes_unstakes =
+                            self.return_yes_voters_rep(voting_id, VotingType::Formal);
+                        let (mints, burns) = self
+                            .redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+                        add_to_map(&mut rep_unstakes, Reason::FormalFinished, yes_unstakes);
+                        add_to_map(&mut rep_mints, Reason::FormalWon, mints);
+                        add_to_map(&mut rep_burns, Reason::FormalLost, burns);
                     }
                     VotingResult::Against => {
-                        self.return_reputation_of_no_voters(voting_id, VotingType::Formal);
-                        self.redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                        let no_unstakes = self.return_no_voters_rep(voting_id, VotingType::Formal);
+                        let (mints, burns) = self
+                            .redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                        add_to_map(&mut rep_unstakes, Reason::FormalFinished, no_unstakes);
+                        add_to_map(&mut rep_mints, Reason::FormalWon, mints);
+                        add_to_map(&mut rep_burns, Reason::FormalLost, burns);
                     }
                     VotingResult::QuorumNotReached => {
-                        self.return_reputation_of_yes_voters(voting_id, VotingType::Formal);
-                        self.return_reputation_of_no_voters(voting_id, VotingType::Formal);
+                        let yes_unstakes =
+                            self.return_yes_voters_rep(voting_id, VotingType::Formal);
+                        let no_unstakes = self.return_no_voters_rep(voting_id, VotingType::Formal);
+                        add_to_map(&mut rep_unstakes, Reason::FormalFinished, yes_unstakes);
+                        add_to_map(&mut rep_unstakes, Reason::FormalFinished, no_unstakes);
                     }
                     VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
                 }
                 voting_result
             }
-        }
+        };
+
+        let stats = match summary.voting_type() {
+            VotingType::Informal => voting.informal_stats(),
+            VotingType::Formal => voting.formal_stats(),
+        };
+
+        // Emit VotingEnded event.
+        let voting_ended_event = VotingEnded::new(
+            voting_id,
+            summary.voting_type(),
+            summary.result(),
+            stats,
+            rep_unstakes,
+            BTreeMap::new(),
+            rep_burns,
+            rep_mints,
+        );
+        voting_ended_event.emit();
+
+        self.set_voting(voting);
+        summary
     }
 
     pub fn finish_voting_without_token_redistribution(
         &mut self,
         voting_id: VotingId,
     ) -> VotingSummary {
-        let voting = self
+        let mut voting = self
             .get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
@@ -201,10 +248,14 @@ impl VotingEngine {
             revert(Error::FinishingCompletedVotingNotAllowed)
         }
 
-        match voting.voting_type() {
-            VotingType::Informal => self.finish_informal_voting(voting),
-            VotingType::Formal => self.finish_formal_voting(voting),
-        }
+        let summary = match voting.voting_type() {
+            VotingType::Informal => self.finish_informal_voting(&mut voting),
+            VotingType::Formal => self.finish_formal_voting(&mut voting),
+        };
+
+        self.set_voting(voting);
+
+        summary
     }
 
     pub fn summary(&self, voting_id: VotingId) -> VotingSummary {
@@ -217,7 +268,7 @@ impl VotingEngine {
         )
     }
 
-    fn finish_informal_voting(&mut self, mut voting: VotingStateMachine) -> VotingSummary {
+    fn finish_informal_voting(&mut self, voting: &mut VotingStateMachine) -> VotingSummary {
         if !voting.is_in_time(get_block_time()) {
             revert(Error::InformalVotingTimeNotReached)
         }
@@ -227,7 +278,6 @@ impl VotingEngine {
         let voting_result = voting.get_result(voters_len);
         match voting_result {
             VotingResult::InFavor | VotingResult::Against => {
-                // TODO: Emit event
                 voting.complete_informal_voting();
             }
             VotingResult::QuorumNotReached => {
@@ -236,25 +286,10 @@ impl VotingEngine {
             VotingResult::Canceled => revert(Error::VotingAlreadyCanceled),
         };
 
-        // Move up in stack.
-        // VotingEnded {
-        //     voting_id: informal_voting_id,
-        //     informal_voting_id,
-        //     formal_voting_id: voting.formal_voting_id(),
-        //     result: result.into(),
-        //     votes_count: voters_len.into(),
-        //     stake_in_favor: voting.stake_in_favor(),
-        //     stake_against: voting.stake_against(),
-        //     transfers,
-        //     burns,
-        //     mints: BTreeMap::new(),
-        // }
-        // .emit();
-        self.set_voting(voting);
         VotingSummary::new(voting_result, VotingType::Informal, voting_id)
     }
 
-    fn finish_formal_voting(&mut self, mut voting: VotingStateMachine) -> VotingSummary {
+    fn finish_formal_voting(&mut self, voting: &mut VotingStateMachine) -> VotingSummary {
         voting.guard_finish_formal_voting(get_block_time());
         let voting_id = voting.voting_id();
         let voters_len = self.voters.len((voting_id, VotingType::Formal));
@@ -264,10 +299,7 @@ impl VotingEngine {
             self.perform_action(voting.voting_id());
         }
 
-        // TODO: Emit events
-
         voting.finish();
-        self.set_voting(voting);
 
         VotingSummary::new(voting_result, VotingType::Formal, voting_id)
     }
@@ -289,7 +321,13 @@ impl VotingEngine {
         choice: Choice,
         stake: U512,
     ) {
-        let voting = self.get_voting_or_revert(voting_id);
+        let mut voting = self.get_voting_or_revert(voting_id);
+        self.cast_vote(voter, voting_type, choice, stake, &mut voting);
+        self.set_voting(voting);
+    }
+
+    fn cast_vote(&mut self, voter: Address, voting_type: VotingType, choice: Choice, stake: U512, voting: &mut VotingStateMachine) {
+        let voting_id = voting.voting_id();
         self.assert_voting_type(&voting, voting_type);
         voting.guard_vote(get_block_time());
         self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);
@@ -323,7 +361,7 @@ impl VotingEngine {
         choice: Choice,
         stake: U512,
         unbounded: bool,
-        mut voting: VotingStateMachine,
+        voting: &mut VotingStateMachine,
     ) {
         if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
@@ -331,23 +369,24 @@ impl VotingEngine {
                 .stake_voting(voter, voting_id, choice, stake);
         }
 
-        let vote = Ballot {
+        let ballot = Ballot::new(
             voter,
-            choice,
             voting_id,
+            voting.voting_type(),
+            choice,
             stake,
             unbounded,
-            canceled: false,
-        };
+            false,
+        );
 
-        BallotCast::new(&vote).emit();
+        BallotCast::new(&ballot).emit();
 
         // Add a voter to the list
         self.voters.add((voting_id, voting.voting_type()), voter);
 
         // Update the votes list
         self.ballots
-            .set(&(voting_id, voting.voting_type(), voter), vote);
+            .set(&(voting_id, voting.voting_type(), voter), ballot);
 
         // update voting
         if unbounded {
@@ -355,7 +394,6 @@ impl VotingEngine {
         } else {
             voting.add_stake(stake, choice);
         }
-        self.set_voting(voting);
     }
 
     /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
@@ -417,7 +455,7 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::VotingDoesNotExist)
     }
 
-    fn set_voting(&self, voting: VotingStateMachine) {
+    pub fn set_voting(&self, voting: VotingStateMachine) {
         self.voting_states.set(&voting.voting_id(), Some(voting))
     }
 
@@ -447,8 +485,8 @@ impl VotingEngine {
         transfers
     }
 
-    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting_id: VotingId) {
-        let voting = self.get_voting_or_revert(voting_id);
+    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting: &mut VotingStateMachine) {
+        let voting_id = voting.voting_id();
         let creator = voting.creator();
         let creator_ballot = self
             .get_ballot(voting_id, VotingType::Informal, *creator)
@@ -464,31 +502,45 @@ impl VotingEngine {
         );
     }
 
-    pub fn return_reputation_of_yes_voters(&self, voting_id: VotingId, voting_type: VotingType) {
+    pub fn return_yes_voters_rep(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> BTreeMap<Address, U512> {
+        let mut summary = BTreeMap::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_in_favor() && !ballot.unbounded {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
+                summary.insert(ballot.voter, ballot.stake);
             }
         }
+        summary
     }
 
-    pub fn return_reputation_of_no_voters(&self, voting_id: VotingId, voting_type: VotingType) {
+    pub fn return_no_voters_rep(
+        &self,
+        voting_id: VotingId,
+        voting_type: VotingType,
+    ) -> BTreeMap<Address, U512> {
+        let mut summary = BTreeMap::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_against() && !ballot.unbounded {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
+                summary.insert(ballot.voter, ballot.stake);
             }
         }
+        summary
     }
 
     pub fn redistribute_reputation_of_no_voters(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
-    ) {
+    ) -> (BTreeMap<Address, U512>, BTreeMap<Address, U512>) {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
@@ -508,14 +560,16 @@ impl VotingEngine {
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.reputation_token().bulk_mint_burn(mints, burns);
+        self.reputation_token()
+            .bulk_mint_burn(mints.clone(), burns.clone());
+        (mints, burns)
     }
 
     pub fn redistribute_reputation_of_yes_voters(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
-    ) {
+    ) -> (BTreeMap<Address, U512>, BTreeMap<Address, U512>) {
         let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
@@ -535,7 +589,9 @@ impl VotingEngine {
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.reputation_token().bulk_mint_burn(mints, burns);
+        self.reputation_token()
+            .bulk_mint_burn(mints.clone(), burns.clone());
+        (mints, burns)
     }
 
     fn is_va(&self, address: Address) -> bool {
@@ -594,11 +650,14 @@ impl VotingEngine {
     }
 
     fn cancel_voting(&mut self, mut voting: VotingStateMachine) {
+        let voting_id = voting.voting_id();
+        let voting_type = voting.voting_type();
+        let unstakes = self.unstake_all_reputation(voting_id, voting_type);
         voting.cancel();
-        self.unstake_all_reputation(voting.voting_id(), voting.voting_type());
         self.set_voting(voting);
 
         // Emit event.
+        VotingCanceled::new(voting_id, voting_type, unstakes).emit();
     }
 
     // Note: it doesn't remove a voter from self.votings to keep the quorum num right.
@@ -624,10 +683,21 @@ impl VotingEngine {
         }
         self.set_voting(voting);
 
+        // Emit event.
+        BallotCanceled::new(&ballot).emit();
+
         // Update ballot.
         ballot.canceled = true;
         self.ballots.set(&ballots_key, ballot);
+    }
+}
 
-        // Emit event.
+fn add_to_map(
+    target: &mut BTreeMap<(Address, Reason), U512>,
+    reason: Reason,
+    source: BTreeMap<Address, U512>,
+) {
+    for (addr, amount) in source {
+        target.insert((addr, reason), amount);
     }
 }

@@ -3,6 +3,7 @@ use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
     casper_env::caller,
     Address,
+    BlockTime,
     ContractCall,
     DocumentHash,
     Mapping,
@@ -16,6 +17,7 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
     },
     ConfigurationBuilder,
@@ -61,13 +63,6 @@ pub struct ReputationVoting {
     pub account: Address,
     pub amount: U512,
     pub document_hash: DocumentHash,
-}
-
-/// An event thrown when new reputation voting starts
-#[derive(Debug, PartialEq, Eq, Event)]
-pub struct ReputationVotingCreated {
-    pub reputation_voting: ReputationVoting,
-    pub voting_id: VotingId,
 }
 
 #[casper_contract_interface]
@@ -181,25 +176,21 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         })
         .build();
 
-        let voting_id = self
+        let info = self
             .voting
             .create_voting(caller(), stake, voting_configuration);
 
         let reputation_voting = ReputationVoting {
-            action,
+            action: action.clone(),
             account,
             amount,
-            document_hash,
+            document_hash: document_hash.clone(),
         };
 
         self.reputation_votings
-            .set(&voting_id, reputation_voting.clone());
+            .set(&info.voting_id, reputation_voting);
 
-        ReputationVotingCreated {
-            reputation_voting,
-            voting_id,
-        }
-        .emit();
+        ReputationVotingCreated::new(account, action, amount, document_hash, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -210,5 +201,53 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
         self.voting.slash_voter(voter, voting_id);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct ReputationVotingCreated {
+    account: Address,
+    action: Action,
+    amount: U512,
+    document_hash: DocumentHash,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl ReputationVotingCreated {
+    pub fn new(
+        account: Address,
+        action: Action,
+        amount: U512,
+        document_hash: DocumentHash,
+        info: VotingCreatedInfo,
+    ) -> Self {
+        Self {
+            account,
+            action,
+            amount,
+            document_hash,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
+        }
     }
 }

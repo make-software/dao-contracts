@@ -121,4 +121,8 @@ impl JobOffer {
             AuctionState::None
         }
     }
+
+    pub fn configuration(&self) -> &Configuration {
+        &self.configuration
+    }
 }

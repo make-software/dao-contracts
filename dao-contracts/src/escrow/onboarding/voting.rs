@@ -8,7 +8,7 @@ use casper_dao_utils::{
     Error,
     Mapping,
 };
-use casper_types::{URef, U512};
+use casper_types::U512;
 
 use super::request::{OnboardingRequest, Request};
 use crate::{
@@ -18,7 +18,7 @@ use crate::{
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
         VotingEngine,
-        VotingId,
+        VotingId, VotingCreatedInfo,
     },
     Configuration,
     ConfigurationBuilder,
@@ -47,11 +47,10 @@ impl Onboarding {
         self.requests.get_or_none(&voting_id)
     }
 
-    pub fn submit_request(&mut self, reason: DocumentHash, purse: URef) {
+    pub fn submit_request(&mut self, reason: DocumentHash, cspr_deposit: U512) -> VotingCreatedInfo {
         let requestor = caller();
 
         let configuration = self.build_configuration();
-        let cspr_deposit = transfer::deposit_cspr(purse);
         let rep_stake = configuration.apply_reputation_conversion_rate_to(cspr_deposit);
         let exists_ongoing_voting = self
             .get_user_voting(&requestor)
@@ -69,11 +68,13 @@ impl Onboarding {
         };
 
         // Create voting and cast creator's ballot
-        let voting_id = self.init_voting(requestor, configuration.clone(), rep_stake);
+        let voting_info = self.init_voting(requestor, configuration.clone(), rep_stake);
+        let voting_id = voting_info.voting_id;
 
         self.store_request(request, voting_id);
         self.store_configuration(voting_id, configuration);
-        // TODO: emit event
+
+        voting_info
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId) {
@@ -122,8 +123,10 @@ impl Onboarding {
         creator: Address,
         configuration: Configuration,
         stake: U512,
-    ) -> VotingId {
-        let voting_id = self.voting.create_voting(creator, stake, configuration);
+    ) -> VotingCreatedInfo {
+        let voting_info = self.voting.create_voting(creator, stake, configuration);
+        let voting_id = voting_info.voting_id;
+        let mut voting = self.voting.get_voting_or_revert(voting_id);
 
         // passed config disables casting first votes, must be casted manually.
         self.voting.cast_ballot(
@@ -132,11 +135,11 @@ impl Onboarding {
             Choice::InFavor,
             stake,
             true,
-            self.voting.get_voting_or_revert(voting_id),
+            &mut voting
         );
         self.ids.set(&creator, voting_id);
-
-        voting_id
+        self.voting.set_voting(voting);
+        voting_info
     }
 
     fn store_request(&mut self, request: OnboardingRequest, voting_id: VotingId) {
@@ -149,13 +152,14 @@ impl Onboarding {
     }
 
     fn create_formal_voting(&mut self, voting_id: VotingId) {
-        let voting = self.voting.get_voting_or_revert(voting_id);
+        let mut voting = self.voting.get_voting_or_revert(voting_id);
         if voting.voting_configuration().informal_stake_reputation() {
             self.voting
                 .unstake_all_reputation(voting_id, VotingType::Informal);
         }
         self.voting
-            .recast_creators_ballot_from_informal_to_formal(voting_id);
+            .recast_creators_ballot_from_informal_to_formal(&mut voting);
+        self.voting.set_voting(voting);
     }
 }
 
@@ -210,9 +214,9 @@ impl Onboarding {
             || voting_type == VotingType::Formal
         {
             self.voting
-                .return_reputation_of_yes_voters(voting_id, voting_type);
+                .return_yes_voters_rep(voting_id, voting_type);
             self.voting
-                .return_reputation_of_no_voters(voting_id, voting_type);
+                .return_no_voters_rep(voting_id, voting_type);
         }
 
         transfer::withdraw_cspr(request.creator(), request.cspr_deposit());
@@ -232,7 +236,7 @@ impl Onboarding {
         self.voting
             .bound_ballot(voting_id, request.creator(), VotingType::Formal);
         self.voting
-            .return_reputation_of_yes_voters(voting_id, VotingType::Formal);
+            .return_yes_voters_rep(voting_id, VotingType::Formal);
         self.voting
             .redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
         // Burn temporary reputation.
@@ -245,7 +249,7 @@ impl Onboarding {
         let configuration = self.configurations.get_or_revert(&voting_id);
 
         self.voting
-            .return_reputation_of_no_voters(voting_id, VotingType::Formal);
+            .return_no_voters_rep(voting_id, VotingType::Formal);
         self.voting
             .redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
         let amount = self.redistribute_to_governance(&configuration, request.cspr_deposit());

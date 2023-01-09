@@ -1,10 +1,10 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::system::get_purse_balance,
-    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_dao_macros::{casper_contract_interface, Instance, Event},
     casper_env::{self, caller},
     Address,
-    DocumentHash,
+    DocumentHash, transfer, BlockTime,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
@@ -16,7 +16,7 @@ use crate::{
         Ballot,
         Choice,
         VotingEngine,
-        VotingId,
+        VotingId, VotingCreatedInfo,
     },
 };
 
@@ -36,7 +36,7 @@ pub trait OnboardingRequestContractInterface {
     );
 
     /// Submits onboarding request. If the request is valid voting starts.
-    fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
+    fn create_voting(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote over a job
     /// # Events
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
@@ -114,8 +114,6 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
         }
 
         to self.onboarding {
-            #[call(submit_request)]
-            fn submit_onboarding_request(&mut self, reason: DocumentHash, purse: URef);
             fn finish_voting(&mut self, voting_id: VotingId);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
         }
@@ -131,6 +129,12 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
         self.voting.init(variable_repo, reputation_token, va_token);
         self.onboarding.init(va_token, kyc_token);
         self.access_control.init(caller());
+    }
+
+    fn create_voting(&mut self, reason: DocumentHash, purse: URef) {
+        let cspr_deposit = transfer::deposit_cspr(purse);
+        let voting_info = self.onboarding.submit_request(reason.clone(), cspr_deposit);
+        OnboardingVotingCreated::new(reason, cspr_deposit, voting_info).emit();
     }
 
     fn get_cspr_balance(&self) -> U512 {
@@ -163,5 +167,48 @@ impl OnboardingRequestContractTest {
                 "amount" => cspr_amount,
             },
         )
+    }
+}
+
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct OnboardingVotingCreated {
+    reason: DocumentHash,
+    cspr_deposit: U512,
+    creator: Address,
+    stake: Option<U512>,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl OnboardingVotingCreated {
+    pub fn new(
+        reason: DocumentHash,
+        cspr_deposit: U512,
+        info: VotingCreatedInfo,
+    ) -> Self {
+        Self {
+            reason,
+            cspr_deposit,
+            creator: info.creator,
+            stake: info.stake,
+            voting_id: info.voting_id,
+            config_informal_quorum: info.config_informal_quorum,
+            config_informal_voting_time: info.config_informal_voting_time,
+            config_formal_quorum: info.config_formal_quorum,
+            config_formal_voting_time: info.config_formal_voting_time,
+            config_total_onboarded: info.config_total_onboarded,
+            config_double_time_between_votings: info.config_double_time_between_votings,
+            config_voting_clearness_delta: info.config_voting_clearness_delta,
+            config_time_between_informal_and_formal_voting: info
+                .config_time_between_informal_and_formal_voting,
+        }
     }
 }
