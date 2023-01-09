@@ -6,7 +6,7 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use super::{balances::BalanceStorage, stakes::StakeInfo};
+use super::{balances::BalanceStorage, stakes::StakesStorage};
 use crate::{escrow::types::BidId, voting::VotingId};
 
 #[derive(Instance)]
@@ -14,7 +14,7 @@ pub struct BalanceAggregates {
     #[scoped = "contract"]
     reputation_storage: BalanceStorage,
     #[scoped = "contract"]
-    stake_info: StakeInfo,
+    stakes_storage: StakesStorage,
 }
 
 impl BalanceAggregates {
@@ -42,8 +42,8 @@ impl BalanceAggregates {
     }
 
     pub fn stakes_info(&self, address: Address) -> AggregatedStake {
-        let bids = self.stake_info.get_bids(&address);
-        let votings = self.stake_info.get_votings(&address);
+        let bids = self.stakes_storage.get_bids(&address);
+        let votings = self.stakes_storage.get_votings(&address);
         AggregatedStake::new(address, votings, bids)
     }
 }
@@ -66,7 +66,7 @@ impl AggregatedBalance {
         &self.balances
     }
 
-    pub fn partial_supply(&self) -> U512 {
+    pub fn total_supply(&self) -> U512 {
         self.total_supply
     }
 }

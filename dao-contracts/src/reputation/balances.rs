@@ -99,21 +99,21 @@ impl BalanceStorage {
     }
 
     fn inc_balance(&mut self, owner: &Address, amount: U512) {
-        let balance = self.balances.get(&owner).unwrap_or_default();
+        let balance = self.balances.get(owner).unwrap_or_default();
         let new_balance = balance
             .checked_add(amount)
             .unwrap_or_revert_with(Error::ArithmeticOverflow);
 
-        self.set_balance(&owner, new_balance);
+        self.set_balance(owner, new_balance);
     }
 
     fn dec_balance(&mut self, owner: &Address, amount: U512) {
-        let balance = self.balances.get(&owner).unwrap_or_default();
+        let balance = self.balances.get(owner).unwrap_or_default();
         let new_balance = balance
             .checked_sub(amount)
             .unwrap_or_revert_with(Error::InsufficientBalance);
 
-        self.set_balance(&owner, new_balance);
+        self.set_balance(owner, new_balance);
     }
 
     fn inc_total_supply(&mut self, amount: U512) {

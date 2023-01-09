@@ -12,7 +12,7 @@ use delegate::delegate;
 use super::{
     agg::{AggregatedStake, BalanceAggregates},
     balances::BalanceStorage,
-    stakes::StakeInfo,
+    stakes::StakesStorage,
     AggregatedBalance,
 };
 use crate::{
@@ -129,11 +129,11 @@ pub trait ReputationContractInterface {
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
 #[derive(Instance)]
 pub struct ReputationContract {
-    passive_reputation_storage: BalanceStorage,
     reputation_storage: BalanceStorage,
-    access_control: AccessControl,
-    stake_info: StakeInfo,
+    passive_reputation_storage: BalanceStorage,
+    stakes_storage: StakesStorage,
     aggregates: BalanceAggregates,
+    access_control: AccessControl,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -164,8 +164,12 @@ impl ReputationContractInterface for ReputationContract {
             fn burn_all(&mut self, owner: Address);
         }
 
-        to self.stake_info {
+        to self.stakes_storage {
             fn get_stake(&self, address: Address) -> U512;
+            fn stake_voting(&mut self, ballot: Ballot);
+            fn stake_bid(&mut self, bidder: Address, bid_id: BidId, amount: U512);
+            fn unstake_voting(&mut self, ballot: Ballot);
+            fn unstake_bid(&mut self, bid: Bid);
         }
 
         to self.aggregates {
@@ -178,27 +182,6 @@ impl ReputationContractInterface for ReputationContract {
     fn init(&mut self) {
         let deployer = caller();
         self.access_control.init(deployer);
-    }
-
-    fn stake_voting(&mut self, ballot: Ballot) {
-        let voter_contract = caller();
-        self.stake_info.stake_voting(voter_contract, ballot);
-    }
-
-    fn stake_bid(&mut self, bidder: Address, bid_id: BidId, amount: U512) {
-        let voter_contract = caller();
-        self.stake_info
-            .stake_bid(voter_contract, bidder, bid_id, amount);
-    }
-
-    fn unstake_voting(&mut self, ballot: Ballot) {
-        let voter_contract = caller();
-        self.stake_info.unstake_voting(voter_contract, ballot);
-    }
-    
-    fn unstake_bid(&mut self, bid: Bid) {
-        let voter_contract = caller();
-        self.stake_info.unstake_bid(voter_contract, bid);
     }
 }
 

@@ -2,12 +2,16 @@ use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::revert,
+    casper_env::{self, revert},
     Address,
     Error,
     Mapping,
 };
-use casper_types::U512;
+use casper_types::{
+    bytesrepr::{FromBytes, ToBytes},
+    CLTyped,
+    U512,
+};
 
 use super::balances::BalanceStorage;
 use crate::{
@@ -16,7 +20,7 @@ use crate::{
 };
 
 #[derive(Instance)]
-pub struct StakeInfo {
+pub struct StakesStorage {
     total_stake: Mapping<Address, U512>,
     bids: Mapping<Address, Vec<(Address, BidId)>>,
     votings: Mapping<Address, Vec<(Address, VotingId)>>,
@@ -26,7 +30,58 @@ pub struct StakeInfo {
     reputation_storage: BalanceStorage,
 }
 
-impl StakeInfo {
+impl StakesStorage {
+    pub fn stake_voting(&mut self, ballot: Ballot) {
+        self.access_control.ensure_whitelisted();
+
+        let Ballot {
+            voter,
+            stake,
+            voting_id,
+            ..
+        } = ballot;
+        self.assert_stake(stake);
+        self.assert_balance(voter, stake);
+
+        let voter_contract = casper_env::caller();
+        self.inc_total_stake(voter, stake);
+        self.votings
+            .push_record(&voter, (voter_contract, voting_id));
+
+        // TODO: Emit Stake event.
+    }
+
+    pub fn unstake_voting(&mut self, ballot: Ballot) {
+        self.access_control.ensure_whitelisted();
+
+        let voter_contract = casper_env::caller();
+        // Decrement total stake.
+        self.dec_total_stake(ballot.voter, ballot.stake);
+        self.votings
+            .remove_record(&ballot.voter, (voter_contract, ballot.voting_id));
+    }
+
+    pub fn stake_bid(&mut self, bidder: Address, bid_id: BidId, stake: U512) {
+        self.access_control.ensure_whitelisted();
+        self.assert_balance(bidder, stake);
+        self.assert_stake(stake);
+
+        let voter_contract = casper_env::caller();
+        self.inc_total_stake(bidder, stake);
+        self.bids.push_record(&bidder, (voter_contract, bid_id));
+        // TODO: Emit Stake event.
+    }
+
+    pub fn unstake_bid(&mut self, bid: Bid) {
+        self.access_control.ensure_whitelisted();
+
+        let voter_contract = casper_env::caller();
+        // Decrement total stake.
+        self.dec_total_stake(bid.worker, bid.reputation_stake);
+        self.bids
+            .remove_record(&bid.worker, (voter_contract, bid.bid_id));
+    }
+
     pub fn get_stake(&self, address: Address) -> U512 {
         self.total_stake.get(&address).unwrap_or_default()
     }
@@ -38,74 +93,25 @@ impl StakeInfo {
     pub fn get_votings(&self, address: &Address) -> Vec<(Address, VotingId)> {
         self.votings.get(address).unwrap_or_default()
     }
+}
 
-    pub fn stake_voting(
-        &mut self,
-        voter_contract: Address,
-        ballot: Ballot,
-    ) {
-        self.access_control.ensure_whitelisted();
+impl StakesStorage {
+    fn assert_balance(&self, address: Address, stake: U512) {
+        let user_stake = self.get_stake(address);
+        let available_balance = self
+            .reputation_storage
+            .balance_of(address)
+            .saturating_sub(user_stake);
 
-        let Ballot {
-            voter,
-            stake,
-            voting_id,
-            ..
-        } = ballot;
+        if available_balance < stake {
+            revert(Error::InsufficientBalance)
+        }
+    }
+
+    fn assert_stake(&self, stake: U512) {
         if stake.is_zero() {
-            revert(Error::ZeroStake);
+            revert(Error::ZeroStake)
         }
-        if stake
-            > self.reputation_storage
-                .balance_of(voter)
-                .saturating_sub(self.get_stake(voter))
-        {
-            revert(Error::InsufficientBalance);
-        }
-        self.inc_total_stake(voter, stake);
-        self.push_voting_id(&voter, (voter_contract, voting_id));
-
-        // TODO: Emit Stake event.
-    }
-
-    pub fn unstake_voting(&mut self, voter_contract: Address, ballot: Ballot) {
-        self.access_control.ensure_whitelisted();
-
-        // Decrement total stake.
-        self.dec_total_stake(ballot.voter, ballot.stake);
-        self.remove_voting_id(&ballot.voter, (voter_contract, ballot.voting_id));
-    }
-
-    pub fn stake_bid(
-        &mut self,
-        voter_contract: Address,
-        bidder: Address,
-        bid_id: BidId,
-        stake: U512,
-    ) {
-        self.access_control.ensure_whitelisted();
-
-        if stake.is_zero() {
-            revert(Error::ZeroStake);
-        }
-        if stake
-            > self.reputation_storage
-                .balance_of(bidder)
-                .saturating_sub(self.get_stake(bidder))
-        {
-            revert(Error::InsufficientBalance);
-        }
-        self.inc_total_stake(bidder, stake);
-        self.push_bid_id(&bidder, (voter_contract, bid_id));
-        // TODO: Emit Stake event.
-    }
-
-    pub fn unstake_bid(&mut self, voter_contract: Address, bid: Bid) {
-        self.access_control.ensure_whitelisted();
-
-        // Decrement total stake.
-        self.dec_total_stake(bid.worker, bid.reputation_stake);
-        self.remove_bid_id(&bid.worker, (voter_contract, bid.bid_id));
     }
 
     fn inc_total_stake(&mut self, account: Address, amount: U512) {
@@ -120,32 +126,28 @@ impl StakeInfo {
             .unwrap_or_revert_with(Error::ZeroStake);
         self.total_stake.set(&account, new_value);
     }
+}
 
-    pub fn push_bid_id(&mut self, address: &Address, record: (Address, BidId)) {
-        let mut records = self.bids.get(address).unwrap_or_default();
+trait Updatable<R> {
+    fn push_record(&self, key: &Address, record: R);
+    fn remove_record(&self, key: &Address, record: R);
+}
+
+impl<Record> Updatable<Record> for Mapping<Address, Vec<Record>>
+where
+    Record: ToBytes + FromBytes + CLTyped + PartialEq,
+{
+    fn push_record(&self, key: &Address, record: Record) {
+        let mut records = self.get(key).unwrap_or_default();
         records.push(record);
-        self.bids.set(address, records);
+        self.set(key, records);
     }
 
-    pub fn push_voting_id(&mut self, address: &Address, record: (Address, BidId)) {
-        let mut records = self.votings.get(address).unwrap_or_default();
-        records.push(record);
-        self.votings.set(address, records);
-    }
-
-    pub fn remove_bid_id(&mut self, address: &Address, record: (Address, BidId)) {
-        let mut records = self.bids.get(address).unwrap_or_default();
+    fn remove_record(&self, key: &Address, record: Record) {
+        let mut records = self.get(key).unwrap_or_default();
         if let Some(position) = records.iter().position(|r| r == &record) {
             records.remove(position);
         }
-        self.bids.set(address, records);
-    }
-
-    pub fn remove_voting_id(&mut self, address: &Address, record: (Address, BidId)) {
-        let mut records = self.votings.get(address).unwrap_or_default();
-        if let Some(position) = records.iter().position(|r| r == &record) {
-            records.remove(position);
-        }
-        self.votings.set(address, records);
+        self.set(key, records);
     }
 }

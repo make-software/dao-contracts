@@ -459,7 +459,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         onboard: bool,
         purse: Option<URef>,
     ) {
-        let cspr_stake = purse.map(|purse| transfer::deposit_cspr(purse));
+        let cspr_stake = purse.map(transfer::deposit_cspr);
 
         if cspr_stake.is_none() && reputation_stake.is_zero() {
             revert(Error::ZeroStake);
@@ -756,7 +756,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
 impl BidEscrowContract {
     fn slash_worker(&self, job: &Job) {
-        let config = self.job_storage.get_job_offer_configuration(&job);
+        let config = self.job_storage.get_job_offer_configuration(job);
         let worker_balance = self.reputation_token().balance_of(job.worker());
         let amount_to_burn = config.apply_default_reputation_slash_to(worker_balance);
         self.reputation_token().burn(job.worker(), amount_to_burn);
@@ -824,7 +824,7 @@ impl BidEscrowContract {
 
         // For VA's
         let all_balances = self.voting.reputation_token().all_balances();
-        let total_supply = all_balances.partial_supply();
+        let total_supply = all_balances.total_supply();
 
         for (address, balance) in all_balances.balances() {
             let amount = total_left * balance / total_supply;
@@ -844,7 +844,7 @@ impl BidEscrowContract {
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
         let all_balances = self.voting.reputation_token().all_balances();
-        let total_supply = all_balances.partial_supply();
+        let total_supply = all_balances.total_supply();
 
         for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
@@ -859,7 +859,7 @@ impl BidEscrowContract {
         let all_voters = self.voting.all_voters(voting_id, VotingType::Formal);
 
         let balances = self.voting.reputation_token().partial_balances(all_voters);
-        let partial_supply = balances.partial_supply();
+        let partial_supply = balances.total_supply();
         for (address, balance) in balances.balances() {
             let amount = to_redistribute * balance / partial_supply;
             transfer::withdraw_cspr(*address, amount);
