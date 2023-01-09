@@ -9,6 +9,7 @@ use casper_types::U512;
 use super::{balances::BalanceStorage, stakes::StakesStorage};
 use crate::{escrow::types::BidId, voting::VotingId};
 
+/// A module that provides aggregated data about reputation tokens.
 #[derive(Instance)]
 pub struct BalanceAggregates {
     #[scoped = "contract"]
@@ -18,6 +19,7 @@ pub struct BalanceAggregates {
 }
 
 impl BalanceAggregates {
+    /// Gets balances of all the token holders.
     pub fn all_balances(&self) -> AggregatedBalance {
         let mut balances = BTreeMap::<Address, U512>::new();
         self.reputation_storage.holders().for_each(|address| {
@@ -27,6 +29,7 @@ impl BalanceAggregates {
         AggregatedBalance::new(balances, self.reputation_storage.total_supply())
     }
 
+    /// Gets balances of the given account addresses.
     pub fn partial_balances(&self, addresses: Vec<Address>) -> AggregatedBalance {
         let mut balances = BTreeMap::<Address, U512>::new();
         let mut partial_supply = U512::zero();
@@ -41,6 +44,7 @@ impl BalanceAggregates {
         }
     }
 
+    /// Gets all the data about the given user stakes.
     pub fn stakes_info(&self, address: Address) -> AggregatedStake {
         let bids = self.stakes_storage.get_bids(&address);
         let votings = self.stakes_storage.get_votings(&address);
@@ -48,6 +52,8 @@ impl BalanceAggregates {
     }
 }
 
+
+/// Stores information about balances and the total supply.
 #[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]
 pub struct AggregatedBalance {
     balances: BTreeMap<Address, U512>,
@@ -71,6 +77,7 @@ impl AggregatedBalance {
     }
 }
 
+/// Stores information about the user's voting and bids.
 #[derive(Debug, FromBytes, ToBytes, CLTyped)]
 pub struct AggregatedStake {
     voter: Address,
