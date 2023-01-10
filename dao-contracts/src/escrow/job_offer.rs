@@ -4,12 +4,20 @@ use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
     BlockTime,
-    Error,
 };
 use casper_types::U512;
 
 use crate::{
-    escrow::{types::JobOfferId, validation::rules::is_dos_fee_enough::IsDosFeeEnough},
+    escrow::{
+        job::PickBidRequest,
+        types::JobOfferId,
+        validation::rules::{
+            can_job_offer_be_cancelled::CanJobOfferBeCancelled,
+            can_progress_job_offer::CanProgressJobOffer,
+            has_permissions_to_cancel_job_offer::HasPermissionsToCancelJobOffer,
+            is_dos_fee_enough::IsDosFeeEnough,
+        },
+    },
     rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
     Configuration,
 };
@@ -17,7 +25,7 @@ use crate::{
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]
 pub enum JobOfferStatus {
     Created,
-    Selected,
+    InProgress,
     Cancelled,
 }
 
@@ -37,6 +45,11 @@ pub struct PostJobOfferRequest {
     pub dos_fee: U512,
     pub start_time: BlockTime,
     pub configuration: Rc<Configuration>,
+}
+
+pub struct CancelJobOfferRequest {
+    pub caller: Address,
+    pub block_time: BlockTime,
 }
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]
@@ -73,6 +86,28 @@ impl JobOffer {
         }
     }
 
+    pub fn in_progress(&mut self, request: &PickBidRequest) {
+        RulesBuilder::new()
+            .add_validation(CanProgressJobOffer::create(request.caller, self.job_poster))
+            .validate();
+
+        self.status = JobOfferStatus::InProgress;
+    }
+
+    pub fn cancel(&mut self, request: &CancelJobOfferRequest) {
+        RulesBuilder::new()
+            .add_validation(HasPermissionsToCancelJobOffer::create(
+                request.caller,
+                self.job_poster,
+            ))
+            .add_validation(CanJobOfferBeCancelled::create(
+                self.auction_state(request.block_time),
+            ))
+            .validate();
+
+        self.status = JobOfferStatus::Cancelled;
+    }
+
     pub fn auction_state(&self, block_time: BlockTime) -> AuctionState {
         let public_auction_start_time =
             self.start_time + self.configuration.internal_auction_time();
@@ -87,15 +122,7 @@ impl JobOffer {
         }
     }
 
-    pub fn validate_cancel(&self, caller: Address, block_time: BlockTime) -> Result<(), Error> {
-        if caller != self.job_poster {
-            return Err(Error::OnlyJobPosterCanCancelJobOffer);
-        }
-
-        if self.auction_state(block_time) != AuctionState::None {
-            return Err(Error::JobOfferCannotBeYetCanceled);
-        }
-
-        Ok(())
+    pub fn configuration(&self) -> &Configuration {
+        &self.configuration
     }
 }

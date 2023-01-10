@@ -38,6 +38,8 @@ use crate::{
     VaNftContractCaller,
     VaNftContractInterface,
 };
+use crate::rules::builder::RulesBuilder;
+use crate::voting::validation::rules::can_create_voting::CanCreateVoting;
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
 /// 1. Informal voting
@@ -90,9 +92,9 @@ impl VotingEngine {
         stake: U512,
         configuration: Configuration,
     ) -> VotingCreatedInfo {
-        if configuration.only_va_can_create() && !self.is_va(creator) {
-            revert(Error::NotOnboarded)
-        }
+        RulesBuilder::new()
+            .add_validation(CanCreateVoting::create(self.is_va(creator), configuration.only_va_can_create()))
+            .validate();
 
         let should_cast_first_vote = configuration.should_cast_first_vote();
 

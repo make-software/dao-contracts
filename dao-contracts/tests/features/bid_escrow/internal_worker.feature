@@ -1,5 +1,7 @@
 Feature: Internal Flow
+  External and Internal Workers are submitting a bid.
   Job Poster picks a bid of an Internal Worker, and the Internal Worker accepts the job.
+  External Worker's stake is returned.
   The voting process is completed.
 
   Background:
@@ -18,6 +20,8 @@ Feature: Internal Flow
       | VotingStartAfterJobSubmission          | 0             |
     When JobPoster posted a JobOffer with expected timeframe of 14 days, maximum budget of 1000 CSPR and 400 CSPR DOS Fee
     And InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
+    And 8 days passed
+    And ExternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 CSPR stake with onboarding
     And JobPoster picked the Bid of InternalWorker
 
   Scenario: JobPoster picked the Bid of Internal Worker
@@ -26,6 +30,7 @@ Feature: Internal Flow
       | BidEscrow        | 900          | 0            | 0          |
       | JobPoster        | 100          | 0            | 0          |
       | InternalWorker   | 0            | 1000         | 100        |
+      | ExternalWorker   | 500          | 0            | 0          |
       | VA1              | 0            | 1000         | 0          |
       | VA2              | 0            | 1000         | 0          |
     When InternalWorker submits the JobProof of Job 0
