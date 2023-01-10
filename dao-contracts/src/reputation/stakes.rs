@@ -19,6 +19,9 @@ use crate::{
     voting::{Ballot, VotingId},
 };
 
+/// A module that stores information about stakes.
+/// 
+/// 
 #[derive(Instance)]
 pub struct StakesStorage {
     total_stake: Mapping<Address, U512>,
@@ -31,6 +34,15 @@ pub struct StakesStorage {
 }
 
 impl StakesStorage {
+    /// Decreases the voter's stake and total stake.
+    /// 
+    /// # Arguments
+    ///
+    /// * `ballot` - the original ballot that has been casted.
+    ///
+    /// # Errors
+    ///
+    /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn stake_voting(&mut self, ballot: Ballot) {
         self.access_control.ensure_whitelisted();
 
@@ -51,6 +63,15 @@ impl StakesStorage {
         // TODO: Emit Stake event.
     }
 
+    /// Decreases the voter's stake and total stake.
+    /// 
+    /// # Arguments
+    ///
+    /// * `ballot` - the original ballot that has been casted.
+    ///
+    /// # Errors
+    ///
+    /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn unstake_voting(&mut self, ballot: Ballot) {
         self.access_control.ensure_whitelisted();
 
@@ -61,6 +82,17 @@ impl StakesStorage {
             .remove_record(&ballot.voter, (voter_contract, ballot.voting_id));
     }
 
+    /// Increases the voter's stake and total stake.
+    /// 
+    /// # Arguments
+    ///
+    /// * `bidder` - the address who placed the bid.
+    /// * `bid_id` - the id of placed the bid 
+    /// * `stake` - the amount attached to the bid.
+    ///
+    /// # Errors
+    ///
+    /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn stake_bid(&mut self, bidder: Address, bid_id: BidId, stake: U512) {
         self.access_control.ensure_whitelisted();
         self.assert_balance(bidder, stake);
@@ -72,6 +104,15 @@ impl StakesStorage {
         // TODO: Emit Stake event.
     }
 
+    /// Decreases the voter's stake and total stake.
+    /// 
+    /// # Arguments
+    ///
+    /// * `bid` - the original bid that has been offered.
+    ///
+    /// # Errors
+    ///
+    /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn unstake_bid(&mut self, bid: Bid) {
         self.access_control.ensure_whitelisted();
 
@@ -82,14 +123,21 @@ impl StakesStorage {
             .remove_record(&bid.worker, (voter_contract, bid.bid_id));
     }
 
+    /// Returns the total stake of the given account.
     pub fn get_stake(&self, address: Address) -> U512 {
         self.total_stake.get(&address).unwrap_or_default()
     }
 
+    /// Returns all the bids placed by the given account. 
+    /// 
+    /// A returned vector is a tuple of (BidEscrow contract address, bid id).
     pub fn get_bids(&self, address: &Address) -> Vec<(Address, BidId)> {
         self.bids.get(address).unwrap_or_default()
     }
 
+    /// Returns all the voting the given account participated in. 
+    /// 
+    /// A returned vector is a tuple of (voting contract address, voting id).
     pub fn get_votings(&self, address: &Address) -> Vec<(Address, VotingId)> {
         self.votings.get(address).unwrap_or_default()
     }
@@ -128,12 +176,12 @@ impl StakesStorage {
     }
 }
 
-trait Updatable<R> {
+trait UpdatableVec<R> {
     fn push_record(&self, key: &Address, record: R);
     fn remove_record(&self, key: &Address, record: R);
 }
 
-impl<Record> Updatable<Record> for Mapping<Address, Vec<Record>>
+impl<Record> UpdatableVec<Record> for Mapping<Address, Vec<Record>>
 where
     Record: ToBytes + FromBytes + CLTyped + PartialEq,
 {

@@ -20,9 +20,7 @@ use casper_types::U512;
 
 use super::token::events::{Burn, Mint};
 
-/// The BalanceStorage module.
-///
-/// Stores information about the users' token balances and the total token supply.
+/// A module that stores information about the users' token balances and the total token supply.
 ///
 /// In the system occurs two types of balances:
 /// 1. "Real balance" - the actual tokens that a user posses.

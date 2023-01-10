@@ -30,7 +30,7 @@ pub trait ReputationContractInterface {
     ///
     /// It initializes contract elements:
     /// * Events dictionary.
-    /// * Named keys of [`TokenWithStaking`], [`AccessControl`].
+    /// * Named keys of [`AccessControl`].
     /// * Set [`caller`] as the owner of the contract.
     /// * Add [`caller`] to the whitelist.
     ///
@@ -38,13 +38,13 @@ pub trait ReputationContractInterface {
     /// [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) events.
     fn init(&mut self);
 
-    /// Mint new tokens. Add `amount` of new tokens to the balance of the `recipient` and
-    /// increment the total supply. Only whitelisted addresses are permitted to call this method.
+    /// Mints new tokens. Adds `amount` of new tokens to the balance of the `recipient` and
+    /// increments the total supply. Only whitelisted addresses are permitted to call this method.
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Mint`](casper_dao_contracts::reputation::events::Mint) event.
+    /// It emits [`Mint`](events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U512);
 
     /// Increases the balance of the passive reputation of the given address.
@@ -53,14 +53,14 @@ pub trait ReputationContractInterface {
     /// is not whitelisted.
     fn mint_passive(&mut self, recipient: Address, amount: U512);
 
-    /// Burn existing tokens. Remove `amount` of existing tokens from the balance of the `owner`
-    /// and decrement the total supply. Only whitelisted addresses are permitted to call this
+    /// Burns existing tokens. Removes `amount` of existing tokens from the balance of the `owner`
+    /// and decrements the total supply. Only whitelisted addresses are permitted to call this
     /// method.
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// It emits [`Burn`](casper_dao_contracts::reputation::events::Burn) event.
+    /// It emits [`Burn`](events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U512);
 
     /// Decreases the balance of the passive reputation of the given address.
@@ -72,18 +72,18 @@ pub trait ReputationContractInterface {
     /// amount exceeds the balance of the passive reputation of the given address.
     fn burn_passive(&mut self, owner: Address, amount: U512);
 
-    /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
+    /// Changes ownership of the contract. Transfer the ownership to the `owner`. Only the current owner
     /// is permitted to call this method.
     ///
     /// See [AccessControl](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
 
-    /// Add new address to the whitelist.
+    /// Adds a  new address to the whitelist.
     ///
     /// See [AccessControl](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
 
-    /// Remove address from the whitelist.
+    /// Removes address from the whitelist.
     ///
     /// See [AccessControl](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
@@ -103,26 +103,34 @@ pub trait ReputationContractInterface {
     /// Checks whether the given address is added to the whitelist.
     fn is_whitelisted(&self, address: Address) -> bool;
 
-    /// Stakes the reputation for a given voting and choice.
+    /// Stakes the reputation used as voting power.
     fn stake_voting(&mut self, ballot: Ballot);
 
+    // Unstakes the reputation used as voting power.
     fn unstake_voting(&mut self, ballot: Ballot);
 
+    /// Stakes the reputation used as bid value.
     fn stake_bid(&mut self, bidder: Address, bid_id: BidId, amount: U512);
 
+    /// Unstakes the reputation used as bid value.
     fn unstake_bid(&mut self, bid: Bid);
 
+    /// Returns the total stake of the given account.
     fn get_stake(&self, address: Address) -> U512;
 
+    /// Gets balances of all the token holders.
     fn all_balances(&self) -> AggregatedBalance;
 
+    /// Gets balances of the given account addresses.
     fn partial_balances(&self, addresses: Vec<Address>) -> AggregatedBalance;
 
-    // Redistributes the reputation based on the voting summary
+    /// Redistributes the reputation based on the voting summary
     fn bulk_mint_burn(&mut self, mints: BTreeMap<Address, U512>, burns: BTreeMap<Address, U512>);
 
+    /// Burns all the tokens of the `owner`.
     fn burn_all(&mut self, owner: Address);
 
+    /// Returns all the data about the given user stakes.
     fn stakes_info(&self, address: Address) -> AggregatedStake;
 }
 
