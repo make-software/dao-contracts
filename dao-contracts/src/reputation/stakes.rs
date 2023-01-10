@@ -120,7 +120,7 @@ impl StakesStorage {
         // TODO: Emit Stake event.
     }
 
-    /// Decreases the voter's stake and total stake.
+    /// Decreases the bidder's stake and total stake.
     /// 
     /// # Arguments
     ///
@@ -139,7 +139,15 @@ impl StakesStorage {
             .remove_record(&bid.worker, (voter_contract, bid.bid_id));
     }
 
-
+    // Decreases all the bidders stake and total stake.
+    /// 
+    /// # Arguments
+    ///
+    /// * `bid` - the original bid that has been offered.
+    ///
+    /// # Errors
+    ///
+    /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn bulk_unstake_bid(&mut self, bids: Vec<ShortenedBid>) {
         self.access_control.ensure_whitelisted();
 
@@ -152,7 +160,6 @@ impl StakesStorage {
                 .remove_record(&bid.worker, (voter_contract, bid.bid_id));
         }
     }
-
 
     /// Returns the total stake of the given account.
     pub fn get_stake(&self, address: Address) -> U512 {
