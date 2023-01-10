@@ -1,15 +1,16 @@
 use casper_dao_utils::Error;
 use cucumber::{gherkin::Step, given, then, when};
 
-use crate::common::{
+use crate::{common::{
     params::{
-        voting::{BallotBuilder, Voting, VotingType},
+        voting::{BallotBuilder, Voting, VotingType, Choice, Ballot},
         Account,
         Balance,
         Contract,
+        Result
     },
-    DaoWorld,
-};
+    DaoWorld, helpers,
+}, on_voting_contract};
 
 #[when(expr = "{account} starts voting with the following config")]
 #[given(expr = "{account} starts voting with the following config")]
@@ -76,7 +77,7 @@ fn assert_formal_voting_starts(world: &mut DaoWorld, voting_id: u32, contract: C
     assert!(voting_exists);
 }
 
-#[then(expr = "votes in {contract}'s     {voting_type} voting with id {int} fail")]
+#[then(expr = "votes in {contract}'s {voting_type} voting with id {int} fail")]
 fn assert_vote_fails(
     world: &mut DaoWorld,
     step: &Step,
@@ -103,4 +104,66 @@ fn assert_vote_fails(
         "ZeroStake" => assert_eq!(Error::ZeroStake, result.unwrap_err()),
         unknown => panic!("Unknown error {}", unknown),
     });
+}
+
+#[then(expr = "{account} {choice} vote of {balance} REP {result}")]
+fn assert_vote(
+    world: &mut DaoWorld,
+    step: &Step,
+    voter: Account,
+    choice: Choice,
+    stake: Balance,
+    expected_result: Result,
+) {
+    let voting = step.table.as_ref().unwrap().rows.first().unwrap();
+    let contract = helpers::parse::<Contract>(voting.get(0), "Couldn't parse contract");
+    let voting_id = helpers::parse_or_default::<u32>(voting.get(1));
+    let voting_type = helpers::parse_or_default::<VotingType>(voting.get(2));
+
+    let ballot = Ballot {
+        voting_id,
+        voting_type,
+        voter,
+        choice,
+        stake
+    };
+
+    assert_eq!(*expected_result, world.checked_vote(&contract, &ballot).is_ok());
+}
+
+#[then(expr = "{contract} ballot for voting {int} for {account} has {balance} unbounded tokens")]
+fn assert_ballot_is_unbounded(
+    w: &mut DaoWorld,
+    contract: Contract,
+    voting_id: u32,
+    account: Account,
+    amount: Balance,
+) {
+    let voting = on_voting_contract!(w, contract, get_voting(voting_id)).unwrap();
+    let voting_type = voting.voting_type();
+    let account = w.get_address(&account);
+    let ballot = on_voting_contract!(w, contract, get_ballot(voting_id, voting_type, account))
+        .unwrap_or_else(|| panic!("Ballot doesn't exists"));
+    assert_eq!(
+        ballot.choice,
+        Choice::InFavor.into(),
+        "Ballot choice not in favor"
+    );
+    assert!(ballot.unbounded, "Ballot is not unbounded");
+    assert_eq!(
+        ballot.stake, *amount,
+        "Ballot has stake {:?}, but should be {:?}",
+        ballot.stake, amount
+    );
+}
+
+#[then(expr = "{contract} total unbounded stake for voting {int} is {balance} tokens")]
+fn assert_unbounded_stake(w: &mut DaoWorld, contract: Contract, voting_id: u32, amount: Balance) {
+    let voting = on_voting_contract!(w, contract, get_voting(voting_id)).unwrap();
+    let total_unbounded_stake = voting.total_unbounded_stake();
+    assert_eq!(
+        total_unbounded_stake, *amount,
+        "Total unbounded stake is {:?}, but should be {:?}",
+        total_unbounded_stake, amount
+    );
 }
