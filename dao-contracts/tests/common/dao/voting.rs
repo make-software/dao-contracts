@@ -1,15 +1,18 @@
 use casper_dao_utils::{DocumentHash, Error, TestContract};
 use casper_types::{bytesrepr::Bytes, U512};
 
-use crate::{common::{
-    params::{
-        voting::{Ballot, Voting, VotingType},
-        Account,
-        Balance,
-        Contract,
+use crate::{
+    common::{
+        params::{
+            voting::{Ballot, Voting, VotingType},
+            Account,
+            Balance,
+            Contract,
+        },
+        DaoWorld,
     },
-    DaoWorld,
-}, on_voting_contract};
+    on_voting_contract,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -104,7 +107,12 @@ impl DaoWorld {
         let stake = ballot.stake.0;
         let voting_type = ballot.voting_type.into();
 
-        on_voting_contract!(self, voter, contract, vote(voting_id, voting_type, choice, stake))
+        on_voting_contract!(
+            self,
+            voter,
+            contract,
+            vote(voting_id, voting_type, choice, stake)
+        )
     }
 
     pub fn finish_voting(

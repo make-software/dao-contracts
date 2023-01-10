@@ -9,7 +9,14 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
-use crate::{escrow::bid::Bid, voting::types::VotingId};
+use crate::{
+    escrow::validation::rules::{
+        can_pick_bid::CanPickBid,
+        does_proposed_payment_match_transferred::DoesProposedPaymentMatchTransferred,
+    },
+    rules::builder::RulesBuilder,
+    voting::types::VotingId,
+};
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
@@ -26,6 +33,38 @@ impl Default for JobStatus {
     fn default() -> Self {
         JobStatus::Created
     }
+}
+
+pub struct PickBidRequest {
+    pub job_id: JobId,
+    pub job_offer_id: JobOfferId,
+    pub bid_id: BidId,
+    pub caller: Address,
+    pub poster: Address,
+    pub worker: Address,
+    pub is_worker_va: bool,
+    pub onboard: bool,
+    pub block_time: BlockTime,
+    pub timeframe: BlockTime,
+    pub payment: U512,
+    pub transferred_cspr: U512,
+    pub stake: U512,
+    pub external_worker_cspr_stake: U512,
+}
+
+pub struct ReclaimJobRequest {
+    pub new_job_id: JobId,
+    pub new_bid_id: BidId,
+    pub proposed_timeframe: BlockTime,
+    pub worker: Address,
+    pub cspr_stake: Option<U512>,
+    pub reputation_stake: U512,
+    pub onboard: bool,
+    pub block_time: BlockTime,
+}
+
+pub struct SubmitJobProofRequest {
+    pub proof: DocumentHash,
 }
 
 /// Struct holding Job
@@ -49,67 +88,69 @@ pub struct Job {
 }
 
 impl Job {
-    /// Job constructor
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        job_id: JobId,
-        bid_id: BidId,
-        job_offer_id: JobOfferId,
-        start_time: BlockTime,
-        timeframe: BlockTime,
-        worker: Address,
-        worker_type: WorkerType,
-        poster: Address,
-        payment: U512,
-        stake: U512,
-        external_worker_cspr_stake: U512,
-    ) -> Self {
+    pub fn new(request: &PickBidRequest) -> Self {
+        RulesBuilder::new()
+            .add_validation(CanPickBid::create(request.caller, request.poster))
+            .add_validation(DoesProposedPaymentMatchTransferred::create(
+                request.payment,
+                request.transferred_cspr,
+            ))
+            .validate();
+
+        let worker_type = if request.is_worker_va {
+            WorkerType::Internal
+        } else if request.onboard {
+            WorkerType::ExternalToVA
+        } else {
+            WorkerType::External
+        };
+
         Job {
-            job_id,
-            bid_id,
-            job_offer_id,
+            job_id: request.job_id,
+            bid_id: request.bid_id,
+            job_offer_id: request.job_offer_id,
             voting_id: None,
             job_proof: None,
-            start_time,
-            time_for_job: timeframe,
+            start_time: request.block_time,
+            time_for_job: request.timeframe,
             status: JobStatus::Created,
-            worker,
+            worker: request.worker,
             worker_type,
-            poster,
-            payment,
-            stake,
-            external_worker_cspr_stake,
+            poster: request.poster,
+            payment: request.payment,
+            stake: request.stake,
+            external_worker_cspr_stake: request.external_worker_cspr_stake,
             followed_by: None,
         }
     }
 
-    pub fn reclaim(&mut self, new_job_id: JobId, new_bid: &Bid, block_time: BlockTime) -> Job {
+    pub fn reclaim(&mut self, request: ReclaimJobRequest) -> Job {
         self.status = JobStatus::Completed;
-        self.followed_by = Some(new_job_id);
+        self.followed_by = Some(request.new_job_id);
 
-        let worker_type = match (new_bid.cspr_stake.is_some(), new_bid.onboard) {
+        let worker_type = match (request.cspr_stake.is_some(), request.onboard) {
             (_, true) => WorkerType::ExternalToVA,
             (true, false) => WorkerType::External,
             (false, false) => WorkerType::Internal,
         };
 
-        let mut new_job = Job::new(
-            new_job_id,
-            new_bid.bid_id,
-            new_bid.job_offer_id,
-            block_time,
-            new_bid.proposed_timeframe,
-            new_bid.worker,
+        Job {
+            job_id: request.new_job_id,
+            bid_id: request.new_bid_id,
+            job_offer_id: self.job_offer_id,
+            voting_id: None,
+            job_proof: None,
+            start_time: request.block_time,
+            time_for_job: request.proposed_timeframe,
+            status: JobStatus::Submitted,
+            worker: request.worker,
             worker_type,
-            self.poster,
-            self.payment,
-            new_bid.reputation_stake,
-            new_bid.cspr_stake.unwrap_or_default(),
-        );
-
-        new_job.status = JobStatus::Submitted;
-
-        new_job
+            poster: self.poster,
+            payment: self.payment,
+            stake: request.reputation_stake,
+            external_worker_cspr_stake: request.cspr_stake.unwrap_or_default(),
+            followed_by: None,
+        }
     }
 
     /// Changes status to the Accepted
@@ -175,12 +216,12 @@ impl Job {
         false
     }
 
-    pub fn submit_proof(&mut self, job_proof: DocumentHash) {
+    pub fn submit_proof(&mut self, request: SubmitJobProofRequest)  {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);
         }
 
-        self.job_proof = Some(job_proof);
+        self.job_proof = Some(request.proof);
         self.status = JobStatus::Submitted;
     }
 
