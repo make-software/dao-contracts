@@ -11,7 +11,7 @@ pub struct CanProgressJobOffer {
 impl Validation for CanProgressJobOffer {
     fn validate(&self) -> Result<(), Error> {
         if self.job_poster != self.caller {
-            return Err(Error::OnlyJobPosterCanPickABid);
+            return Err(Error::OnlyJobPosterCanModifyJobOffer);
         }
         Ok(())
     }

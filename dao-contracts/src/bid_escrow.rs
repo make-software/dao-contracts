@@ -635,6 +635,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.voting.get_voting(voting_id)
     }
 
+    // TODO: move somewhere else
     fn get_cspr_balance(&self) -> U512 {
         get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
     }

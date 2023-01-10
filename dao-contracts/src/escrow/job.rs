@@ -88,8 +88,6 @@ pub struct Job {
 }
 
 impl Job {
-    /// Job constructor
-    #[allow(clippy::too_many_arguments)]
     pub fn new(request: &PickBidRequest) -> Self {
         RulesBuilder::new()
             .add_validation(CanPickBid::create(request.caller, request.poster))
@@ -136,7 +134,7 @@ impl Job {
             (false, false) => WorkerType::Internal,
         };
 
-        let mut new_job = Job {
+        Job {
             job_id: request.new_job_id,
             bid_id: request.new_bid_id,
             job_offer_id: self.job_offer_id,
@@ -144,7 +142,7 @@ impl Job {
             job_proof: None,
             start_time: request.block_time,
             time_for_job: request.proposed_timeframe,
-            status: JobStatus::Created,
+            status: JobStatus::Submitted,
             worker: request.worker,
             worker_type,
             poster: self.poster,
@@ -152,11 +150,7 @@ impl Job {
             stake: request.reputation_stake,
             external_worker_cspr_stake: request.cspr_stake.unwrap_or_default(),
             followed_by: None,
-        };
-
-        new_job.status = JobStatus::Submitted;
-
-        new_job
+        }
     }
 
     /// Changes status to the Accepted

@@ -127,6 +127,7 @@ dao_errors!(
     JobOfferCannotBeYetCanceled => 4031,
     JobCannotBeYetCanceled => 4032,
     FiatRateNotSet => 4033,
+    OnlyJobPosterCanModifyJobOffer => 4034,
     // Reputation Token Errors.
     CannotStakeTwice => 4500,
     VotingStakeDoesntExists => 4501,
