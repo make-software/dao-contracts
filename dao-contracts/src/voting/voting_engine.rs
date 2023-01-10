@@ -29,7 +29,7 @@ use super::{
     BallotCanceled,
     Reason,
     VotingCanceled,
-    VotingEnded,
+    VotingEnded, ShortenedBallot,
 };
 use crate::{
     Configuration,
@@ -373,7 +373,7 @@ impl VotingEngine {
         
         if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
-            self.reputation_token().stake_voting(ballot.clone());
+            self.reputation_token().stake_voting(voting_id, ballot.clone().into());
         }
         
         BallotCast::new(&ballot).emit();
@@ -469,16 +469,16 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut transfers = BTreeMap::new();
+        let mut ballots= Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded || ballot.canceled {
                 continue;
             }
             transfers.insert(ballot.voter, ballot.stake);
-            // TODO: bulk unstake
-            self.reputation_token().unstake_voting(ballot);
+            ballots.push(ballot.into());
         }
-
+        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
         transfers
     }
 
@@ -505,14 +505,15 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut summary = BTreeMap::new();
+        let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_in_favor() && !ballot.unbounded {
-                // TODO: bulk unstake
-                self.reputation_token().unstake_voting(ballot.clone());
+                ballots.push(ballot.clone().into());
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
+        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -522,14 +523,15 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut summary = BTreeMap::new();
+        let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_against() && !ballot.unbounded {
-                self.reputation_token().unstake_voting(ballot.clone());
+                ballots.push(ballot.clone().into());
                 summary.insert(ballot.voter, ballot.stake);
-                // TODO: bulk unstake
             }
         }
+        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -543,6 +545,7 @@ impl VotingEngine {
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
+        let mut ballots: Vec<ShortenedBallot> = Vec::new();
 
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
@@ -550,14 +553,14 @@ impl VotingEngine {
                 continue;
             }
             if ballot.choice.is_against() {
-                // TODO: bulk unstake
-                self.reputation_token().unstake_voting(ballot.clone());
+                ballots.push(ballot.clone().into());
                 burns.insert(ballot.voter, ballot.stake);
             } else {
                 let amount_to_mint = total_stake_against * ballot.stake / total_stake_in_favor;
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
+        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
         self.reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
@@ -573,20 +576,21 @@ impl VotingEngine {
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
+        let mut ballots: Vec<ShortenedBallot> = Vec::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded {
                 continue;
             }
             if ballot.choice.is_in_favor() {
-                // TODO: bulk unstake
-                self.reputation_token().unstake_voting(ballot.clone());
+                ballots.push(ballot.clone().into());
                 burns.insert(ballot.voter, ballot.stake);
             } else {
                 let amount_to_mint = total_stake_in_favor * ballot.stake / total_stake_against;
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
+        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
         self.reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
@@ -613,7 +617,7 @@ impl VotingEngine {
         self.voters().len((voting_id, voting_type))
     }
 
-    pub fn bound_ballot(&mut self, voting_id: u32, worker: Address, voting_type: VotingType) {
+    pub fn bound_ballot(&mut self, voting_id: VotingId, worker: Address, voting_type: VotingType) {
         let mut ballot = self
             .get_ballot(voting_id, voting_type, worker)
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
@@ -623,7 +627,7 @@ impl VotingEngine {
         self.set_voting(voting);
 
         self.reputation_token().mint(worker, ballot.stake);
-        self.reputation_token().stake_voting(ballot.clone());
+        self.reputation_token().stake_voting(voting_id, ballot.clone().into());
 
         ballot.unbounded = false;
         self.ballots.set(&(voting_id, voting_type, worker), ballot);
@@ -667,8 +671,7 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         // Unstake reputation.
-        // TODO: bulk unstake
-        self.reputation_token().unstake_voting(ballot.clone());
+        self.reputation_token().unstake_voting(voting_id, ballot.clone().into());
 
         // Update voting.
         let stake = ballot.stake;

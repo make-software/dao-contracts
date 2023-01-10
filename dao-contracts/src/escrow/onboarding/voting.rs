@@ -8,7 +8,7 @@ use casper_dao_utils::{
     Error,
     Mapping,
 };
-use casper_types::{URef, U512};
+use casper_types::U512;
 
 use super::request::{OnboardingRequest, Request};
 use crate::{

@@ -61,6 +61,18 @@ impl Ballot {
     }
 }
 
+#[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
+pub struct ShortenedBallot {
+    pub voter: Address,
+    pub stake: U512,
+}
+
+impl From<Ballot> for ShortenedBallot {
+    fn from(value: Ballot) -> Self {
+        Self { voter: value.voter, stake: value.stake }
+    }
+}
+
 #[cfg(test)]
 #[test]
 fn test_vote_serialization() {

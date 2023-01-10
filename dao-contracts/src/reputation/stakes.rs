@@ -15,8 +15,8 @@ use casper_types::{
 
 use super::balances::BalanceStorage;
 use crate::{
-    escrow::{bid::Bid, types::BidId},
-    voting::{Ballot, VotingId},
+    escrow::{bid::ShortenedBid, types::BidId},
+    voting::{VotingId, ShortenedBallot},
 };
 
 /// A module that stores information about stakes.
@@ -43,15 +43,10 @@ impl StakesStorage {
     /// # Errors
     ///
     /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
-    pub fn stake_voting(&mut self, ballot: Ballot) {
+    pub fn stake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot) {
         self.access_control.ensure_whitelisted();
 
-        let Ballot {
-            voter,
-            stake,
-            voting_id,
-            ..
-        } = ballot;
+        let ShortenedBallot { voter, stake} = ballot;
         self.assert_stake(stake);
         self.assert_balance(voter, stake);
 
@@ -72,35 +67,46 @@ impl StakesStorage {
     /// # Errors
     ///
     /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
-    pub fn unstake_voting(&mut self, ballot: Ballot) {
+    pub fn unstake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot) {
         self.access_control.ensure_whitelisted();
 
         let voter_contract = casper_env::caller();
         // Decrement total stake.
         self.dec_total_stake(ballot.voter, ballot.stake);
         self.votings
-            .remove_record(&ballot.voter, (voter_contract, ballot.voting_id));
+            .remove_record(&ballot.voter, (voter_contract, voting_id));
+    }
+
+    pub fn bulk_unstake_voting(&mut self, voting_id: VotingId, ballots: Vec<ShortenedBallot>) {
+        self.access_control.ensure_whitelisted();
+
+        let voter_contract = casper_env::caller();
+
+        for ballot in ballots {
+            self.dec_total_stake(ballot.voter, ballot.stake);
+            self.votings.remove_record(&ballot.voter, (voter_contract, voting_id));
+        }
     }
 
     /// Increases the voter's stake and total stake.
     /// 
     /// # Arguments
     ///
-    /// * `bidder` - the address who placed the bid.
-    /// * `bid_id` - the id of placed the bid 
-    /// * `stake` - the amount attached to the bid.
+    /// * `bid` - a short version bid that has been offered.
     ///
     /// # Errors
     ///
     /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
-    pub fn stake_bid(&mut self, bidder: Address, bid_id: BidId, stake: U512) {
+    pub fn stake_bid(&mut self, bid: ShortenedBid) {
         self.access_control.ensure_whitelisted();
-        self.assert_balance(bidder, stake);
-        self.assert_stake(stake);
+        let ShortenedBid { worker, reputation_stake, bid_id } = bid;
+
+        self.assert_balance(worker, reputation_stake);
+        self.assert_stake(reputation_stake);
 
         let voter_contract = casper_env::caller();
-        self.inc_total_stake(bidder, stake);
-        self.bids.push_record(&bidder, (voter_contract, bid_id));
+        self.inc_total_stake(worker, reputation_stake);
+        self.bids.push_record(&worker, (voter_contract, bid_id));
         // TODO: Emit Stake event.
     }
 
@@ -113,7 +119,7 @@ impl StakesStorage {
     /// # Errors
     ///
     /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
-    pub fn unstake_bid(&mut self, bid: Bid) {
+    pub fn unstake_bid(&mut self, bid: ShortenedBid) {
         self.access_control.ensure_whitelisted();
 
         let voter_contract = casper_env::caller();
@@ -176,22 +182,23 @@ impl StakesStorage {
     }
 }
 
-trait UpdatableVec<R> {
-    fn push_record(&self, key: &Address, record: R);
-    fn remove_record(&self, key: &Address, record: R);
+trait UpdatableVec<K, R> {
+    fn push_record(&self, key: &K, record: R);
+    fn remove_record(&self, key: &K, record: R);
 }
 
-impl<Record> UpdatableVec<Record> for Mapping<Address, Vec<Record>>
+impl<Key, Record> UpdatableVec<Key, Record> for Mapping<Key, Vec<Record>>
 where
+    Key: ToBytes + FromBytes + CLTyped,
     Record: ToBytes + FromBytes + CLTyped + PartialEq,
 {
-    fn push_record(&self, key: &Address, record: Record) {
+    fn push_record(&self, key: &Key, record: Record) {
         let mut records = self.get(key).unwrap_or_default();
         records.push(record);
         self.set(key, records);
     }
 
-    fn remove_record(&self, key: &Address, record: Record) {
+    fn remove_record(&self, key: &Key, record: Record) {
         let mut records = self.get(key).unwrap_or_default();
         if let Some(position) = records.iter().position(|r| r == &record) {
             records.remove(position);

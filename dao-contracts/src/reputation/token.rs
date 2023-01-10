@@ -16,8 +16,8 @@ use super::{
     AggregatedBalance,
 };
 use crate::{
-    escrow::{bid::Bid, types::BidId},
-    voting::Ballot,
+    escrow::bid::ShortenedBid,
+    voting::{ShortenedBallot, VotingId},
 };
 
 // Interface of the Reputation Contract.
@@ -104,16 +104,19 @@ pub trait ReputationContractInterface {
     fn is_whitelisted(&self, address: Address) -> bool;
 
     /// Stakes the reputation used as voting power.
-    fn stake_voting(&mut self, ballot: Ballot);
+    fn stake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot);
 
     // Unstakes the reputation used as voting power.
-    fn unstake_voting(&mut self, ballot: Ballot);
+    fn unstake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot);
 
+    /// Unstakes the reputation used as voting power.
+    fn bulk_unstake_voting(&mut self, voting_id: VotingId, ballots: Vec<ShortenedBallot>);
+    
     /// Stakes the reputation used as bid value.
-    fn stake_bid(&mut self, bidder: Address, bid_id: BidId, amount: U512);
+    fn stake_bid(&mut self, bid: ShortenedBid);
 
     /// Unstakes the reputation used as bid value.
-    fn unstake_bid(&mut self, bid: Bid);
+    fn unstake_bid(&mut self, bid: ShortenedBid);
 
     /// Returns the total stake of the given account.
     fn get_stake(&self, address: Address) -> U512;
@@ -174,10 +177,11 @@ impl ReputationContractInterface for ReputationContract {
 
         to self.stakes_storage {
             fn get_stake(&self, address: Address) -> U512;
-            fn stake_voting(&mut self, ballot: Ballot);
-            fn stake_bid(&mut self, bidder: Address, bid_id: BidId, amount: U512);
-            fn unstake_voting(&mut self, ballot: Ballot);
-            fn unstake_bid(&mut self, bid: Bid);
+            fn stake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot);
+            fn stake_bid(&mut self, bid: ShortenedBid);
+            fn unstake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot);
+            fn unstake_bid(&mut self, bid: ShortenedBid);
+            fn bulk_unstake_voting(&mut self,voting_id:VotingId,ballots:Vec<ShortenedBallot>);
         }
 
         to self.aggregates {
