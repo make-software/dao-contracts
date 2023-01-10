@@ -38,7 +38,7 @@ impl StakesStorage {
     /// 
     /// # Arguments
     ///
-    /// * `ballot` - the original ballot that has been casted.
+    /// * `ballot` - a short version of ballot that has been casted.
     ///
     /// # Errors
     ///
@@ -62,7 +62,7 @@ impl StakesStorage {
     /// 
     /// # Arguments
     ///
-    /// * `ballot` - the original ballot that has been casted.
+    /// * `ballot`- a short version of ballot that has been casted.
     ///
     /// # Errors
     ///
@@ -77,6 +77,16 @@ impl StakesStorage {
             .remove_record(&ballot.voter, (voter_contract, voting_id));
     }
 
+    /// Decreases all the voters' stake in voting with the given id, and their total stake.
+    /// 
+    /// # Arguments
+    ///
+    /// * `voting_id` - the id of voting to unstake tokens.
+    /// * `ballots`- a vector of short version of ballots that has been casted.
+    ///
+    /// # Errors
+    ///
+    /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn bulk_unstake_voting(&mut self, voting_id: VotingId, ballots: Vec<ShortenedBallot>) {
         self.access_control.ensure_whitelisted();
 
@@ -92,7 +102,7 @@ impl StakesStorage {
     /// 
     /// # Arguments
     ///
-    /// * `bid` - a short version bid that has been offered.
+    /// * `bid` - a short version of the bid that has been offered.
     ///
     /// # Errors
     ///
@@ -128,6 +138,21 @@ impl StakesStorage {
         self.bids
             .remove_record(&bid.worker, (voter_contract, bid.bid_id));
     }
+
+
+    pub fn bulk_unstake_bid(&mut self, bids: Vec<ShortenedBid>) {
+        self.access_control.ensure_whitelisted();
+
+        let voter_contract = casper_env::caller();
+
+        for bid in bids {
+            // Decrement total stake.
+            self.dec_total_stake(bid.worker, bid.reputation_stake);
+            self.bids
+                .remove_record(&bid.worker, (voter_contract, bid.bid_id));
+        }
+    }
+
 
     /// Returns the total stake of the given account.
     pub fn get_stake(&self, address: Address) -> U512 {

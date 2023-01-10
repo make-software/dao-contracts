@@ -61,6 +61,10 @@ impl Ballot {
     }
 }
 
+/// ShortenedBallot struct
+///
+/// Derives from the [`Ballot`] struct. 
+/// Contains only the essential fields from the original [`Ballot`] required in cross-contract communication.
 #[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
 pub struct ShortenedBallot {
     pub voter: Address,

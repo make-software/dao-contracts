@@ -118,6 +118,9 @@ pub trait ReputationContractInterface {
     /// Unstakes the reputation used as bid value.
     fn unstake_bid(&mut self, bid: ShortenedBid);
 
+    /// Unstakes the reputation used as bid value.
+    fn bulk_unstake_bid(&mut self, bids: Vec<ShortenedBid>);
+
     /// Returns the total stake of the given account.
     fn get_stake(&self, address: Address) -> U512;
 
@@ -140,11 +143,11 @@ pub trait ReputationContractInterface {
 /// Implementation of the Reputation Contract. See [`ReputationContractInterface`].
 #[derive(Instance)]
 pub struct ReputationContract {
-    reputation_storage: BalanceStorage,
-    passive_reputation_storage: BalanceStorage,
-    stakes_storage: StakesStorage,
-    aggregates: BalanceAggregates,
-    access_control: AccessControl,
+    pub reputation_storage: BalanceStorage,
+    pub passive_reputation_storage: BalanceStorage,
+    pub stakes_storage: StakesStorage,
+    pub aggregates: BalanceAggregates,
+    pub access_control: AccessControl,
 }
 
 impl ReputationContractInterface for ReputationContract {
@@ -182,6 +185,7 @@ impl ReputationContractInterface for ReputationContract {
             fn unstake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot);
             fn unstake_bid(&mut self, bid: ShortenedBid);
             fn bulk_unstake_voting(&mut self,voting_id:VotingId,ballots:Vec<ShortenedBallot>);
+            fn bulk_unstake_bid(&mut self, bids: Vec<ShortenedBid>);
         }
 
         to self.aggregates {

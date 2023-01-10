@@ -32,7 +32,6 @@ use super::token::events::{Burn, Mint};
 pub struct BalanceStorage {
     balances: Mapping<Address, U512>,
     holders: OrderedCollection<Address>,
-    #[scoped = "parent"]
     total_supply: TotalSupply,
     #[scoped = "contract"]
     access_control: AccessControl,
@@ -177,6 +176,7 @@ impl BalanceStorage {
 /// Wraps `total_supply` and some operations for convenience.
 #[derive(Instance)]
 struct TotalSupply {
+    #[scoped = "parent"]
     total_supply: Variable<U512>,
 }
 

@@ -760,12 +760,13 @@ impl BidEscrowContract {
 
     fn cancel_all_bids(&mut self, job_offer_id: JobOfferId) {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
+        let mut bids = Vec::<ShortenedBid>::new();
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
 
             match bid.cspr_stake {
                 None => {
-                    self.reputation_token().unstake_bid(bid.borrow().into());
+                    bids.push(bid.borrow().into());
                 }
                 Some(cspr_stake) => {
                     transfer::withdraw_cspr(bid.worker, cspr_stake);
@@ -774,6 +775,7 @@ impl BidEscrowContract {
             bid.cancel();
             self.job_storage.store_bid(bid);
         }
+        self.reputation_token().bulk_unstake_bid(bids);
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
@@ -951,15 +953,17 @@ impl BidEscrowContract {
 
     fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
+        let mut bids = Vec::<ShortenedBid>::new();
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
-                self.reputation_token().unstake_bid(bid.borrow().into());
+                bids.push(bid.borrow().into());
                 bid.reject();
                 self.job_storage.store_bid(bid);
             }
         }
+        self.reputation_token().bulk_unstake_bid(bids);
     }
 
     fn create_formal_voting(&mut self, voting_id: VotingId) {
