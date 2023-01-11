@@ -54,13 +54,7 @@ impl Configuration {
             false => self.dao_configuration.formal_quorum_ratio,
         };
 
-        // TODO: make the math not fail and reusable
-        ratio
-            .checked_mul(self.total_onboarded())
-            .unwrap()
-            .checked_div(1_000.into())
-            .unwrap()
-            .as_u32()
+        math::per_mil_of_as_u32(ratio, self.total_onboarded()).unwrap_or_revert()
     }
 
     pub fn informal_voting_quorum(&self) -> u32 {
@@ -69,13 +63,7 @@ impl Configuration {
             false => self.dao_configuration.informal_quorum_ratio,
         };
 
-        // TODO: make the math not fail and reusable
-        ratio
-            .checked_mul(self.total_onboarded())
-            .unwrap()
-            .checked_div(1_000.into())
-            .unwrap()
-            .as_u32()
+        math::per_mil_of_as_u32(ratio, self.total_onboarded()).unwrap_or_revert()
     }
 
     pub fn informal_voting_time(&self) -> BlockTime {
@@ -129,7 +117,7 @@ impl Configuration {
     }
 
     pub fn is_post_job_dos_fee_too_low(&self, fiat_value: U512) -> bool {
-        self.dao_configuration.post_job_dos_fee > fiat_value.saturating_mul(1_000.into())
+        math::to_per_mils(self.dao_configuration.post_job_dos_fee) > fiat_value
     }
 
     pub fn internal_auction_time(&self) -> BlockTime {
@@ -177,23 +165,20 @@ impl Configuration {
     }
 
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.default_policing_rate)
-            .unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.default_policing_rate).unwrap_or_revert()
     }
 
     pub fn apply_bid_escrow_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.bid_escrow_payment_ratio)
-            .unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.bid_escrow_payment_ratio).unwrap_or_revert()
     }
 
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.reputation_conversion_rate)
+        math::per_mil_of(amount, self.dao_configuration.reputation_conversion_rate)
             .unwrap_or_revert()
     }
 
     pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.default_reputation_slash)
-            .unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.default_reputation_slash).unwrap_or_revert()
     }
 
     pub fn fiat_rate(&self) -> Option<U512> {

@@ -40,6 +40,10 @@ impl JobStorage {
         self.active_job_offers_ids.set(&poster, job_offers);
     }
 
+    pub fn update_job_offer(&mut self, offer_id: JobOfferId, offer: JobOffer) {
+        self.job_offers.set(&offer_id, offer);
+    }
+
     pub fn store_bid_id(&mut self, offer_id: JobOfferId, bid_id: BidId) {
         self.job_offers_bids.add(offer_id, bid_id);
     }
