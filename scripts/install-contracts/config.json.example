@@ -1,0 +1,16 @@
+{
+  "private_key_path": "/Users/username/path/to/secret_key.pem",
+  "node_rpc_uri": "http://localhost:11101/rpc",
+  "contracts": {
+    "VaNftContract": {
+      "name": "VaNFTCRDao",
+      "symbol": "VACRDAO",
+      "base_uri": "http://example.com"
+    },
+    "KycNftContract": {
+      "name": "KYCNFTCRDao",
+      "symbol": "KYCCRDAO",
+      "base_uri": "http://example.com"
+    }
+  }
+}
