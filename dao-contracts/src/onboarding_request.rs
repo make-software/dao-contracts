@@ -1,22 +1,26 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::system::get_purse_balance,
-    casper_dao_macros::{casper_contract_interface, Instance, Event},
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
     casper_env::{self, caller},
+    transfer,
     Address,
-    DocumentHash, transfer, BlockTime,
+    BlockTime,
+    DocumentHash,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
     escrow::onboarding::Onboarding,
+    refs::ContractRefsWithKycStorage,
     voting::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
-        VotingId, VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -29,7 +33,7 @@ pub trait OnboardingRequestContractInterface {
     /// Emits [`VotingContractCreated`](crate::voting::voting_engine::events::VotingContractCreated)
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         kyc_token: Address,
         va_token: Address,
@@ -52,7 +56,7 @@ pub trait OnboardingRequestContractInterface {
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, voting_id: VotingId);
     /// see [VotingEngine](VotingEngine)
-    fn variable_repo_address(&self) -> Address;
+    fn variable_repository_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
@@ -84,6 +88,7 @@ pub trait OnboardingRequestContractInterface {
 
 #[derive(Instance)]
 pub struct OnboardingRequestContract {
+    refs: ContractRefsWithKycStorage,
     voting: VotingEngine,
     access_control: AccessControl,
     onboarding: Onboarding,
@@ -92,8 +97,6 @@ pub struct OnboardingRequestContract {
 impl OnboardingRequestContractInterface for OnboardingRequestContract {
     delegate! {
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -117,17 +120,22 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
             fn finish_voting(&mut self, voting_id: VotingId);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         kyc_token: Address,
         va_token: Address,
     ) {
-        self.voting.init(variable_repo, reputation_token, va_token);
-        self.onboarding.init(va_token, kyc_token);
+        self.refs
+            .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
     }
 
@@ -170,7 +178,6 @@ impl OnboardingRequestContractTest {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct OnboardingVotingCreated {
     reason: DocumentHash,
@@ -189,11 +196,7 @@ pub struct OnboardingVotingCreated {
 }
 
 impl OnboardingVotingCreated {
-    pub fn new(
-        reason: DocumentHash,
-        cspr_deposit: U512,
-        info: VotingCreatedInfo,
-    ) -> Self {
+    pub fn new(reason: DocumentHash, cspr_deposit: U512, info: VotingCreatedInfo) -> Self {
         Self {
             reason,
             cspr_deposit,

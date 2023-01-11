@@ -14,6 +14,7 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    refs::{ContractRefsStorage, ContractRefs},
     voting::{
         types::VotingId,
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
@@ -30,7 +31,7 @@ use crate::{
 #[casper_contract_interface]
 pub trait SlashingVoterContractInterface {
     /// see [VotingEngine](VotingEngine::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
 
     fn create_voting(&mut self, address_to_slash: Address, slash_ratio: u32, stake: U512);
     /// see [VotingEngine](VotingEngine::vote())
@@ -38,7 +39,7 @@ pub trait SlashingVoterContractInterface {
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
+    fn variable_repository_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_reputation_token_address())
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
@@ -71,6 +72,7 @@ pub trait SlashingVoterContractInterface {
 /// For details see [SlashingVoterContractInterface](SlashingVoterContractInterface)
 #[derive(Instance)]
 pub struct SlashingVoterContract {
+    refs: ContractRefsStorage,
     voting: VotingEngine,
     tasks: Mapping<VotingId, SlashTask>,
     bid_escrows: Variable<Vec<Address>>,
@@ -80,8 +82,6 @@ pub struct SlashingVoterContract {
 impl SlashingVoterContractInterface for SlashingVoterContract {
     delegate! {
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
             fn get_voting(
@@ -103,10 +103,16 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.voting.init(variable_repo, reputation_token, va_token);
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        self.refs
+            .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller());
     }
 
@@ -117,13 +123,9 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
 
     fn create_voting(&mut self, address_to_slash: Address, slash_ratio: u32, stake: U512) {
         // TODO: contraints
-        let current_reputation = self.voting.reputation_token().balance_of(address_to_slash);
+        let current_reputation = self.refs.reputation_token().balance_of(address_to_slash);
 
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs).build();
 
         let creator = caller();
         let info = self
@@ -168,9 +170,9 @@ impl SlashingVoterContract {
         let slash_task = self.tasks.get_or_revert(&voting_id);
 
         // Burn VA token.
-        self.voting.va_token().burn(slash_task.subject);
+        self.refs.va_token().burn(slash_task.subject);
 
-        let mut reputation = self.voting.reputation_token();
+        let mut reputation = self.refs.reputation_token();
         // If partial slash only burn reputation.
         if slash_task.ratio != 1000 {
             let slash_amount = slash_task.reputation_at_voting_creation * slash_task.ratio / 1000;

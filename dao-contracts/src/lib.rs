@@ -11,6 +11,7 @@ mod kyc_nft;
 mod kyc_voter;
 mod onboarding_request;
 mod rate_provider;
+mod refs;
 pub mod rules;
 pub mod slashing_voter;
 mod va_nft;
@@ -62,7 +63,7 @@ pub use onboarding_request::{
     OnboardingRequestContract,
     OnboardingRequestContractCaller,
     OnboardingRequestContractInterface,
-    OnboardingVotingCreated
+    OnboardingVotingCreated,
 };
 #[cfg(feature = "test-support")]
 pub use rate_provider::CSPRRateProviderContractTest;

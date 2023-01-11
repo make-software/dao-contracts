@@ -12,13 +12,15 @@ use casper_types::U512;
 
 use super::request::{OnboardingRequest, Request};
 use crate::{
+    refs::{ContractRefsWithKycStorage, ContractRefs},
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
-        VotingId, VotingCreatedInfo,
+        VotingId,
     },
     Configuration,
     ConfigurationBuilder,
@@ -32,22 +34,23 @@ pub struct Onboarding {
     configurations: Mapping<VotingId, Configuration>,
     ids: Mapping<Address, VotingId>,
     #[scoped = "contract"]
+    refs: ContractRefsWithKycStorage,
+    #[scoped = "contract"]
     voting: VotingEngine,
     kyc: KycInfo,
     info: OnboardingInfo,
 }
 
 impl Onboarding {
-    pub fn init(&mut self, va_token: Address, kyc_token: Address) {
-        self.info.init(va_token);
-        self.kyc.init(kyc_token);
-    }
-
     pub fn get_request(&self, voting_id: VotingId) -> Option<Request> {
         self.requests.get_or_none(&voting_id)
     }
 
-    pub fn submit_request(&mut self, reason: DocumentHash, cspr_deposit: U512) -> VotingCreatedInfo {
+    pub fn submit_request(
+        &mut self,
+        reason: DocumentHash,
+        cspr_deposit: U512,
+    ) -> VotingCreatedInfo {
         let requestor = caller();
 
         let configuration = self.build_configuration();
@@ -109,13 +112,10 @@ impl Onboarding {
 
 impl Onboarding {
     fn build_configuration(&self) -> Configuration {
-        ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .only_va_can_create(false)
-        .is_bid_escrow(true)
-        .build()
+        ConfigurationBuilder::new(&self.refs)
+            .only_va_can_create(false)
+            .is_bid_escrow(true)
+            .build()
     }
 
     fn init_voting(
@@ -135,7 +135,7 @@ impl Onboarding {
             Choice::InFavor,
             stake,
             true,
-            &mut voting
+            &mut voting,
         );
         self.ids.set(&creator, voting_id);
         self.voting.set_voting(voting);
@@ -213,10 +213,8 @@ impl Onboarding {
         if (configuration.informal_stake_reputation() && voting_type == VotingType::Informal)
             || voting_type == VotingType::Formal
         {
-            self.voting
-                .return_yes_voters_rep(voting_id, voting_type);
-            self.voting
-                .return_no_voters_rep(voting_id, voting_type);
+            self.voting.return_yes_voters_rep(voting_id, voting_type);
+            self.voting.return_no_voters_rep(voting_id, voting_type);
         }
 
         transfer::withdraw_cspr(request.creator(), request.cspr_deposit());
@@ -230,7 +228,7 @@ impl Onboarding {
         let configuration = self.configurations.get_or_revert(&voting_id);
 
         // Make the user VA.
-        self.voting.va_token().mint(request.creator());
+        self.refs.va_token().mint(request.creator());
 
         // Bound ballot for the requester - mint temporary reputation.
         self.voting
@@ -271,7 +269,7 @@ impl Onboarding {
             configuration.apply_default_policing_rate_to(reputation_to_mint);
 
         // Worker
-        self.voting.reputation_token().mint(
+        self.refs.reputation_token().mint(
             request.creator(),
             reputation_to_mint - reputation_to_redistribute,
         );
@@ -289,9 +287,7 @@ impl Onboarding {
                 continue;
             }
             let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
-            self.voting
-                .reputation_token()
-                .mint(ballot.voter, to_transfer);
+            self.refs.reputation_token().mint(ballot.voter, to_transfer);
         }
     }
 
@@ -309,7 +305,7 @@ impl Onboarding {
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let all_balances = self.voting.reputation_token().all_balances();
+        let all_balances = self.refs.reputation_token().all_balances();
         let total_supply = all_balances.total_supply();
 
         for (address, balance) in all_balances.balances() {
@@ -319,7 +315,7 @@ impl Onboarding {
     }
 
     fn burn_requestor_reputation(&self, request: &Request) {
-        self.voting
+        self.refs
             .reputation_token()
             .burn(request.creator(), request.rep_stake());
     }

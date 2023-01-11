@@ -12,7 +12,6 @@ use casper_dao_utils::{
     Address,
     Error,
     Mapping,
-    Variable,
     VecMapping,
 };
 use casper_types::U512;
@@ -32,14 +31,13 @@ use super::{
     VotingEnded, ShortenedBallot,
 };
 use crate::{
+    refs::{ContractRefsStorage, ContractRefs},
+    rules::builder::RulesBuilder,
+    voting::validation::rules::can_create_voting::CanCreateVoting,
     Configuration,
-    ReputationContractCaller,
     ReputationContractInterface,
-    VaNftContractCaller,
     VaNftContractInterface,
 };
-use crate::rules::builder::RulesBuilder;
-use crate::voting::validation::rules::can_create_voting::CanCreateVoting;
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
 /// 1. Informal voting
@@ -55,25 +53,14 @@ use crate::voting::validation::rules::can_create_voting::CanCreateVoting;
 /// For example implementation see [AdminContract](crate::admin::AdminContract)
 #[derive(Instance)]
 pub struct VotingEngine {
-    variable_repo: Variable<Address>,
-    reputation_token: Variable<Address>,
-    va_token: Variable<Address>,
+    #[scoped = "contract"]
+    refs: ContractRefsStorage,
     voting_states: Mapping<VotingId, Option<VotingStateMachine>>,
     ballots: Mapping<(VotingId, VotingType, Address), Ballot>,
     voters: VecMapping<(VotingId, VotingType), Address>,
 }
 
 impl VotingEngine {
-    /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract) and [Variable Repo](crate::VariableRepositoryContract)
-    ///
-    /// # Events
-    /// Emits [`VotingContractCreated`](VotingContractCreated)
-    pub fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.variable_repo.set(variable_repo);
-        self.reputation_token.set(reputation_token);
-        self.va_token.set(va_token);
-    }
-
     /// Creates new informal [Voting](VotingStateMachine).
     ///
     /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed  when formal voting passes.
@@ -93,14 +80,18 @@ impl VotingEngine {
         configuration: Configuration,
     ) -> VotingCreatedInfo {
         RulesBuilder::new()
-            .add_validation(CanCreateVoting::create(self.is_va(creator), configuration.only_va_can_create()))
+            .add_validation(CanCreateVoting::create(
+                self.is_va(creator),
+                configuration.only_va_can_create(),
+            ))
             .validate();
 
         let should_cast_first_vote = configuration.should_cast_first_vote();
 
         let voting_ids_address = configuration.voting_ids_address();
         let voting_id = ids::get_next_voting_id(voting_ids_address);
-        let mut voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
+        let mut voting =
+            VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
 
         let mut used_stake = None;
         if should_cast_first_vote {
@@ -109,7 +100,7 @@ impl VotingEngine {
                 VotingType::Informal,
                 Choice::InFavor,
                 stake,
-                &mut voting
+                &mut voting,
             );
             used_stake = Some(stake);
         }
@@ -326,7 +317,14 @@ impl VotingEngine {
         self.set_voting(voting);
     }
 
-    fn cast_vote(&mut self, voter: Address, voting_type: VotingType, choice: Choice, stake: U512, voting: &mut VotingStateMachine) {
+    fn cast_vote(
+        &mut self,
+        voter: Address,
+        voting_type: VotingType,
+        choice: Choice,
+        stake: U512,
+        voting: &mut VotingStateMachine,
+    ) {
         let voting_id = voting.voting_id();
         self.assert_voting_type(&voting, voting_type);
         voting.guard_vote(get_block_time());
@@ -375,7 +373,7 @@ impl VotingEngine {
         
         if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
-            self.reputation_token().stake_voting(voting_id, ballot.clone().into());
+            self.refs.reputation_token().stake_voting(voting_id, ballot.clone().into());
         }
         
         BallotCast::new(&ballot).emit();
@@ -393,20 +391,6 @@ impl VotingEngine {
         } else {
             voting.add_stake(stake, choice);
         }
-    }
-
-    /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
-    pub fn variable_repo_address(&self) -> Address {
-        self.variable_repo.get().unwrap_or_revert()
-    }
-
-    /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
-    pub fn reputation_token_address(&self) -> Address {
-        self.reputation_token.get().unwrap_or_revert()
-    }
-
-    pub fn va_token_address(&self) -> Address {
-        self.va_token.get().unwrap_or_revert()
     }
 
     pub fn all_voters(&self, voting_id: VotingId, voting_type: VotingType) -> Vec<Address> {
@@ -480,11 +464,14 @@ impl VotingEngine {
             transfers.insert(ballot.voter, ballot.stake);
             ballots.push(ballot.into());
         }
-        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
         transfers
     }
 
-    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting: &mut VotingStateMachine) {
+    pub fn recast_creators_ballot_from_informal_to_formal(
+        &mut self,
+        voting: &mut VotingStateMachine,
+    ) {
         let voting_id = voting.voting_id();
         let creator = voting.creator();
         let creator_ballot = self
@@ -515,7 +502,7 @@ impl VotingEngine {
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
-        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -533,7 +520,7 @@ impl VotingEngine {
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
-        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -562,8 +549,8 @@ impl VotingEngine {
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
-        self.reputation_token()
+        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs.reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
     }
@@ -592,22 +579,14 @@ impl VotingEngine {
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.reputation_token().bulk_unstake_voting(voting_id, ballots);
-        self.reputation_token()
+        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs.reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
     }
 
     fn is_va(&self, address: Address) -> bool {
-        !self.va_token().balance_of(address).is_zero()
-    }
-
-    pub fn va_token(&self) -> VaNftContractCaller {
-        VaNftContractCaller::at(self.va_token_address())
-    }
-
-    pub fn reputation_token(&self) -> ReputationContractCaller {
-        ReputationContractCaller::at(self.reputation_token_address())
+        !self.refs.va_token().balance_of(address).is_zero()
     }
 
     /// Get a reference to the governance voting's voters.
@@ -628,8 +607,8 @@ impl VotingEngine {
         voting.bound_stake(ballot.stake, ballot.choice);
         self.set_voting(voting);
 
-        self.reputation_token().mint(worker, ballot.stake);
-        self.reputation_token().stake_voting(voting_id, ballot.clone().into());
+        self.refs.reputation_token().mint(worker, ballot.stake);
+        self.refs.reputation_token().stake_voting(voting_id, ballot.clone().into());
 
         ballot.unbounded = false;
         self.ballots.set(&(voting_id, voting_type, worker), ballot);
@@ -673,7 +652,7 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         // Unstake reputation.
-        self.reputation_token().unstake_voting(voting_id, ballot.clone().into());
+        self.refs.reputation_token().unstake_voting(voting_id, ballot.clone().into());
 
         // Update voting.
         let stake = ballot.stake;
