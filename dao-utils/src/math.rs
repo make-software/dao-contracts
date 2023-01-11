@@ -1,38 +1,28 @@
 use casper_types::U512;
 
-use crate::{conversions::BytesConversion, Error};
+use crate::Error;
 
 pub const RATIO_DIVISOR: u32 = 1000;
 
-// TODO: Refactor this!
-pub fn promils_of(number: U512, promils: U512) -> Result<U512, Error> {
-    let number_u512 = U512::convert_from_bytes(number.convert_to_bytes()?)?;
-    let ratio_u512 = U512::convert_from_bytes(promils.convert_to_bytes()?)?;
-
-    let dividend = number_u512 * ratio_u512;
-
-    let result = dividend / U512::from(RATIO_DIVISOR);
-
-    if result > U512::convert_from_bytes(U512::MAX.convert_to_bytes()?)? {
-        Err(Error::ArithmeticOverflow)
+pub fn per_mil_of<T: Into<U512>, R: Into<U512>>(number: T, other: R) -> Result<U512, Error> {
+    let number: U512 = number.into();
+    let other: U512 = other.into();
+    if number < other {
+        per_mil_of_u512(other, number)
     } else {
-        Ok(U512::convert_from_bytes(result.convert_to_bytes()?)?)
+        per_mil_of_u512(number, other)
     }
 }
 
-// TODO: Refactor this even more!
-pub fn promils_of_u512(number: U512, promils: U512) -> Result<U512, Error> {
-    let number_u512 = number;
-    let ratio_u512 = promils;
-
-    let dividend = number_u512 * ratio_u512;
-
-    let result = dividend / U512::from(RATIO_DIVISOR);
-
-    if result > U512::convert_from_bytes(U512::MAX.convert_to_bytes()?)? {
-        Err(Error::ArithmeticOverflow)
-    } else {
-        Ok(U512::convert_from_bytes(result.convert_to_bytes()?)?)
+fn per_mil_of_u512(number: U512, other: U512) -> Result<U512, Error> {
+    match number.checked_mul(other) {
+        // if the result is lower than U512::MAX, divide by the ratio.
+        Some(value) => Ok(value / U512::from(RATIO_DIVISOR)),
+        // if the result is greater than U512::MAX, do number/ratio * other.
+        // It may lead to a precision loss but makes it possible to multiply numbers whose result before the division would be greater that U512::MAX.
+        None => {
+            (number / U512::from(RATIO_DIVISOR)).checked_mul(other).ok_or(Error::ArithmeticOverflow)
+        }
     }
 }
 
@@ -62,15 +52,19 @@ pub fn rem_from_balance(current: (bool, U512), amount: U512) -> (bool, U512) {
 
 #[cfg(test)]
 mod tests {
-    use super::{add_to_balance, promils_of, U512};
-    use crate::math::rem_from_balance;
+    use super::{add_to_balance, per_mil_of, U512};
+    use crate::{math::rem_from_balance, Error};
     #[test]
-    fn test_promils_of() {
-        assert_eq!(promils_of(1000.into(), 1.into()).unwrap(), 1.into());
-        assert_eq!(promils_of(1000.into(), 999.into()).unwrap(), 999.into());
-        assert_eq!(promils_of(6.into(), 334.into()).unwrap(), 2.into());
-        assert_eq!(promils_of(6.into(), 333.into()).unwrap(), 1.into());
-        assert_eq!(promils_of(10.into(), 750.into()).unwrap(), 7.into());
+    fn test_per_mils_of() {
+        dbg!(U512::MAX);
+        assert_eq!(per_mil_of(1000, 1).unwrap(), 1.into());
+        assert_eq!(per_mil_of(1000, 999).unwrap(), 999.into());
+        assert_eq!(per_mil_of(6, 334).unwrap(), 2.into());
+        assert_eq!(per_mil_of(6, 333).unwrap(), 1.into());
+        assert_eq!(per_mil_of(10, 750).unwrap(), 7.into());
+        assert_eq!(per_mil_of(U512::MAX, 10).unwrap(), U512::MAX / 100);
+        assert_eq!(per_mil_of(10, U512::MAX).unwrap(), U512::MAX / 100);
+        assert_eq!(per_mil_of(1001, U512::MAX), Err(Error::ArithmeticOverflow));  
     }
 
     #[allow(non_snake_case)]

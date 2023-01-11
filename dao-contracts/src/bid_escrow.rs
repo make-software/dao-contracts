@@ -657,8 +657,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         self.cancel_all_bids(job_offer_id);
         self.return_job_offer_poster_dos_fee(job_offer_id);
 
-        // TODO: implement in jobstorage
-        self.job_storage.job_offers.set(&job_offer_id, job_offer);
+        self.job_storage.update_job_offer(job_offer_id, job_offer);
     }
 
     fn cancel_job(&mut self, job_id: JobId) {

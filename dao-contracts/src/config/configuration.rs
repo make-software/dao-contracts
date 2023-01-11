@@ -177,22 +177,22 @@ impl Configuration {
     }
 
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.default_policing_rate)
+        math::per_mil_of(amount, self.dao_configuration.default_policing_rate)
             .unwrap_or_revert()
     }
 
     pub fn apply_bid_escrow_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.bid_escrow_payment_ratio)
+        math::per_mil_of(amount, self.dao_configuration.bid_escrow_payment_ratio)
             .unwrap_or_revert()
     }
 
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.reputation_conversion_rate)
+        math::per_mil_of(amount, self.dao_configuration.reputation_conversion_rate)
             .unwrap_or_revert()
     }
 
     pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
-        math::promils_of_u512(amount, self.dao_configuration.default_reputation_slash)
+        math::per_mil_of(amount, self.dao_configuration.default_reputation_slash)
             .unwrap_or_revert()
     }
 
