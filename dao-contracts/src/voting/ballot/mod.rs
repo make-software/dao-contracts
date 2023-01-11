@@ -63,7 +63,7 @@ impl Ballot {
 
 /// ShortenedBallot struct
 ///
-/// Derives from the [`Ballot`] struct. 
+/// Derives from the [`Ballot`] struct.
 /// Contains only the essential fields from the original [`Ballot`] required in cross-contract communication.
 #[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
 pub struct ShortenedBallot {
@@ -73,7 +73,10 @@ pub struct ShortenedBallot {
 
 impl From<Ballot> for ShortenedBallot {
     fn from(value: Ballot) -> Self {
-        Self { voter: value.voter, stake: value.stake }
+        Self {
+            voter: value.voter,
+            stake: value.stake,
+        }
     }
 }
 

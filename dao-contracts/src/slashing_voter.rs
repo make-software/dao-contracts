@@ -14,7 +14,7 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
-    refs::{ContractRefsStorage, ContractRefs},
+    refs::{ContractRefs, ContractRefsStorage},
     voting::{
         types::VotingId,
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},

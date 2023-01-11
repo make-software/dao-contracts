@@ -52,7 +52,6 @@ impl BalanceAggregates {
     }
 }
 
-
 /// Stores information about balances and the total supply.
 #[derive(Default, Debug, FromBytes, ToBytes, CLTyped)]
 pub struct AggregatedBalance {

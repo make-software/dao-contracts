@@ -206,23 +206,31 @@ impl Bid {
 
 /// ShortenedBid struct
 ///
-/// Derives from the [`Bid`] struct. 
+/// Derives from the [`Bid`] struct.
 /// Contains only the essential fields from the original [`Bid`] required in cross-contract communication.
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
 pub struct ShortenedBid {
-    pub bid_id: BidId, 
+    pub bid_id: BidId,
     pub reputation_stake: U512,
-    pub worker: Address, 
+    pub worker: Address,
 }
 
 impl ShortenedBid {
     pub fn new(bid_id: BidId, reputation_stake: U512, worker: Address) -> Self {
-        Self { bid_id, reputation_stake, worker }
+        Self {
+            bid_id,
+            reputation_stake,
+            worker,
+        }
     }
 }
 
 impl From<&Bid> for ShortenedBid {
     fn from(value: &Bid) -> Self {
-        Self { bid_id: value.bid_id, reputation_stake: value.reputation_stake, worker: value.worker }
+        Self {
+            bid_id: value.bid_id,
+            reputation_stake: value.reputation_stake,
+            worker: value.worker,
+        }
     }
-} 
+}

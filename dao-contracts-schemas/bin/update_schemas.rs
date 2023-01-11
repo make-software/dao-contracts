@@ -1,6 +1,7 @@
 use std::{fs::File, io::Write};
-use convert_case::{Case, Casing};
+
 use casper_dao_utils::definitions::ContractDef;
+use convert_case::{Case, Casing};
 use dao_contracts_schemas::all_contracts;
 
 fn main() {

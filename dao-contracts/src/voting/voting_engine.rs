@@ -27,11 +27,12 @@ use super::{
     Ballot,
     BallotCanceled,
     Reason,
+    ShortenedBallot,
     VotingCanceled,
-    VotingEnded, ShortenedBallot,
+    VotingEnded,
 };
 use crate::{
-    refs::{ContractRefsStorage, ContractRefs},
+    refs::{ContractRefs, ContractRefsStorage},
     rules::builder::RulesBuilder,
     voting::validation::rules::can_create_voting::CanCreateVoting,
     Configuration,
@@ -370,12 +371,14 @@ impl VotingEngine {
             unbounded,
             false,
         );
-        
+
         if !unbounded && !voting.is_informal_without_stake() {
             // Stake the reputation
-            self.refs.reputation_token().stake_voting(voting_id, ballot.clone().into());
+            self.refs
+                .reputation_token()
+                .stake_voting(voting_id, ballot.clone().into());
         }
-        
+
         BallotCast::new(&ballot).emit();
 
         // Add a voter to the list
@@ -455,7 +458,7 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut transfers = BTreeMap::new();
-        let mut ballots= Vec::<ShortenedBallot>::new();
+        let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded || ballot.canceled {
@@ -464,7 +467,9 @@ impl VotingEngine {
             transfers.insert(ballot.voter, ballot.stake);
             ballots.push(ballot.into());
         }
-        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
         transfers
     }
 
@@ -502,7 +507,9 @@ impl VotingEngine {
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
-        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -520,7 +527,9 @@ impl VotingEngine {
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
-        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -549,8 +558,11 @@ impl VotingEngine {
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
-        self.refs.reputation_token()
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
     }
@@ -579,8 +591,11 @@ impl VotingEngine {
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.refs.reputation_token().bulk_unstake_voting(voting_id, ballots);
-        self.refs.reputation_token()
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
     }
@@ -608,7 +623,9 @@ impl VotingEngine {
         self.set_voting(voting);
 
         self.refs.reputation_token().mint(worker, ballot.stake);
-        self.refs.reputation_token().stake_voting(voting_id, ballot.clone().into());
+        self.refs
+            .reputation_token()
+            .stake_voting(voting_id, ballot.clone().into());
 
         ballot.unbounded = false;
         self.ballots.set(&(voting_id, voting_type, worker), ballot);
@@ -652,7 +669,9 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         // Unstake reputation.
-        self.refs.reputation_token().unstake_voting(voting_id, ballot.clone().into());
+        self.refs
+            .reputation_token()
+            .unstake_voting(voting_id, ballot.clone().into());
 
         // Update voting.
         let stake = ballot.stake;

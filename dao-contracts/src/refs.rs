@@ -1,7 +1,12 @@
-use casper_dao_utils::{casper_dao_macros::Instance, Variable, Address};
+use casper_dao_utils::{casper_dao_macros::Instance, Address, Variable};
 use delegate::delegate;
 
-use crate::{ReputationContractCaller, VariableRepositoryContractCaller, VaNftContractCaller, KycNftContractCaller};
+use crate::{
+    KycNftContractCaller,
+    ReputationContractCaller,
+    VaNftContractCaller,
+    VariableRepositoryContractCaller,
+};
 
 /// Provides references to common contracts that are used by most of the voting contracts.
 pub trait ContractRefs {
@@ -18,11 +23,16 @@ pub trait ContractRefs {
 pub struct ContractRefsStorage {
     variable_repository: Variable<Address>,
     reputation_token: Variable<Address>,
-    va_token: Variable<Address>
+    va_token: Variable<Address>,
 }
 
 impl ContractRefsStorage {
-    pub fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+    pub fn init(
+        &mut self,
+        variable_repository: Address,
+        reputation_token: Address,
+        va_token: Address,
+    ) {
         self.variable_repository.set(variable_repository);
         self.reputation_token.set(reputation_token);
         self.va_token.set(va_token);
@@ -31,7 +41,7 @@ impl ContractRefsStorage {
     /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
     pub fn reputation_token_address(&self) -> Address {
         self.reputation_token.get_or_revert()
-    } 
+    }
 
     /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) connected to the contract
     pub fn variable_repository_address(&self) -> Address {
@@ -58,11 +68,10 @@ impl ContractRefs for ContractRefsStorage {
 pub struct ContractRefsWithKycStorage {
     #[scoped = "contract"]
     refs: ContractRefsStorage,
-    kyc_token: Variable<Address>
+    kyc_token: Variable<Address>,
 }
 
 impl ContractRefsWithKycStorage {
-
     delegate! {
         to self.refs {
             pub fn reputation_token_address(&self) -> Address;
@@ -70,8 +79,15 @@ impl ContractRefsWithKycStorage {
         }
     }
 
-    pub fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address, kyc_token: Address) {
-        self.refs.init(variable_repository, reputation_token, va_token);
+    pub fn init(
+        &mut self,
+        variable_repository: Address,
+        reputation_token: Address,
+        va_token: Address,
+        kyc_token: Address,
+    ) {
+        self.refs
+            .init(variable_repository, reputation_token, va_token);
         self.kyc_token.set(kyc_token);
     }
 
@@ -83,7 +99,7 @@ impl ContractRefsWithKycStorage {
     /// Returns the address of [KYC Token](crate::KycNftContract) connected to the contract
     pub fn kyc_token_address(&self) -> Address {
         self.kyc_token.get_or_revert()
-    } 
+    }
 }
 
 impl ContractRefs for ContractRefsWithKycStorage {

@@ -6,7 +6,10 @@ use casper_dao_utils::{
     Error,
 };
 
-use crate::{refs::{ContractRefsWithKycStorage, ContractRefs}, VaNftContractInterface};
+use crate::{
+    refs::{ContractRefs, ContractRefsWithKycStorage},
+    VaNftContractInterface,
+};
 
 /// A utility module that provides information about the current status of the onboarding process.
 #[derive(Instance)]

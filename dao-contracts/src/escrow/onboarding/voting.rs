@@ -12,7 +12,7 @@ use casper_types::U512;
 
 use super::request::{OnboardingRequest, Request};
 use crate::{
-    refs::{ContractRefsWithKycStorage, ContractRefs},
+    refs::{ContractRefs, ContractRefsWithKycStorage},
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,

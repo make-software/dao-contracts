@@ -1,4 +1,4 @@
-use std::{rc::Rc, borrow::Borrow};
+use std::{borrow::Borrow, rc::Rc};
 
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
@@ -22,7 +22,7 @@ use crate::{
         storage::JobStorage,
         types::{BidId, JobId, JobOfferId},
     },
-    refs::{ContractRefsWithKycStorage, ContractRefs},
+    refs::{ContractRefs, ContractRefsWithKycStorage},
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
@@ -384,7 +384,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         if job_offer.configuration.informal_stake_reputation() && !job.stake().is_zero() {
             let bid = self.job_storage.get_bid(job.bid_id()).unwrap();
-            self.refs.reputation_token().unstake_bid(bid.borrow().into());
+            self.refs
+                .reputation_token()
+                .unstake_bid(bid.borrow().into());
         }
 
         let stake = if job.external_worker_cspr_stake().is_zero() {
@@ -487,7 +489,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         // Stake new bid
         if new_bid.reputation_stake > U512::zero() {
-            self.refs.reputation_token().stake_bid(new_bid.borrow().into());
+            self.refs
+                .reputation_token()
+                .stake_bid(new_bid.borrow().into());
         }
 
         self.job_storage.store_job(old_job);
@@ -522,14 +526,18 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 VotingResult::InFavor => {
                     if !job_offer.configuration.informal_stake_reputation() {
                         let bid = self.job_storage.get_bid(job.bid_id()).unwrap_or_revert();
-                        self.refs.reputation_token().unstake_bid(bid.borrow().into());
+                        self.refs
+                            .reputation_token()
+                            .unstake_bid(bid.borrow().into());
                     }
                     self.create_formal_voting(voting_id);
                 }
                 VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
                         let bid = self.job_storage.get_bid(job.bid_id()).unwrap_or_revert();
-                        self.refs.reputation_token().unstake_bid(bid.borrow().into());
+                        self.refs
+                            .reputation_token()
+                            .unstake_bid(bid.borrow().into());
                     }
                     self.create_formal_voting(voting_id);
                 }
@@ -716,7 +724,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         bid.cancel_without_validation();
 
-        self.refs.reputation_token().unstake_bid(bid.borrow().into());
+        self.refs
+            .reputation_token()
+            .unstake_bid(bid.borrow().into());
 
         // TODO: Implement Event
         self.job_storage.store_bid(bid);
@@ -972,7 +982,7 @@ impl BidEscrowContract {
     ) -> Option<U512> {
         match purse {
             None => {
-                let bid = ShortenedBid ::new(bid_id, reputation_stake, worker);
+                let bid = ShortenedBid::new(bid_id, reputation_stake, worker);
                 self.refs.reputation_token().stake_bid(bid);
                 None
             }
@@ -986,7 +996,9 @@ impl BidEscrowContract {
     fn unstake_cspr_or_reputation_for_bid(&mut self, bid: &Bid) {
         match bid.cspr_stake {
             None => {
-                self.refs.reputation_token().unstake_bid(bid.borrow().into());
+                self.refs
+                    .reputation_token()
+                    .unstake_bid(bid.borrow().into());
             }
             Some(cspr_stake) => {
                 transfer::withdraw_cspr(bid.worker, cspr_stake);
@@ -996,9 +1008,11 @@ impl BidEscrowContract {
 
     fn burn_reputation_stake(&mut self, bid: &Bid) {
         if bid.reputation_stake > U512::zero() {
-            self.refs.reputation_token()
+            self.refs
+                .reputation_token()
                 .unstake_bid(bid.borrow().into());
-            self.refs.reputation_token()
+            self.refs
+                .reputation_token()
                 .burn(bid.worker, bid.reputation_stake);
         }
     }

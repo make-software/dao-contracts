@@ -14,9 +14,10 @@ use casper_types::{
 
 use crate::{
     config::{dao_configuration::DaoConfiguration, voting_configuration::VotingConfiguration},
+    refs::ContractRefs,
     Configuration,
     VaNftContractInterface,
-    VariableRepositoryContractInterface, refs::ContractRefs,
+    VariableRepositoryContractInterface,
 };
 
 pub struct ConfigurationBuilder {

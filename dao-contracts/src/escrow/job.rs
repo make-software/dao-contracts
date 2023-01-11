@@ -216,7 +216,7 @@ impl Job {
         false
     }
 
-    pub fn submit_proof(&mut self, request: SubmitJobProofRequest)  {
+    pub fn submit_proof(&mut self, request: SubmitJobProofRequest) {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);
         }
