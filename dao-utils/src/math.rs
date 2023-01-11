@@ -4,6 +4,10 @@ use crate::Error;
 
 pub const RATIO_DIVISOR: u32 = 1000;
 
+pub fn to_per_mils<T: Into<U512>>(value: T) -> U512 {
+    value.into() / U512::from(RATIO_DIVISOR)
+}
+
 pub fn per_mil_of<T: Into<U512>, R: Into<U512>>(number: T, other: R) -> Result<U512, Error> {
     let number: U512 = number.into();
     let other: U512 = other.into();
@@ -14,16 +18,8 @@ pub fn per_mil_of<T: Into<U512>, R: Into<U512>>(number: T, other: R) -> Result<U
     }
 }
 
-fn per_mil_of_u512(number: U512, other: U512) -> Result<U512, Error> {
-    match number.checked_mul(other) {
-        // if the result is lower than U512::MAX, divide by the ratio.
-        Some(value) => Ok(value / U512::from(RATIO_DIVISOR)),
-        // if the result is greater than U512::MAX, do number/ratio * other.
-        // It may lead to a precision loss but makes it possible to multiply numbers whose result before the division would be greater that U512::MAX.
-        None => {
-            (number / U512::from(RATIO_DIVISOR)).checked_mul(other).ok_or(Error::ArithmeticOverflow)
-        }
-    }
+pub fn per_mil_of_as_u32<T: Into<U512>, R: Into<U512>>(number: T, other: R) -> Result<u32, Error> {
+    per_mil_of(number, other).and_then(|n| u32::try_from(n).map_err(|_| Error::ArithmeticOverflow))
 }
 
 pub fn add_to_balance(current: (bool, U512), amount: U512) -> (bool, U512) {
@@ -50,6 +46,18 @@ pub fn rem_from_balance(current: (bool, U512), amount: U512) -> (bool, U512) {
     }
 }
 
+fn per_mil_of_u512(number: U512, other: U512) -> Result<U512, Error> {
+    match number.checked_mul(other) {
+        // if the result is lower than U512::MAX, divide by the ratio.
+        Some(value) => Ok(value / U512::from(RATIO_DIVISOR)),
+        // if the result is greater than U512::MAX, do number/ratio * other.
+        // It may lead to a precision loss but makes it possible to multiply numbers whose result before the division would be greater that U512::MAX.
+        None => (number / U512::from(RATIO_DIVISOR))
+            .checked_mul(other)
+            .ok_or(Error::ArithmeticOverflow),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{add_to_balance, per_mil_of, U512};
@@ -64,7 +72,7 @@ mod tests {
         assert_eq!(per_mil_of(10, 750).unwrap(), 7.into());
         assert_eq!(per_mil_of(U512::MAX, 10).unwrap(), U512::MAX / 100);
         assert_eq!(per_mil_of(10, U512::MAX).unwrap(), U512::MAX / 100);
-        assert_eq!(per_mil_of(1001, U512::MAX), Err(Error::ArithmeticOverflow));  
+        assert_eq!(per_mil_of(1001, U512::MAX), Err(Error::ArithmeticOverflow));
     }
 
     #[allow(non_snake_case)]
