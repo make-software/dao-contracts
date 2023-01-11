@@ -32,14 +32,14 @@ use super::{
     VotingEnded,
 };
 use crate::{
+    rules::builder::RulesBuilder,
+    voting::validation::rules::can_create_voting::CanCreateVoting,
     Configuration,
     ReputationContractCaller,
     ReputationContractInterface,
     VaNftContractCaller,
     VaNftContractInterface,
 };
-use crate::rules::builder::RulesBuilder;
-use crate::voting::validation::rules::can_create_voting::CanCreateVoting;
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
 /// 1. Informal voting
@@ -93,14 +93,18 @@ impl VotingEngine {
         configuration: Configuration,
     ) -> VotingCreatedInfo {
         RulesBuilder::new()
-            .add_validation(CanCreateVoting::create(self.is_va(creator), configuration.only_va_can_create()))
+            .add_validation(CanCreateVoting::create(
+                self.is_va(creator),
+                configuration.only_va_can_create(),
+            ))
             .validate();
 
         let should_cast_first_vote = configuration.should_cast_first_vote();
 
         let voting_ids_address = configuration.voting_ids_address();
         let voting_id = ids::get_next_voting_id(voting_ids_address);
-        let mut voting = VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
+        let mut voting =
+            VotingStateMachine::new(voting_id, get_block_time(), creator, configuration);
 
         let mut used_stake = None;
         if should_cast_first_vote {
@@ -109,7 +113,7 @@ impl VotingEngine {
                 VotingType::Informal,
                 Choice::InFavor,
                 stake,
-                &mut voting
+                &mut voting,
             );
             used_stake = Some(stake);
         }
@@ -146,9 +150,7 @@ impl VotingEngine {
     ///
     /// Throws [`ArithmeticOverflow`](Error::ArithmeticOverflow) in an unlikely event of a overflow when calculating reputation to redistribute
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
-        let mut voting = self
-            .get_voting(voting_id)
-            .unwrap_or_revert_with(Error::VotingDoesNotExist);
+        let mut voting = self.get_voting_or_revert(voting_id);
 
         self.assert_voting_type(&voting, voting_type);
 
@@ -185,18 +187,30 @@ impl VotingEngine {
                 let voting_result = self.finish_formal_voting(&mut voting);
                 match voting_result.result() {
                     VotingResult::InFavor => {
+                        if voting
+                            .voting_configuration()
+                            .voting_configuration
+                            .bound_ballot_for_successful_voting
+                        {
+                            let worker = voting
+                                .voting_configuration()
+                                .voting_configuration
+                                .bound_ballot_address
+                                .unwrap_or_revert_with(Error::ArithmeticOverflow);
+                            self.bound_ballot(&mut voting, worker, VotingType::Formal);
+                        }
                         let yes_unstakes =
                             self.return_yes_voters_rep(voting_id, VotingType::Formal);
-                        let (mints, burns) = self
-                            .redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
+                        let (mints, burns) =
+                            self.redistribute_reputation_of_no_voters(&voting, VotingType::Formal);
                         add_to_map(&mut rep_unstakes, Reason::FormalFinished, yes_unstakes);
                         add_to_map(&mut rep_mints, Reason::FormalWon, mints);
                         add_to_map(&mut rep_burns, Reason::FormalLost, burns);
                     }
                     VotingResult::Against => {
                         let no_unstakes = self.return_no_voters_rep(voting_id, VotingType::Formal);
-                        let (mints, burns) = self
-                            .redistribute_reputation_of_yes_voters(voting_id, VotingType::Formal);
+                        let (mints, burns) =
+                            self.redistribute_reputation_of_yes_voters(&voting, VotingType::Formal);
                         add_to_map(&mut rep_unstakes, Reason::FormalFinished, no_unstakes);
                         add_to_map(&mut rep_mints, Reason::FormalWon, mints);
                         add_to_map(&mut rep_burns, Reason::FormalLost, burns);
@@ -231,7 +245,6 @@ impl VotingEngine {
             rep_mints,
         );
         voting_ended_event.emit();
-
         self.set_voting(voting);
         summary
     }
@@ -326,9 +339,16 @@ impl VotingEngine {
         self.set_voting(voting);
     }
 
-    fn cast_vote(&mut self, voter: Address, voting_type: VotingType, choice: Choice, stake: U512, voting: &mut VotingStateMachine) {
+    fn cast_vote(
+        &mut self,
+        voter: Address,
+        voting_type: VotingType,
+        choice: Choice,
+        stake: U512,
+        voting: &mut VotingStateMachine,
+    ) {
         let voting_id = voting.voting_id();
-        self.assert_voting_type(&voting, voting_type);
+        self.assert_voting_type(voting, voting_type);
         voting.guard_vote(get_block_time());
         self.assert_vote_doesnt_exist(voting_id, voting.voting_type(), voter);
         self.cast_ballot(voter, voting_id, choice, stake, false, voting);
@@ -485,7 +505,10 @@ impl VotingEngine {
         transfers
     }
 
-    pub fn recast_creators_ballot_from_informal_to_formal(&mut self, voting: &mut VotingStateMachine) {
+    pub fn recast_creators_ballot_from_informal_to_formal(
+        &mut self,
+        voting: &mut VotingStateMachine,
+    ) {
         let voting_id = voting.voting_id();
         let creator = voting.creator();
         let creator_ballot = self
@@ -510,7 +533,7 @@ impl VotingEngine {
         let mut summary = BTreeMap::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.choice.is_in_favor() && !ballot.unbounded {
+            if ballot.choice.is_in_favor() && !ballot.unbounded && !ballot.canceled {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
                 summary.insert(ballot.voter, ballot.stake);
@@ -527,7 +550,7 @@ impl VotingEngine {
         let mut summary = BTreeMap::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.choice.is_against() && !ballot.unbounded {
+            if ballot.choice.is_against() && !ballot.unbounded && !ballot.canceled {
                 self.reputation_token()
                     .unstake_voting(ballot.voter, voting_id);
                 summary.insert(ballot.voter, ballot.stake);
@@ -538,11 +561,11 @@ impl VotingEngine {
 
     pub fn redistribute_reputation_of_no_voters(
         &self,
-        voting_id: VotingId,
+        voting: &VotingStateMachine,
         voting_type: VotingType,
     ) -> (BTreeMap<Address, U512>, BTreeMap<Address, U512>) {
-        let voting = self.get_voting_or_revert(voting_id);
         let total_stake_in_favor = voting.stake_in_favor();
+        let voting_id = voting.voting_id();
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
@@ -567,10 +590,10 @@ impl VotingEngine {
 
     pub fn redistribute_reputation_of_yes_voters(
         &self,
-        voting_id: VotingId,
+        voting: &VotingStateMachine,
         voting_type: VotingType,
     ) -> (BTreeMap<Address, U512>, BTreeMap<Address, U512>) {
-        let voting = self.get_voting_or_revert(voting_id);
+        let voting_id = voting.voting_id();
         let total_stake_in_favor = voting.stake_in_favor();
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
@@ -615,21 +638,29 @@ impl VotingEngine {
         self.voters().len((voting_id, voting_type))
     }
 
-    pub fn bound_ballot(&mut self, voting_id: u32, worker: Address, voting_type: VotingType) {
+    pub fn bound_ballot(
+        &mut self,
+        voting: &mut VotingStateMachine,
+        worker: Address,
+        voting_type: VotingType,
+    ) {
         let mut ballot = self
-            .get_ballot(voting_id, voting_type, worker)
+            .get_ballot(voting.voting_id(), voting_type, worker)
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
-        let mut voting = self.get_voting_or_revert(voting_id);
         voting.bound_stake(ballot.stake, ballot.choice);
-        self.set_voting(voting);
 
         self.reputation_token().mint(worker, ballot.stake);
-        self.reputation_token()
-            .stake_voting(worker, voting_id, ballot.choice, ballot.stake);
+        self.reputation_token().stake_voting(
+            worker,
+            voting.voting_id(),
+            ballot.choice,
+            ballot.stake,
+        );
 
         ballot.unbounded = false;
-        self.ballots.set(&(voting_id, voting_type, worker), ballot);
+        self.ballots
+            .set(&(voting.voting_id(), voting_type, worker), ballot);
     }
 
     pub fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {

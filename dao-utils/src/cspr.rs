@@ -14,6 +14,10 @@ use crate::{
     Error,
 };
 
+pub fn get_cspr_balance() -> U512 {
+    get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
+}
+
 pub fn deposit_cspr(cargo_purse: URef) -> U512 {
     let main_purse = casper_env::contract_main_purse();
     let amount = get_purse_balance(cargo_purse).unwrap_or_revert_with(Error::PurseError);

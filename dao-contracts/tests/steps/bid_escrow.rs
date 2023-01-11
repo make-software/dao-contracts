@@ -5,11 +5,7 @@ use cucumber::{then, when};
 
 use crate::common::{
     helpers::{self, parse_bool},
-    params::{
-        Account,
-        Balance,
-        TimeUnit,
-    },
+    params::{Account, Balance, TimeUnit},
     DaoWorld,
 };
 
@@ -100,7 +96,9 @@ fn submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
         .unwrap();
 }
 
-#[when(expr = "{account} submits the JobProof of Job {int} with {balance} CSPR stake {word} onboarding")]
+#[when(
+    expr = "{account} submits the JobProof of Job {int} with {balance} CSPR stake {word} onboarding"
+)]
 fn submit_job_proof_during_grace_period_external(
     w: &mut DaoWorld,
     worker: Account,

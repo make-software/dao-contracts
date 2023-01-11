@@ -22,8 +22,7 @@ fn call() {
     let cargo_purse: URef = create_purse();
     transfer_from_purse_to_purse(main_purse, cargo_purse, cspr_amount, None).unwrap_or_revert();
 
-    OnboardingRequestContractCaller::at(onboarding_address)
-        .create_voting(reason, cargo_purse);
+    OnboardingRequestContractCaller::at(onboarding_address).create_voting(reason, cargo_purse);
 }
 
 fn main() {}

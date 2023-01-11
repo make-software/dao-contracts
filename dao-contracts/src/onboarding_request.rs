@@ -1,10 +1,11 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::contract_api::system::get_purse_balance,
-    casper_dao_macros::{casper_contract_interface, Instance, Event},
-    casper_env::{self, caller},
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
+    casper_env::caller,
+    cspr,
     Address,
-    DocumentHash, transfer, BlockTime,
+    BlockTime,
+    DocumentHash,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
@@ -15,8 +16,9 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
+        VotingCreatedInfo,
         VotingEngine,
-        VotingId, VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -50,7 +52,7 @@ pub trait OnboardingRequestContractInterface {
     /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn finish_voting(&mut self, voting_id: VotingId);
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// see [VotingEngine](VotingEngine)
     fn variable_repo_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
@@ -114,7 +116,7 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
         }
 
         to self.onboarding {
-            fn finish_voting(&mut self, voting_id: VotingId);
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
         }
     }
@@ -132,13 +134,13 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
     }
 
     fn create_voting(&mut self, reason: DocumentHash, purse: URef) {
-        let cspr_deposit = transfer::deposit_cspr(purse);
+        let cspr_deposit = cspr::deposit_cspr(purse);
         let voting_info = self.onboarding.submit_request(reason.clone(), cspr_deposit);
         OnboardingVotingCreated::new(reason, cspr_deposit, voting_info).emit();
     }
 
     fn get_cspr_balance(&self) -> U512 {
-        get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
+        cspr::get_cspr_balance()
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
@@ -170,7 +172,6 @@ impl OnboardingRequestContractTest {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct OnboardingVotingCreated {
     reason: DocumentHash,
@@ -189,11 +190,7 @@ pub struct OnboardingVotingCreated {
 }
 
 impl OnboardingVotingCreated {
-    pub fn new(
-        reason: DocumentHash,
-        cspr_deposit: U512,
-        info: VotingCreatedInfo,
-    ) -> Self {
+    pub fn new(reason: DocumentHash, cspr_deposit: U512, info: VotingCreatedInfo) -> Self {
         Self {
             reason,
             cspr_deposit,

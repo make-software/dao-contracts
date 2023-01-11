@@ -185,15 +185,14 @@ impl ReputationContractInterface for ReputationContract {
 
     fn burn(&mut self, owner: Address, amount: U512) {
         self.access_control.ensure_whitelisted();
-
         let mut balances = self.balances.get_or_revert();
         balances.dec(owner, amount);
         self.balances.set(balances);
-
         let (new_supply, is_overflowed) = self.total_supply().overflowing_sub(amount);
         if is_overflowed {
             revert(Error::TotalSupplyOverflow);
         }
+
         self.total_supply.set(new_supply);
 
         // Emit Burn event.

@@ -11,7 +11,7 @@ pub struct CanCreateVoting {
 impl Validation for CanCreateVoting {
     fn validate(&self) -> Result<(), Error> {
         if self.only_va_can_create && !self.is_va {
-            return Err(Error::NotOnboarded)
+            return Err(Error::NotOnboarded);
         }
 
         Ok(())
