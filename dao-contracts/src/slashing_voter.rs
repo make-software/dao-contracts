@@ -200,10 +200,10 @@ impl SlashingVoterContract {
         // Slash all bids.
         for (bid_escrow_address, bid_id) in stakes.get_bids_stakes_origins() {
             ContractCall {
-                address: bid_escrow_address,
+                address: *bid_escrow_address,
                 entry_point: String::from("slash_bid"),
                 runtime_args: runtime_args! {
-                    "bid_id" => bid_id,
+                    "bid_id" => *bid_id,
                 },
             }
             .call();
@@ -212,11 +212,11 @@ impl SlashingVoterContract {
         // Slash subject in all voter contracts.
         for (contract_address, voting_id) in stakes.get_voting_stakes_origins() {
             ContractCall {
-                address: contract_address,
+                address: *contract_address,
                 entry_point: String::from("slash_voter"),
                 runtime_args: runtime_args! {
                     "voter" => slash_task.subject,
-                    "voting_id" => voting_id
+                    "voting_id" => *voting_id
                 },
             }
             .call();

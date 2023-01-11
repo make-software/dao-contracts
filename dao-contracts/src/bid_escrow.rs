@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, borrow::Borrow};
 
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
@@ -16,7 +16,7 @@ use delegate::delegate;
 
 use crate::{
     escrow::{
-        bid::{Bid, BidStatus},
+        bid::{Bid, BidStatus, ShortenedBid},
         job::{Job, WorkerType},
         job_offer::{JobOffer, JobOfferStatus, PostJobOfferRequest},
         storage::JobStorage,
@@ -383,7 +383,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
         // TODO: Emit event.
 
         if job_offer.configuration.informal_stake_reputation() && !job.stake().is_zero() {
-            self.reputation_token().unstake_bid(worker, job.bid_id());
+            let bid = self.job_storage.get_bid(job.bid_id()).unwrap();
+            self.reputation_token().unstake_bid(bid.borrow().into());
         }
 
         let stake = if job.external_worker_cspr_stake().is_zero() {
@@ -485,11 +486,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         // Stake new bid
         if new_bid.reputation_stake > U512::zero() {
-            self.reputation_token().stake_bid(
-                new_bid.worker,
-                new_bid.bid_id(),
-                new_bid.reputation_stake,
-            );
+            self.reputation_token().stake_bid(new_bid.borrow().into());
         }
 
         self.job_storage.store_job(old_job);
@@ -518,19 +515,20 @@ impl BidEscrowContractInterface for BidEscrowContract {
         let voting_summary = self
             .voting
             .finish_voting_without_token_redistribution(voting_id);
+
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        self.reputation_token()
-                            .unstake_bid(job.worker(), job.bid_id());
+                        let bid = self.job_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        self.reputation_token().unstake_bid(bid.borrow().into());
                     }
                     self.create_formal_voting(voting_id);
                 }
                 VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        self.reputation_token()
-                            .unstake_bid(job.worker(), job.bid_id());
+                        let bid = self.job_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        self.reputation_token().unstake_bid(bid.borrow().into());
                     }
                     self.create_formal_voting(voting_id);
                 }
@@ -717,7 +715,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         bid.cancel_without_validation();
 
-        self.reputation_token().unstake_bid(bid.worker, bid_id);
+        self.reputation_token().unstake_bid(bid.borrow().into());
 
         // TODO: Implement Event
         self.job_storage.store_bid(bid);
@@ -739,12 +737,17 @@ impl BidEscrowContract {
 
     fn cancel_all_bids(&mut self, job_offer_id: JobOfferId) {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
+        let mut bids = Vec::<ShortenedBid>::new();
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
-            self.unstake_cspr_or_reputation_for_bid(&bid);
+            if let Some(cspr) = bid.cspr_stake {
+                transfer::withdraw_cspr(bid.worker, cspr);
+            }
+            bids.push(bid.borrow().into());
             bid.cancel_without_validation();
             self.job_storage.store_bid(bid);
         }
+        self.reputation_token().bulk_unstake_bid(bids);
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
@@ -790,10 +793,12 @@ impl BidEscrowContract {
         let total_left = self.redistribute_to_governance(job, job.external_worker_cspr_stake());
 
         // For VA's
-        let (total_supply, balances) = self.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.voting.reputation_token().all_balances();
+        let total_supply = all_balances.total_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = total_left * balance / total_supply;
-            transfer::withdraw_cspr(address, amount);
+            transfer::withdraw_cspr(*address, amount);
         }
     }
 
@@ -808,10 +813,12 @@ impl BidEscrowContract {
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let (total_supply, balances) = self.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.voting.reputation_token().all_balances();
+        let total_supply = all_balances.total_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            transfer::withdraw_cspr(address, amount);
+            transfer::withdraw_cspr(*address, amount);
         }
     }
 
@@ -820,10 +827,12 @@ impl BidEscrowContract {
             .voting_id()
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
         let all_voters = self.voting.all_voters(voting_id, VotingType::Formal);
-        let (partial_supply, balances) = self.reputation_token().partial_balances(all_voters);
-        for (address, balance) in balances.balances {
+
+        let balances = self.voting.reputation_token().partial_balances(all_voters);
+        let partial_supply = balances.total_supply();
+        for (address, balance) in balances.balances() {
             let amount = to_redistribute * balance / partial_supply;
-            transfer::withdraw_cspr(address, amount);
+            transfer::withdraw_cspr(*address, amount);
         }
     }
 
@@ -916,15 +925,20 @@ impl BidEscrowContract {
 
     fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
         let bids_amount = self.job_storage.get_bids_count(job_offer_id);
+        let mut bids = Vec::<ShortenedBid>::new();
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
-                self.unstake_cspr_or_reputation_for_bid(&bid);
+                if let Some(cspr) = bid.cspr_stake {
+                    transfer::withdraw_cspr(bid.worker, cspr);
+                }
+                bids.push(bid.borrow().into());
                 bid.reject_without_validation();
                 self.job_storage.store_bid(bid);
             }
         }
+        self.reputation_token().bulk_unstake_bid(bids);
     }
 
     fn create_formal_voting(&mut self, voting_id: VotingId) {
@@ -969,8 +983,8 @@ impl BidEscrowContract {
     ) -> Option<U512> {
         match purse {
             None => {
-                self.reputation_token()
-                    .stake_bid(worker, bid_id, reputation_stake);
+                let bid = ShortenedBid ::new(bid_id, reputation_stake, worker);
+                self.reputation_token().stake_bid(bid);
                 None
             }
             Some(purse) => {
@@ -983,7 +997,7 @@ impl BidEscrowContract {
     fn unstake_cspr_or_reputation_for_bid(&mut self, bid: &Bid) {
         match bid.cspr_stake {
             None => {
-                self.reputation_token().unstake_bid(bid.worker, bid.bid_id);
+                self.reputation_token().unstake_bid(bid.borrow().into());
             }
             Some(cspr_stake) => {
                 transfer::withdraw_cspr(bid.worker, cspr_stake);
@@ -994,7 +1008,7 @@ impl BidEscrowContract {
     fn burn_reputation_stake(&mut self, bid: &Bid) {
         if bid.reputation_stake > U512::zero() {
             self.reputation_token()
-                .unstake_bid(bid.worker, bid.bid_id());
+                .unstake_bid(bid.borrow().into());
             self.reputation_token()
                 .burn(bid.worker, bid.reputation_stake);
         }

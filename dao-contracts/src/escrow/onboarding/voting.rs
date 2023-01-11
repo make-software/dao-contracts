@@ -240,8 +240,8 @@ impl Onboarding {
         self.voting
             .redistribute_reputation_of_no_voters(voting_id, VotingType::Formal);
         // Burn temporary reputation.
-        self.burn_requestor_reputation(&request);
-        self.mint_and_redistribute_reputation_for_requestor(voting_id, &request);
+        self.burn_requestor_reputation(request);
+        self.mint_and_redistribute_reputation_for_requestor(voting_id, request);
         self.redistribute_cspr(&configuration, request.cspr_deposit());
     }
 
@@ -309,10 +309,12 @@ impl Onboarding {
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let (total_supply, balances) = self.voting.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.voting.reputation_token().all_balances();
+        let total_supply = all_balances.total_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            casper_dao_utils::transfer::withdraw_cspr(address, amount);
+            casper_dao_utils::transfer::withdraw_cspr(*address, amount);
         }
     }
 
