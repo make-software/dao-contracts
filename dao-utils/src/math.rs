@@ -64,7 +64,6 @@ mod tests {
     use crate::{math::rem_from_balance, Error};
     #[test]
     fn test_per_mils_of() {
-        dbg!(U512::MAX);
         assert_eq!(per_mil_of(1000, 1).unwrap(), 1.into());
         assert_eq!(per_mil_of(1000, 999).unwrap(), 999.into());
         assert_eq!(per_mil_of(6, 334).unwrap(), 2.into());
