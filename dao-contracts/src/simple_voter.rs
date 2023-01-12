@@ -13,6 +13,7 @@ use casper_types::U512;
 use delegate::delegate;
 
 use crate::{
+    refs::ContractRefsStorage,
     voting::{
         types::VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
@@ -26,8 +27,20 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait SimpleVoterContractInterface {
-    /// see [VotingEngine](VotingEngine::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract), 
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
+    ///
+    /// # Events
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
     /// Creates new SimpleVoter voting.
     ///
     /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
@@ -38,9 +51,9 @@ pub trait SimpleVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -72,6 +85,7 @@ pub trait SimpleVoterContractInterface {
 /// The topic of the voting is handled by `document_hash` which is a hash of a document being voted on.
 #[derive(Instance)]
 pub struct SimpleVoterContract {
+    refs: ContractRefsStorage,
     voting: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
     access_control: AccessControl,
@@ -80,8 +94,6 @@ pub struct SimpleVoterContract {
 impl SimpleVoterContractInterface for SimpleVoterContract {
     delegate! {
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voting(
                 &self,
@@ -103,19 +115,21 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.voting.init(variable_repo, reputation_token, va_token);
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        self.refs
+            .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller())
     }
 
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512) {
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs).build();
 
         let info = self
             .voting

@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_env::{call_contract, revert},
     consts,
-    Address,
     ContractCall,
     Error,
 };
@@ -15,10 +14,9 @@ use casper_types::{
 
 use crate::{
     config::{dao_configuration::DaoConfiguration, voting_configuration::VotingConfiguration},
+    refs::ContractRefs,
     Configuration,
-    VaNftContractCaller,
     VaNftContractInterface,
-    VariableRepositoryContractCaller,
     VariableRepositoryContractInterface,
 };
 
@@ -27,9 +25,9 @@ pub struct ConfigurationBuilder {
 }
 
 impl ConfigurationBuilder {
-    pub fn new(variable_repo_address: Address, va_token_address: Address) -> Self {
-        let total_onboarded = VaNftContractCaller::at(va_token_address).total_supply();
-        let variables = VariableRepositoryContractCaller::at(variable_repo_address).all_variables();
+    pub fn new<T: ContractRefs>(refs: &T) -> Self {
+        let total_onboarded = refs.va_token().total_supply();
+        let variables = refs.variable_repository().all_variables();
         use consts::*;
         ConfigurationBuilder {
             configuration: Configuration::new(

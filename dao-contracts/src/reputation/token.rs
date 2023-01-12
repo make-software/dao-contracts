@@ -111,7 +111,7 @@ pub trait ReputationContractInterface {
 
     /// Unstakes the reputation used as voting power.
     fn bulk_unstake_voting(&mut self, voting_id: VotingId, ballots: Vec<ShortenedBallot>);
-    
+
     /// Stakes the reputation used as bid value.
     fn stake_bid(&mut self, bid: ShortenedBid);
 

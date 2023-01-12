@@ -2,7 +2,7 @@ use casper_dao_utils::casper_dao_macros::{CLTyped, FromBytes, ToBytes};
 
 /// Enum for actions that (AdminContract)[crate::AdminContract] can perform
 ///
-/// - `AddToWhitelists` - calls `add_to_whitelist` method
+/// - `AddToWhitelist` - calls `add_to_whitelist` method
 /// - `RemoveFromWhitelist` - calls `remove_from_whitelist` method
 /// - `ChangeOwner` - calls `change_ownership` method
 #[derive(CLTyped, PartialEq, Eq, Debug, FromBytes, ToBytes)]

@@ -16,12 +16,12 @@ use casper_types::{
 use super::balances::BalanceStorage;
 use crate::{
     escrow::{bid::ShortenedBid, types::BidId},
-    voting::{VotingId, ShortenedBallot},
+    voting::{ShortenedBallot, VotingId},
 };
 
 /// A module that stores information about stakes.
-/// 
-/// 
+///
+///
 #[derive(Instance)]
 pub struct StakesStorage {
     total_stake: Mapping<Address, U512>,
@@ -35,7 +35,7 @@ pub struct StakesStorage {
 
 impl StakesStorage {
     /// Decreases the voter's stake and total stake.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `ballot` - a short version of ballot that has been casted.
@@ -46,7 +46,7 @@ impl StakesStorage {
     pub fn stake_voting(&mut self, voting_id: VotingId, ballot: ShortenedBallot) {
         self.access_control.ensure_whitelisted();
 
-        let ShortenedBallot { voter, stake} = ballot;
+        let ShortenedBallot { voter, stake } = ballot;
         self.assert_stake(stake);
         self.assert_balance(voter, stake);
 
@@ -59,7 +59,7 @@ impl StakesStorage {
     }
 
     /// Decreases the voter's stake and total stake.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `ballot`- a short version of ballot that has been casted.
@@ -78,7 +78,7 @@ impl StakesStorage {
     }
 
     /// Decreases all the voters' stake in voting with the given id, and their total stake.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `voting_id` - the id of voting to unstake tokens.
@@ -94,12 +94,13 @@ impl StakesStorage {
 
         for ballot in ballots {
             self.dec_total_stake(ballot.voter, ballot.stake);
-            self.votings.remove_record(&ballot.voter, (voter_contract, voting_id));
+            self.votings
+                .remove_record(&ballot.voter, (voter_contract, voting_id));
         }
     }
 
     /// Increases the voter's stake and total stake.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `bid` - a short version of the bid that has been offered.
@@ -109,7 +110,11 @@ impl StakesStorage {
     /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn stake_bid(&mut self, bid: ShortenedBid) {
         self.access_control.ensure_whitelisted();
-        let ShortenedBid { worker, reputation_stake, bid_id } = bid;
+        let ShortenedBid {
+            worker,
+            reputation_stake,
+            bid_id,
+        } = bid;
 
         self.assert_balance(worker, reputation_stake);
         self.assert_stake(reputation_stake);
@@ -121,7 +126,7 @@ impl StakesStorage {
     }
 
     /// Decreases the bidder's stake and total stake.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `bid` - the original bid that has been offered.
@@ -140,7 +145,7 @@ impl StakesStorage {
     }
 
     // Decreases all the bidders stake and total stake.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `bid` - the original bid that has been offered.
@@ -166,15 +171,15 @@ impl StakesStorage {
         self.total_stake.get(&address).unwrap_or_default()
     }
 
-    /// Returns all the bids placed by the given account. 
-    /// 
+    /// Returns all the bids placed by the given account.
+    ///
     /// A returned vector is a tuple of (BidEscrow contract address, bid id).
     pub fn get_bids(&self, address: &Address) -> Vec<(Address, BidId)> {
         self.bids.get(address).unwrap_or_default()
     }
 
-    /// Returns all the voting the given account participated in. 
-    /// 
+    /// Returns all the voting the given account participated in.
+    ///
     /// A returned vector is a tuple of (voting contract address, voting id).
     pub fn get_votings(&self, address: &Address) -> Vec<(Address, VotingId)> {
         self.votings.get(address).unwrap_or_default()

@@ -1,16 +1,20 @@
 use casper_dao_utils::Error;
 use cucumber::{gherkin::Step, given, then, when};
 
-use crate::{common::{
-    params::{
-        voting::{BallotBuilder, Voting, VotingType, Choice, Ballot},
-        Account,
-        Balance,
-        Contract,
-        Result
+use crate::{
+    common::{
+        helpers,
+        params::{
+            voting::{Ballot, BallotBuilder, Choice, Voting, VotingType},
+            Account,
+            Balance,
+            Contract,
+            Result,
+        },
+        DaoWorld,
     },
-    DaoWorld, helpers,
-}, on_voting_contract};
+    on_voting_contract,
+};
 
 #[when(expr = "{account} starts voting with the following config")]
 #[given(expr = "{account} starts voting with the following config")]
@@ -125,10 +129,13 @@ fn assert_vote(
         voting_type,
         voter,
         choice,
-        stake
+        stake,
     };
 
-    assert_eq!(*expected_result, world.checked_vote(&contract, &ballot).is_ok());
+    assert_eq!(
+        *expected_result,
+        world.checked_vote(&contract, &ballot).is_ok()
+    );
 }
 
 #[then(expr = "{contract} ballot for voting {int} for {account} has {balance} unbounded tokens")]
