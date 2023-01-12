@@ -4,12 +4,6 @@ use crate::common::{config::UserConfiguration, params::{Account, Contract}, DaoW
 
 macro_rules! transfer_ownership_to_admin {
     ($world:ident, $contract:expr) => {
-        $world.remove_from_whitelist(
-            &$contract, 
-            &Account::Owner, 
-            &Account::Owner
-        ).unwrap();
-
         $world.change_ownership(
             &$contract, 
             &Account::Owner, 
@@ -58,6 +52,10 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
         world.set_cspr_balance(account, cspr_balance);
     }
 
+    // A hack - the owner/deployer should be removed from the whitelist but if we do so, 
+    // some calls fail (the owner/deployer is the default caller).
+    // TestEnv does not allow to set a contract as the call executor, so we need leave the owner/deployer
+    // on the whitelist.
     transfer_ownership_to_admin!(world, Contract::BidEscrow);
     transfer_ownership_to_admin!(world, Contract::KycToken);
     transfer_ownership_to_admin!(world, Contract::KycVoter);
