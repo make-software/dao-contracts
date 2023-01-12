@@ -100,3 +100,7 @@ test-ownership: build-dao-contracts
 test-va: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_va
+
+test-voting: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_voting

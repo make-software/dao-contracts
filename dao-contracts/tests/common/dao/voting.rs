@@ -15,51 +15,52 @@ use crate::{
     on_voting_contract,
 };
 
+mod builder;
+
 #[allow(dead_code)]
 impl DaoWorld {
     pub fn checked_create_voting(&mut self, creator: Account, voting: Voting) -> Result<(), Error> {
         let creator = self.get_address(&creator);
         let stake = voting.get_stake();
 
-        match voting.contract {
-            Contract::Admin => {
-                let contract_to_update = voting.get_parsed_arg::<Contract>(0);
-                let contract_to_update = self.get_contract_address(&contract_to_update);
-
-                let action = voting.get_parsed_arg::<String>(1);
-                let action = match action.as_str() {
-                    "add_to_whitelist" => Action::AddToWhitelist,
-                    "remove_from_whitelist" => Action::RemoveFromWhitelist,
-                    "change_ownership" => Action::ChangeOwner,
-                    unknown => panic!("{:?} is not a valid action", unknown)
-                };
-
-                let address = voting.get_parsed_arg::<Account>(2);
-                let address = self.get_address(&address);
-
-                self.admin.as_account(creator).create_voting(contract_to_update, action, address, *stake)
-            }
-            Contract::KycVoter => {
-                let subject_address = voting.get_parsed_arg::<Account>(0);
-                let subject_address = self.get_address(&subject_address);
-                self.kyc_voter.as_account(creator).create_voting(
-                    subject_address,
-                    DocumentHash::default(),
+        match builder::build(self, voting) {
+            builder::VotingSetup::Admin(contract_to_update, action, subject) => self
+                .admin
+                .as_account(creator)
+                .create_voting(contract_to_update, action, subject, *stake),
+            builder::VotingSetup::Kyc(subject, document_hash) => self
+                .kyc_voter
+                .as_account(creator)
+                .create_voting(subject, document_hash, *stake),
+            builder::VotingSetup::Slasher(address_to_slash, slash_ratio) => self
+                .slashing_voter
+                .as_account(creator)
+                .create_voting(address_to_slash, slash_ratio, *stake),
+            builder::VotingSetup::Repository(
+                variable_repository_address,
+                key,
+                value,
+                activation_time,
+            ) => self.repo_voter.as_account(creator).create_voting(
+                variable_repository_address,
+                key,
+                value,
+                activation_time,
+                *stake,
+            ),
+            builder::VotingSetup::Simple(document_hash) => self
+                .simple_voter
+                .as_account(creator)
+                .create_voting(document_hash, *stake),
+            builder::VotingSetup::Reputation(recipient_address, action, amount, document_hash) => {
+                self.reputation_voter.as_account(creator).create_voting(
+                    recipient_address,
+                    action,
+                    *amount,
+                    document_hash,
                     *stake,
                 )
             }
-            Contract::SlashingVoter => {
-                let address_to_slash = voting.get_parsed_arg::<Account>(0);
-                let address_to_slash = self.get_address(&address_to_slash);
-                let slash_ratio = voting.get_parsed_arg::<f32>(1);
-
-                self.slashing_voter.as_account(creator).create_voting(
-                    address_to_slash,
-                    (slash_ratio * 1000.0) as u32,
-                    *stake,
-                )
-            }
-            contract => panic!("{:?} is not a voting contract", contract),
         }
     }
 

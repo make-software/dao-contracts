@@ -1,5 +1,5 @@
 Feature: Admin manages other contracts ownership
-  Admin contract is capable of add/remove to whitelist and the current owner of contract.
+  Admin contract is capable of add/remove to whitelist and change the current owner of contract.
 
 Background:
       Given users

@@ -43,19 +43,19 @@ const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
 #[derive(cucumber::World)]
 pub struct DaoWorld {
     pub env: TestEnv,
+    pub admin: AdminContractTest,
     pub bid_escrow: BidEscrowContractTest,
-    pub reputation_token: ReputationContractTest,
-    pub va_token: VaNftContractTest,
     pub kyc_token: KycNftContractTest,
-    pub slashing_voter: SlashingVoterContractTest,
     pub kyc_voter: KycVoterContractTest,
-    pub variable_repository: VariableRepositoryContractTest,
+    pub onboarding: OnboardingRequestContractTest,
+    pub rate_provider: CSPRRateProviderContractTest,
     pub repo_voter: RepoVoterContractTest,
+    pub reputation_token: ReputationContractTest,
     pub reputation_voter: ReputationVoterContractTest,
     pub simple_voter: SimpleVoterContractTest,
-    pub admin: AdminContractTest,
-    pub rate_provider: CSPRRateProviderContractTest,
-    pub onboarding: OnboardingRequestContractTest,
+    pub slashing_voter: SlashingVoterContractTest,
+    pub va_token: VaNftContractTest,
+    pub variable_repository: VariableRepositoryContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -89,7 +89,7 @@ impl Debug for DaoWorld {
 impl Default for DaoWorld {
     fn default() -> Self {
         let env = TestEnv::new();
-        let variable_repository = VariableRepositoryContractTest::new(&env);
+        let mut variable_repository = VariableRepositoryContractTest::new(&env);
         let mut reputation_token = ReputationContractTest::new(&env);
 
         let mut va_token = VaNftContractTest::new(
@@ -188,6 +188,9 @@ impl Default for DaoWorld {
 
         // Setup Reputation.
         // Setup VariableRepository.
+        variable_repository
+            .add_to_whitelist(repo_voter.address())
+            .unwrap();
         // Setup VaToken.
         // Setup KycToken.
 
@@ -204,7 +207,7 @@ impl Default for DaoWorld {
         reputation_token
             .add_to_whitelist(repo_voter.address())
             .unwrap();
-        repo_voter.add_to_whitelist(repo_voter.address()).unwrap();
+        // repo_voter.add_to_whitelist(repo_voter.address()).unwrap();
 
         // Setup ReputationVoter.
         reputation_token
