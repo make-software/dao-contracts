@@ -1,3 +1,4 @@
+use casper_dao_contracts::action::Action;
 use casper_dao_utils::{DocumentHash, Error, TestContract};
 use casper_types::{bytesrepr::Bytes, U512};
 
@@ -21,6 +22,23 @@ impl DaoWorld {
         let stake = voting.get_stake();
 
         match voting.contract {
+            Contract::Admin => {
+                let contract_to_update = voting.get_parsed_arg::<Contract>(0);
+                let contract_to_update = self.get_contract_address(&contract_to_update);
+
+                let action = voting.get_parsed_arg::<String>(1);
+                let action = match action.as_str() {
+                    "add_to_whitelist" => Action::AddToWhitelist,
+                    "remove_from_whitelist" => Action::RemoveFromWhitelist,
+                    "change_ownership" => Action::ChangeOwner,
+                    unknown => panic!("{:?} is not a valid action", unknown)
+                };
+
+                let address = voting.get_parsed_arg::<Account>(2);
+                let address = self.get_address(&address);
+
+                self.admin.as_account(creator).create_voting(contract_to_update, action, address, *stake)
+            }
             Contract::KycVoter => {
                 let subject_address = voting.get_parsed_arg::<Account>(0);
                 let subject_address = self.get_address(&subject_address);
@@ -38,7 +56,7 @@ impl DaoWorld {
                 self.slashing_voter.as_account(creator).create_voting(
                     address_to_slash,
                     (slash_ratio * 1000.0) as u32,
-                    stake.0,
+                    *stake,
                 )
             }
             contract => panic!("{:?} is not a voting contract", contract),

@@ -18,6 +18,11 @@ futures = "0.3.5"
 derive_more = "0.99.17"
 
 [[test]]
+name = "test_admin"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
+[[test]]
 name = "test_bid_escrow"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
@@ -46,15 +51,6 @@ required-features = ["test-support"]
 name = "test_ownership"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
-
-#[[test]]
-#name = "test_gherkin_reputation_token"
-#harness = false  # allows Cucumber to print output instead of libtest
-#required-features = ["test-support"]
-
-#[[test]]
-#name = "test_balance"
-#required-features = ["test-support"]
 
 [[bin]]
 name = "reputation_contract"
