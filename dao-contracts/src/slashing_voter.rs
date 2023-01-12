@@ -30,7 +30,19 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait SlashingVoterContractInterface {
-    /// see [VotingEngine](VotingEngine::init())
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract), 
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
+    ///
+    /// # Events
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
 
     fn create_voting(&mut self, address_to_slash: Address, slash_ratio: u32, stake: U512);
@@ -38,9 +50,9 @@ pub trait SlashingVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;

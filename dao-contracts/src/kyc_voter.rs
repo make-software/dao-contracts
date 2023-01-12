@@ -29,11 +29,19 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
-    /// Contract constructor
+     /// Constructor function.
     ///
-    /// Initializes modules.
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract), 
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
     ///
-    /// See [VotingEngine](VotingEngine::init()), [KycInfo](KycInfo::init())
+    /// # Events
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
         &mut self,
         variable_repository: Address,
@@ -58,9 +66,9 @@ pub trait KycVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
@@ -73,7 +81,7 @@ pub trait KycVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    /// see [KycInfo](KycInfo::get_kyc_token_address())
+    /// Returns the address of [KYC Token](crate::KycNftContract) contract.
     fn kyc_token_address(&self) -> Address;
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);

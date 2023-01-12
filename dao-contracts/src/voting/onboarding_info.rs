@@ -26,7 +26,7 @@ impl OnboardingInfo {
 
     /// Returns the `token id` of the `address`.
     ///
-    /// If the `address` does not own any token, reverts with [`InvalidTokenOwner`](Error:InvalidTokenOwner) error.
+    /// If the `address` does not own any token, reverts with [`InvalidTokenOwner`](Error::InvalidTokenOwner) error.
     pub fn token_id_of(&self, address: &Address) -> TokenId {
         self.refs
             .va_token()

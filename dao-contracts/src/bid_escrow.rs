@@ -40,11 +40,19 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
-    /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract), [Variable Repo](crate::VariableRepositoryContract)
-    /// KYC Token and VA Token
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract), 
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits [`VotingContractCreated`](crate::voting::voting_engine::events::VotingContractCreated)
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
         &mut self,
         variable_repository: Address,
@@ -145,9 +153,9 @@ pub trait BidEscrowContractInterface {
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, voting_id: VotingId);
-    /// see [VotingEngine](VotingEngine)
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;

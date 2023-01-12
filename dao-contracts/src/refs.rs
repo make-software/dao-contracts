@@ -38,12 +38,12 @@ impl ContractRefsStorage {
         self.va_token.set(va_token);
     }
 
-    /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     pub fn reputation_token_address(&self) -> Address {
         self.reputation_token.get_or_revert()
     }
 
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) connected to the contract
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
     pub fn variable_repository_address(&self) -> Address {
         self.variable_repository.get_or_revert()
     }
