@@ -147,13 +147,13 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
     }
 
     fn create_voting(&mut self, reason: DocumentHash, purse: URef) {
-        let cspr_deposit = cspr::deposit_cspr(purse);
+        let cspr_deposit = cspr::deposit(purse);
         let voting_info = self.onboarding.submit_request(reason.clone(), cspr_deposit);
         OnboardingVotingCreated::new(reason, cspr_deposit, voting_info).emit();
     }
 
     fn get_cspr_balance(&self) -> U512 {
-        cspr::get_cspr_balance()
+        cspr::main_purse_balance()
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

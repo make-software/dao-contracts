@@ -113,7 +113,7 @@ impl Onboarding {
         ConfigurationBuilder::new(&self.refs)
             .only_va_can_create(false)
             .is_bid_escrow(true)
-            .bound_ballot_for_successful_voting(requestor)
+            .bind_ballot_for_successful_voting(requestor)
             .build()
     }
 
@@ -189,7 +189,7 @@ impl Onboarding {
     }
 
     fn on_quorum_not_reached(&self, request: &Request) {
-        cspr::withdraw_cspr(request.creator(), request.cspr_deposit());
+        cspr::withdraw(request.creator(), request.cspr_deposit());
     }
 
     fn on_informal_voting_finished(&mut self, _voting_id: VotingId) {}
@@ -208,7 +208,7 @@ impl Onboarding {
     fn on_formal_voting_against(&mut self, voting_id: VotingId, request: &Request) {
         let configuration = self.configurations.get_or_revert(&voting_id);
         let amount = self.redistribute_to_governance(&configuration, request.cspr_deposit());
-        cspr::withdraw_cspr(request.creator(), amount);
+        cspr::withdraw(request.creator(), amount);
     }
 }
 
@@ -240,10 +240,10 @@ impl Onboarding {
 
         for i in 0..self.voting.voters_count(voting_id, VotingType::Formal) {
             let ballot = self.voting.get_ballot_at(voting_id, VotingType::Formal, i);
-            if ballot.unbounded {
+            if ballot.unbound {
                 continue;
             }
-            let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
+            let to_transfer = ballot.stake * amount / voting.total_bound_stake();
             self.refs.reputation_token().mint(ballot.voter, to_transfer);
         }
     }
@@ -256,7 +256,7 @@ impl Onboarding {
     fn redistribute_to_governance(&mut self, configuration: &Configuration, amount: U512) -> U512 {
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(amount);
-        cspr::withdraw_cspr(governance_wallet, governance_wallet_payment);
+        cspr::withdraw(governance_wallet, governance_wallet_payment);
 
         amount - governance_wallet_payment
     }
@@ -267,7 +267,7 @@ impl Onboarding {
 
         for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            cspr::withdraw_cspr(*address, amount);
+            cspr::withdraw(*address, amount);
         }
     }
 

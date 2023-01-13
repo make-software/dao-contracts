@@ -35,7 +35,7 @@ pub struct Ballot {
     pub voting_type: VotingType,
     pub choice: Choice,
     pub stake: U512,
-    pub unbounded: bool,
+    pub unbound: bool,
     pub canceled: bool,
 }
 
@@ -46,7 +46,7 @@ impl Ballot {
         voting_type: VotingType,
         choice: Choice,
         stake: U512,
-        unbounded: bool,
+        unbound: bool,
         canceled: bool,
     ) -> Self {
         Self {
@@ -55,7 +55,7 @@ impl Ballot {
             voting_type,
             choice,
             stake,
-            unbounded,
+            unbound,
             canceled,
         }
     }
@@ -95,7 +95,7 @@ fn test_vote_serialization() {
         voting_type: VotingType::Formal,
         choice: Choice::InFavor,
         stake: U512::from(456),
-        unbounded: false,
+        unbound: false,
         canceled: false,
     };
 

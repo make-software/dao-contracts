@@ -95,8 +95,8 @@ impl VotingSummary {
 pub struct Stats {
     pub stake_in_favor: U512,
     pub stake_against: U512,
-    pub unbounded_stake_in_favor: U512,
-    pub unbounded_stake_against: U512,
+    pub unbound_stake_in_favor: U512,
+    pub unbound_stake_against: U512,
     pub votes_in_favor: u32,
     pub votes_against: u32,
 }
@@ -210,8 +210,8 @@ impl VotingStateMachine {
     }
 
     pub fn is_result_close(&self) -> bool {
-        let stake_in_favor = self.stake_in_favor() + self.unbounded_stake_in_favor();
-        let stake_against = self.stake_against() + self.unbounded_stake_against();
+        let stake_in_favor = self.stake_in_favor() + self.unbound_stake_in_favor();
+        let stake_against = self.stake_against() + self.unbound_stake_against();
         let stake_diff = stake_in_favor.abs_diff(stake_against);
         let stake_diff_percent = stake_diff.saturating_mul(U512::from(100)) / self.total_stake();
         stake_diff_percent <= self.configuration.voting_clearness_delta()
@@ -244,20 +244,20 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn add_unbounded_stake(&mut self, stake: U512, choice: Choice) {
+    pub fn add_unbound_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
         match (self.voting_type(), choice) {
             (VotingType::Informal, Choice::InFavor) => {
-                self.informal_stats.unbounded_stake_in_favor += stake
+                self.informal_stats.unbound_stake_in_favor += stake
             }
             (VotingType::Informal, Choice::Against) => {
-                self.informal_stats.unbounded_stake_against += stake
+                self.informal_stats.unbound_stake_against += stake
             }
             (VotingType::Formal, Choice::InFavor) => {
-                self.formal_stats.unbounded_stake_in_favor += stake
+                self.formal_stats.unbound_stake_in_favor += stake
             }
             (VotingType::Formal, Choice::Against) => {
-                self.formal_stats.unbounded_stake_against += stake
+                self.formal_stats.unbound_stake_against += stake
             }
         }
     }
@@ -272,48 +272,35 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn remove_unbounded_stake(&mut self, stake: U512, choice: Choice) {
+    pub fn remove_unbound_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
         match (self.voting_type(), choice) {
             (VotingType::Informal, Choice::InFavor) => {
-                self.informal_stats.unbounded_stake_in_favor -= stake
+                self.informal_stats.unbound_stake_in_favor -= stake
             }
             (VotingType::Informal, Choice::Against) => {
-                self.informal_stats.unbounded_stake_against -= stake
+                self.informal_stats.unbound_stake_against -= stake
             }
             (VotingType::Formal, Choice::InFavor) => {
-                self.formal_stats.unbounded_stake_in_favor -= stake
+                self.formal_stats.unbound_stake_in_favor -= stake
             }
             (VotingType::Formal, Choice::Against) => {
-                self.formal_stats.unbounded_stake_against -= stake
+                self.formal_stats.unbound_stake_against -= stake
             }
         }
     }
 
-    pub fn bound_stake(&mut self, stake: U512, choice: Choice) {
-        match (self.voting_type(), choice) {
-            (VotingType::Informal, Choice::InFavor) => {
-                self.informal_stats.unbounded_stake_in_favor -= stake
-            }
-            (VotingType::Informal, Choice::Against) => {
-                self.informal_stats.unbounded_stake_against -= stake
-            }
-            (VotingType::Formal, Choice::InFavor) => {
-                self.formal_stats.unbounded_stake_in_favor -= stake
-            }
-            (VotingType::Formal, Choice::Against) => {
-                self.formal_stats.unbounded_stake_against -= stake
-            }
-        };
+    pub fn bind_stake(&mut self, stake: U512, choice: Choice) {
+        self.remove_unbound_stake(stake, choice);
         self.add_stake(stake, choice);
     }
 
     pub fn total_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
-        self.total_bounded_stake() + self.total_unbounded_stake()
+        self.total_bound_stake() + self.total_unbound_stake()
     }
 
-    pub fn total_bounded_stake(&self) -> U512 {
+    pub fn total_bound_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
         match self.voting_type() {
             VotingType::Informal => {
@@ -325,16 +312,15 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn total_unbounded_stake(&self) -> U512 {
+    pub fn total_unbound_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
         match self.voting_type() {
             VotingType::Informal => {
-                self.informal_stats.unbounded_stake_in_favor
-                    + self.informal_stats.unbounded_stake_against
+                self.informal_stats.unbound_stake_in_favor
+                    + self.informal_stats.unbound_stake_against
             }
             VotingType::Formal => {
-                self.formal_stats.unbounded_stake_in_favor
-                    + self.formal_stats.unbounded_stake_against
+                self.formal_stats.unbound_stake_in_favor + self.formal_stats.unbound_stake_against
             }
         }
     }
@@ -360,17 +346,17 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn unbounded_stake_in_favor(&self) -> U512 {
+    pub fn unbound_stake_in_favor(&self) -> U512 {
         match self.voting_type() {
-            VotingType::Informal => self.informal_stats.unbounded_stake_in_favor,
-            VotingType::Formal => self.formal_stats.unbounded_stake_in_favor,
+            VotingType::Informal => self.informal_stats.unbound_stake_in_favor,
+            VotingType::Formal => self.formal_stats.unbound_stake_in_favor,
         }
     }
 
-    pub fn unbounded_stake_against(&self) -> U512 {
+    pub fn unbound_stake_against(&self) -> U512 {
         match self.voting_type() {
-            VotingType::Informal => self.informal_stats.unbounded_stake_against,
-            VotingType::Formal => self.formal_stats.unbounded_stake_against,
+            VotingType::Informal => self.informal_stats.unbound_stake_against,
+            VotingType::Formal => self.formal_stats.unbound_stake_against,
         }
     }
 

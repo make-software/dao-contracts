@@ -267,7 +267,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             job_poster: caller,
             max_budget,
             expected_timeframe,
-            dos_fee: cspr::deposit_cspr(purse),
+            dos_fee: cspr::deposit(purse),
             start_time: get_block_time(),
             configuration,
         };
@@ -359,7 +359,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             block_time: get_block_time(),
             timeframe: bid.proposed_timeframe,
             payment: bid.proposed_payment,
-            transferred_cspr: cspr::deposit_cspr(purse),
+            transferred_cspr: cspr::deposit(purse),
             stake: bid.reputation_stake,
             external_worker_cspr_stake: bid.cspr_stake.unwrap_or_default(),
         };
@@ -404,9 +404,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
                 .apply_reputation_conversion_rate_to(job.external_worker_cspr_stake())
         };
 
-        let is_unbounded = job.worker_type() != &WorkerType::Internal;
-        if is_unbounded && bid.onboard {
-            voting_configuration.bound_ballot_for_successful_voting(job.worker());
+        let is_unbound = job.worker_type() != &WorkerType::Internal;
+        if is_unbound && bid.onboard {
+            voting_configuration.bind_ballot_for_successful_voting(job.worker());
         }
 
         let voting_info = self
@@ -424,7 +424,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             voting_info.voting_id,
             Choice::InFavor,
             stake,
-            is_unbounded,
+            is_unbound,
             &mut voting,
         );
 
@@ -442,7 +442,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         onboard: bool,
         purse: Option<URef>,
     ) {
-        let cspr_stake = purse.map(cspr::deposit_cspr);
+        let cspr_stake = purse.map(cspr::deposit);
         let new_worker = caller();
         let caller = new_worker;
         let block_time = get_block_time();
@@ -606,7 +606,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
     }
 
     fn get_cspr_balance(&self) -> U512 {
-        cspr::get_cspr_balance()
+        cspr::main_purse_balance()
     }
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
@@ -716,7 +716,7 @@ impl BidEscrowContract {
         for i in 0..bids_amount {
             let mut bid = self.job_storage.get_nth_bid(job_offer_id, i);
             if let Some(cspr) = bid.cspr_stake {
-                cspr::withdraw_cspr(bid.worker, cspr);
+                cspr::withdraw(bid.worker, cspr);
             }
             bids.push(bid.borrow().into());
             bid.cancel_without_validation();
@@ -748,7 +748,7 @@ impl BidEscrowContract {
         let to_worker = total_left - to_redistribute;
 
         // For External Worker
-        cspr::withdraw_cspr(job.worker(), to_worker);
+        cspr::withdraw(job.worker(), to_worker);
 
         let redistribute_to_all_vas = self
             .job_storage
@@ -773,7 +773,7 @@ impl BidEscrowContract {
 
         for (address, balance) in all_balances.balances() {
             let amount = total_left * balance / total_supply;
-            cspr::withdraw_cspr(*address, amount);
+            cspr::withdraw(*address, amount);
         }
     }
 
@@ -782,7 +782,7 @@ impl BidEscrowContract {
 
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
-        cspr::withdraw_cspr(governance_wallet, governance_wallet_payment);
+        cspr::withdraw(governance_wallet, governance_wallet_payment);
 
         payment - governance_wallet_payment
     }
@@ -793,7 +793,7 @@ impl BidEscrowContract {
 
         for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            cspr::withdraw_cspr(*address, amount);
+            cspr::withdraw(*address, amount);
         }
     }
 
@@ -807,27 +807,27 @@ impl BidEscrowContract {
         let partial_supply = balances.total_supply();
         for (address, balance) in balances.balances() {
             let amount = to_redistribute * balance / partial_supply;
-            cspr::withdraw_cspr(*address, amount);
+            cspr::withdraw(*address, amount);
         }
     }
 
     fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
         let job_offer = self.job_storage.get_job_offer_or_revert(job.job_offer_id());
-        cspr::withdraw_cspr(job.poster(), job.payment() + job_offer.dos_fee);
+        cspr::withdraw(job.poster(), job.payment() + job_offer.dos_fee);
     }
 
     fn return_job_poster_dos_fee(&mut self, job: &Job) {
         let job_offer = self.job_storage.get_job_offer_or_revert(job.job_offer_id());
-        cspr::withdraw_cspr(job.poster(), job_offer.dos_fee);
+        cspr::withdraw(job.poster(), job_offer.dos_fee);
     }
 
     fn return_job_offer_poster_dos_fee(&mut self, job_offer_id: JobOfferId) {
         let job_offer = self.job_storage.get_job_offer_or_revert(job_offer_id);
-        cspr::withdraw_cspr(job_offer.job_poster, job_offer.dos_fee);
+        cspr::withdraw(job_offer.job_poster, job_offer.dos_fee);
     }
 
     fn return_external_worker_cspr_stake(&mut self, job: &Job) {
-        cspr::withdraw_cspr(job.worker(), job.external_worker_cspr_stake());
+        cspr::withdraw(job.worker(), job.external_worker_cspr_stake());
     }
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
@@ -877,10 +877,10 @@ impl BidEscrowContract {
             let ballot = self
                 .voting
                 .get_ballot_at(voting.voting_id(), VotingType::Formal, i);
-            if ballot.unbounded || ballot.canceled {
+            if ballot.unbound || ballot.canceled {
                 continue;
             }
-            let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
+            let to_transfer = ballot.stake * amount / voting.total_bound_stake();
             self.refs.reputation_token().mint(ballot.voter, to_transfer);
         }
     }
@@ -897,7 +897,7 @@ impl BidEscrowContract {
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
                 if let Some(cspr) = bid.cspr_stake {
-                    cspr::withdraw_cspr(bid.worker, cspr);
+                    cspr::withdraw(bid.worker, cspr);
                 }
                 bids.push(bid.borrow().into());
                 bid.reject_without_validation();
@@ -938,7 +938,7 @@ impl BidEscrowContract {
                 None
             }
             Some(purse) => {
-                let cspr_stake = cspr::deposit_cspr(purse);
+                let cspr_stake = cspr::deposit(purse);
                 Some(cspr_stake)
             }
         }
@@ -952,7 +952,7 @@ impl BidEscrowContract {
                     .unstake_bid(bid.borrow().into());
             }
             Some(cspr_stake) => {
-                cspr::withdraw_cspr(bid.worker, cspr_stake);
+                cspr::withdraw(bid.worker, cspr_stake);
             }
         }
     }

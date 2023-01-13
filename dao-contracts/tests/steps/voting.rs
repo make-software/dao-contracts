@@ -156,7 +156,7 @@ fn assert_ballot_is_unbounded(
         Choice::InFavor.into(),
         "Ballot choice not in favor"
     );
-    assert!(ballot.unbounded, "Ballot is not unbounded");
+    assert!(ballot.unbound, "Ballot is not unbounded");
     assert_eq!(
         ballot.stake, *amount,
         "Ballot has stake {:?}, but should be {:?}",
@@ -167,7 +167,7 @@ fn assert_ballot_is_unbounded(
 #[then(expr = "{contract} total unbounded stake for voting {int} is {balance} tokens")]
 fn assert_unbounded_stake(w: &mut DaoWorld, contract: Contract, voting_id: u32, amount: Balance) {
     let voting = on_voting_contract!(w, contract, get_voting(voting_id)).unwrap();
-    let total_unbounded_stake = voting.total_unbounded_stake();
+    let total_unbounded_stake = voting.total_unbound_stake();
     assert_eq!(
         total_unbounded_stake, *amount,
         "Total unbounded stake is {:?}, but should be {:?}",

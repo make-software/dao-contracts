@@ -178,12 +178,12 @@ impl VotingEngine {
                         if voting
                             .voting_configuration()
                             .voting_configuration
-                            .bound_ballot_for_successful_voting
+                            .bind_ballot_for_successful_voting
                         {
                             let worker = voting
                                 .voting_configuration()
                                 .voting_configuration
-                                .bound_ballot_address
+                                .unbound_ballot_address
                                 .unwrap_or_revert_with(Error::ArithmeticOverflow);
                             self.bound_ballot(&mut voting, worker, VotingType::Formal);
                         }
@@ -369,7 +369,7 @@ impl VotingEngine {
         voting_id: VotingId,
         choice: Choice,
         stake: U512,
-        unbounded: bool,
+        unbound: bool,
         voting: &mut VotingStateMachine,
     ) {
         let ballot = Ballot::new(
@@ -378,11 +378,11 @@ impl VotingEngine {
             voting.voting_type(),
             choice,
             stake,
-            unbounded,
+            unbound,
             false,
         );
 
-        if !unbounded && !voting.is_informal_without_stake() {
+        if !unbound && !voting.is_informal_without_stake() {
             // Stake the reputation
             self.refs
                 .reputation_token()
@@ -399,8 +399,8 @@ impl VotingEngine {
             .set(&(voting_id, voting.voting_type(), voter), ballot);
 
         // update voting
-        if unbounded {
-            voting.add_unbounded_stake(stake, choice)
+        if unbound {
+            voting.add_unbound_stake(stake, choice)
         } else {
             voting.add_stake(stake, choice);
         }
@@ -471,7 +471,7 @@ impl VotingEngine {
         let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.unbounded || ballot.canceled {
+            if ballot.unbound || ballot.canceled {
                 continue;
             }
             transfers.insert(ballot.voter, ballot.stake);
@@ -498,7 +498,7 @@ impl VotingEngine {
             voting_id,
             Choice::InFavor,
             creator_ballot.stake,
-            creator_ballot.unbounded,
+            creator_ballot.unbound,
             voting,
         );
     }
@@ -512,7 +512,7 @@ impl VotingEngine {
         let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.choice.is_in_favor() && !ballot.unbounded && !ballot.canceled {
+            if ballot.choice.is_in_favor() && !ballot.unbound && !ballot.canceled {
                 ballots.push(ballot.clone().into());
                 summary.insert(ballot.voter, ballot.stake);
             }
@@ -532,7 +532,7 @@ impl VotingEngine {
         let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.choice.is_against() && !ballot.unbounded && !ballot.canceled {
+            if ballot.choice.is_against() && !ballot.unbound && !ballot.canceled {
                 ballots.push(ballot.clone().into());
                 summary.insert(ballot.voter, ballot.stake);
             }
@@ -557,7 +557,7 @@ impl VotingEngine {
 
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.unbounded {
+            if ballot.unbound {
                 continue;
             }
             if ballot.choice.is_against() {
@@ -590,7 +590,7 @@ impl VotingEngine {
         let mut ballots: Vec<ShortenedBallot> = Vec::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.unbounded {
+            if ballot.unbound {
                 continue;
             }
             if ballot.choice.is_in_favor() {
@@ -633,14 +633,14 @@ impl VotingEngine {
             .get_ballot(voting.voting_id(), voting_type, worker)
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
-        voting.bound_stake(ballot.stake, ballot.choice);
+        voting.bind_stake(ballot.stake, ballot.choice);
 
         self.refs.reputation_token().mint(worker, ballot.stake);
         self.refs
             .reputation_token()
             .stake_voting(voting.voting_id(), ballot.clone().into());
 
-        ballot.unbounded = false;
+        ballot.unbound = false;
         self.ballots
             .set(&(voting.voting_id(), voting_type, worker), ballot);
     }
@@ -690,8 +690,8 @@ impl VotingEngine {
         // Update voting.
         let stake = ballot.stake;
         let choice = ballot.choice;
-        if ballot.unbounded {
-            voting.remove_unbounded_stake(stake, choice)
+        if ballot.unbound {
+            voting.remove_unbound_stake(stake, choice)
         } else {
             voting.remove_stake(stake, choice);
         }

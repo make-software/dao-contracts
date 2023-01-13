@@ -36,9 +36,9 @@ impl Configuration {
         }
     }
 
-    pub fn bound_ballot_for_successful_voting(&mut self, address: Address) {
-        self.voting_configuration.bound_ballot_for_successful_voting = true;
-        self.voting_configuration.bound_ballot_address = Some(address);
+    pub fn bind_ballot_for_successful_voting(&mut self, address: Address) {
+        self.voting_configuration.bind_ballot_for_successful_voting = true;
+        self.voting_configuration.unbound_ballot_address = Some(address);
     }
 
     pub fn double_time_between_votings(&mut self) {

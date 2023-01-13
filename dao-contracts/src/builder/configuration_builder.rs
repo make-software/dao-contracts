@@ -107,8 +107,8 @@ impl ConfigurationBuilder {
                 },
                 VotingConfiguration {
                     is_bid_escrow: false,
-                    bound_ballot_for_successful_voting: false,
-                    bound_ballot_address: None,
+                    bind_ballot_for_successful_voting: false,
+                    unbound_ballot_address: None,
                     contract_calls: Vec::new(),
                     only_va_can_create: true,
                     double_time_between_votings: false,
@@ -160,11 +160,13 @@ impl ConfigurationBuilder {
         self
     }
 
-    pub fn bound_ballot_for_successful_voting(mut self, address: Address) -> ConfigurationBuilder {
+    pub fn bind_ballot_for_successful_voting(mut self, address: Address) -> ConfigurationBuilder {
         self.configuration
             .voting_configuration
-            .bound_ballot_for_successful_voting = true;
-        self.configuration.voting_configuration.bound_ballot_address = Some(address);
+            .bind_ballot_for_successful_voting = true;
+        self.configuration
+            .voting_configuration
+            .unbound_ballot_address = Some(address);
         self
     }
 
