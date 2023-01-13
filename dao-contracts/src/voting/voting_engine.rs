@@ -12,7 +12,6 @@ use casper_dao_utils::{
     Address,
     Error,
     Mapping,
-    Variable,
     VecMapping,
 };
 use casper_types::U512;
@@ -28,16 +27,16 @@ use super::{
     Ballot,
     BallotCanceled,
     Reason,
+    ShortenedBallot,
     VotingCanceled,
     VotingEnded,
 };
 use crate::{
+    refs::{ContractRefs, ContractRefsStorage},
     rules::builder::RulesBuilder,
     voting::validation::rules::can_create_voting::CanCreateVoting,
     Configuration,
-    ReputationContractCaller,
     ReputationContractInterface,
-    VaNftContractCaller,
     VaNftContractInterface,
 };
 
@@ -55,25 +54,14 @@ use crate::{
 /// For example implementation see [AdminContract](crate::admin::AdminContract)
 #[derive(Instance)]
 pub struct VotingEngine {
-    variable_repo: Variable<Address>,
-    reputation_token: Variable<Address>,
-    va_token: Variable<Address>,
+    #[scoped = "contract"]
+    refs: ContractRefsStorage,
     voting_states: Mapping<VotingId, Option<VotingStateMachine>>,
     ballots: Mapping<(VotingId, VotingType, Address), Ballot>,
     voters: VecMapping<(VotingId, VotingType), Address>,
 }
 
 impl VotingEngine {
-    /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract) and [Variable Repo](crate::VariableRepositoryContract)
-    ///
-    /// # Events
-    /// Emits [`VotingContractCreated`](VotingContractCreated)
-    pub fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.variable_repo.set(variable_repo);
-        self.reputation_token.set(reputation_token);
-        self.va_token.set(va_token);
-    }
-
     /// Creates new informal [Voting](VotingStateMachine).
     ///
     /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed  when formal voting passes.
@@ -245,6 +233,7 @@ impl VotingEngine {
             rep_mints,
         );
         voting_ended_event.emit();
+
         self.set_voting(voting);
         summary
     }
@@ -383,12 +372,6 @@ impl VotingEngine {
         unbounded: bool,
         voting: &mut VotingStateMachine,
     ) {
-        if !unbounded && !voting.is_informal_without_stake() {
-            // Stake the reputation
-            ReputationContractCaller::at(self.reputation_token_address())
-                .stake_voting(voter, voting_id, choice, stake);
-        }
-
         let ballot = Ballot::new(
             voter,
             voting_id,
@@ -398,6 +381,13 @@ impl VotingEngine {
             unbounded,
             false,
         );
+
+        if !unbounded && !voting.is_informal_without_stake() {
+            // Stake the reputation
+            self.refs
+                .reputation_token()
+                .stake_voting(voting_id, ballot.clone().into());
+        }
 
         BallotCast::new(&ballot).emit();
 
@@ -414,20 +404,6 @@ impl VotingEngine {
         } else {
             voting.add_stake(stake, choice);
         }
-    }
-
-    /// Returns the address of [Variable Repo](crate::VariableRepositoryContract) connected to the contract
-    pub fn variable_repo_address(&self) -> Address {
-        self.variable_repo.get().unwrap_or_revert()
-    }
-
-    /// Returns the address of [Reputation Token](crate::ReputationContract) connected to the contract
-    pub fn reputation_token_address(&self) -> Address {
-        self.reputation_token.get().unwrap_or_revert()
-    }
-
-    pub fn va_token_address(&self) -> Address {
-        self.va_token.get().unwrap_or_revert()
     }
 
     pub fn all_voters(&self, voting_id: VotingId, voting_type: VotingType) -> Vec<Address> {
@@ -492,16 +468,18 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut transfers = BTreeMap::new();
+        let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded || ballot.canceled {
                 continue;
             }
             transfers.insert(ballot.voter, ballot.stake);
-            ReputationContractCaller::at(self.reputation_token_address())
-                .unstake_voting(ballot.voter, ballot.voting_id);
+            ballots.push(ballot.into());
         }
-
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
         transfers
     }
 
@@ -531,14 +509,17 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut summary = BTreeMap::new();
+        let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_in_favor() && !ballot.unbounded && !ballot.canceled {
-                self.reputation_token()
-                    .unstake_voting(ballot.voter, voting_id);
+                ballots.push(ballot.clone().into());
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -548,14 +529,17 @@ impl VotingEngine {
         voting_type: VotingType,
     ) -> BTreeMap<Address, U512> {
         let mut summary = BTreeMap::new();
+        let mut ballots = Vec::<ShortenedBallot>::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.choice.is_against() && !ballot.unbounded && !ballot.canceled {
-                self.reputation_token()
-                    .unstake_voting(ballot.voter, voting_id);
+                ballots.push(ballot.clone().into());
                 summary.insert(ballot.voter, ballot.stake);
             }
         }
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
         summary
     }
 
@@ -569,21 +553,26 @@ impl VotingEngine {
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
+        let mut ballots: Vec<ShortenedBallot> = Vec::new();
+
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded {
                 continue;
             }
             if ballot.choice.is_against() {
-                self.reputation_token()
-                    .unstake_voting(ballot.voter, voting_id);
+                ballots.push(ballot.clone().into());
                 burns.insert(ballot.voter, ballot.stake);
             } else {
                 let amount_to_mint = total_stake_against * ballot.stake / total_stake_in_favor;
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.reputation_token()
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
     }
@@ -598,35 +587,31 @@ impl VotingEngine {
         let total_stake_against = voting.stake_against();
         let mut burns: BTreeMap<Address, U512> = BTreeMap::new();
         let mut mints: BTreeMap<Address, U512> = BTreeMap::new();
+        let mut ballots: Vec<ShortenedBallot> = Vec::new();
         for i in 0..self.voters.len((voting_id, voting_type)) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
             if ballot.unbounded {
                 continue;
             }
             if ballot.choice.is_in_favor() {
-                self.reputation_token()
-                    .unstake_voting(ballot.voter, voting_id);
+                ballots.push(ballot.clone().into());
                 burns.insert(ballot.voter, ballot.stake);
             } else {
                 let amount_to_mint = total_stake_in_favor * ballot.stake / total_stake_against;
                 mints.insert(ballot.voter, amount_to_mint);
             }
         }
-        self.reputation_token()
+        self.refs
+            .reputation_token()
+            .bulk_unstake_voting(voting_id, ballots);
+        self.refs
+            .reputation_token()
             .bulk_mint_burn(mints.clone(), burns.clone());
         (mints, burns)
     }
 
     fn is_va(&self, address: Address) -> bool {
-        !self.va_token().balance_of(address).is_zero()
-    }
-
-    pub fn va_token(&self) -> VaNftContractCaller {
-        VaNftContractCaller::at(self.va_token_address())
-    }
-
-    pub fn reputation_token(&self) -> ReputationContractCaller {
-        ReputationContractCaller::at(self.reputation_token_address())
+        !self.refs.va_token().balance_of(address).is_zero()
     }
 
     /// Get a reference to the governance voting's voters.
@@ -650,13 +635,10 @@ impl VotingEngine {
 
         voting.bound_stake(ballot.stake, ballot.choice);
 
-        self.reputation_token().mint(worker, ballot.stake);
-        self.reputation_token().stake_voting(
-            worker,
-            voting.voting_id(),
-            ballot.choice,
-            ballot.stake,
-        );
+        self.refs.reputation_token().mint(worker, ballot.stake);
+        self.refs
+            .reputation_token()
+            .stake_voting(voting.voting_id(), ballot.clone().into());
 
         ballot.unbounded = false;
         self.ballots
@@ -701,8 +683,9 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         // Unstake reputation.
-        ReputationContractCaller::at(self.reputation_token_address())
-            .unstake_voting(voter, voting_id);
+        self.refs
+            .reputation_token()
+            .unstake_voting(voting_id, ballot.clone().into());
 
         // Update voting.
         let stake = ballot.stake;

@@ -11,6 +11,7 @@ use delegate::delegate;
 
 use crate::{
     action::Action,
+    refs::ContractRefsStorage,
     voting::{
         types::VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
@@ -24,8 +25,20 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait AdminContractInterface {
-    /// see [VotingEngine](VotingEngine::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
+    ///
+    /// # Events
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
 
     /// Creates new admin voting.
     ///
@@ -45,9 +58,9 @@ pub trait AdminContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -77,6 +90,7 @@ pub trait AdminContractInterface {
 /// For details see [AdminContractInterface](AdminContractInterface)
 #[derive(Instance)]
 pub struct AdminContract {
+    refs: ContractRefsStorage,
     voting: VotingEngine,
     access_control: AccessControl,
 }
@@ -84,8 +98,6 @@ pub struct AdminContract {
 impl AdminContractInterface for AdminContract {
     delegate! {
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voting(
                 &self,
@@ -107,10 +119,16 @@ impl AdminContractInterface for AdminContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.voting.init(variable_repo, reputation_token, va_token);
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        self.refs
+            .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller());
     }
 
@@ -121,18 +139,15 @@ impl AdminContractInterface for AdminContract {
         address: Address,
         stake: U512,
     ) {
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .contract_call(ContractCall {
-            address: contract_to_update,
-            entry_point: action.get_entry_point(),
-            runtime_args: runtime_args! {
-                action.get_arg() => address,
-            },
-        })
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs)
+            .contract_call(ContractCall {
+                address: contract_to_update,
+                entry_point: action.get_entry_point(),
+                runtime_args: runtime_args! {
+                    action.get_arg() => address,
+                },
+            })
+            .build();
 
         let info = self
             .voting

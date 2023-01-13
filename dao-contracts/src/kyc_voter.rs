@@ -14,6 +14,7 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    refs::ContractRefsWithKycStorage,
     voting::{
         kyc_info::KycInfo,
         types::VotingId,
@@ -28,14 +29,22 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
-    /// Contract constructor
+    /// Constructor function.
     ///
-    /// Initializes modules.
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
     ///
-    /// See [VotingEngine](VotingEngine::init()), [KycInfo](KycInfo::init())
+    /// # Events
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         va_token: Address,
         kyc_token: Address,
@@ -57,9 +66,9 @@ pub trait KycVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
@@ -72,8 +81,8 @@ pub trait KycVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    /// see [KycInfo](KycInfo::get_kyc_token_address())
-    fn get_kyc_token_address(&self) -> Address;
+    /// Returns the address of [KYC Token](crate::KycNftContract) contract.
+    fn kyc_token_address(&self) -> Address;
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
 
@@ -94,6 +103,7 @@ pub trait KycVoterContractInterface {
 /// When the voting passes, a kyc token is minted.
 #[derive(Instance)]
 pub struct KycVoterContract {
+    refs: ContractRefsWithKycStorage,
     kyc: KycInfo,
     access_control: AccessControl,
     voting: VotingEngine,
@@ -101,13 +111,7 @@ pub struct KycVoterContract {
 
 impl KycVoterContractInterface for KycVoterContract {
     delegate! {
-        to self.kyc {
-            fn get_kyc_token_address(&self) -> Address;
-        }
-
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -126,17 +130,23 @@ impl KycVoterContractInterface for KycVoterContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+            fn kyc_token_address(&self) -> Address;
+        }
     }
 
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         va_token: Address,
         kyc_token: Address,
     ) {
-        self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token, va_token);
+        self.refs
+            .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
     }
 
@@ -151,18 +161,15 @@ impl KycVoterContractInterface for KycVoterContract {
 
         let creator = caller();
 
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .contract_call(ContractCall {
-            address: self.get_kyc_token_address(),
-            entry_point: consts::EP_MINT.to_string(),
-            runtime_args: runtime_args! {
-                consts::ARG_TO => subject_address,
-            },
-        })
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs)
+            .contract_call(ContractCall {
+                address: self.kyc_token_address(),
+                entry_point: consts::EP_MINT.to_string(),
+                runtime_args: runtime_args! {
+                    consts::ARG_TO => subject_address,
+                },
+            })
+            .build();
 
         let info = self
             .voting

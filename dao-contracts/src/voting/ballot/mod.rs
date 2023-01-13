@@ -28,7 +28,7 @@ impl Choice {
 }
 
 /// Ballot struct
-#[derive(Debug, FromBytes, ToBytes, CLTyped)]
+#[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
 pub struct Ballot {
     pub voter: Address,
     pub voting_id: VotingId,
@@ -57,6 +57,25 @@ impl Ballot {
             stake,
             unbounded,
             canceled,
+        }
+    }
+}
+
+/// ShortenedBallot struct
+///
+/// Derives from the [`Ballot`] struct.
+/// Contains only the essential fields from the original [`Ballot`] required in cross-contract communication.
+#[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
+pub struct ShortenedBallot {
+    pub voter: Address,
+    pub stake: U512,
+}
+
+impl From<Ballot> for ShortenedBallot {
+    fn from(value: Ballot) -> Self {
+        Self {
+            voter: value.voter,
+            stake: value.stake,
         }
     }
 }

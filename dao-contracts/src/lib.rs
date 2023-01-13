@@ -11,6 +11,7 @@ mod kyc_nft;
 mod kyc_voter;
 mod onboarding_request;
 mod rate_provider;
+pub mod refs;
 pub mod rules;
 pub mod slashing_voter;
 mod va_nft;

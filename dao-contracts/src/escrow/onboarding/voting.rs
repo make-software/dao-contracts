@@ -12,6 +12,7 @@ use casper_types::U512;
 
 use super::request::{OnboardingRequest, Request};
 use crate::{
+    refs::{ContractRefs, ContractRefsWithKycStorage},
     voting::{
         kyc_info::KycInfo,
         onboarding_info::OnboardingInfo,
@@ -33,17 +34,14 @@ pub struct Onboarding {
     configurations: Mapping<VotingId, Configuration>,
     ids: Mapping<Address, VotingId>,
     #[scoped = "contract"]
+    refs: ContractRefsWithKycStorage,
+    #[scoped = "contract"]
     voting: VotingEngine,
     kyc: KycInfo,
     info: OnboardingInfo,
 }
 
 impl Onboarding {
-    pub fn init(&mut self, va_token: Address, kyc_token: Address) {
-        self.info.init(va_token);
-        self.kyc.init(kyc_token);
-    }
-
     pub fn get_request(&self, voting_id: VotingId) -> Option<Request> {
         self.requests.get_or_none(&voting_id)
     }
@@ -112,14 +110,11 @@ impl Onboarding {
 
 impl Onboarding {
     fn build_configuration(&self, requestor: Address) -> Configuration {
-        ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .only_va_can_create(false)
-        .is_bid_escrow(true)
-        .bound_ballot_for_successful_voting(requestor)
-        .build()
+        ConfigurationBuilder::new(&self.refs)
+            .only_va_can_create(false)
+            .is_bid_escrow(true)
+            .bound_ballot_for_successful_voting(requestor)
+            .build()
     }
 
     fn init_voting(
@@ -203,7 +198,7 @@ impl Onboarding {
         let configuration = self.configurations.get_or_revert(&voting_id);
         let voting = self.voting.get_voting_or_revert(voting_id);
         // Make the user VA.
-        self.voting.va_token().mint(request.creator());
+        self.refs.va_token().mint(request.creator());
         // Burn temporary reputation.
         self.burn_requestor_reputation(request);
         self.mint_and_redistribute_reputation_for_requestor(&voting, request);
@@ -227,11 +222,11 @@ impl Onboarding {
         let configuration = self.configurations.get_or_revert(&voting.voting_id());
 
         let reputation_to_mint = request.rep_stake();
-
         let reputation_to_redistribute =
             configuration.apply_default_policing_rate_to(reputation_to_mint);
+
         // Worker
-        self.voting.reputation_token().mint(
+        self.refs.reputation_token().mint(
             request.creator(),
             reputation_to_mint - reputation_to_redistribute,
         );
@@ -249,9 +244,7 @@ impl Onboarding {
                 continue;
             }
             let to_transfer = ballot.stake * amount / voting.total_bounded_stake();
-            self.voting
-                .reputation_token()
-                .mint(ballot.voter, to_transfer);
+            self.refs.reputation_token().mint(ballot.voter, to_transfer);
         }
     }
 
@@ -263,21 +256,23 @@ impl Onboarding {
     fn redistribute_to_governance(&mut self, configuration: &Configuration, amount: U512) -> U512 {
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(amount);
-        casper_dao_utils::cspr::withdraw_cspr(governance_wallet, governance_wallet_payment);
+        cspr::withdraw_cspr(governance_wallet, governance_wallet_payment);
 
         amount - governance_wallet_payment
     }
 
     fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let (total_supply, balances) = self.voting.reputation_token().all_balances();
-        for (address, balance) in balances.balances {
+        let all_balances = self.refs.reputation_token().all_balances();
+        let total_supply = all_balances.total_supply();
+
+        for (address, balance) in all_balances.balances() {
             let amount = to_redistribute * balance / total_supply;
-            casper_dao_utils::cspr::withdraw_cspr(address, amount);
+            cspr::withdraw_cspr(*address, amount);
         }
     }
 
     fn burn_requestor_reputation(&self, request: &Request) {
-        self.voting
+        self.refs
             .reputation_token()
             .burn(request.creator(), request.rep_stake());
     }

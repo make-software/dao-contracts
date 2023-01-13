@@ -18,7 +18,7 @@ pub mod math;
 pub use conversions::BytesConversion;
 pub use parts::{
     address::Address,
-    collection::{List, OrderedCollection, Set},
+    collection::{Iter, List, OrderedCollection, Set},
     consts,
     contract_call::ContractCall,
     error::Error,

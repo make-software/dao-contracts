@@ -15,11 +15,10 @@ use delegate::delegate;
 // and [`VariableRepositoryContractTest`].
 #[casper_contract_interface]
 pub trait VariableRepositoryContractInterface {
-    /// Constructor method.
+    /// Constructor function.
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Events dictionary.
     /// * Sets the default configuration of the [`Repository`](casper_dao_modules::Repository)
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.

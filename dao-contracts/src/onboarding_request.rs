@@ -12,6 +12,7 @@ use delegate::delegate;
 
 use crate::{
     escrow::onboarding::Onboarding,
+    refs::ContractRefsWithKycStorage,
     voting::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
@@ -24,14 +25,22 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait OnboardingRequestContractInterface {
-    /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract), [Variable Repo](crate::VariableRepositoryContract)
-    /// KYC Token and VA Token
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits [`VotingContractCreated`](crate::voting::voting_engine::events::VotingContractCreated)
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         kyc_token: Address,
         va_token: Address,
@@ -53,9 +62,9 @@ pub trait OnboardingRequestContractInterface {
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine)
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -86,6 +95,7 @@ pub trait OnboardingRequestContractInterface {
 
 #[derive(Instance)]
 pub struct OnboardingRequestContract {
+    refs: ContractRefsWithKycStorage,
     voting: VotingEngine,
     access_control: AccessControl,
     onboarding: Onboarding,
@@ -94,8 +104,6 @@ pub struct OnboardingRequestContract {
 impl OnboardingRequestContractInterface for OnboardingRequestContract {
     delegate! {
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -119,17 +127,22 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
             fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         kyc_token: Address,
         va_token: Address,
     ) {
-        self.voting.init(variable_repo, reputation_token, va_token);
-        self.onboarding.init(va_token, kyc_token);
+        self.refs
+            .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
     }
 
