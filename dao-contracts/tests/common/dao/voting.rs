@@ -142,41 +142,8 @@ impl DaoWorld {
     ) {
         let voting_type = voting_type.map(|vt| vt.into()).unwrap();
 
-        match contract {
-            Contract::KycVoter => self
-                .kyc_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish KycVoter voting"),
-            Contract::BidEscrow => self
-                .bid_escrow
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish BidEscrow voting"),
-            Contract::SlashingVoter => self
-                .slashing_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish SlashingVoting voting"),
-            Contract::RepoVoter => self
-                .repo_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish RepoVoter voting"),
-            Contract::Admin => self
-                .admin
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish Admin voting"),
-            Contract::SimpleVoter => self
-                .simple_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish SimpleVoter voting"),
-            Contract::ReputationVoter => self
-                .reputation_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish ReputationVoter voting"),
-            Contract::Onboarding => self
-                .onboarding
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish Onboarding voting"),
-            invalid => panic!("{:?} is not a voting contract", invalid),
-        };
+        let result = on_voting_contract!(self, contract, finish_voting(voting_id, voting_type));
+        result.expect(&format!("Couldn't finish {:?} voting", contract));
     }
 
     pub fn voting_exists(

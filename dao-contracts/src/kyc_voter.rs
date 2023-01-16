@@ -175,9 +175,9 @@ impl KycVoterContractInterface for KycVoterContract {
             .voting
             .create_voting(creator, stake, voting_configuration);
 
-        KycVotingCreated::new(subject_address, document_hash, info).emit();
+        self.kyc.set_voting(subject_address, info.voting_id);
 
-        self.kyc.set_voting(&subject_address);
+        KycVotingCreated::new(subject_address, document_hash, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -185,7 +185,6 @@ impl KycVoterContractInterface for KycVoterContract {
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
-    // TODO: Store action in Mapping instead of extracting it from args of the call.
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let summary = self.voting.finish_voting(voting_id, voting_type);
         // The voting is ended when:
@@ -196,7 +195,7 @@ impl KycVoterContractInterface for KycVoterContract {
                 .voting
                 .get_voting(voting_id)
                 .unwrap_or_revert_with(Error::VotingDoesNotExist);
-            let address = self.extract_address_from_args(&voting);
+            let address = self.kyc.get_voting_subject(voting.voting_id());
             self.kyc.clear_voting(&address);
         }
     }
@@ -209,23 +208,6 @@ impl KycVoterContractInterface for KycVoterContract {
 
 // non-contract implementation
 impl KycVoterContract {
-    fn extract_address_from_args(&self, voting: &VotingStateMachine) -> Address {
-        let runtime_args = voting
-            .contract_calls()
-            .first()
-            .unwrap_or_revert()
-            .runtime_args();
-        let arg = runtime_args
-            .named_args()
-            .find(|arg| arg.name() == consts::ARG_TO)
-            .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
-
-        arg.cl_value()
-            .clone()
-            .into_t()
-            .unwrap_or_revert_with(Error::UnexpectedOnboardingError)
-    }
-
     fn assert_not_kyced(&self, address: &Address) {
         if self.kyc.is_kycd(address) {
             casper_env::revert(Error::UserKycedAlready);
