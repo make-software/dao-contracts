@@ -18,11 +18,6 @@ futures = "0.3.5"
 derive_more = "0.99.17"
 
 [[test]]
-name = "test_admin"
-harness = false  # allows Cucumber to print output instead of libtest
-required-features = ["test-support"]
-
-[[test]]
 name = "test_bid_escrow"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]

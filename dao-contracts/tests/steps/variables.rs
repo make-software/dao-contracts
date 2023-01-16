@@ -1,3 +1,4 @@
+use casper_types::U512;
 use cucumber::{given, then};
 
 use crate::common::{
@@ -6,15 +7,22 @@ use crate::common::{
 };
 
 #[then(expr = "{account} Bid {word} posted")]
-fn bid_is_posted(w: &mut DaoWorld, account: Account, is_posted: String) {
+fn bid_is_posted(world: &mut DaoWorld, account: Account, is_posted: String) {
     let is_posted = match is_posted.as_str() {
         "is" => true,
         "isn't" => false,
         _ => panic!("Unknown is_posted option - it should be either is or isn't"),
     };
-    let bid = w.get_bid(0, account);
+    let bid = world.get_bid(0, account);
 
     assert_eq!(bid.is_some(), is_posted);
+}
+
+#[then(expr = "value of {word} is {word}")]
+fn assert_variable(world: &mut DaoWorld, key: String, value: String) {
+    let current_value: U512 = world.get_variable(key);
+    let expected = U512::from_dec_str(&value).unwrap();
+    assert_eq!(current_value, expected);
 }
 
 #[given(expr = "the price of USDT is {balance} CSPR")]

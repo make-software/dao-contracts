@@ -5,6 +5,7 @@ use cucumber::Parameter;
 use super::{Account, Balance, Contract};
 use crate::common::helpers;
 
+#[derive(Debug, Clone)]
 pub struct Voting {
     pub contract: Contract,
     stake: Balance,

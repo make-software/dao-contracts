@@ -10,7 +10,7 @@ use crate::{
             Balance,
             Contract,
         },
-        DaoWorld,
+        DaoWorld, helpers::value_to_bytes,
     },
     on_voting_contract,
 };
@@ -37,11 +37,13 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
         Contract::KycVoter => {
             let subject_address = voting.get_parsed_arg::<Account>(0);
             let subject_address = world.get_address(&subject_address);
+
             VotingSetup::Kyc(subject_address, DocumentHash::default())
         }
         Contract::SlashingVoter => {
             let address_to_slash = voting.get_parsed_arg::<Account>(0);
             let address_to_slash = world.get_address(&address_to_slash);
+            
             let slash_ratio = voting.get_parsed_arg::<f32>(1);
 
             VotingSetup::Slasher(address_to_slash, (slash_ratio * 1000.0) as u32)
@@ -51,7 +53,9 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
             let variable_repository_address = world.get_address(&variable_repository_address);
 
             let key = voting.get_parsed_arg::<String>(1);
-            let value = Bytes::from(0.to_bytes().unwrap_or_default());
+
+            let value = voting.get_parsed_arg::<String>(2);
+            let value = value_to_bytes(&value, &key);
             
             VotingSetup::Repository(variable_repository_address, key, value, None)
         }
@@ -78,6 +82,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
 }
 
 
+#[derive(Debug)]
 pub enum VotingSetup {
     Admin(Address, AdminAction, Address),
     Kyc(Address, DocumentHash),
@@ -85,5 +90,4 @@ pub enum VotingSetup {
     Repository(Address, String, Bytes, Option<BlockTime>),
     Simple(DocumentHash),
     Reputation(Address, ReputationAction, Balance, DocumentHash),
-
 }
