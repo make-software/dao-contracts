@@ -1,34 +1,42 @@
 use std::{borrow::Borrow, rc::Rc};
 
+use casper_types::{U512, URef};
+use delegate::delegate;
+
 use casper_dao_utils::{
+    Address,
+    BlockTime,
     casper_dao_macros::Instance,
     casper_env::{caller, get_block_time},
     cspr,
-    Address,
-    BlockTime,
 };
-use casper_types::{URef, U512};
-use delegate::delegate;
 
 use crate::{
+    Configuration,
+    ConfigurationBuilder,
     escrow::{
-        bid::{Bid, CancelBidRequest, ShortenedBid, SubmitBidRequest},
+        bid::{Bid, BidStatus, CancelBidRequest, ShortenedBid, SubmitBidRequest},
+        job::{Job, PickBidRequest},
         job_offer::{CancelJobOfferRequest, JobOffer, PostJobOfferRequest},
-        storage::BidStorage,
+        storage::{BidStorage, JobStorage},
         types::{BidId, JobOfferId},
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
-    voting::{kyc_info::KycInfo, onboarding_info::OnboardingInfo},
-    Configuration,
-    ConfigurationBuilder,
     ReputationContractInterface,
+    voting::{kyc_info::KycInfo, onboarding_info::OnboardingInfo},
 };
 
 #[derive(Instance)]
 pub struct Bidding {
+    #[scoped = "contract"]
     pub bid_storage: BidStorage,
+    #[scoped = "contract"]
+    pub job_storage: JobStorage,
+    #[scoped = "contract"]
     kyc: KycInfo,
-    onboarding_info: OnboardingInfo,
+    #[scoped = "contract"]
+    onboarding: OnboardingInfo,
+    #[scoped = "contract"]
     refs: ContractRefsWithKycStorage,
 }
 
@@ -91,7 +99,7 @@ impl Bidding {
             onboard,
             worker,
             worker_kyced: self.kyc.is_kycd(&worker),
-            worker_is_va: self.onboarding_info.is_onboarded(&worker),
+            worker_is_va: self.onboarding.is_onboarded(&worker),
             job_poster: job_offer.job_poster,
             max_budget: job_offer.max_budget,
             auction_state: job_offer.auction_state(block_time),
@@ -140,6 +148,44 @@ impl Bidding {
 
         self.bid_storage.update_job_offer(job_offer_id, job_offer);
     }
+
+    pub fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef) {
+        let mut job_offer = self.bid_storage.get_job_offer_or_revert(job_offer_id);
+        let mut bid = self.bid_storage.get_bid_or_revert(bid_id);
+        let job_id = self.job_storage.next_job_id();
+
+        self.unstake_not_picked(job_offer_id, bid_id);
+
+        let pick_bid_request = PickBidRequest {
+            job_id,
+            job_offer_id,
+            bid_id,
+            caller: caller(),
+            poster: job_offer.job_poster,
+            worker: bid.worker,
+            is_worker_va: self.onboarding.is_onboarded(&bid.worker),
+            onboard: bid.onboard,
+            block_time: get_block_time(),
+            timeframe: bid.proposed_timeframe,
+            payment: bid.proposed_payment,
+            transferred_cspr: cspr::deposit(purse),
+            stake: bid.reputation_stake,
+            external_worker_cspr_stake: bid.cspr_stake.unwrap_or_default(),
+        };
+
+        let job = Job::new(&pick_bid_request);
+
+        bid.picked(&pick_bid_request);
+
+        job_offer.in_progress(&pick_bid_request);
+
+        self.job_storage.store_job(job);
+        self.bid_storage.store_bid(bid);
+        self.bid_storage
+            .store_active_job_offer_id(&job_offer.job_poster, job_offer_id);
+        self.bid_storage.store_job_offer(job_offer);
+        // TODO: Emit event.
+    }
 }
 
 impl Bidding {
@@ -176,7 +222,7 @@ impl Bidding {
         }
     }
 
-    pub(crate) fn cancel_all_bids(&mut self, job_offer_id: JobOfferId) {
+    pub fn cancel_all_bids(&mut self, job_offer_id: JobOfferId) {
         let bids_amount = self.bid_storage.get_bids_count(job_offer_id);
         let mut bids = Vec::<ShortenedBid>::new();
         for i in 0..bids_amount {
@@ -191,9 +237,27 @@ impl Bidding {
         self.refs.reputation_token().bulk_unstake_bid(bids);
     }
 
-    pub(crate) fn return_job_offer_poster_dos_fee(&mut self, job_offer_id: JobOfferId) {
+    pub fn return_job_offer_poster_dos_fee(&mut self, job_offer_id: JobOfferId) {
         let job_offer = self.bid_storage.get_job_offer_or_revert(job_offer_id);
         cspr::withdraw(job_offer.job_poster, job_offer.dos_fee);
+    }
+
+    fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
+        let bids_amount = self.bid_storage.get_bids_count(job_offer_id);
+        let mut bids = Vec::<ShortenedBid>::new();
+        for i in 0..bids_amount {
+            let mut bid = self.bid_storage.get_nth_bid(job_offer_id, i);
+
+            if bid.bid_id != bid_id && bid.status == BidStatus::Created {
+                if let Some(cspr) = bid.cspr_stake {
+                    cspr::withdraw(bid.worker, cspr);
+                }
+                bids.push(bid.borrow().into());
+                bid.reject_without_validation();
+                self.bid_storage.store_bid(bid);
+            }
+        }
+        self.refs.reputation_token().bulk_unstake_bid(bids);
     }
 
     /// Builds Configuration for a Bid Escrow Entities
