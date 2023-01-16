@@ -1,3 +1,4 @@
+use casper_dao_contracts::action::Action;
 use casper_dao_utils::{DocumentHash, Error, TestContract};
 use casper_types::{bytesrepr::Bytes, U512};
 
@@ -14,34 +15,52 @@ use crate::{
     on_voting_contract,
 };
 
+mod builder;
+
 #[allow(dead_code)]
 impl DaoWorld {
     pub fn checked_create_voting(&mut self, creator: Account, voting: Voting) -> Result<(), Error> {
         let creator = self.get_address(&creator);
         let stake = voting.get_stake();
 
-        match voting.contract {
-            Contract::KycVoter => {
-                let subject_address = voting.get_parsed_arg::<Account>(0);
-                let subject_address = self.get_address(&subject_address);
-                self.kyc_voter.as_account(creator).create_voting(
-                    subject_address,
-                    DocumentHash::default(),
+        match builder::build(self, voting) {
+            builder::VotingSetup::Admin(contract_to_update, action, subject) => self
+                .admin
+                .as_account(creator)
+                .create_voting(contract_to_update, action, subject, *stake),
+            builder::VotingSetup::Kyc(subject, document_hash) => self
+                .kyc_voter
+                .as_account(creator)
+                .create_voting(subject, document_hash, *stake),
+            builder::VotingSetup::Slasher(address_to_slash, slash_ratio) => self
+                .slashing_voter
+                .as_account(creator)
+                .create_voting(address_to_slash, slash_ratio, *stake),
+            builder::VotingSetup::Repository(
+                variable_repository_address,
+                key,
+                value,
+                activation_time,
+            ) => self.repo_voter.as_account(creator).create_voting(
+                variable_repository_address,
+                key,
+                value,
+                activation_time,
+                *stake,
+            ),
+            builder::VotingSetup::Simple(document_hash) => self
+                .simple_voter
+                .as_account(creator)
+                .create_voting(document_hash, *stake),
+            builder::VotingSetup::Reputation(recipient_address, action, amount, document_hash) => {
+                self.reputation_voter.as_account(creator).create_voting(
+                    recipient_address,
+                    action,
+                    *amount,
+                    document_hash,
                     *stake,
                 )
             }
-            Contract::SlashingVoter => {
-                let address_to_slash = voting.get_parsed_arg::<Account>(0);
-                let address_to_slash = self.get_address(&address_to_slash);
-                let slash_ratio = voting.get_parsed_arg::<f32>(1);
-
-                self.slashing_voter.as_account(creator).create_voting(
-                    address_to_slash,
-                    (slash_ratio * 1000.0) as u32,
-                    stake.0,
-                )
-            }
-            contract => panic!("{:?} is not a voting contract", contract),
         }
     }
 
