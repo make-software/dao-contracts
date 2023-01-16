@@ -1,9 +1,8 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::contract_api::system::get_purse_balance,
     casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::{self, caller},
-    transfer,
+    casper_env::caller,
+    cspr,
     Address,
     BlockTime,
     DocumentHash,
@@ -30,7 +29,7 @@ pub trait OnboardingRequestContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract), 
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
     /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
@@ -62,7 +61,7 @@ pub trait OnboardingRequestContractInterface {
     /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn finish_voting(&mut self, voting_id: VotingId);
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
     /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
@@ -125,7 +124,7 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
         }
 
         to self.onboarding {
-            fn finish_voting(&mut self, voting_id: VotingId);
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
         }
 
@@ -148,13 +147,13 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
     }
 
     fn create_voting(&mut self, reason: DocumentHash, purse: URef) {
-        let cspr_deposit = transfer::deposit_cspr(purse);
+        let cspr_deposit = cspr::deposit(purse);
         let voting_info = self.onboarding.submit_request(reason.clone(), cspr_deposit);
         OnboardingVotingCreated::new(reason, cspr_deposit, voting_info).emit();
     }
 
     fn get_cspr_balance(&self) -> U512 {
-        get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
+        cspr::main_purse_balance()
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

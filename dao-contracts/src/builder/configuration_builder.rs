@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_env::{call_contract, revert},
     consts,
+    Address,
     ContractCall,
     Error,
 };
@@ -106,6 +107,8 @@ impl ConfigurationBuilder {
                 },
                 VotingConfiguration {
                     is_bid_escrow: false,
+                    bind_ballot_for_successful_voting: false,
+                    unbound_ballot_address: None,
                     contract_calls: Vec::new(),
                     only_va_can_create: true,
                     double_time_between_votings: false,
@@ -154,6 +157,16 @@ impl ConfigurationBuilder {
         );
         self.configuration.fiat_rate = Some(rate);
         self.configuration.voting_configuration.is_bid_escrow = is_bid_escrow;
+        self
+    }
+
+    pub fn bind_ballot_for_successful_voting(mut self, address: Address) -> ConfigurationBuilder {
+        self.configuration
+            .voting_configuration
+            .bind_ballot_for_successful_voting = true;
+        self.configuration
+            .voting_configuration
+            .unbound_ballot_address = Some(address);
         self
     }
 

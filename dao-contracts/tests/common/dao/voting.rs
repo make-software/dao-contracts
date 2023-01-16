@@ -149,7 +149,7 @@ impl DaoWorld {
                 .expect("Couldn't finish KycVoter voting"),
             Contract::BidEscrow => self
                 .bid_escrow
-                .finish_voting(voting_id)
+                .finish_voting(voting_id, voting_type)
                 .expect("Couldn't finish BidEscrow voting"),
             Contract::SlashingVoter => self
                 .slashing_voter
@@ -173,7 +173,7 @@ impl DaoWorld {
                 .expect("Couldn't finish ReputationVoter voting"),
             Contract::Onboarding => self
                 .onboarding
-                .finish_voting(voting_id)
+                .finish_voting(voting_id, voting_type)
                 .expect("Couldn't finish Onboarding voting"),
             invalid => panic!("{:?} is not a voting contract", invalid),
         };

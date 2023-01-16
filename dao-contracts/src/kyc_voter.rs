@@ -29,11 +29,11 @@ use crate::{
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
-     /// Constructor function.
+    /// Constructor function.
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract), 
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
     /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.

@@ -36,6 +36,11 @@ impl Configuration {
         }
     }
 
+    pub fn bind_ballot_for_successful_voting(&mut self, address: Address) {
+        self.voting_configuration.bind_ballot_for_successful_voting = true;
+        self.voting_configuration.unbound_ballot_address = Some(address);
+    }
+
     pub fn double_time_between_votings(&mut self) {
         self.voting_configuration.double_time_between_votings = true
     }
