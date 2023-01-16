@@ -1,5 +1,8 @@
-use casper_dao_contracts::{action::Action as AdminAction, reputation_voter::Action as ReputationAction};
-use casper_dao_utils::{Address, DocumentHash, BlockTime};
+use casper_dao_contracts::{
+    action::Action as AdminAction,
+    reputation_voter::Action as ReputationAction,
+};
+use casper_dao_utils::{Address, BlockTime, DocumentHash};
 use casper_types::bytesrepr::{Bytes, ToBytes};
 
 use crate::{
@@ -26,7 +29,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
                 "add_to_whitelist" => AdminAction::AddToWhitelist,
                 "remove_from_whitelist" => AdminAction::RemoveFromWhitelist,
                 "change_ownership" => AdminAction::ChangeOwner,
-                unknown => panic!("{:?} is not a valid action", unknown)
+                unknown => panic!("{:?} is not a valid action", unknown),
             };
 
             let address = voting.get_parsed_arg::<Account>(2);
@@ -52,12 +55,10 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
 
             let key = voting.get_parsed_arg::<String>(1);
             let value = Bytes::from(0.to_bytes().unwrap_or_default());
-            
+
             VotingSetup::Repository(variable_repository_address, key, value, None)
         }
-        Contract::SimpleVoter => {
-            VotingSetup::Simple(Default::default())
-        }
+        Contract::SimpleVoter => VotingSetup::Simple(Default::default()),
         Contract::ReputationVoter => {
             let recipient_address = voting.get_parsed_arg::<Account>(0);
             let recipient_address = world.get_address(&recipient_address);
@@ -66,7 +67,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
             let action = match action.as_str() {
                 "mint" => ReputationAction::Mint,
                 "burn" => ReputationAction::Burn,
-                unknown => panic!("{:?} is not a valid action", unknown)
+                unknown => panic!("{:?} is not a valid action", unknown),
             };
 
             let amount = voting.get_parsed_arg::<Balance>(2);
@@ -77,7 +78,6 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
     }
 }
 
-
 pub enum VotingSetup {
     Admin(Address, AdminAction, Address),
     Kyc(Address, DocumentHash),
@@ -85,5 +85,4 @@ pub enum VotingSetup {
     Repository(Address, String, Bytes, Option<BlockTime>),
     Simple(DocumentHash),
     Reputation(Address, ReputationAction, Balance, DocumentHash),
-
 }
