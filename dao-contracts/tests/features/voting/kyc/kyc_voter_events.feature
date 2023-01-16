@@ -7,22 +7,9 @@ Feature: Kyc Voter events
         | VA2     | true  | 1000        |
         | VA3     | true  | 1000        |
         | VA4     | true  | 1000        |
-      When VA1 starts voting with the following config
+      When KycVoter voting with id 0 created by VA1 passes
         | voting_contract | stake | arg1  |
         | KycVoter        | 100   | Alice |
-      And voters vote in KycVoter informal voting with id 0
-        | user    | REP stake  | choice   | 
-        | VA2     | 500        | in favor |
-        | VA3     | 200        | in favor |
-        | VA4     | 100        | against  |
-      And 5 days passed
-      And informal voting with id 0 ends in KycVoter contract
-      And 2 days passed
-      And voters vote in KycVoter formal voting with id 0
-        | user    | REP stake  | choice   | 
-        | VA2     | 500        | in favor |
-        | VA3     | 200        | in favor |
-        | VA4     | 300        | against  |
       # Then KycVoter contract emits events
       #   | event                 | arg1               | arg2            | arg3     | arg4  | arg5   | arg6   | arg7   | arg8   |
       #   | VotingContractCreated | VariableRepository | ReputationToken | KycVoter |       |        |        |        |        |

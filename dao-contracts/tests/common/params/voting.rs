@@ -73,7 +73,7 @@ impl From<VotingType> for casper_dao_contracts::voting::voting_state_machine::Vo
     }
 }
 
-#[derive(Debug, Default, Clone, Parameter)]
+#[derive(Debug, Default, Clone, Copy, Parameter)]
 #[param(name = "choice", regex = "in favor|against|yes|no|Yes|No")]
 pub enum Choice {
     InFavor,

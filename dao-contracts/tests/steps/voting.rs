@@ -3,13 +3,13 @@ use cucumber::{gherkin::Step, given, then, when};
 
 use crate::{
     common::{
-        helpers,
+        helpers::{self, to_seconds},
         params::{
             voting::{Ballot, BallotBuilder, Choice, Voting, VotingType},
             Account,
             Balance,
             Contract,
-            Result,
+            Result, TimeUnit,
         },
         DaoWorld,
     },
@@ -173,4 +173,55 @@ fn assert_unbounded_stake(w: &mut DaoWorld, contract: Contract, voting_id: u32, 
         "Total unbounded stake is {:?}, but should be {:?}",
         total_unbounded_stake, amount
     );
+}
+
+#[when(expr = "{contract} voting with id {int} created by {account} passes")]
+fn voting_passes(world: &mut DaoWorld, step: &Step, contract: Contract, voting_id: u32, creator: Account) {
+    conduct_voting(world, step, contract, voting_id, creator, Choice::InFavor);
+}
+
+
+#[when(expr = "{contract} voting with id {int} created by {account} fails")]
+fn voting_fails(world: &mut DaoWorld, step: &Step, contract: Contract, voting_id: u32, creator: Account) {
+    conduct_voting(world, step, contract, voting_id, creator, Choice::Against);
+}
+
+fn conduct_voting(world: &mut DaoWorld, step: &Step, contract: Contract, voting_id: u32, creator: Account, choice: Choice) {
+    // creator starts voting
+    let rows = step.table.as_ref().unwrap().rows.iter().skip(1);
+    for row in rows {
+        let voting: Voting = row.into();
+        let _ = world.checked_create_voting(creator, voting);
+    }
+    let stake = "100".parse().unwrap();
+    let voting_type = VotingType::Informal;
+
+    // voters vote in favor
+    (2..8).into_iter()
+        .map(|n| Account::VA(n))
+        .map(|voter| Ballot { voter, stake, choice, voting_id, voting_type })
+        .for_each(|ballot| {
+            let _ = world.checked_vote(&contract, &ballot);
+        });
+    
+    // 5 days passed
+    world.advance_time(to_seconds(5, TimeUnit::Days));
+    // informal voting ends
+    world.finish_voting(&contract, voting_id, Some(voting_type));
+    // 2 days passed
+    world.advance_time(to_seconds(2, TimeUnit::Days));
+
+    // voters vote in favor
+    let voting_type = VotingType::Formal;
+    (2..8).into_iter()
+        .map(|n| Account::VA(n))
+        .map(|voter| Ballot { voter, stake, choice, voting_id, voting_type })
+        .for_each(|ballot| {
+            let _ = world.checked_vote(&contract, &ballot);
+        });
+    
+    // 5 days passed
+    world.advance_time(to_seconds(5, TimeUnit::Days));
+    // formal voting ends
+    world.finish_voting(&contract, voting_id, Some(voting_type));
 }
