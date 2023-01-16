@@ -73,6 +73,10 @@ update-schemas:
 run-e2e-tests:
 	cd client && ./run-e2e-tests.sh
 
+test-admin: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_admin
+
 test-bid-escrow: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_bid_escrow
@@ -96,3 +100,7 @@ test-ownership: build-dao-contracts
 test-va: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_va
+
+test-voting: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_voting
