@@ -9,7 +9,8 @@ use crate::{
             Account,
             Balance,
             Contract,
-            Result, TimeUnit,
+            Result,
+            TimeUnit,
         },
         DaoWorld,
     },
@@ -176,17 +177,35 @@ fn assert_unbounded_stake(w: &mut DaoWorld, contract: Contract, voting_id: u32, 
 }
 
 #[when(expr = "{contract} voting with id {int} created by {account} passes")]
-fn voting_passes(world: &mut DaoWorld, step: &Step, contract: Contract, voting_id: u32, creator: Account) {
+fn voting_passes(
+    world: &mut DaoWorld,
+    step: &Step,
+    contract: Contract,
+    voting_id: u32,
+    creator: Account,
+) {
     conduct_voting(world, step, contract, voting_id, creator, Choice::InFavor);
 }
 
-
 #[when(expr = "{contract} voting with id {int} created by {account} fails")]
-fn voting_fails(world: &mut DaoWorld, step: &Step, contract: Contract, voting_id: u32, creator: Account) {
+fn voting_fails(
+    world: &mut DaoWorld,
+    step: &Step,
+    contract: Contract,
+    voting_id: u32,
+    creator: Account,
+) {
     conduct_voting(world, step, contract, voting_id, creator, Choice::Against);
 }
 
-fn conduct_voting(world: &mut DaoWorld, step: &Step, contract: Contract, voting_id: u32, creator: Account, choice: Choice) {
+fn conduct_voting(
+    world: &mut DaoWorld,
+    step: &Step,
+    contract: Contract,
+    voting_id: u32,
+    creator: Account,
+    choice: Choice,
+) {
     // creator starts voting
     let rows = step.table.as_ref().unwrap().rows.iter().skip(1);
     for row in rows {
@@ -197,13 +216,20 @@ fn conduct_voting(world: &mut DaoWorld, step: &Step, contract: Contract, voting_
     let voting_type = VotingType::Informal;
 
     // voters vote in favor
-    (2..8).into_iter()
+    (1..8)
+        .into_iter()
         .map(|n| Account::VA(n))
-        .map(|voter| Ballot { voter, stake, choice, voting_id, voting_type })
+        .map(|voter| Ballot {
+            voter,
+            stake,
+            choice,
+            voting_id,
+            voting_type,
+        })
         .for_each(|ballot| {
             let _ = world.checked_vote(&contract, &ballot);
         });
-    
+
     // 5 days passed
     world.advance_time(to_seconds(5, TimeUnit::Days));
     // informal voting ends
@@ -213,18 +239,22 @@ fn conduct_voting(world: &mut DaoWorld, step: &Step, contract: Contract, voting_
 
     // voters vote in favor
     let voting_type = VotingType::Formal;
-    (2..8).into_iter()
+    (1..8)
+        .into_iter()
         .map(|n| Account::VA(n))
-        .map(|voter| Ballot { voter, stake, choice, voting_id, voting_type })
+        .map(|voter| Ballot {
+            voter,
+            stake,
+            choice,
+            voting_id,
+            voting_type,
+        })
         .for_each(|ballot| {
             let _ = world.checked_vote(&contract, &ballot);
         });
-    
+
     // 5 days passed
     world.advance_time(to_seconds(5, TimeUnit::Days));
     // formal voting ends
     world.finish_voting(&contract, voting_id, Some(voting_type));
-
-    // let v = world.admin.get_voting(0).unwrap();
-    // dbg!(v.get_result(3));
 }

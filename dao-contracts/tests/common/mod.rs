@@ -31,7 +31,7 @@ use casper_dao_contracts::{
 };
 use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{
-    bytesrepr::{Bytes, ToBytes, FromBytes},
+    bytesrepr::{Bytes, FromBytes, ToBytes},
     U512,
 };
 

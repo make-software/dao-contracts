@@ -1,16 +1,21 @@
-use casper_dao_contracts::{action::Action as AdminAction, reputation_voter::Action as ReputationAction};
-use casper_dao_utils::{Address, DocumentHash, BlockTime};
+use casper_dao_contracts::{
+    action::Action as AdminAction,
+    reputation_voter::Action as ReputationAction,
+};
+use casper_dao_utils::{Address, BlockTime, DocumentHash};
 use casper_types::bytesrepr::{Bytes, ToBytes};
 
 use crate::{
     common::{
+        helpers::{to_seconds, value_to_bytes},
         params::{
             voting::{Ballot, Voting, VotingType},
             Account,
             Balance,
-            Contract, TimeUnit,
+            Contract,
+            TimeUnit,
         },
-        DaoWorld, helpers::{value_to_bytes, to_seconds},
+        DaoWorld,
     },
     on_voting_contract,
 };
@@ -26,7 +31,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
                 "add_to_whitelist" => AdminAction::AddToWhitelist,
                 "remove_from_whitelist" => AdminAction::RemoveFromWhitelist,
                 "change_ownership" => AdminAction::ChangeOwner,
-                unknown => panic!("{:?} is not a valid action", unknown)
+                unknown => panic!("{:?} is not a valid action", unknown),
             };
 
             let address = voting.get_parsed_arg::<Account>(2);
@@ -43,7 +48,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
         Contract::SlashingVoter => {
             let address_to_slash = voting.get_parsed_arg::<Account>(0);
             let address_to_slash = world.get_address(&address_to_slash);
-            
+
             let slash_ratio = voting.get_parsed_arg::<f32>(1);
 
             VotingSetup::Slasher(address_to_slash, (slash_ratio * 1000.0) as u32)
@@ -57,20 +62,16 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
             let value = voting.get_parsed_arg::<String>(2);
             let value = value_to_bytes(&value, &key);
 
-            let activation_time = voting
-                .get_parsed_arg_or_none::<String>(3)
-                .map(|s| {
-                    let values = s.split(" ").collect::<Vec<_>>();
-                    let value = values.get(0).and_then(|s| s.parse().ok()).unwrap();
-                    let unit = values.get(1).and_then(|s| s.parse().ok()).unwrap();
-                    to_seconds(value, unit)
-                });
-            
+            let activation_time = voting.get_parsed_arg_or_none::<String>(3).map(|s| {
+                let values = s.split(" ").collect::<Vec<_>>();
+                let value = values.get(0).and_then(|s| s.parse().ok()).unwrap();
+                let unit = values.get(1).and_then(|s| s.parse().ok()).unwrap();
+                to_seconds(value, unit)
+            });
+
             VotingSetup::Repository(variable_repository_address, key, value, activation_time)
         }
-        Contract::SimpleVoter => {
-            VotingSetup::Simple(Default::default())
-        }
+        Contract::SimpleVoter => VotingSetup::Simple(Default::default()),
         Contract::ReputationVoter => {
             let recipient_address = voting.get_parsed_arg::<Account>(0);
             let recipient_address = world.get_address(&recipient_address);
@@ -79,7 +80,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
             let action = match action.as_str() {
                 "mint" => ReputationAction::Mint,
                 "burn" => ReputationAction::Burn,
-                unknown => panic!("{:?} is not a valid action", unknown)
+                unknown => panic!("{:?} is not a valid action", unknown),
             };
 
             let amount = voting.get_parsed_arg::<Balance>(2);
@@ -89,7 +90,6 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
         contract => panic!("{:?} is not a voting contract", contract),
     }
 }
-
 
 #[derive(Debug)]
 pub enum VotingSetup {

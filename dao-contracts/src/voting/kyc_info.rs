@@ -1,8 +1,12 @@
-use casper_dao_utils::{casper_dao_macros::Instance, Address, Mapping, casper_contract::unwrap_or_revert::UnwrapOrRevert};
-
-use crate::{refs::ContractRefsWithKycStorage, KycNftContractInterface};
+use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::Instance,
+    Address,
+    Mapping,
+};
 
 use super::VotingId;
+use crate::{refs::ContractRefsWithKycStorage, KycNftContractInterface};
 
 /// A utility module that provides information about the current status of the KYC process.
 #[derive(Instance)]
