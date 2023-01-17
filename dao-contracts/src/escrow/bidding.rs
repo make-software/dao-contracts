@@ -1,19 +1,16 @@
 use std::{borrow::Borrow, rc::Rc};
 
-use casper_types::{U512, URef};
-use delegate::delegate;
-
 use casper_dao_utils::{
-    Address,
-    BlockTime,
     casper_dao_macros::Instance,
     casper_env::{caller, get_block_time},
     cspr,
+    Address,
+    BlockTime,
 };
+use casper_types::{URef, U512};
+use delegate::delegate;
 
 use crate::{
-    Configuration,
-    ConfigurationBuilder,
     escrow::{
         bid::{Bid, BidStatus, CancelBidRequest, ShortenedBid, SubmitBidRequest},
         job::{Job, PickBidRequest},
@@ -22,16 +19,18 @@ use crate::{
         types::{BidId, JobOfferId},
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
-    ReputationContractInterface,
     voting::{kyc_info::KycInfo, onboarding_info::OnboardingInfo},
+    Configuration,
+    ConfigurationBuilder,
+    ReputationContractInterface,
 };
 
 #[derive(Instance)]
 pub struct Bidding {
     #[scoped = "contract"]
-    pub bid_storage: BidStorage,
+    bid_storage: BidStorage,
     #[scoped = "contract"]
-    pub job_storage: JobStorage,
+    job_storage: JobStorage,
     #[scoped = "contract"]
     kyc: KycInfo,
     #[scoped = "contract"]
@@ -46,7 +45,13 @@ impl Bidding {
             pub fn job_offers_count(&self) -> u32;
             pub fn bids_count(&self) -> u32;
             pub fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer>;
+            pub fn get_job_offer_or_revert(&self, job_offer_id: JobOfferId) -> JobOffer;
             pub fn get_bid(&self, bid_id: BidId) -> Option<Bid>;
+            pub fn get_bid_or_revert(&self, bid_id: BidId) -> Bid;
+            pub fn next_bid_id(&mut self) -> BidId;
+            pub fn store_bid(&mut self, bid: Bid);
+            pub fn clear_active_job_offers_ids(&mut self, bidder: &Address) -> Vec<JobOfferId>;
+            pub fn get_job_offer_configuration(&self, job: &Job) -> Configuration;
         }
     }
 

@@ -22,7 +22,7 @@ use crate::{
         bidding::Bidding,
         job::{Job, ReclaimJobRequest, SubmitJobProofRequest, WorkerType},
         job_offer::{JobOffer, JobOfferStatus},
-        storage::{BidStorage, JobStorage},
+        storage::JobStorage,
         types::{BidId, JobId, JobOfferId},
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
@@ -208,7 +208,6 @@ pub struct BidEscrowContract {
     onboarding: OnboardingInfo,
     access_control: AccessControl,
     job_storage: JobStorage,
-    bid_storage: BidStorage,
     bidding: Bidding,
 }
 
@@ -280,9 +279,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
         let mut job = self.job_storage.get_job_or_revert(job_id);
-        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bidding.get_job_offer_or_revert(job.job_offer_id());
         let mut voting_configuration = job_offer.configuration().clone();
-        let bid = self.bid_storage.get_bid_or_revert(job.bid_id());
+        let bid = self.bidding.get_bid_or_revert(job.bid_id());
         let worker = caller();
 
         let submit_proof_request = SubmitJobProofRequest { proof };
@@ -291,7 +290,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         // TODO: Emit event.
 
         if job_offer.configuration.informal_stake_reputation() && !job.stake().is_zero() {
-            let bid = self.bid_storage.get_bid(job.bid_id()).unwrap();
+            let bid = self.bidding.get_bid(job.bid_id()).unwrap();
             self.refs
                 .reputation_token()
                 .unstake_bid(bid.borrow().into());
@@ -349,7 +348,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         let mut old_job: Job = self.job_storage.get_job_or_revert(job_id);
         let mut old_bid = self
-            .bid_storage
+            .bidding
             .get_bid(old_job.bid_id())
             .unwrap_or_revert_with(Error::BidNotFound);
 
@@ -369,7 +368,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         let reclaim_bid_request = ReclaimBidRequest {
-            new_bid_id: self.bid_storage.next_bid_id(),
+            new_bid_id: self.bidding.next_bid_id(),
             caller,
             cspr_stake,
             reputation_stake,
@@ -408,9 +407,9 @@ impl BidEscrowContractInterface for BidEscrowContract {
         }
 
         self.job_storage.store_job(old_job);
-        self.bid_storage.store_bid(old_bid);
+        self.bidding.store_bid(old_bid);
         self.job_storage.store_job(new_job);
-        self.bid_storage.store_bid(new_bid);
+        self.bidding.store_bid(new_bid);
 
         // continue as normal
         self.submit_job_proof(new_job_id, proof);
@@ -429,17 +428,13 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let job = self.job_storage.get_job_by_voting_id(voting_id);
-        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bidding.get_job_offer_or_revert(job.job_offer_id());
         let voting_summary = self.voting.finish_voting(voting_id, voting_type);
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        let bid = self
-                            .bidding
-                            .bid_storage
-                            .get_bid(job.bid_id())
-                            .unwrap_or_revert();
+                        let bid = self.bidding.get_bid(job.bid_id()).unwrap_or_revert();
                         self.refs
                             .reputation_token()
                             .unstake_bid(bid.borrow().into());
@@ -517,7 +512,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
         self.return_job_poster_payment_and_dos_fee(&job);
 
-        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+        let bid = self.bidding.get_bid(job.bid_id()).unwrap_or_revert();
 
         // redistribute cspr stake
         if let Some(cspr_stake) = bid.cspr_stake {
@@ -540,7 +535,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
     fn slash_all_active_job_offers(&mut self, bidder: Address) {
         self.access_control.ensure_whitelisted();
         // Cancel job offers created by the bidder.
-        let job_offer_ids = self.bid_storage.clear_active_job_offers_ids(&bidder);
+        let job_offer_ids = self.bidding.clear_active_job_offers_ids(&bidder);
         for job_offer_id in job_offer_ids {
             self.bidding.cancel_all_bids(job_offer_id);
             self.bidding.return_job_offer_poster_dos_fee(job_offer_id);
@@ -569,7 +564,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             .unstake_bid(bid.borrow().into());
 
         // TODO: Implement Event
-        self.bid_storage.store_bid(bid);
+        self.bidding.store_bid(bid);
     }
 
     fn slash_voter(&mut self, _voter: Address, _voting_id: VotingId) {
@@ -580,7 +575,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
 impl BidEscrowContract {
     fn slash_worker(&self, job: &Job) {
-        let config = self.bid_storage.get_job_offer_configuration(job);
+        let config = self.bidding.get_job_offer_configuration(job);
         let worker_balance = self.refs.reputation_token().balance_of(job.worker());
         let amount_to_burn = config.apply_default_reputation_slash_to(worker_balance);
         self.refs
@@ -591,7 +586,7 @@ impl BidEscrowContract {
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
         let to_redistribute = self.redistribute_to_governance(job, job.payment());
         let redistribute_to_all_vas = self
-            .bid_storage
+            .bidding
             .get_job_offer_or_revert(job.job_offer_id())
             .configuration
             .distribute_payment_to_non_voters();
@@ -606,7 +601,7 @@ impl BidEscrowContract {
 
     fn redistribute_cspr_external_worker(&mut self, job: &Job) {
         let total_left = self.redistribute_to_governance(job, job.payment());
-        let config = self.bid_storage.get_job_offer_configuration(job);
+        let config = self.bidding.get_job_offer_configuration(job);
         let to_redistribute = config.apply_default_policing_rate_to(total_left);
         let to_worker = total_left - to_redistribute;
 
@@ -614,7 +609,7 @@ impl BidEscrowContract {
         cspr::withdraw(job.worker(), to_worker);
 
         let redistribute_to_all_vas = self
-            .bid_storage
+            .bidding
             .get_job_offer_or_revert(job.job_offer_id())
             .configuration
             .distribute_payment_to_non_voters();
@@ -641,7 +636,7 @@ impl BidEscrowContract {
     }
 
     fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
-        let configuration = self.bid_storage.get_job_offer_configuration(job);
+        let configuration = self.bidding.get_job_offer_configuration(job);
 
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
@@ -675,12 +670,12 @@ impl BidEscrowContract {
     }
 
     fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
-        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bidding.get_job_offer_or_revert(job.job_offer_id());
         cspr::withdraw(job.poster(), job.payment() + job_offer.dos_fee);
     }
 
     fn return_job_poster_dos_fee(&mut self, job: &Job) {
-        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bidding.get_job_offer_or_revert(job.job_offer_id());
         cspr::withdraw(job.poster(), job_offer.dos_fee);
     }
 
@@ -689,7 +684,7 @@ impl BidEscrowContract {
     }
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
-        let configuration = self.bid_storage.get_job_offer_configuration(job);
+        let configuration = self.bidding.get_job_offer_configuration(job);
 
         let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
         let reputation_to_redistribute =
@@ -706,7 +701,7 @@ impl BidEscrowContract {
     }
 
     fn mint_and_redistribute_reputation_for_external_worker(&mut self, job: &Job) {
-        let configuration = self.bid_storage.get_job_offer_configuration(job);
+        let configuration = self.bidding.get_job_offer_configuration(job);
         let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
         let reputation_to_redistribute =
             configuration.apply_default_policing_rate_to(reputation_to_mint);
@@ -744,7 +739,7 @@ impl BidEscrowContract {
     }
 
     fn burn_external_worker_reputation(&self, job: &Job) {
-        let config = self.bid_storage.get_job_offer_configuration(job);
+        let config = self.bidding.get_job_offer_configuration(job);
 
         let stake = config.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake());
         self.refs.reputation_token().burn(job.worker(), stake);
