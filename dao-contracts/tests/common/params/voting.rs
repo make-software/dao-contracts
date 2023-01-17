@@ -21,6 +21,14 @@ impl Voting {
         helpers::parse::<T>(self.raw_args.get(n), "Couldn't parse voting arg")
     }
 
+    pub fn get_parsed_arg_or_none<T>(&self, n: usize) -> Option<T>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: Debug,
+    {
+        helpers::parse_or_none::<T>(self.raw_args.get(n))
+    }
+
     pub fn get_stake(&self) -> Balance {
         self.stake
     }

@@ -193,7 +193,7 @@ fn conduct_voting(world: &mut DaoWorld, step: &Step, contract: Contract, voting_
         let voting: Voting = row.into();
         let _ = world.checked_create_voting(creator, voting);
     }
-    let stake = "100".parse().unwrap();
+    let stake = "500".parse().unwrap();
     let voting_type = VotingType::Informal;
 
     // voters vote in favor
@@ -224,4 +224,7 @@ fn conduct_voting(world: &mut DaoWorld, step: &Step, contract: Contract, voting_
     world.advance_time(to_seconds(5, TimeUnit::Days));
     // formal voting ends
     world.finish_voting(&contract, voting_id, Some(voting_type));
+
+    // let v = world.admin.get_voting(0).unwrap();
+    // dbg!(v.get_result(3));
 }

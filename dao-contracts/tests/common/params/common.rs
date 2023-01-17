@@ -56,8 +56,8 @@ impl FromStr for TimeUnit {
             "minutes" | "minute" => Self::Minutes,
             "hours" | "hour" => Self::Hours,
             "days" | "day" => Self::Days,
-            _ => {
-                panic!("Unknown unit option - it should be either seconds, minutes, hours or days")
+            invalid => {
+                panic!("Unknown unit {:?} option - it should be either seconds, minutes, hours or days", invalid)
             }
         })
     }

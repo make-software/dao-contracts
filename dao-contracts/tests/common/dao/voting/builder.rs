@@ -8,9 +8,9 @@ use crate::{
             voting::{Ballot, Voting, VotingType},
             Account,
             Balance,
-            Contract,
+            Contract, TimeUnit,
         },
-        DaoWorld, helpers::value_to_bytes,
+        DaoWorld, helpers::{value_to_bytes, to_seconds},
     },
     on_voting_contract,
 };
@@ -56,8 +56,17 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
 
             let value = voting.get_parsed_arg::<String>(2);
             let value = value_to_bytes(&value, &key);
+
+            let activation_time = voting
+                .get_parsed_arg_or_none::<String>(3)
+                .map(|s| {
+                    let values = s.split(" ").collect::<Vec<_>>();
+                    let value = values.get(0).and_then(|s| s.parse().ok()).unwrap();
+                    let unit = values.get(1).and_then(|s| s.parse().ok()).unwrap();
+                    to_seconds(value, unit)
+                });
             
-            VotingSetup::Repository(variable_repository_address, key, value, None)
+            VotingSetup::Repository(variable_repository_address, key, value, activation_time)
         }
         Contract::SimpleVoter => {
             VotingSetup::Simple(Default::default())
