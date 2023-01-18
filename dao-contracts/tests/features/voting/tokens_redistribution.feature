@@ -11,10 +11,10 @@ Feature: Tokens redistribution
         | VA5     | true  | 1000        |
         | VA6     | true  | 1000        |
 
-    Scenario Outline: Informal voting quorum not reached
+    Scenario Outline: Informal voting quorum not reached, formal voting does not start
       When VA1 starts voting with the following config
-        | voting_contract    | stake | arg1    | arg2    | arg3   | arg4   |
-        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> | <arg4> |
+        | voting_contract    | stake | arg1    | arg2    | arg3   |
+        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> |
       And voters vote in <voting_contract> informal voting with id 0
         | user    | REP stake  | choice | 
        #| VA1     | 100        | yes    | - automatically voted by the system
@@ -31,18 +31,18 @@ Feature: Tokens redistribution
         | VA6     | 1000         |
       And formal voting with id 0 in <voting_contract> contract does not start
       Examples:
-        | voting_contract  | arg1               | arg2             | arg3  | arg4 | arg5 |
-        | KycVoter         | Alice              |                  |       |      |      |      
-        | Admin            | ReputationToken    | add_to_whitelist | Alice |      |      |
-        | SlashingVoter    | Bob                | 1                |       |      |      |
-        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     |      |      | 
-        | SimpleVoter      |                    |                  |       |      |      |
-        | ReputationVoter  | Alice              | mint             | 100   |      |      |
+        | voting_contract  | arg1               | arg2             | arg3  |
+        | KycVoter         | Alice              |                  |       |      
+        | Admin            | ReputationToken    | add_to_whitelist | Alice |
+        | SlashingVoter    | Bob                | 1                |       |
+        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     | 
+        | SimpleVoter      |                    |                  |       |
+        | ReputationVoter  | Alice              | mint             | 100   |
 
     Scenario Outline: Formal voting quorum not reached
       When VA1 starts voting with the following config
-        | voting_contract    | stake | arg1    | arg2    | arg3   | arg4   |
-        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> | <arg4> |
+        | voting_contract    | stake | arg1    | arg2    | arg3   |
+        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> |
       And voters vote in <voting_contract> informal voting with id 0
         | user    | REP stake  | choice | 
        #| VA1     | 100        | yes    | - automatically voted by the system
@@ -65,18 +65,18 @@ Feature: Tokens redistribution
         | VA3     | 1000         |
         | VA4     | 1000         |
       Examples:
-        | voting_contract  | arg1               | arg2             | arg3  | arg4 | arg5 |
-        | KycVoter         | Alice              |                  |       |      |      |      
-        | Admin            | ReputationToken    | add_to_whitelist | Alice |      |      |
-        | SlashingVoter    | Bob                | 1                |       |      |      |
-        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     |      |      | 
-        | SimpleVoter      |                    |                  |       |      |      |
-        | ReputationVoter  | Alice              | mint             | 100   |      |      |
+        | voting_contract  | arg1               | arg2             | arg3  |
+        | KycVoter         | Alice              |                  |       |      
+        | Admin            | ReputationToken    | add_to_whitelist | Alice |
+        | SlashingVoter    | Bob                | 1                |       |
+        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     | 
+        | SimpleVoter      |                    |                  |       |
+        | ReputationVoter  | Alice              | mint             | 100   |
 
     Scenario Outline: Voting passed
       When VA1 starts voting with the following config
-        | voting_contract    | stake | arg1    | arg2    | arg3   | arg4   |
-        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> | <arg4> |
+        | voting_contract    | stake | arg1    | arg2    | arg3   |
+        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> |
       And voters vote in <voting_contract> informal voting with id 0
         | user    | REP stake  | choice | 
        #| VA1     | 100        | yes    | - automatically voted by the system
@@ -101,18 +101,18 @@ Feature: Tokens redistribution
         | VA3     | 1062.5       |
         | VA4     | 750          |
      Examples:
-        | voting_contract  | arg1               | arg2             | arg3  | arg4 | arg5 |
-        | KycVoter         | Alice              |                  |       |      |      |      
-        | Admin            | ReputationToken    | add_to_whitelist | Alice |      |      |
-        | SlashingVoter    | Bob                | 1                |       |      |      |
-        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     |      |      | 
-        | SimpleVoter      |                    |                  |       |      |      |
-        | ReputationVoter  | Alice              | mint             | 100   |      |      |
+        | voting_contract  | arg1               | arg2             | arg3  |
+        | KycVoter         | Alice              |                  |       | 
+        | Admin            | ReputationToken    | add_to_whitelist | Alice |
+        | SlashingVoter    | Bob                | 1                |       |
+        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     | 
+        | SimpleVoter      |                    |                  |       |
+        | ReputationVoter  | Alice              | mint             | 100   |
 
     Scenario Outline: Voting rejected
       When VA1 starts voting with the following config
-        | voting_contract    | stake | arg1    | arg2    | arg3   | arg4   |
-        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> | <arg4> |
+        | voting_contract    | stake | arg1    | arg2    | arg3   |
+        | <voting_contract>  | 100   | <arg1>  | <arg2>  | <arg3> |
       And voters vote in <voting_contract> informal voting with id 0
         | user    | REP stake  | choice | 
        #| VA1     | 100        | yes    | - automatically voted by the system
@@ -137,10 +137,10 @@ Feature: Tokens redistribution
         | VA3     | 1100         |
         | VA4     | 750          |
      Examples:
-        | voting_contract  | arg1               | arg2             | arg3  | arg4 | arg5 |
-        | KycVoter         | Alice              |                  |       |      |      |      
-        | Admin            | ReputationToken    | add_to_whitelist | Alice |      |      |
-        | SlashingVoter    | Bob                | 1                |       |      |      |
-        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     |      |      | 
-        | SimpleVoter      |                    |                  |       |      |      |
-        | ReputationVoter  | Alice              | mint             | 100   |      |      |
+        | voting_contract  | arg1               | arg2             | arg3  |
+        | KycVoter         | Alice              |                  |       |      
+        | Admin            | ReputationToken    | add_to_whitelist | Alice |
+        | SlashingVoter    | Bob                | 1                |       |
+        | RepoVoter        | VariableRepository | PostJobDOSFee    | 1     | 
+        | SimpleVoter      |                    |                  |       |
+        | ReputationVoter  | Alice              | mint             | 100   |

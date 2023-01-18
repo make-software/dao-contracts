@@ -5,6 +5,7 @@ use cucumber::Parameter;
 use super::{Account, Balance, Contract};
 use crate::common::helpers;
 
+#[derive(Debug, Clone)]
 pub struct Voting {
     pub contract: Contract,
     stake: Balance,
@@ -18,6 +19,14 @@ impl Voting {
         <T as FromStr>::Err: Debug,
     {
         helpers::parse::<T>(self.raw_args.get(n), "Couldn't parse voting arg")
+    }
+
+    pub fn get_parsed_arg_or_none<T>(&self, n: usize) -> Option<T>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: Debug,
+    {
+        helpers::parse_or_none::<T>(self.raw_args.get(n))
     }
 
     pub fn get_stake(&self) -> Balance {
@@ -72,7 +81,7 @@ impl From<VotingType> for casper_dao_contracts::voting::voting_state_machine::Vo
     }
 }
 
-#[derive(Debug, Default, Clone, Parameter)]
+#[derive(Debug, Default, Clone, Copy, Parameter)]
 #[param(name = "choice", regex = "in favor|against|yes|no|Yes|No")]
 pub enum Choice {
     InFavor,

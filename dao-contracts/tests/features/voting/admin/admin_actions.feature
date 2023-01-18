@@ -9,30 +9,28 @@ Background:
     | VA1     | true  | 1000        |                 |
     | VA2     | true  | 1000        |                 |
     | VA3     | true  | 1000        |                 |
+  Then Alice is not whitelisted in ReputationToken contract 
+  And Bob is whitelisted in ReputationToken contract 
+  And Bob is not the owner of ReputationToken contract
 
 Scenario Outline: Voting passed, action applied
-  When VA1 starts voting with the following config
+  When Admin voting with id 0 created by VA1 passes
     | voting_contract | stake | arg1            | arg2     | arg3      |
-    | Admin           | 500   | ReputationToken | <action> | <subject> |
-  When voters vote in Admin informal voting with id 0
-    | user    | REP stake  | choice   | 
-   #| VA1     | 500        | yes      | - automatically voted by the system
-    | VA2     | 500        | yes      |
-    | VA3     | 500        | yes      |
-  And 5 days passed
-  And informal voting with id 0 ends in Admin contract
-  And 2 days passed
-  And voters vote in Admin formal voting with id 0
-    | user    | REP stake  | choice   | 
-   #| VA1     | 500        | yes      | - automatically voted by the system
-    | VA2     | 500        | yes      |
-    | VA3     | 500        | yes      |
-  And 5 days passed
-  And formal voting with id 0 ends in Admin contract
+    | Admin           | 100   | ReputationToken | <action> | <subject> |
   Then <subject> <result>
-
   Examples:
     | action                | subject | result                                         |
     | add_to_whitelist      | Alice   | is whitelisted in ReputationToken contract     |
     | remove_from_whitelist | Bob     | is not whitelisted in ReputationToken contract |
     | change_ownership      | Bob     | is the owner of ReputationToken contract       |
+
+Scenario Outline: Voting rejected, action not applied
+  When Admin voting with id 0 created by VA1 fails
+    | voting_contract | stake | arg1            | arg2     | arg3      |
+    | Admin           | 100   | ReputationToken | <action> | <subject> |
+  Then <subject> <result>
+  Examples:
+    | action                | subject | result                                         |
+    | add_to_whitelist      | Alice   | is not whitelisted in ReputationToken contract |
+    | remove_from_whitelist | Bob     | is whitelisted in ReputationToken contract     |
+    | change_ownership      | Bob     | is not the owner of ReputationToken contract   |

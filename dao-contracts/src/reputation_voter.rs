@@ -6,7 +6,6 @@ use casper_dao_utils::{
     BlockTime,
     ContractCall,
     DocumentHash,
-    Mapping,
 };
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
@@ -133,7 +132,6 @@ pub trait ReputationVoterContractInterface {
 pub struct ReputationVoterContract {
     refs: ContractRefsStorage,
     voting: VotingEngine,
-    reputation_votings: Mapping<VotingId, ReputationVoting>,
     access_control: AccessControl,
 }
 
@@ -194,16 +192,6 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
         let info = self
             .voting
             .create_voting(caller(), stake, voting_configuration);
-
-        let reputation_voting = ReputationVoting {
-            action: action.clone(),
-            account,
-            amount,
-            document_hash: document_hash.clone(),
-        };
-
-        self.reputation_votings
-            .set(&info.voting_id, reputation_voting);
 
         ReputationVotingCreated::new(account, action, amount, document_hash, info).emit();
     }

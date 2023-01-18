@@ -7,11 +7,13 @@ use casper_types::bytesrepr::{Bytes, ToBytes};
 
 use crate::{
     common::{
+        helpers::{to_seconds, value_to_bytes},
         params::{
             voting::{Ballot, Voting, VotingType},
             Account,
             Balance,
             Contract,
+            TimeUnit,
         },
         DaoWorld,
     },
@@ -40,11 +42,13 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
         Contract::KycVoter => {
             let subject_address = voting.get_parsed_arg::<Account>(0);
             let subject_address = world.get_address(&subject_address);
+
             VotingSetup::Kyc(subject_address, DocumentHash::default())
         }
         Contract::SlashingVoter => {
             let address_to_slash = voting.get_parsed_arg::<Account>(0);
             let address_to_slash = world.get_address(&address_to_slash);
+
             let slash_ratio = voting.get_parsed_arg::<f32>(1);
 
             VotingSetup::Slasher(address_to_slash, (slash_ratio * 1000.0) as u32)
@@ -54,9 +58,18 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
             let variable_repository_address = world.get_address(&variable_repository_address);
 
             let key = voting.get_parsed_arg::<String>(1);
-            let value = Bytes::from(0.to_bytes().unwrap_or_default());
 
-            VotingSetup::Repository(variable_repository_address, key, value, None)
+            let value = voting.get_parsed_arg::<String>(2);
+            let value = value_to_bytes(&value, &key);
+
+            let activation_time = voting.get_parsed_arg_or_none::<String>(3).map(|s| {
+                let values = s.split(" ").collect::<Vec<_>>();
+                let value = values.get(0).and_then(|s| s.parse().ok()).unwrap();
+                let unit = values.get(1).and_then(|s| s.parse().ok()).unwrap();
+                to_seconds(value, unit)
+            });
+
+            VotingSetup::Repository(variable_repository_address, key, value, activation_time)
         }
         Contract::SimpleVoter => VotingSetup::Simple(Default::default()),
         Contract::ReputationVoter => {
@@ -78,6 +91,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
     }
 }
 
+#[derive(Debug)]
 pub enum VotingSetup {
     Admin(Address, AdminAction, Address),
     Kyc(Address, DocumentHash),

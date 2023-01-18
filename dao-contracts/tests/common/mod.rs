@@ -31,7 +31,7 @@ use casper_dao_contracts::{
 };
 use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
+    bytesrepr::{Bytes, FromBytes, ToBytes},
     U512,
 };
 
@@ -75,8 +75,14 @@ impl DaoWorld {
     }
 
     // gets variable value
-    pub fn _get_variable(&self, name: String) -> Bytes {
+    pub fn get_raw_variable(&self, name: String) -> Bytes {
         self.variable_repository.get(name).unwrap()
+    }
+
+    // gets variable value
+    pub fn get_variable<T: FromBytes>(&self, name: String) -> T {
+        let bytes = self.variable_repository.get(name).unwrap();
+        T::from_bytes(&bytes).unwrap().0
     }
 }
 
