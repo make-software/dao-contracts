@@ -9,12 +9,27 @@ use casper_types::U512;
 
 #[casper_contract_interface]
 pub trait CSPRRateProviderContractInterface {
+    ///  Contract constructor.
+    ///  * sets the initial CSPR:Fiat rate.
+    ///  * sets the deployer as the owner.
+    ///
+    ///  see [`Owner`](Owner::init())
     fn init(&mut self, rate: U512);
+    /// Gets the current CSPR:Fiat rate.
     fn get_rate(&self) -> U512;
+    /// Updates the current CSPR:Fiat rate.
+    ///
+    /// # Errors
+    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if the caller is not the contract owner.
     fn set_rate(&mut self, rate: U512);
+    /// Returns the address of the current owner.
     fn get_owner(&self) -> Option<Address>;
 }
 
+/// CSPR Rate provider contract allows to read and write the current CSPR:Fiat rate.
+/// Only the owner is eligible to update the rate, but any account can read the current value.
+///
+/// For details see [CSPRRateProviderContractInterface](CSPRRateProviderContractInterface).
 #[derive(Instance)]
 pub struct CSPRRateProviderContract {
     owner: Owner,
