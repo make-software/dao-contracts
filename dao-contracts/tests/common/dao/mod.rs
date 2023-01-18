@@ -28,6 +28,7 @@ macro_rules! on_contract {
             Contract::SimpleVoter => $world.simple_voter.$call( $($arg),* ),
             Contract::ReputationVoter => $world.reputation_voter.$call( $($arg),* ),
             Contract::Onboarding => $world.onboarding.$call( $($arg),* ),
+            invalid_contract => panic!("invalid contract {:?}", invalid_contract),
         }
     };
     ($world:ident, $caller:ident, $contract:ident, $call:ident($($arg:expr),*)) => {
@@ -44,6 +45,7 @@ macro_rules! on_contract {
             Contract::SimpleVoter => $world.simple_voter.as_account($caller).$call( $($arg),* ),
             Contract::ReputationVoter => $world.reputation_voter.as_account($caller).$call( $($arg),* ),
             Contract::Onboarding => $world.onboarding.as_account($caller).$call( $($arg),* ),
+            invalid_contract => panic!("invalid contract {:?}", invalid_contract),
         }
     }
 }

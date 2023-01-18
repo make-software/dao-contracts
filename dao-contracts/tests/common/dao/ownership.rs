@@ -35,7 +35,11 @@ impl DaoWorld {
     }
 
     pub fn get_owner(&mut self, contract: &Contract) -> Option<Address> {
-        on_contract!(self, contract, get_owner())
+        if let Contract::CSPRRateProvider = contract {
+            self.rate_provider.get_owner()
+        } else {
+            on_contract!(self, contract, get_owner())
+        }
     }
 
     pub fn change_ownership(

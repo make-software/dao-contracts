@@ -104,3 +104,7 @@ test-va: build-dao-contracts
 test-voting: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_voting
+
+test-rate-provider: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_rate_provider

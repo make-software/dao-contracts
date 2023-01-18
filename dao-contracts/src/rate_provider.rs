@@ -2,6 +2,7 @@ use casper_dao_modules::Owner;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
+    Address,
     Variable,
 };
 use casper_types::U512;
@@ -11,6 +12,7 @@ pub trait CSPRRateProviderContractInterface {
     fn init(&mut self, rate: U512);
     fn get_rate(&self) -> U512;
     fn set_rate(&mut self, rate: U512);
+    fn get_owner(&self) -> Option<Address>;
 }
 
 #[derive(Instance)]
@@ -34,5 +36,9 @@ impl CSPRRateProviderContractInterface for CSPRRateProviderContract {
         self.owner.ensure_owner();
 
         self.rate.set(rate);
+    }
+
+    fn get_owner(&self) -> Option<Address> {
+        self.owner.get_owner()
     }
 }

@@ -1,5 +1,6 @@
+use casper_dao_utils::TestContract;
 use casper_types::U512;
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use crate::common::{
     params::{Account, Balance},
@@ -28,4 +29,15 @@ fn assert_variable(world: &mut DaoWorld, key: String, value: String) {
 #[given(expr = "the price of USDT is {balance} CSPR")]
 fn set_cspr_rate(world: &mut DaoWorld, rate: Balance) {
     let _ = world.rate_provider.set_rate(*rate);
+}
+
+#[when(expr = "{account} sets the price of USDT to {balance} CSPR")]
+fn set_cspr_rate_by(world: &mut DaoWorld, account: Account, rate: Balance) {
+    let account = world.get_address(&account);
+    let _ = world.rate_provider.as_account(account).set_rate(*rate);
+}
+
+#[then(expr = "the price of USDT is {balance} CSPR")]
+fn assert_cspr_rate(world: &mut DaoWorld, expected_rate: Balance) {
+    assert_eq!(*expected_rate, world.rate_provider.get_rate());
 }
