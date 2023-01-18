@@ -1,15 +1,21 @@
 use cucumber::{gherkin::Step, given};
 
-use crate::common::{config::UserConfiguration, params::{Account, Contract}, DaoWorld};
+use crate::common::{
+    config::UserConfiguration,
+    params::{Account, Contract},
+    DaoWorld,
+};
 
 macro_rules! transfer_ownership_to_admin {
     ($world:ident, $contract:expr) => {
-        $world.change_ownership(
-            &$contract, 
-            &Account::Owner, 
-            &Account::Contract(Contract::Admin)
-        ).unwrap();
-    }
+        $world
+            .change_ownership(
+                &$contract,
+                &Account::Owner,
+                &Account::Contract(Contract::Admin),
+            )
+            .unwrap();
+    };
 }
 
 #[given(expr = "users")]
@@ -52,7 +58,7 @@ fn users_setup(world: &mut DaoWorld, step: &Step) {
         world.set_cspr_balance(account, cspr_balance);
     }
 
-    // A hack - the owner/deployer should be removed from the whitelist but if we do so, 
+    // A hack - the owner/deployer should be removed from the whitelist but if we do so,
     // some calls fail (the owner/deployer is the default caller).
     // TestEnv does not allow to set a contract as the call executor, so we need leave the owner/deployer
     // on the whitelist.
