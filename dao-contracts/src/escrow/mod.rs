@@ -1,4 +1,5 @@
 pub mod bid;
+pub mod bidding;
 pub mod events;
 pub mod job;
 pub mod job_offer;

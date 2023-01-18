@@ -17,10 +17,7 @@ use super::{
 use crate::{voting::VotingId, Configuration};
 
 #[derive(Instance)]
-pub struct JobStorage {
-    jobs: Mapping<JobId, Job>,
-    jobs_for_voting: Mapping<VotingId, JobId>,
-    jobs_count: SequenceGenerator<JobId>,
+pub struct BidStorage {
     pub job_offers: Mapping<JobOfferId, JobOffer>,
     active_job_offers_ids: Mapping<Address, Vec<JobOfferId>>,
     job_offers_count: SequenceGenerator<JobOfferId>,
@@ -29,7 +26,7 @@ pub struct JobStorage {
     bids_count: SequenceGenerator<BidId>,
 }
 
-impl JobStorage {
+impl BidStorage {
     pub fn store_job_offer(&mut self, offer: JobOffer) {
         let poster = offer.job_poster;
         let offer_id = offer.job_offer_id;
@@ -69,27 +66,6 @@ impl JobStorage {
         job_offer_ids
     }
 
-    pub fn store_job_for_voting(&mut self, voting_id: VotingId, job_id: JobId) {
-        self.jobs_for_voting.set(&voting_id, job_id);
-    }
-
-    pub fn get_job(&self, job_id: JobId) -> Option<Job> {
-        self.jobs.get_or_none(&job_id)
-    }
-
-    pub fn get_job_by_voting_id(&self, voting_id: VotingId) -> Job {
-        let job_id = self
-            .jobs_for_voting
-            .get(&voting_id)
-            .unwrap_or_revert_with(Error::VotingIdNotFound);
-
-        self.get_job_or_revert(job_id)
-    }
-
-    pub fn get_job_or_revert(&self, job_id: JobId) -> Job {
-        self.jobs.get_or_revert(&job_id)
-    }
-
     pub fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer> {
         self.job_offers.get_or_none(&job_offer_id)
     }
@@ -118,16 +94,8 @@ impl JobStorage {
             .unwrap_or_revert_with(Error::BidNotFound)
     }
 
-    pub fn store_job(&mut self, job: Job) {
-        self.jobs.set(&job.job_id(), job);
-    }
-
     pub fn job_offers_count(&self) -> u32 {
         self.job_offers_count.get_current_value()
-    }
-
-    pub fn jobs_count(&self) -> u32 {
-        self.jobs_count.get_current_value()
     }
 
     pub fn bids_count(&self) -> u32 {
@@ -142,10 +110,6 @@ impl JobStorage {
         self.job_offers_count.next_value()
     }
 
-    pub fn next_job_id(&mut self) -> JobId {
-        self.jobs_count.next_value()
-    }
-
     pub fn get_bids_count(&self, offer_id: JobOfferId) -> u32 {
         self.job_offers_bids.len(offer_id)
     }
@@ -153,5 +117,47 @@ impl JobStorage {
     pub fn get_job_offer_configuration(&self, job: &Job) -> Configuration {
         let job_offer = self.get_job_offer_or_revert(job.job_offer_id());
         job_offer.configuration
+    }
+}
+
+#[derive(Instance)]
+pub struct JobStorage {
+    jobs: Mapping<JobId, Job>,
+    jobs_for_voting: Mapping<VotingId, JobId>,
+    jobs_count: SequenceGenerator<JobId>,
+}
+
+impl JobStorage {
+    pub fn store_job_for_voting(&mut self, voting_id: VotingId, job_id: JobId) {
+        self.jobs_for_voting.set(&voting_id, job_id);
+    }
+
+    pub fn get_job(&self, job_id: JobId) -> Option<Job> {
+        self.jobs.get_or_none(&job_id)
+    }
+
+    pub fn get_job_by_voting_id(&self, voting_id: VotingId) -> Job {
+        let job_id = self
+            .jobs_for_voting
+            .get(&voting_id)
+            .unwrap_or_revert_with(Error::VotingIdNotFound);
+
+        self.get_job_or_revert(job_id)
+    }
+
+    pub fn get_job_or_revert(&self, job_id: JobId) -> Job {
+        self.jobs.get_or_revert(&job_id)
+    }
+
+    pub fn store_job(&mut self, job: Job) {
+        self.jobs.set(&job.job_id(), job);
+    }
+
+    pub fn jobs_count(&self) -> u32 {
+        self.jobs_count.get_current_value()
+    }
+
+    pub fn next_job_id(&mut self) -> JobId {
+        self.jobs_count.next_value()
     }
 }
