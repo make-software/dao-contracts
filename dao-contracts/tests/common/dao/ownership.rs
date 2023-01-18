@@ -22,18 +22,6 @@ impl DaoWorld {
         self.whitelist(contract, caller, user)
     }
 
-    pub fn whitelist_contract(
-        &mut self,
-        contract: &Contract,
-        caller: &Account,
-        contract_to_whitelist: &Contract,
-    ) -> Result<(), casper_dao_utils::Error> {
-        let address = self.get_contract_address(contract_to_whitelist);
-        let caller = self.get_address(caller);
-
-        self.whitelist(contract, caller, address)
-    }
-
     pub fn remove_from_whitelist(
         &mut self,
         contract: &Contract,
