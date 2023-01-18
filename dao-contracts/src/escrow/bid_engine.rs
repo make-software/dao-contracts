@@ -26,7 +26,7 @@ use crate::{
 };
 
 #[derive(Instance)]
-pub struct Bidding {
+pub struct BidEngine {
     #[scoped = "contract"]
     bid_storage: BidStorage,
     #[scoped = "contract"]
@@ -39,7 +39,7 @@ pub struct Bidding {
     refs: ContractRefsWithKycStorage,
 }
 
-impl Bidding {
+impl BidEngine {
     delegate! {
         to self.bid_storage {
             pub fn job_offers_count(&self) -> u32;
@@ -193,7 +193,7 @@ impl Bidding {
     }
 }
 
-impl Bidding {
+impl BidEngine {
     fn stake_cspr_or_reputation_for_bid(
         &mut self,
         reputation_stake: U512,
