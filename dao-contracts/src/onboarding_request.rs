@@ -31,8 +31,8 @@ pub trait OnboardingRequestContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -52,6 +52,7 @@ pub trait OnboardingRequestContractInterface {
     fn create_voting(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote over a job
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
 
     /// # Errors
@@ -60,13 +61,14 @@ pub trait OnboardingRequestContractInterface {
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
     /// with a refund or convert the requestor to a VA.
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;

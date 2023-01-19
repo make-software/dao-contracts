@@ -28,8 +28,8 @@ pub trait RepoVoterContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract).
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -40,9 +40,9 @@ pub trait RepoVoterContractInterface {
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
     /// Creates new RepoVoter voting.
     ///
-    /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
+    /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::variable_repository::VariableRepositoryContract) instance that will be updated
     ///
-    /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
+    /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
     fn create_voting(
         &mut self,
         variable_repo_to_edit: Address,
@@ -55,9 +55,9 @@ pub trait RepoVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -84,7 +84,7 @@ pub trait RepoVoterContractInterface {
 
 /// RepoVoterContract
 ///
-/// It is responsible for managing variables held in [Variable Repo](crate::VariableRepositoryContract).
+/// It is responsible for managing variables held in [Variable Repo](crate::variable_repository::VariableRepositoryContract).
 ///
 /// Each change to the variable is being voted on, and when the voting passes, a change is made at given time.
 #[derive(Instance)]

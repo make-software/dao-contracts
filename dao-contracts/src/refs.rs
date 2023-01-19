@@ -10,11 +10,11 @@ use crate::{
 
 /// Provides references to common contracts that are used by most of the voting contracts.
 pub trait ContractRefs {
-    /// Returns a reference to [Reputation Token](crate::ReputationContract) connected to the contract
+    /// Returns a reference to [Reputation Token](crate::reputation::ReputationContract) connected to the contract
     fn reputation_token(&self) -> ReputationContractCaller;
-    /// Returns a reference to [Variable Repository](crate::VariableRepositoryContract) connected to the contract
+    /// Returns a reference to [Variable Repository](crate::variable_repository::VariableRepositoryContract) connected to the contract
     fn variable_repository(&self) -> VariableRepositoryContractCaller;
-    /// Returns a reference to [VA Token](crate::VaNftContract) connected to the contract
+    /// Returns a reference to [VA Token](crate::va_nft::VaNftContract) connected to the contract
     fn va_token(&self) -> VaNftContractCaller;
 }
 
@@ -38,12 +38,12 @@ impl ContractRefsStorage {
         self.va_token.set(va_token);
     }
 
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     pub fn reputation_token_address(&self) -> Address {
         self.reputation_token.get_or_revert()
     }
 
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     pub fn variable_repository_address(&self) -> Address {
         self.variable_repository.get_or_revert()
     }
@@ -63,7 +63,7 @@ impl ContractRefs for ContractRefsStorage {
     }
 }
 
-/// A decorated [ContractRefsStorage] module that additionally stores addresses an address of [KYC Token](crate::KycNftContract).
+/// A decorated [ContractRefsStorage] module that additionally stores addresses an address of [KYC Token](crate::kyc_nft::KycNftContract).
 #[derive(Instance)]
 pub struct ContractRefsWithKycStorage {
     #[scoped = "contract"]
@@ -91,12 +91,12 @@ impl ContractRefsWithKycStorage {
         self.kyc_token.set(kyc_token);
     }
 
-    /// Returns a reference to [KYC Token](crate::KycNftContract) connected to the contract
+    /// Returns a reference to [KYC Token](crate::kyc_nft::KycNftContract) connected to the contract
     pub fn kyc_token(&self) -> KycNftContractCaller {
         KycNftContractCaller::at(self.kyc_token.get_or_revert())
     }
 
-    /// Returns the address of [KYC Token](crate::KycNftContract) connected to the contract
+    /// Returns the address of [KYC Token](crate::kyc_nft::KycNftContract) connected to the contract
     pub fn kyc_token_address(&self) -> Address {
         self.kyc_token.get_or_revert()
     }
