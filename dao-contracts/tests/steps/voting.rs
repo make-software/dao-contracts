@@ -82,6 +82,11 @@ fn assert_formal_voting_starts(world: &mut DaoWorld, voting_id: u32, contract: C
     assert!(voting_exists);
 }
 
+#[then(expr = "voting with id {int} in {contract} contract starts")]
+fn assert_voting_(world: &mut DaoWorld, voting_id: u32, contract: Contract) {
+    assert!(world.voting_exists(&contract, voting_id, VotingType::Informal));
+}
+
 #[then(expr = "votes in {contract} {voting_type} voting with id {int} fail")]
 fn assert_vote_fails(
     world: &mut DaoWorld,
