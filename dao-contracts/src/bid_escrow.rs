@@ -37,7 +37,6 @@ use crate::{
 use self::{job_engine::JobEngine, bid_engine::BidEngine};
 
 pub mod bid;
-pub mod bidding;
 pub mod events;
 pub mod job;
 pub mod job_offer;
