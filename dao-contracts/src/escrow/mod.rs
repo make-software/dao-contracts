@@ -1,7 +1,8 @@
 pub mod bid;
-pub mod bidding;
+pub mod bid_engine;
 pub mod events;
 pub mod job;
+pub mod job_engine;
 pub mod job_offer;
 pub mod onboarding;
 pub mod storage;
