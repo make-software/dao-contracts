@@ -33,70 +33,57 @@ async function main() {
       1) VariableRepositoryContract
       2) ReputationContract
       3) DaoIdsContract
-      4) VaNftContract
-      5) KycNftContract
   `);
 
-  let contractsConfig = [
-    {
-      name: 'VariableRepositoryContract',
-      wasmPath: path.resolve(__dirname, config.contracts.VariableRepositoryContract.wasm_relative_path),
-      args: [],
-      paymentAmount: config.contracts.VariableRepositoryContract.payment_amount,
-    },
-    {
-      name: 'ReputationContract',
-      wasmPath: path.resolve(__dirname, config.contracts.ReputationContract.wasm_relative_path),
-      args: [],
-      paymentAmount: config.contracts.ReputationContract.payment_amount,
-    },
-    {
-      name: 'VaNftContract',
-      wasmPath: path.resolve(__dirname, config.contracts.VaNftContract.wasm_relative_path),
-      args: {
-        name: CLValueBuilder.string(config.contracts.VaNftContract.args.name),
-        symbol: CLValueBuilder.string(config.contracts.VaNftContract.args.symbol),
-        base_uri: CLValueBuilder.string(config.contracts.VaNftContract.args.base_uri),
-      },
-      paymentAmount: config.contracts.VaNftContract.payment_amount,
-    },
-    {
-      name: 'KycNftContract',
-      wasmPath: path.resolve(__dirname, config.contracts.KycNftContract.wasm_relative_path),
-      args: {
-        name: CLValueBuilder.string(config.contracts.KycNftContract.args.name),
-        symbol: CLValueBuilder.string(config.contracts.KycNftContract.args.symbol),
-        base_uri: CLValueBuilder.string(config.contracts.KycNftContract.args.base_uri),
-      },
-      paymentAmount: config.contracts.KycNftContract.payment_amount,
-    },
-    {
-      name: 'DaoIdsContract',
-      wasmPath: path.resolve(__dirname, config.contracts.DaoIdsContract.wasm_relative_path),
-      args: [],
-      paymentAmount: config.contracts.DaoIdsContract.payment_amount,
-    },
-  ];
-
-  let contractDeploymentResults = await Promise.all(contractsConfig.map(async (cfg) => {
+  let contractDeploymentResults = await Promise.all(['VariableRepositoryContract', 'ReputationContract', 'DaoIdsContract'].map(async (cn) => {
     let deploy = await installContract(
       contractClient,
       rpcAPI,
-      cfg.wasmPath,
-      cfg.args,
-      cfg.paymentAmount,
+      path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
+      [],
+      config.contracts[cn].payment_amount,
       status.chainspec_name,
       pk,
     );
 
     const contract = parseWriteContract(deploy);
 
-    return { name: cfg.name, ...contract, deployHash: deploy.deploy.hash };
+    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
   }));
+
+  let contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), {});
 
   contractDeploymentResults.forEach(logContractOutput);
 
-  let contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), {});
+  console.log(`
+    Info: Installing contracts:
+      4) VaNftContract
+      5) KycNftContract
+  `);
+
+  contractDeploymentResults = await Promise.all(['VaNftContract', 'KycNftContract'].map(async (cn) => {
+    let deploy = await installContract(
+      contractClient,
+      rpcAPI,
+      path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
+      {
+        name: CLValueBuilder.string(config.contracts[cn].args.name),
+        symbol: CLValueBuilder.string(config.contracts[cn].args.symbol),
+        base_uri: CLValueBuilder.string(config.contracts[cn].args.base_uri),
+      },
+      config.contracts[cn].payment_amount,
+      status.chainspec_name,
+      pk,
+    );
+
+    const contract = parseWriteContract(deploy);
+
+    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+  }));
+
+  contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
+
+  contractDeploymentResults.forEach(logContractOutput);
 
   console.log(`
     Info: Installing contracts:
@@ -105,116 +92,73 @@ async function main() {
       8) ReputationVoterContract
       9) RepoVoterContract
       10) AdminContract
-      11) OnboardingRequestContract
-      12) KycVoterContract
-      13) BidEscrowContract
   `);
 
-  contractsConfig = [
-    {
-      name: 'SlashingVoterContract',
-      wasmPath: path.resolve(__dirname, config.contracts.SlashingVoterContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.SlashingVoterContract.payment_amount,
-    },
-    {
-      name: 'SimpleVoterContract',
-      wasmPath: path.resolve(__dirname, config.contracts.SimpleVoterContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.SimpleVoterContract.payment_amount,
-    },
-    {
-      name: 'ReputationVoterContract',
-      wasmPath: path.resolve(__dirname, config.contracts.ReputationVoterContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.ReputationVoterContract.payment_amount,
-    },
-    {
-      name: 'RepoVoterContract',
-      wasmPath: path.resolve(__dirname, config.contracts.RepoVoterContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.RepoVoterContract.payment_amount,
-    },
-    {
-      name: 'AdminContract',
-      wasmPath: path.resolve(__dirname, config.contracts.AdminContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.AdminContract.payment_amount,
-    },
-    {
-      name: 'OnboardingRequestContract',
-      wasmPath: path.resolve(__dirname, config.contracts.OnboardingRequestContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.OnboardingRequestContract.payment_amount,
-    },
-    {
-      name: 'KycVoterContract',
-      wasmPath: path.resolve(__dirname, config.contracts.KycVoterContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.KycVoterContract.payment_amount,
-    },
-    {
-      name: 'BidEscrowContract',
-      wasmPath: path.resolve(__dirname, config.contracts.BidEscrowContract.wasm_relative_path),
-      args: {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
-      },
-      paymentAmount: config.contracts.BidEscrowContract.payment_amount,
-    },
-  ];
-
-  contractDeploymentResults = await Promise.all(contractsConfig.map(async (cfg) => {
+  contractDeploymentResults = await Promise.all([
+    'SlashingVoterContract',
+    'SimpleVoterContract',
+    'ReputationVoterContract',
+    'RepoVoterContract',
+    'AdminContract',
+  ].map(async (cn) => {
     let deploy = await installContract(
       contractClient,
       rpcAPI,
-      cfg.wasmPath,
-      cfg.args,
-      cfg.paymentAmount,
+      path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
+      {
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
+      },
+      config.contracts[cn].payment_amount,
       status.chainspec_name,
       pk,
     );
 
     const contract = parseWriteContract(deploy);
 
-    return { name: cfg.name, ...contract, deployHash: deploy.deploy.hash };
+    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
   }));
+
+  contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
 
   contractDeploymentResults.forEach(logContractOutput);
 
+  console.log(`
+    Info: Installing contracts:
+      11) OnboardingRequestContract
+      12) KycVoterContract
+      13) BidEscrowContract
+  `);
+
+  contractDeploymentResults = await Promise.all([
+    'OnboardingRequestContract',
+    'KycVoterContract',
+    'BidEscrowContract',
+  ].map(async (cn) => {
+    let deploy = await installContract(
+      contractClient,
+      rpcAPI,
+      path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
+      {
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
+      },
+      config.contracts[cn].payment_amount,
+      status.chainspec_name,
+      pk,
+    );
+
+    const contract = parseWriteContract(deploy);
+
+    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+  }));
+
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
+
+  contractDeploymentResults.forEach(logContractOutput);
 
   console.log(`
     Info: Setupping contracts:
