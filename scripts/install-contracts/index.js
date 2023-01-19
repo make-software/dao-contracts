@@ -10,7 +10,6 @@ const {
 const path = require('path');
 const {
   installContract,
-  prepareContractCallDeploy,
   waitForDeploy,
   parseExecutionResult,
   parseWriteContract,
@@ -25,8 +24,6 @@ const rpcAPI = new CasperServiceByJsonRPC(config.node_rpc_uri);
 const contractClient = new Contracts.Contract(new CasperClient(config.node_rpc_uri));
 
 async function main() {
-  const baseWasmPath = path.resolve(__dirname, '../../target/wasm32-unknown-unknown/release');
-
   const status = await rpcAPI.getStatus();
 
   const pk = Keys.Ed25519.loadKeyPairFromPrivateFile(config.private_key_path);
@@ -43,41 +40,41 @@ async function main() {
   let contractsConfig = [
     {
       name: 'VariableRepositoryContract',
-      wasmPath: `${baseWasmPath}/variable_repository_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.VariableRepositoryContract.wasm_relative_path),
       args: [],
-      paymentAmount: '108880890230',
+      paymentAmount: config.contracts.VariableRepositoryContract.payment_amount,
     },
     {
       name: 'ReputationContract',
-      wasmPath: `${baseWasmPath}/reputation_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.ReputationContract.wasm_relative_path),
       args: [],
-      paymentAmount: '183129693550',
+      paymentAmount: config.contracts.ReputationContract.payment_amount,
     },
     {
       name: 'VaNftContract',
-      wasmPath: `${baseWasmPath}/va_nft_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.VaNftContract.wasm_relative_path),
       args: {
-        name: CLValueBuilder.string(config.contracts.VaNftContract.name),
-        symbol: CLValueBuilder.string(config.contracts.VaNftContract.symbol),
-        base_uri: CLValueBuilder.string(config.contracts.VaNftContract.base_uri),
+        name: CLValueBuilder.string(config.contracts.VaNftContract.args.name),
+        symbol: CLValueBuilder.string(config.contracts.VaNftContract.args.symbol),
+        base_uri: CLValueBuilder.string(config.contracts.VaNftContract.args.base_uri),
       },
-      paymentAmount: '119826860400',
+      paymentAmount: config.contracts.VaNftContract.payment_amount,
     },
     {
       name: 'KycNftContract',
-      wasmPath: `${baseWasmPath}/kyc_nft_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.KycNftContract.wasm_relative_path),
       args: {
-        name: CLValueBuilder.string(config.contracts.KycNftContract.name),
-        symbol: CLValueBuilder.string(config.contracts.KycNftContract.symbol),
-        base_uri: CLValueBuilder.string(config.contracts.KycNftContract.base_uri),
+        name: CLValueBuilder.string(config.contracts.KycNftContract.args.name),
+        symbol: CLValueBuilder.string(config.contracts.KycNftContract.args.symbol),
+        base_uri: CLValueBuilder.string(config.contracts.KycNftContract.args.base_uri),
       },
-      paymentAmount: '119828799090',
+      paymentAmount: config.contracts.KycNftContract.payment_amount,
     },
     {
       name: 'DaoIdsContract',
-      wasmPath: `${baseWasmPath}/dao_ids_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.DaoIdsContract.wasm_relative_path),
       args: [],
-      paymentAmount: '60562436540',
+      paymentAmount: config.contracts.DaoIdsContract.payment_amount,
     },
   ];
 
@@ -99,13 +96,7 @@ async function main() {
 
   contractDeploymentResults.forEach(logContractOutput);
 
-  const [
-    variableRepositoryContract,
-    reputationContract,
-    vaNFTContract,
-    kycNFTContract,
-    daoIdsContract,
-  ] = contractDeploymentResults;
+  let contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), {});
 
   console.log(`
     Info: Installing contracts:
@@ -122,86 +113,86 @@ async function main() {
   contractsConfig = [
     {
       name: 'SlashingVoterContract',
-      wasmPath: `${baseWasmPath}/slashing_voter_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.SlashingVoterContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '252363913860',
+      paymentAmount: config.contracts.SlashingVoterContract.payment_amount,
     },
     {
       name: 'SimpleVoterContract',
-      wasmPath: `${baseWasmPath}/simple_voter_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.SimpleVoterContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '223485461700',
+      paymentAmount: config.contracts.SimpleVoterContract.payment_amount,
     },
     {
       name: 'ReputationVoterContract',
-      wasmPath: `${baseWasmPath}/reputation_voter_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.ReputationVoterContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '226933514950',
+      paymentAmount: config.contracts.ReputationVoterContract.payment_amount,
     },
     {
       name: 'RepoVoterContract',
-      wasmPath: `${baseWasmPath}/repo_voter_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.RepoVoterContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '224252440240',
+      paymentAmount: config.contracts.RepoVoterContract.payment_amount,
     },
     {
       name: 'AdminContract',
-      wasmPath: `${baseWasmPath}/admin_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.AdminContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '221501219360',
+      paymentAmount: config.contracts.AdminContract.payment_amount,
     },
     {
       name: 'OnboardingRequestContract',
-      wasmPath: `${baseWasmPath}/onboarding_request_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.OnboardingRequestContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        kyc_token: stringToCLKey(kycNFTContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '257216800760',
+      paymentAmount: config.contracts.OnboardingRequestContract.payment_amount,
     },
     {
       name: 'KycVoterContract',
-      wasmPath: `${baseWasmPath}/kyc_voter_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.KycVoterContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        kyc_token: stringToCLKey(kycNFTContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '225739722330',
+      paymentAmount: config.contracts.KycVoterContract.payment_amount,
     },
     {
       name: 'BidEscrowContract',
-      wasmPath: `${baseWasmPath}/bid_escrow_contract.wasm`,
+      wasmPath: path.resolve(__dirname, config.contracts.BidEscrowContract.wasm_relative_path),
       args: {
-        variable_repo: stringToCLKey(variableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(reputationContract.contractHash),
-        kyc_token: stringToCLKey(kycNFTContract.contractHash),
-        va_token: stringToCLKey(vaNFTContract.contractHash),
+        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
+        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
-      paymentAmount: '314222329770',
+      paymentAmount: config.contracts.BidEscrowContract.payment_amount,
     },
   ];
 
@@ -223,314 +214,88 @@ async function main() {
 
   contractDeploymentResults.forEach(logContractOutput);
 
-  const [
-    slashingVoterContract,
-    simpleVoterContract,
-    reputationVoterContract,
-    repoVoterContract,
-    adminContract,
-    onboardingRequestContract,
-    kycVoterContract,
-    bidEscrowContract,
-  ] = contractDeploymentResults;
+  contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
 
   console.log(`
-    Info: Whitelisting contracts:
+    Info: Setupping contracts:
   `);
 
-  const contractCallsConfig = [
-    // 1) OnboardingRequestContract <- SlashingVoterContract
-    {
-      name: "OnboardingRequestContract->add_to_whitelist(SlashingVoterContract)",
-      contract: onboardingRequestContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "361497030",
-    },
-    // 2) DaoIdsContract <- KycVoterContract
-    //    DaoIdsContract <- BidEscrowContract
-    //    DaoIdsContract <- OnboardingRequestContract
-    //    DaoIdsContract <- SlashingVoterContract
-    //    DaoIdsContract <- RepoVoterContract
-    //    DaoIdsContract <- ReputationVoterContract
-    //    DaoIdsContract <- SimpleVoterContract
-    //    DaoIdsContract <- AdminContract
-    {
-      name: "DaoIdsContract->add_to_whitelist(KycVoterContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(kycVoterContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(BidEscrowContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(bidEscrowContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(OnboardingRequestContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(onboardingRequestContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(SlashingVoterContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(RepoVoterContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(repoVoterContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(ReputationVoterContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(reputationVoterContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(SimpleVoterContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(simpleVoterContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    {
-      name: "DaoIdsContract->add_to_whitelist(AdminContract)",
-      contract: daoIdsContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(adminContract.contractHash),
-      }),
-      payment: "319808600",
-    },
-    // 3) ReputationContract <- AdminContract
-    {
-      name: "ReputationContract->add_to_whitelist(AdminContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(adminContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    // 4) ReputationContract <- KycVoterContract
-    //    KycNftContract <- KycVoterContract
-    {
-      name: "ReputationContract->add_to_whitelist(KycVoterContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(kycVoterContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    {
-      name: "KycNftContract->add_to_whitelist(KycVoterContract)",
-      contract: kycNFTContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(kycVoterContract.contractHash),
-      }),
-      payment: "337962950",
-    },
-    // 5) ReputationContract <- RepoVoterContract
-    //    RepoVoterContract <- RepoVoterContract
-    {
-      name: "ReputationContract->add_to_whitelist(RepoVoterContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(repoVoterContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    {
-      name: "RepoVoterContract->add_to_whitelist(RepoVoterContract)",
-      contract: repoVoterContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(repoVoterContract.contractHash),
-      }),
-      payment: "332353080",
-    },
-    // 6) ReputationContract <- ReputationVoterContract
-    {
-      name: "ReputationContract->add_to_whitelist(ReputationVoterContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(reputationVoterContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    // 7) ReputationContract <- SlashingVoterContract
-    //    VaNftContract <- SlashingVoterContract
-    //    RepoVoterContract <- SlashingVoterContract
-    //    KycVoterContract <- SlashingVoterContract
-    //    BidEscrowContract <- SlashingVoterContract
-    //    AdminContract <- SlashingVoterContract
-    {
-      name: "ReputationContract->add_to_whitelist(SlashingVoterContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    {
-      name: "VaNftContract->add_to_whitelist(SlashingVoterContract)",
-      contract: vaNFTContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "337962950",
-    },
-    {
-      name: "RepoVoterContract->add_to_whitelist(SlashingVoterContract)",
-      contract: repoVoterContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "332353080",
-    },
-    {
-      name: "KycVoterContract->add_to_whitelist(SlashingVoterContract)",
-      contract: kycVoterContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "337162130",
-    },
-    {
-      name: "BidEscrowContract->add_to_whitelist(SlashingVoterContract)",
-      contract: bidEscrowContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "365125380",
-    },
-    {
-      name: "AdminContract->add_to_whitelist(SlashingVoterContract)",
-      contract: adminContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(slashingVoterContract.contractHash),
-      }),
-      payment: "332336090",
-    },
-    // 8) RepoVoterContract <- SimpleVoterContract
-    //    ReputationContract <- SimpleVoterContract
-    {
-      name: "RepoVoterContract->add_to_whitelist(SimpleVoterContract)",
-      contract: repoVoterContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(simpleVoterContract.contractHash),
-      }),
-      payment: "332353080",
-    },
-    {
-      name: "ReputationContract->add_to_whitelist(SimpleVoterContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(simpleVoterContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    // 9) ReputationContract <- BidEscrowContract
-    //    VaNftCo?tract <- BidEscrowContract
-    //    SlashingVoterContract <- (update_bid_escrow_list) <- BidEscrowContract
-    {
-      name: "ReputationContract->add_to_whitelist(BidEscrowContract)",
-      contract: repoVoterContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(bidEscrowContract.contractHash),
-      }),
-      payment: "332353080",
-    },
-    {
-      name: "VaNftContract->add_to_whitelist(BidEscrowContract)",
-      contract: vaNFTContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(bidEscrowContract.contractHash),
-      }),
-      payment: "337962950",
-    },
-    {
-      name: "SlashingVoterContract->update_bid_escrow_list([BidEscrowContract])",
-      contract: slashingVoterContract,
-      entrypoint: "update_bid_escrow_list",
-      args: RuntimeArgs.fromMap({
-        bid_escrows: CLValueBuilder.list([stringToCLKey(bidEscrowContract.contractHash)]),
-      }),
-      payment: "114789450",
-    },
-    // 10) ReputationContract <- OnboardingRequestContract
-    //     VaNftContract <- OnboardingRequestContract
-    {
-      name: "ReputationContract->add_to_whitelist(OnboardingRequestContract)",
-      contract: reputationContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(onboardingRequestContract.contractHash),
-      }),
-      payment: "336074520",
-    },
-    {
-      name: "VaNftContract->add_to_whitelist(OnboardingRequestContract)",
-      contract: vaNFTContract,
-      entrypoint: "add_to_whitelist",
-      args: RuntimeArgs.fromMap({
-        address: stringToCLKey(onboardingRequestContract.contractHash),
-      }),
-      payment: "337962950",
-    },
-  ];
+  const contractCalls = Object.entries(config.contracts).reduce((acc, [key,contract]) => {
+    if (!contract.whitelisting) {
+      return acc;
+    }
 
-  const preparedContractCalls = contractCallsConfig.map((c) => prepareContractCallDeploy(contractClient, c, status.chainspec_name, pk));
+    const installedContract = contractsMap[key];
+    if (!installedContract) {
+      throw Error('failed to find installed contract for whitelisting');
+    }
 
-  const results = await Promise.all(preparedContractCalls.map(async (c) => {
+    contractClient.setContractHash(
+      `hash-${installedContract.contractHash}`,
+      `hash-${installedContract.contractPackageHash}`,
+    );
+
+    contract.whitelisting.contracts.forEach(cn => {
+      const contractToAdd = contractsMap[cn];
+      if (!contractToAdd) {
+        throw new Error('failed to find contract to whitelist')
+      }
+
+      const deploy = contractClient.callEntrypoint(
+        'add_to_whitelist',
+        RuntimeArgs.fromMap({
+          address: stringToCLKey(contractToAdd.contractHash),
+        }),
+        pk.publicKey,
+        status.chainspec_name,
+        contract.whitelisting.payment_amount,
+        [pk]
+      );
+
+      acc.push({ name: `${installedContract.name}->add_to_whitelist->(${contractToAdd.name})`, deploy });
+    });
+
+    return acc;
+  }, []);
+
+  if (config.contracts.SlashingVoterContract.bid_escrow_list) {
+    contractClient.setContractHash(
+      `hash-${contractsMap.SlashingVoterContract.contractHash}`,
+      `hash-${contractsMap.SlashingVoterContract.contractPackageHash}`,
+    );
+
+
+    const clKeys = config.contracts.SlashingVoterContract.bid_escrow_list.contracts.map(contractName => {
+      const contract = contractsMap[contractName];
+      if (!contract) {
+        throw new Error('failed to find contract for bid escrow list');
+      }
+
+      return stringToCLKey(contract.contractHash);
+    })
+
+    const deploy = contractClient.callEntrypoint(
+      'update_bid_escrow_list',
+      RuntimeArgs.fromMap({
+        bid_escrows: CLValueBuilder.list(clKeys),
+      }),
+      pk.publicKey,
+      status.chainspec_name,
+      config.contracts.SlashingVoterContract.bid_escrow_list.payment_amount,
+      [pk]
+    );
+
+    contractCalls.push({ name: `SlashingVoterContract->update_bid_escrow_list(${config.contracts.SlashingVoterContract.bid_escrow_list.contracts.join(',')})`, deploy });
+  }
+
+  const results = await Promise.all(contractCalls.map(async (c) => {
     await rpcAPI.deploy(c.deploy);
 
     const processedDeploy = await waitForDeploy(rpcAPI, c.deploy.hash);
 
     const executionResult = parseExecutionResult(processedDeploy);
 
-    return { ...c, actualCost: executionResult.cost, deployHash: processedDeploy.deploy.hash };
+    return { name: c.name, actualCost: executionResult.cost, deployHash: processedDeploy.deploy.hash };
   }));
 
   results.map(logContractCallOutput);

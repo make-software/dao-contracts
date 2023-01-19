@@ -20,25 +20,7 @@ async function installContract(contractClient, rpcAPI, wasmPath, rawArgs, paymen
   return processedDeploy;
 };
 
-function prepareContractCallDeploy(contractClient, contractCallConfig, chainName, pk) {
-  contractClient.setContractHash(
-    `hash-${contractCallConfig.contract.contractHash}`,
-    `hash-${contractCallConfig.contract.contractPackageHash}`,
-  );
-
-  const deploy = contractClient.callEntrypoint(
-    contractCallConfig.entrypoint,
-    contractCallConfig.args,
-    pk.publicKey,
-    chainName,
-    contractCallConfig.payment,
-    [pk]
-  );
-
-  return { ...contractCallConfig, deploy };
-}
-
-async function waitForDeploy(rpcAPI, deployHash, timeout = 60000) {
+async function waitForDeploy(rpcAPI, deployHash, timeout = 80000) {
   const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
   };
@@ -101,7 +83,6 @@ function stringToCLKey(param) {
 
 module.exports = {
   installContract,
-  prepareContractCallDeploy,
   waitForDeploy,
   parseExecutionResult,
   parseWriteContract,
