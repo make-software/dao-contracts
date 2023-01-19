@@ -10,13 +10,13 @@ use casper_dao_utils::{
     Error,
 };
 use casper_types::{URef, U512};
+use delegate::delegate;
 
 use crate::{
     escrow::{
         bid::{Bid, ReclaimBidRequest},
-        bid_engine::BidEngine,
         job::{Job, ReclaimJobRequest, SubmitJobProofRequest, WorkerType},
-        storage::JobStorage,
+        storage::{BidStorage, JobStorage},
         types::JobId,
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
@@ -37,7 +37,7 @@ pub struct JobEngine {
     #[scoped = "contract"]
     job_storage: JobStorage,
     #[scoped = "contract"]
-    bid_engine: BidEngine,
+    bid_storage: BidStorage,
     #[scoped = "contract"]
     refs: ContractRefsWithKycStorage,
     #[scoped = "contract"]
@@ -49,11 +49,18 @@ pub struct JobEngine {
 }
 
 impl JobEngine {
+    delegate! {
+        to self.job_storage {
+            pub fn jobs_count(&self) -> u32;
+            pub fn get_job(&self, job_id: JobId) -> Option<Job>;
+        }
+    }
+
     pub fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
         let mut job = self.job_storage.get_job_or_revert(job_id);
-        let job_offer = self.bid_engine.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
         let mut voting_configuration = job_offer.configuration().clone();
-        let bid = self.bid_engine.get_bid_or_revert(job.bid_id());
+        let bid = self.bid_storage.get_bid_or_revert(job.bid_id());
         let worker = caller();
 
         let submit_proof_request = SubmitJobProofRequest { proof };
@@ -62,7 +69,7 @@ impl JobEngine {
         // TODO: Emit event.
 
         if job_offer.configuration.informal_stake_reputation() && !job.stake().is_zero() {
-            let bid = self.bid_engine.get_bid(job.bid_id()).unwrap();
+            let bid = self.bid_storage.get_bid(job.bid_id()).unwrap();
             self.refs
                 .reputation_token()
                 .unstake_bid(bid.borrow().into());
@@ -120,7 +127,7 @@ impl JobEngine {
 
         let mut old_job: Job = self.job_storage.get_job_or_revert(job_id);
         let mut old_bid = self
-            .bid_engine
+            .bid_storage
             .get_bid(old_job.bid_id())
             .unwrap_or_revert_with(Error::BidNotFound);
 
@@ -140,7 +147,7 @@ impl JobEngine {
         }
 
         let reclaim_bid_request = ReclaimBidRequest {
-            new_bid_id: self.bid_engine.next_bid_id(),
+            new_bid_id: self.bid_storage.next_bid_id(),
             caller,
             cspr_stake,
             reputation_stake,
@@ -179,9 +186,9 @@ impl JobEngine {
         }
 
         self.job_storage.store_job(old_job);
-        self.bid_engine.store_bid(old_bid);
+        self.bid_storage.store_bid(old_bid);
         self.job_storage.store_job(new_job);
-        self.bid_engine.store_bid(new_bid);
+        self.bid_storage.store_bid(new_bid);
 
         // continue as normal
         self.submit_job_proof(new_job_id, proof);
@@ -197,7 +204,7 @@ impl JobEngine {
 
         self.return_job_poster_payment_and_dos_fee(&job);
 
-        let bid = self.bid_engine.get_bid(job.bid_id()).unwrap_or_revert();
+        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
 
         // redistribute cspr stake
         if let Some(cspr_stake) = bid.cspr_stake {
@@ -236,13 +243,13 @@ impl JobEngine {
 
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let job = self.job_storage.get_job_by_voting_id(voting_id);
-        let job_offer = self.bid_engine.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
         let voting_summary = self.voting.finish_voting(voting_id, voting_type);
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        let bid = self.bid_engine.get_bid(job.bid_id()).unwrap_or_revert();
+                        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
                         self.refs
                             .reputation_token()
                             .unstake_bid(bid.borrow().into());
@@ -304,7 +311,7 @@ impl JobEngine {
 
 impl JobEngine {
     fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
-        let configuration = self.bid_engine.get_job_offer_configuration(job);
+        let configuration = self.bid_storage.get_job_offer_configuration(job);
 
         let governance_wallet: Address = configuration.bid_escrow_wallet_address();
         let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
@@ -335,7 +342,7 @@ impl JobEngine {
     }
 
     fn slash_worker(&self, job: &Job) {
-        let config = self.bid_engine.get_job_offer_configuration(job);
+        let config = self.bid_storage.get_job_offer_configuration(job);
         let worker_balance = self.refs.reputation_token().balance_of(job.worker());
         let amount_to_burn = config.apply_default_reputation_slash_to(worker_balance);
         self.refs
@@ -344,7 +351,7 @@ impl JobEngine {
     }
 
     fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
-        let job_offer = self.bid_engine.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
         cspr::withdraw(job.poster(), job.payment() + job_offer.dos_fee);
     }
 
@@ -353,7 +360,7 @@ impl JobEngine {
     }
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
-        let configuration = self.bid_engine.get_job_offer_configuration(job);
+        let configuration = self.bid_storage.get_job_offer_configuration(job);
 
         let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
         let reputation_to_redistribute =
@@ -370,7 +377,7 @@ impl JobEngine {
     }
 
     fn mint_and_redistribute_reputation_for_external_worker(&mut self, job: &Job) {
-        let configuration = self.bid_engine.get_job_offer_configuration(job);
+        let configuration = self.bid_storage.get_job_offer_configuration(job);
         let reputation_to_mint = configuration.apply_reputation_conversion_rate_to(job.payment());
         let reputation_to_redistribute =
             configuration.apply_default_policing_rate_to(reputation_to_mint);
@@ -408,7 +415,7 @@ impl JobEngine {
     }
 
     fn burn_external_worker_reputation(&self, job: &Job) {
-        let config = self.bid_engine.get_job_offer_configuration(job);
+        let config = self.bid_storage.get_job_offer_configuration(job);
 
         let stake = config.apply_reputation_conversion_rate_to(job.external_worker_cspr_stake());
         self.refs.reputation_token().burn(job.worker(), stake);
@@ -417,7 +424,7 @@ impl JobEngine {
     fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
         let to_redistribute = self.redistribute_to_governance(job, job.payment());
         let redistribute_to_all_vas = self
-            .bid_engine
+            .bid_storage
             .get_job_offer_or_revert(job.job_offer_id())
             .configuration
             .distribute_payment_to_non_voters();
@@ -432,7 +439,7 @@ impl JobEngine {
 
     fn redistribute_cspr_external_worker(&mut self, job: &Job) {
         let total_left = self.redistribute_to_governance(job, job.payment());
-        let config = self.bid_engine.get_job_offer_configuration(job);
+        let config = self.bid_storage.get_job_offer_configuration(job);
         let to_redistribute = config.apply_default_policing_rate_to(total_left);
         let to_worker = total_left - to_redistribute;
 
@@ -440,7 +447,7 @@ impl JobEngine {
         cspr::withdraw(job.worker(), to_worker);
 
         let redistribute_to_all_vas = self
-            .bid_engine
+            .bid_storage
             .get_job_offer_or_revert(job.job_offer_id())
             .configuration
             .distribute_payment_to_non_voters();
@@ -467,7 +474,7 @@ impl JobEngine {
     }
 
     fn return_job_poster_dos_fee(&mut self, job: &Job) {
-        let job_offer = self.bid_engine.get_job_offer_or_revert(job.job_offer_id());
+        let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
         cspr::withdraw(job.poster(), job_offer.dos_fee);
     }
 

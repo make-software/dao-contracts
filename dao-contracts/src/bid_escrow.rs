@@ -23,7 +23,6 @@ use crate::{
         job::Job,
         job_engine::JobEngine,
         job_offer::{JobOffer, JobOfferStatus},
-        storage::JobStorage,
         types::{BidId, JobId, JobOfferId},
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
@@ -201,7 +200,6 @@ pub trait BidEscrowContractInterface {
 pub struct BidEscrowContract {
     refs: ContractRefsWithKycStorage,
     access_control: AccessControl,
-    job_storage: JobStorage,
     job_engine: JobEngine,
     bid_engine: BidEngine,
 }
@@ -264,7 +262,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn get_owner(&self) -> Option<Address>;
         }
 
-        to self.job_storage {
+        to self.job_engine {
             fn jobs_count(&self) -> u32;
             fn get_job(&self, job_id: JobId) -> Option<Job>;
         }
