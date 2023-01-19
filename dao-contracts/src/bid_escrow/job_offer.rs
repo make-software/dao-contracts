@@ -8,18 +8,18 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use crate::{
-    escrow::{
+    bid_escrow::{
         job::PickBidRequest,
         types::JobOfferId,
         validation::rules::{
-            can_job_offer_be_cancelled::CanJobOfferBeCancelled,
-            can_progress_job_offer::CanProgressJobOffer,
-            has_permissions_to_cancel_job_offer::HasPermissionsToCancelJobOffer,
-            is_dos_fee_enough::IsDosFeeEnough,
+            CanJobOfferBeCancelled,
+            CanProgressJobOffer,
+            HasPermissionsToCancelJobOffer,
+            IsDosFeeEnough,
         },
     },
-    rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
-    Configuration,
+    config::Configuration,
+    rules::{builder::RulesBuilder, validation::IsUserKyced},
 };
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]

@@ -3,7 +3,7 @@ use std::rc::Rc;
 use casper_dao_utils::{casper_dao_macros::Rule, Error};
 use casper_types::U512;
 
-use crate::{rules::validation::Validation, Configuration};
+use crate::{config::Configuration, rules::validation::Validation};
 
 #[derive(Rule)]
 pub struct IsDosFeeEnough {

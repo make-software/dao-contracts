@@ -77,6 +77,7 @@ pub trait VaNftContractInterface {
     /// already owns a token.
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`Transfer`](casper_dao_erc721::events::Transfer) event when minted successfully.
     fn mint(&mut self, to: Address);
     /// Burns a token with the given id. Decrements the balance of the token owner

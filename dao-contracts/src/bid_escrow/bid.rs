@@ -6,23 +6,23 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use crate::{
-    escrow::{
+    bid_escrow::{
         job::{JobStatus, PickBidRequest},
         job_offer::{AuctionState, JobOfferStatus},
         types::{BidId, JobOfferId},
         validation::rules::{
-            can_be_onboarded::CanBeOnboarded,
-            can_bid_be_cancelled::CanBidBeCancelled,
-            can_bid_on_auction_state::CanBidOnAuctionState,
-            can_bid_on_own_job::CanBidOnOwnJob,
-            can_pick_bid::CanPickBid,
-            does_proposed_payment_exceed_budget::DoesProposedPaymentExceedBudget,
-            has_permissions_to_cancel_bid::HasPermissionsToCancelBid,
-            is_grace_period::IsGracePeriod,
-            is_stake_non_zero::IsStakeNonZero,
+            CanBeOnboarded,
+            CanBidBeCancelled,
+            CanBidOnAuctionState,
+            CanBidOnOwnJob,
+            CanPickBid,
+            DoesProposedPaymentExceedBudget,
+            HasPermissionsToCancelBid,
+            IsGracePeriod,
+            IsStakeNonZero,
         },
     },
-    rules::{builder::RulesBuilder, validation::is_user_kyced::IsUserKyced},
+    rules::{builder::RulesBuilder, validation::IsUserKyced},
 };
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]

@@ -10,12 +10,9 @@ use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
 use crate::{
-    escrow::validation::rules::{
-        can_pick_bid::CanPickBid,
-        does_proposed_payment_match_transferred::DoesProposedPaymentMatchTransferred,
-    },
+    bid_escrow::validation::rules::{CanPickBid, DoesProposedPaymentMatchTransferred},
     rules::builder::RulesBuilder,
-    voting::types::VotingId,
+    voting::VotingId,
 };
 
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]

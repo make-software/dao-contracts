@@ -11,18 +11,17 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    escrow::{
+    bid_escrow::{
         bid::{Bid, BidStatus, CancelBidRequest, ShortenedBid, SubmitBidRequest},
         job::{Job, PickBidRequest},
         job_offer::{CancelJobOfferRequest, JobOffer, PostJobOfferRequest},
         storage::{BidStorage, JobStorage},
         types::{BidId, JobOfferId},
     },
+    config::{Configuration, ConfigurationBuilder},
     refs::{ContractRefs, ContractRefsWithKycStorage},
-    voting::{kyc_info::KycInfo, onboarding_info::OnboardingInfo},
-    Configuration,
-    ConfigurationBuilder,
-    ReputationContractInterface,
+    reputation::ReputationContractInterface,
+    voting::submodules::{KycInfo, OnboardingInfo},
 };
 
 #[derive(Instance)]

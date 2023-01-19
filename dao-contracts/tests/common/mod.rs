@@ -12,22 +12,24 @@ use std::{
 };
 
 use casper_dao_contracts::{
-    escrow::types::{BidId, JobOfferId},
+    admin::AdminContractTest,
+    bid_escrow::{
+        types::{BidId, JobOfferId},
+        BidEscrowContractTest,
+    },
+    ids::DaoIdsContractTest,
+    kyc_nft::KycNftContractTest,
+    kyc_voter::KycVoterContractTest,
+    onboarding_request::OnboardingRequestContractTest,
+    rate_provider::CSPRRateProviderContractTest,
     repo_voter,
-    AdminContractTest,
-    BidEscrowContractTest,
-    CSPRRateProviderContractTest,
-    DaoIdsContractTest,
-    KycNftContractTest,
-    KycVoterContractTest,
-    OnboardingRequestContractTest,
-    RepoVoterContractTest,
-    ReputationContractTest,
-    ReputationVoterContractTest,
-    SimpleVoterContractTest,
-    SlashingVoterContractTest,
-    VaNftContractTest,
-    VariableRepositoryContractTest,
+    repo_voter::RepoVoterContractTest,
+    reputation::ReputationContractTest,
+    reputation_voter::ReputationVoterContractTest,
+    simple_voter::SimpleVoterContractTest,
+    slashing_voter::SlashingVoterContractTest,
+    va_nft::VaNftContractTest,
+    variable_repository::VariableRepositoryContractTest,
 };
 use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{

@@ -1,5 +1,5 @@
 use casper_dao_contracts::{
-    action::Action as AdminAction,
+    admin::Action as AdminAction,
     reputation_voter::Action as ReputationAction,
 };
 use casper_dao_utils::{Address, BlockTime, DocumentHash};

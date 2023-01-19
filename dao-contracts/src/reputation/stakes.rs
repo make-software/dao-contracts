@@ -15,7 +15,7 @@ use casper_types::{
 
 use super::balances::BalanceStorage;
 use crate::{
-    escrow::{bid::ShortenedBid, types::BidId},
+    bid_escrow::{bid::ShortenedBid, types::BidId},
     voting::{ShortenedBallot, VotingId},
 };
 

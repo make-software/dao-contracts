@@ -17,24 +17,34 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    escrow::{
+    bid_escrow::{
         bid::Bid,
-        bid_engine::BidEngine,
         job::Job,
-        job_engine::JobEngine,
         job_offer::{JobOffer, JobOfferStatus},
         storage::JobStorage,
         types::{BidId, JobId, JobOfferId},
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
+    reputation::ReputationContractInterface,
     voting::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingId,
     },
-    ReputationContractInterface,
 };
+
+use self::{job_engine::JobEngine, bid_engine::BidEngine};
+
+pub mod bid;
+pub mod events;
+pub mod job;
+pub mod job_offer;
+pub mod storage;
+pub mod types;
+pub mod validation;
+pub mod bid_engine;
+pub mod job_engine;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -42,8 +52,8 @@ pub trait BidEscrowContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -66,6 +76,7 @@ pub trait BidEscrowContractInterface {
     /// Alongside Job Offer, Job Poster also sends DOS Fee in CSPR
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`JobOfferCreated`](crate::escrow::events::JobOfferCreated)
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
     /// Worker submits a Bid for a Job
@@ -78,6 +89,7 @@ pub trait BidEscrowContractInterface {
     /// purse: purse containing stake from External Worker
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`BidSubmitted`](crate::escrow::events::BidSubmitted)
     fn submit_bid(
         &mut self,
@@ -99,6 +111,7 @@ pub trait BidEscrowContractInterface {
     /// Otherwise, worker needs to accept job (see [accept_job](accept_job))
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`JobCreated`](JobCreated)
     ///
     /// Emits [`JobAccepted`](JobAccepted)
@@ -113,6 +126,7 @@ pub trait BidEscrowContractInterface {
     /// Submits a job proof. This is called by a Worker or any KYC'd user during Grace Period.
     /// This starts a new voting over the result.
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`JobProofSubmitted`](JobProofSubmitted)
     ///
     /// Emits [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
@@ -132,6 +146,7 @@ pub trait BidEscrowContractInterface {
     );
     /// Casts a vote over a job
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
 
     /// # Errors
@@ -147,13 +162,14 @@ pub trait BidEscrowContractInterface {
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
     /// with a refund or pay the worker.
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
     /// # Errors
     /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine)
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -165,6 +181,7 @@ pub trait BidEscrowContractInterface {
         address: Address,
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine)
+    /// // TODO: Fix documentation link
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
 
     /// Returns the CSPR balance of the contract

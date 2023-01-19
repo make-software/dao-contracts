@@ -1,4 +1,4 @@
-use casper_dao_contracts::escrow::{job::JobStatus, job_offer::JobOfferStatus, types::JobId};
+use casper_dao_contracts::bid_escrow::{job::JobStatus, job_offer::JobOfferStatus, types::JobId};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
 use cucumber::{then, when};
