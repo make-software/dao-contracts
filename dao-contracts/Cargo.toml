@@ -52,6 +52,11 @@ name = "test_voting"
 harness = false  # allows Cucumber to print output instead of libtest
 required-features = ["test-support"]
 
+[[test]]
+name = "test_rate_provider"
+harness = false  # allows Cucumber to print output instead of libtest
+required-features = ["test-support"]
+
 [[bin]]
 name = "reputation_contract"
 path = "bin/reputation_contract.rs"

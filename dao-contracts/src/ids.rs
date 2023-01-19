@@ -40,6 +40,10 @@ pub trait DaoIdsContractInterface {
     fn is_whitelisted(&self, address: Address) -> bool;
 }
 
+/// Dao Ids contract manages voting ids in the system.
+/// Only a whitelisted account is eligible to generate ids.
+///
+/// For details see [DaoIdsContractInterface](DaoIdsContractInterface).
 #[derive(Instance)]
 pub struct DaoIdsContract {
     access_control: AccessControl,
