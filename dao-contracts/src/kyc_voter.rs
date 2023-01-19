@@ -14,17 +14,17 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     refs::ContractRefsWithKycStorage,
     voting::{
-        kyc_info::KycInfo,
-        types::VotingId,
+        submodules::KycInfo,
+        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
     },
-    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -33,8 +33,8 @@ pub trait KycVoterContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract), [`KYC Token`](crate::KycNftContract).
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -66,9 +66,9 @@ pub trait KycVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
@@ -81,7 +81,7 @@ pub trait KycVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    /// Returns the address of [KYC Token](crate::KycNftContract) contract.
+    /// Returns the address of [KYC Token](crate::kyc_nft::KycNftContract) contract.
     fn kyc_token_address(&self) -> Address;
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
@@ -98,6 +98,7 @@ pub trait KycVoterContractInterface {
 
 /// KycVoterContract
 ///
+/// // TODO: Fix documentation link
 /// It is responsible for managing kyc tokens (see [DaoOwnedNftContract](crate::DaoOwnedNftContract).
 ///
 /// When the voting passes, a kyc token is minted.

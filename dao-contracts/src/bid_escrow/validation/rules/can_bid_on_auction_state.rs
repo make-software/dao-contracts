@@ -1,6 +1,6 @@
 use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
-use crate::{escrow::job_offer::AuctionState, rules::validation::Validation};
+use crate::{bid_escrow::job_offer::AuctionState, rules::validation::Validation};
 
 #[derive(Rule)]
 pub struct CanBidOnAuctionState {

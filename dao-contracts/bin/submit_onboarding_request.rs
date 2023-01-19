@@ -1,4 +1,7 @@
-use casper_dao_contracts::{OnboardingRequestContractCaller, OnboardingRequestContractInterface};
+use casper_dao_contracts::onboarding_request::{
+    OnboardingRequestContractCaller,
+    OnboardingRequestContractInterface,
+};
 use casper_dao_utils::{
     casper_contract::{
         contract_api::{

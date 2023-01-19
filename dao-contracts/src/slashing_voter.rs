@@ -14,18 +14,18 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     refs::{ContractRefs, ContractRefsStorage},
+    reputation::ReputationContractInterface,
+    va_nft::VaNftContractInterface,
     voting::{
-        types::VotingId,
+        VotingId,
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
     },
-    ConfigurationBuilder,
-    ReputationContractInterface,
-    VaNftContractInterface,
 };
 
 #[casper_contract_interface]
@@ -34,8 +34,8 @@ pub trait SlashingVoterContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract).
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -50,9 +50,9 @@ pub trait SlashingVoterContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;

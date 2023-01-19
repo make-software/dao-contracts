@@ -1,8 +1,15 @@
-//! Utilities related to [ReputationContract](crate::ReputationContract).
+//! Utilities related to [ReputationContract](crate::reputation::ReputationContract).
 mod agg;
 mod balances;
 mod stakes;
-#[doc(hidden)]
-pub mod token;
+mod token;
 
-pub use agg::AggregatedBalance;
+#[cfg(feature = "test-support")]
+pub use token::ReputationContractTest;
+pub use token::{ReputationContract, ReputationContractInterface, ReputationContractCaller, events::*};
+
+pub mod submodules {
+    pub use super::agg::*;
+    pub use super::balances::BalanceStorage;
+    pub use super::stakes::StakesStorage;
+}

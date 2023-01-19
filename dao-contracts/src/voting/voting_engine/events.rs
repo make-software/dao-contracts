@@ -13,8 +13,8 @@ use casper_types::{
 
 use super::voting_state_machine::{Stats, VotingResult, VotingType};
 use crate::{
+    config::Configuration,
     voting::{ballot::Choice, types::VotingId, Ballot},
-    Configuration,
 };
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]

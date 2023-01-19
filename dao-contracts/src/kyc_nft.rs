@@ -88,6 +88,7 @@ pub trait KycNftContractInterface {
     /// is not whitelisted.
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`Burn`](casper_dao_modules::events::Burn) event.
     fn burn(&mut self, owner: Address);
 }

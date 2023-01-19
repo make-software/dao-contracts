@@ -10,13 +10,12 @@ use casper_types::U512;
 use delegate::delegate;
 
 use super::{
-    agg::{AggregatedStake, BalanceAggregates},
+    agg::{AggregatedStake, AggregatedBalance, BalanceAggregates},
     balances::BalanceStorage,
     stakes::StakesStorage,
-    AggregatedBalance,
 };
 use crate::{
-    escrow::bid::ShortenedBid,
+    bid_escrow::bid::ShortenedBid,
     voting::{ShortenedBallot, VotingId},
 };
 
@@ -44,6 +43,7 @@ pub trait ReputationContractInterface {
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
+    /// // TODO: Fix events documentation
     /// It emits [`Mint`](events::Mint) event.
     fn mint(&mut self, recipient: Address, amount: U512);
 
@@ -59,7 +59,8 @@ pub trait ReputationContractInterface {
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
-    ///
+    /// 
+    /// // TODO: Fix events documentation
     /// It emits [`Burn`](events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U512);
 

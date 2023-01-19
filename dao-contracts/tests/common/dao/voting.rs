@@ -1,4 +1,4 @@
-use casper_dao_contracts::action::Action;
+use casper_dao_contracts::admin::Action;
 use casper_dao_utils::{DocumentHash, Error, TestContract};
 use casper_types::{bytesrepr::Bytes, U512};
 
@@ -96,7 +96,7 @@ impl DaoWorld {
             ),
             Contract::Admin => self.admin.as_account(creator).create_voting(
                 alice,
-                casper_dao_contracts::action::Action::AddToWhitelist,
+                Action::AddToWhitelist,
                 alice,
                 *stake,
             ),

@@ -32,12 +32,12 @@ use super::{
     VotingEnded,
 };
 use crate::{
+    config::Configuration,
     refs::{ContractRefs, ContractRefsStorage},
+    reputation::ReputationContractInterface,
     rules::builder::RulesBuilder,
+    va_nft::VaNftContractInterface,
     voting::validation::rules::can_create_voting::CanCreateVoting,
-    Configuration,
-    ReputationContractInterface,
-    VaNftContractInterface,
 };
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
@@ -48,8 +48,8 @@ use crate::{
 ///
 /// When formal voting passes, an action can be performed - a contract can be called with voted arguments.
 ///
-/// Governance voting uses [Reputation Token](crate::ReputationContract) to handle reputation staking and
-/// [Variable Repo](crate::VariableRepositoryContract) for reading voting configuration.
+/// Governance voting uses [Reputation Token](crate::reputation::ReputationContract) to handle reputation staking and
+/// [Variable Repo](crate::variable_repository::VariableRepositoryContract) for reading voting configuration.
 ///
 /// For example implementation see [AdminContract](crate::admin::AdminContract)
 #[derive(Instance)]
@@ -66,10 +66,11 @@ impl VotingEngine {
     ///
     /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed  when formal voting passes.
     ///
-    /// It collects configuration from [Variable Repo](crate::VariableRepositoryContract) and persists it, so they won't change during the voting process.
+    /// It collects configuration from [Variable Repo](crate::variable_repository::VariableRepositoryContract) and persists it, so they won't change during the voting process.
     ///
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors
@@ -127,6 +128,7 @@ impl VotingEngine {
     /// the reputation is returned, except for the creator - its reputation is then burned.
     ///
     /// # Events
+    /// // TODO: Fix events documentation
     /// Emits [`VotingEnded`](VotingEnded), [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
     ///
     /// # Errors

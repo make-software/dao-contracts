@@ -8,8 +8,8 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use crate::{
+    config::Configuration,
     voting::{ballot::Choice, types::VotingId},
-    Configuration,
 };
 
 /// Result of a Voting

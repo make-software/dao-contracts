@@ -7,7 +7,7 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use super::{balances::BalanceStorage, stakes::StakesStorage};
-use crate::{escrow::types::BidId, voting::VotingId};
+use crate::{bid_escrow::types::BidId, voting::VotingId};
 
 /// A module that provides aggregated data about reputation tokens.
 #[derive(Instance)]

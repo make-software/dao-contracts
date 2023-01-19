@@ -1,6 +1,6 @@
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
+    casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
     casper_env::caller,
     Address,
     BlockTime,
@@ -10,17 +10,16 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
-    action::Action,
+    config::ConfigurationBuilder,
     refs::ContractRefsStorage,
     voting::{
-        types::VotingId,
+        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
     },
-    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -29,8 +28,8 @@ pub trait AdminContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::ReputationContract), [`VA Token`](crate::VaNftContract).
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -58,9 +57,9 @@ pub trait AdminContractInterface {
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// see [VotingEngine](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// Returns the address of [Variable Repository](crate::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
-    /// Returns the address of [Reputation Token](crate::ReputationContract) contract.
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
     /// see [VotingEngine](VotingEngine::get_voting())
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
@@ -214,4 +213,49 @@ impl AdminVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+/// Enum for actions that [AdminContract] can perform
+///
+/// - `AddToWhitelist` - calls `add_to_whitelist` method
+/// - `RemoveFromWhitelist` - calls `remove_from_whitelist` method
+/// - `ChangeOwner` - calls `change_ownership` method
+#[derive(CLTyped, PartialEq, Eq, Debug, FromBytes, ToBytes)]
+pub enum Action {
+    AddToWhitelist,
+    RemoveFromWhitelist,
+    ChangeOwner,
+}
+
+impl Action {
+    pub(crate) fn get_entry_point(&self) -> String {
+        match self {
+            Action::AddToWhitelist => "add_to_whitelist",
+            Action::RemoveFromWhitelist => "remove_from_whitelist",
+            Action::ChangeOwner => "change_ownership",
+        }
+        .to_string()
+    }
+
+    pub(crate) fn get_arg(&self) -> &str {
+        match self {
+            Action::AddToWhitelist => "address",
+            Action::RemoveFromWhitelist => "address",
+            Action::ChangeOwner => "owner",
+        }
+    }
+}
+
+#[test]
+fn test_action() {
+    use casper_types::bytesrepr::{FromBytes, ToBytes};
+    let action = Action::ChangeOwner;
+    let (deserialized_action, _) = Action::from_bytes(&action.to_bytes().unwrap()).unwrap();
+
+    assert_eq!(action, deserialized_action);
+    assert_eq!(deserialized_action.get_arg(), "owner");
+    assert_eq!(
+        deserialized_action.get_entry_point(),
+        "change_ownership".to_string()
+    );
 }
