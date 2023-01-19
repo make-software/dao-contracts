@@ -1,4 +1,4 @@
-use casper_dao_contracts::{BidEscrowContractCaller, BidEscrowContractInterface};
+use casper_dao_contracts::bid_escrow::{BidEscrowContractCaller, BidEscrowContractInterface};
 use casper_dao_utils::{
     casper_contract::{
         contract_api::{

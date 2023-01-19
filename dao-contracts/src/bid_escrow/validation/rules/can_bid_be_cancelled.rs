@@ -1,6 +1,6 @@
 use casper_dao_utils::{casper_dao_macros::Rule, BlockTime, Error};
 
-use crate::{escrow::job_offer::JobOfferStatus, rules::validation::Validation};
+use crate::{bid_escrow::job_offer::JobOfferStatus, rules::validation::Validation};
 
 #[derive(Rule)]
 pub struct CanBidBeCancelled {

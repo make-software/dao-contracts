@@ -32,12 +32,12 @@ use super::{
     VotingEnded,
 };
 use crate::{
+    config::Configuration,
     refs::{ContractRefs, ContractRefsStorage},
+    reputation::ReputationContractInterface,
     rules::builder::RulesBuilder,
+    va_nft::VaNftContractInterface,
     voting::validation::rules::can_create_voting::CanCreateVoting,
-    Configuration,
-    ReputationContractInterface,
-    VaNftContractInterface,
 };
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:

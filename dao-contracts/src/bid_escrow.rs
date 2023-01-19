@@ -17,24 +17,35 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    escrow::{
+    bid_escrow::{
         bid::Bid,
-        bid_engine::BidEngine,
         job::Job,
-        job_engine::JobEngine,
         job_offer::{JobOffer, JobOfferStatus},
         storage::JobStorage,
         types::{BidId, JobId, JobOfferId},
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
+    reputation::ReputationContractInterface,
     voting::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingId,
     },
-    ReputationContractInterface,
 };
+
+use self::{job_engine::JobEngine, bid_engine::BidEngine};
+
+pub mod bid;
+pub mod bidding;
+pub mod events;
+pub mod job;
+pub mod job_offer;
+pub mod storage;
+pub mod types;
+pub mod validation;
+pub mod bid_engine;
+pub mod job_engine;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {

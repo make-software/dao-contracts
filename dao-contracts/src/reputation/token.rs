@@ -10,13 +10,12 @@ use casper_types::U512;
 use delegate::delegate;
 
 use super::{
-    agg::{AggregatedStake, BalanceAggregates},
+    agg::{AggregatedStake, AggregatedBalance, BalanceAggregates},
     balances::BalanceStorage,
     stakes::StakesStorage,
-    AggregatedBalance,
 };
 use crate::{
-    escrow::bid::ShortenedBid,
+    bid_escrow::bid::ShortenedBid,
     voting::{ShortenedBallot, VotingId},
 };
 

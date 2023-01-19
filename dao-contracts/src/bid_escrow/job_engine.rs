@@ -12,7 +12,7 @@ use casper_dao_utils::{
 use casper_types::{URef, U512};
 
 use crate::{
-    escrow::{
+    bid_escrow::{
         bid::{Bid, ReclaimBidRequest},
         bid_engine::BidEngine,
         job::{Job, ReclaimJobRequest, SubmitJobProofRequest, WorkerType},
@@ -21,15 +21,14 @@ use crate::{
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
     voting::{
-        kyc_info::KycInfo,
-        onboarding_info::OnboardingInfo,
+        submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingType},
         Choice,
         VotingEngine,
         VotingId,
     },
-    ReputationContractInterface,
-    VaNftContractInterface,
+    reputation::ReputationContractInterface,
+    va_nft::VaNftContractInterface,
 };
 
 #[derive(Instance)]

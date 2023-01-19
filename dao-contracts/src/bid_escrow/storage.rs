@@ -14,7 +14,7 @@ use super::{
     job_offer::JobOffer,
     types::{BidId, JobId, JobOfferId},
 };
-use crate::{voting::VotingId, Configuration};
+use crate::{config::Configuration, voting::VotingId};
 
 #[derive(Instance)]
 pub struct BidStorage {

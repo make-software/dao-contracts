@@ -11,7 +11,6 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::{
-    escrow::onboarding::Onboarding,
     refs::ContractRefsWithKycStorage,
     voting::{
         voting_state_machine::{VotingStateMachine, VotingType},
@@ -22,6 +21,9 @@ use crate::{
         VotingId,
     },
 };
+
+pub mod request;
+pub mod voting;
 
 #[casper_contract_interface]
 pub trait OnboardingRequestContractInterface {
@@ -164,6 +166,8 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
+
+use self::voting::Onboarding;
 
 #[cfg(feature = "test-support")]
 impl OnboardingRequestContractTest {

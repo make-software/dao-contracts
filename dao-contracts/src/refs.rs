@@ -2,10 +2,10 @@ use casper_dao_utils::{casper_dao_macros::Instance, Address, Variable};
 use delegate::delegate;
 
 use crate::{
-    KycNftContractCaller,
-    ReputationContractCaller,
-    VaNftContractCaller,
-    VariableRepositoryContractCaller,
+    kyc_nft::KycNftContractCaller,
+    reputation::ReputationContractCaller,
+    va_nft::VaNftContractCaller,
+    variable_repository::VariableRepositoryContractCaller,
 };
 
 /// Provides references to common contracts that are used by most of the voting contracts.

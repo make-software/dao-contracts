@@ -1,6 +1,6 @@
 use casper_dao_utils::{casper_dao_macros::Rule, BlockTime, Error};
 
-use crate::{escrow::job::JobStatus, rules::validation::Validation};
+use crate::{bid_escrow::job::JobStatus, rules::validation::Validation};
 
 #[derive(Rule)]
 pub struct IsGracePeriod {

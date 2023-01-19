@@ -11,16 +11,16 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     refs::ContractRefsStorage,
     voting::{
-        types::VotingId,
+        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
     },
-    ConfigurationBuilder,
 };
 
 /// Action to perform against reputation
