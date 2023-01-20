@@ -1,3 +1,4 @@
+//! Contains CSPR Rate Provider Contract definition and related abstractions.
 use casper_dao_modules::Owner;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},

@@ -5,8 +5,8 @@ use casper_dao_utils::{
     Mapping,
 };
 
-use super::VotingId;
-use crate::{kyc_nft::KycNftContractInterface, refs::ContractRefsWithKycStorage};
+use super::{refs::ContractRefsWithKycStorage, VotingId};
+use crate::kyc_nft::KycNftContractInterface;
 
 /// A utility module that provides information about the current status of the KYC process.
 #[derive(Instance)]

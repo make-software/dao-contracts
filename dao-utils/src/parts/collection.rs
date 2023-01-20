@@ -29,7 +29,7 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
     }
 
     /// Tries to delete the given `item`. If succeeds, returns true, otherwise, returns false.
-    /// 
+    ///
     /// Reindexes collection after successful removal.  
     pub fn delete(&mut self, item: T) -> bool {
         let length = self.size();

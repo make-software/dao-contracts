@@ -13,10 +13,10 @@ use casper_types::U512;
 use super::request::{OnboardingRequest, Request};
 use crate::{
     config::{Configuration, ConfigurationBuilder},
-    refs::{ContractRefs, ContractRefsWithKycStorage},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,

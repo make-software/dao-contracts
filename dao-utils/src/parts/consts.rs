@@ -45,7 +45,7 @@ pub const LENGTH_SUFFIX: &str = "_length";
 pub const NAME_EVENTS: &str = "events";
 
 // REPO KEYS
-/// A DOS fee that the JobPoster needs to attach to the Post Job query. 
+/// A DOS fee that the JobPoster needs to attach to the Post Job query.
 /// The value is the minimum amount of Fiat currency to be attached as CSPR using [`FiatConversionRate`](FIAT_CONVERSION_RATE_ADDRESS).
 pub const POST_JOB_DOS_FEE: &str = "PostJobDOSFee";
 /// The time of the Internal Auction.

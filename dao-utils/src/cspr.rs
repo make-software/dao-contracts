@@ -21,7 +21,7 @@ pub fn main_purse_balance() -> U512 {
 }
 
 /// Transfers all the funds from the given `cargo_purse` to the currently executing contract main purse.
-/// 
+///
 /// Reverts if the `cargo_purse` is empty or transfer from purse to purse fails.
 pub fn deposit(cargo_purse: URef) -> U512 {
     let main_purse = casper_env::contract_main_purse();
@@ -37,7 +37,7 @@ pub fn deposit(cargo_purse: URef) -> U512 {
 }
 
 /// Withdraws funds from the currently executing contract main purse to the given [`Address`].
-/// 
+///
 /// Reverts if the `address` is invalid or transfer from purse to account fails.
 pub fn withdraw(address: Address, amount: U512) {
     let main_purse = casper_env::contract_main_purse();

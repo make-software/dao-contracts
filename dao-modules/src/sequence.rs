@@ -1,4 +1,4 @@
-use casper_dao_utils::{Variable, Instanced};
+use casper_dao_utils::{Instanced, Variable};
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped,

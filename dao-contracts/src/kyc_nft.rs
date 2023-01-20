@@ -1,6 +1,14 @@
+//! Contains KYC NFT Contract definition and related abstractions.
+//!
+//! KYC - Know Your Customer, is a process that validates that the user can be the user of the system.
+//!
+//! Ownership of a KYC token indicates the address has been successfully verified and is eligible to participate in the system.
+//! Minting token is usually done as a result of [KYC Voting](crate::kyc_voter::KycVoterContractInterface).
+//!
+//! Each [`Address`] can own only one KYC token.
 use casper_dao_erc721::{
-    ERC721Token,
     BurnableERC721,
+    ERC721Token,
     MetadataERC721,
     MintableERC721,
     TokenId,

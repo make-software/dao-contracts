@@ -19,10 +19,10 @@ use crate::{
         storage::{BidStorage, JobStorage},
         types::JobId,
     },
-    refs::{ContractRefs, ContractRefsWithKycStorage},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingType},
         Choice,

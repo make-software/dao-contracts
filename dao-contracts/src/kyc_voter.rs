@@ -1,3 +1,12 @@
+//! Contains KYC Voter Contract definition and related abstractions.
+//!
+//! # KYC process
+//! KYC Voting is a process in which the VAs validate a user submission.
+//! If VAs vote in favor, the address is considered verified and the KYC Token contract
+//! is called in order to mint a token which formally ends the KYC process.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
@@ -15,8 +24,8 @@ use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
-    refs::ContractRefsWithKycStorage,
     voting::{
+        refs::ContractRefsWithKycStorage,
         submodules::KycInfo,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,

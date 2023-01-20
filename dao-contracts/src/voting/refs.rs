@@ -1,3 +1,4 @@
+//! Utility modules providing references to common contracts that are used by most of the voting contracts.
 use casper_dao_utils::{casper_dao_macros::Instance, Address, Variable};
 use delegate::delegate;
 

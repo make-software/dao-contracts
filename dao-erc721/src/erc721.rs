@@ -9,7 +9,9 @@ use delegate::delegate;
 
 use crate::{
     core::ERC721Token,
-    extensions::{BurnableERC721, MetadataERC721, MintableERC721}, TokenId, TokenUri,
+    extensions::{BurnableERC721, MetadataERC721, MintableERC721},
+    TokenId,
+    TokenUri,
 };
 
 #[casper_contract_interface]
@@ -38,7 +40,7 @@ pub trait ERC721Interface {
     fn burn(&mut self, token_id: TokenId);
 }
 
-/// ERC721 token module. 
+/// ERC721 token module.
 #[derive(Instance)]
 pub struct ERC721 {
     core: ERC721Token,

@@ -16,7 +16,7 @@ use crate::{
     config::Configuration,
     voting::{ballot::Choice, types::VotingId, voting_state_machine::VotingStateMachine, Ballot},
 };
-
+/// Represents an explanation for a particular action (mint, burn, stake).
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum Reason {
     InformalFinished = 1,

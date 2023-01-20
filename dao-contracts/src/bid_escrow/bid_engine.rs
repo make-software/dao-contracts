@@ -19,9 +19,11 @@ use crate::{
         types::{BidId, JobOfferId},
     },
     config::{Configuration, ConfigurationBuilder},
-    refs::{ContractRefs, ContractRefsWithKycStorage},
     reputation::ReputationContractInterface,
-    voting::submodules::{KycInfo, OnboardingInfo},
+    voting::{
+        refs::{ContractRefs, ContractRefsWithKycStorage},
+        submodules::{KycInfo, OnboardingInfo},
+    },
 };
 
 #[derive(Instance)]

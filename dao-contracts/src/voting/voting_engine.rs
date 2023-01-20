@@ -19,6 +19,7 @@ use self::{
 use super::{
     ballot::Choice,
     ids,
+    refs::{ContractRefs, ContractRefsStorage},
     types::VotingId,
     Ballot,
     BallotCanceled,
@@ -29,7 +30,6 @@ use super::{
 };
 use crate::{
     config::Configuration,
-    refs::{ContractRefs, ContractRefsStorage},
     reputation::ReputationContractInterface,
     rules::builder::RulesBuilder,
     va_nft::VaNftContractInterface,
@@ -51,7 +51,7 @@ pub mod voting_state_machine;
 /// Governance voting uses [Reputation Token](crate::reputation::ReputationContract) to handle reputation staking and
 /// [Variable Repo](crate::variable_repository::VariableRepositoryContract) for reading voting configuration.
 ///
-/// For example implementation see [AdminContract](crate::admin::AdminContract)
+/// For example implementation see [AdminContract](crate::admin::AdminContract).
 #[derive(Instance)]
 pub struct VotingEngine {
     #[scoped = "contract"]

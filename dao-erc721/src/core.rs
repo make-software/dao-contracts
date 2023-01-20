@@ -15,7 +15,7 @@ use crate::{
     TokenId,
 };
 
-/// A module implementing ERC721 standard interface. 
+/// A module implementing ERC721 standard interface.
 #[derive(Instance)]
 pub struct ERC721Token {
     total_supply: Variable<U512>,
@@ -31,7 +31,7 @@ pub struct ERC721Token {
 
 impl ERC721Token {
     /// Finds the owner of a token with the given id.
-    /// 
+    ///
     /// # Errors
     /// Reverts with [`Error::TokenDoesNotExist`] if token with the given id does not exists.
     pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
@@ -52,7 +52,7 @@ impl ERC721Token {
     }
 
     /// Sets or revokes the approved address for a token.
-    /// 
+    ///
     /// # Errors
     /// Reverts with [`Error::TokenDoesNotExist`]  if token with the given id does not exists.
     /// Reverts with [`Error::ApprovalToCurrentOwner`] to the approved address is the owner.
@@ -81,7 +81,7 @@ impl ERC721Token {
     }
 
     /// Enables or disables approval for a third party ("operator") to manage all of caller's tokens
-    /// 
+    ///
     /// # Errors
     /// Reverts with [`Error::ApproveToCaller`] the caller tries to approve himself.
     pub fn set_approval_for_all(&mut self, operator: Address, approved: bool) {
@@ -106,7 +106,7 @@ impl ERC721Token {
     }
 
     /// Transfers the ownership of a token from one address to another address.
-    /// 
+    ///
     /// # Errors
     /// The caller must be an owner or be an approved address, otherwise the contract reverts with
     /// [`Error::CallerIsNotOwnerNorApproved`].
@@ -118,9 +118,9 @@ impl ERC721Token {
     }
 
     /// Transfers the ownership of a token from one address to another address.
-    /// 
+    ///
     /// Verifies whether the recipient is a smart contract that implements [`ERC721Receiver`](crate::receiver::IERC721Receiver).
-    /// 
+    ///
     /// # Errors
     /// The caller must be an owner or be an approved address, otherwise the contract reverts with
     /// [`Error::CallerIsNotOwnerNorApproved`].

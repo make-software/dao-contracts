@@ -1,6 +1,8 @@
+//! Contains VA NFT Contract definition and related abstractions.
+
 use casper_dao_erc721::{
-    ERC721Token,
     BurnableERC721,
+    ERC721Token,
     MetadataERC721,
     MintableERC721,
     TokenId,

@@ -1,3 +1,4 @@
+//! Contains Repo Voter Contract definition and related abstractions.
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -11,8 +12,8 @@ use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
-    refs::ContractRefsStorage,
     voting::{
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,

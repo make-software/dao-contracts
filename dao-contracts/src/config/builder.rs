@@ -15,9 +15,9 @@ use casper_types::{
 
 use crate::{
     config::{Configuration, DaoConfiguration, VotingConfiguration},
-    refs::ContractRefs,
     va_nft::VaNftContractInterface,
     variable_repository::VariableRepositoryContractInterface,
+    voting::refs::ContractRefs,
 };
 
 pub struct ConfigurationBuilder {

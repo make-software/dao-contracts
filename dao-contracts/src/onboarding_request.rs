@@ -1,3 +1,4 @@
+//! Contains Onboarding Request Contract definition and related abstractions.
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -10,16 +11,14 @@ use casper_dao_utils::{
 use casper_types::{URef, U512};
 use delegate::delegate;
 
-use crate::{
+use crate::voting::{
     refs::ContractRefsWithKycStorage,
-    voting::{
-        voting_state_machine::{VotingStateMachine, VotingType},
-        Ballot,
-        Choice,
-        VotingCreatedInfo,
-        VotingEngine,
-        VotingId,
-    },
+    voting_state_machine::{VotingStateMachine, VotingType},
+    Ballot,
+    Choice,
+    VotingCreatedInfo,
+    VotingEngine,
+    VotingId,
 };
 
 pub mod request;

@@ -1,7 +1,7 @@
 //! Contains Admin Contract definitions and related abstractions.
-//! 
+//!
 //! The contract is used to manage the other contracts' [`access control`](AccessControl).
-//! 
+//!
 //! Three types of voting can be created:
 //! * add an [`Address`] to the whitelist.
 //! * remove an [`Address`] from the whitelist.
@@ -19,8 +19,8 @@ use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
-    refs::ContractRefsStorage,
     voting::{
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
@@ -178,7 +178,7 @@ impl AdminContractInterface for AdminContract {
     }
 }
 
-/// Event emitted once voting is created. 
+/// Event emitted once voting is created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct AdminVotingCreated {
     contract_to_update: Address,

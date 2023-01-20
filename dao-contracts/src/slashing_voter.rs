@@ -1,3 +1,4 @@
+//! Contains Slashing Voter Contract definition and related abstractions.
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
@@ -15,10 +16,10 @@ use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
-    refs::{ContractRefs, ContractRefsStorage},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        refs::{ContractRefs, ContractRefsStorage},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
         Ballot,
         Choice,

@@ -17,7 +17,7 @@ use casper_types::{
 };
 use lazy_static::lazy_static;
 
-use crate::{casper_env::to_dictionary_key, Instanced, Error};
+use crate::{casper_env::to_dictionary_key, Error, Instanced};
 
 /// Data structure for storing key-value pairs.
 ///
@@ -131,7 +131,7 @@ impl<V: ToBytes + FromBytes + CLTyped + Hash> IndexedMapping<V> {
         self.mapping.get(&index).unwrap_or(None)
     }
 
-    /// Replaces the 'value` with `None`. Returns a tuple (success, altered_index). 
+    /// Replaces the 'value` with `None`. Returns a tuple (success, altered_index).
     pub fn remove(&self, value: V) -> (bool, u32) {
         if let Some(item_index) = self.index.get(&value) {
             if self.mapping.get(&item_index).is_some() {
@@ -153,7 +153,7 @@ impl<V: ToBytes + FromBytes + CLTyped + Hash> IndexedMapping<V> {
         self.index.get(value)
     }
 
-    /// Checks if the `value` is stored in the collection. 
+    /// Checks if the `value` is stored in the collection.
     pub fn contains(&self, value: &V) -> bool {
         matches!(self.index_of(value), Some(_))
     }
@@ -172,7 +172,6 @@ impl<T: FromBytes + ToBytes + CLTyped> Instanced for IndexedMapping<T> {
         }
     }
 }
-
 
 /// Data structure for storing key-value pairs.
 ///

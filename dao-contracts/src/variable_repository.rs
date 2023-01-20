@@ -1,3 +1,4 @@
+//! Contains Variable Repository Contract definition and related abstractions.
 use std::collections::BTreeMap;
 
 use casper_dao_modules::{AccessControl, Record, Repository};

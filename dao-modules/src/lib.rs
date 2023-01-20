@@ -7,8 +7,8 @@ mod whitelist;
 pub use access_control::AccessControl;
 pub use owner::Owner;
 pub use repository::{Record, Repository};
-pub use whitelist::Whitelist;
 pub use sequence::SequenceGenerator;
+pub use whitelist::Whitelist;
 
 /// Events emitted by the modules.
 pub mod events {
