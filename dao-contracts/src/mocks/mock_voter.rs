@@ -12,11 +12,11 @@ use crate::{
     config::ConfigurationBuilder,
     refs::ContractRefsStorage,
     voting::{
-        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
+        VotingId,
     },
 };
 

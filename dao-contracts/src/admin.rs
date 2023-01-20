@@ -13,12 +13,12 @@ use crate::{
     config::ConfigurationBuilder,
     refs::ContractRefsStorage,
     voting::{
-        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
+        VotingId,
     },
 };
 
@@ -90,13 +90,13 @@ pub trait AdminContractInterface {
 #[derive(Instance)]
 pub struct AdminContract {
     refs: ContractRefsStorage,
-    voting: VotingEngine,
+    voting_engine: VotingEngine,
     access_control: AccessControl,
 }
 
 impl AdminContractInterface for AdminContract {
     delegate! {
-        to self.voting {
+        to self.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voting(
                 &self,
@@ -148,25 +148,25 @@ impl AdminContractInterface for AdminContract {
             })
             .build();
 
-        let info = self
-            .voting
+        let (info, _) = self
+            .voting_engine
             .create_voting(caller(), stake, voting_configuration);
 
         AdminVotingCreated::new(contract_to_update, action, address, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting
+        self.voting_engine
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        self.voting.finish_voting(voting_id, voting_type);
+        self.voting_engine.finish_voting(voting_id, voting_type);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter, voting_id);
+        self.voting_engine.slash_voter(voter, voting_id);
     }
 }
 

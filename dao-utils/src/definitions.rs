@@ -28,9 +28,9 @@ impl ContractDef {
     }
 
     pub fn add_event<T: EventDefinition>(&mut self, method_name: &'static str) {
-        self.method_mut(method_name).map(|method| {
+        if let Some(method) = self.method_mut(method_name) {
             method.add_event(T::event_def());
-        });
+        }
     }
 
     pub fn with_event<T: EventDefinition>(mut self, method_name: &'static str) -> Self {
@@ -47,12 +47,9 @@ impl ContractDef {
     }
 
     fn method_mut(&mut self, method_name: &'static str) -> Option<&mut MethodDef> {
-        for method in &mut self.entry_points {
-            if method.name == method_name {
-                return Some(method);
-            }
-        }
-        None
+        self.entry_points
+            .iter_mut()
+            .find(|method| method.name == method_name)
     }
 }
 

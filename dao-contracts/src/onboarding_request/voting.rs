@@ -121,20 +121,18 @@ impl Onboarding {
         configuration: Configuration,
         stake: U512,
     ) -> VotingCreatedInfo {
-        let voting_info = self.voting.create_voting(creator, stake, configuration);
-        let voting_id = voting_info.voting_id;
-        let mut voting = self.voting.get_voting_or_revert(voting_id);
+        let (voting_info, mut voting) = self.voting.create_voting(creator, stake, configuration);
 
         // passed config disables casting first votes, must be casted manually.
         self.voting.cast_ballot(
             creator,
-            voting_id,
+            voting.voting_id(),
             Choice::InFavor,
             stake,
             true,
             &mut voting,
         );
-        self.ids.set(&creator, voting_id);
+        self.ids.set(&creator, voting.voting_id());
         self.voting.set_voting(voting);
         voting_info
     }

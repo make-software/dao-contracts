@@ -16,12 +16,12 @@ use crate::{
     config::ConfigurationBuilder,
     refs::ContractRefsStorage,
     voting::{
-        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
+        VotingId,
     },
 };
 
@@ -86,14 +86,14 @@ pub trait SimpleVoterContractInterface {
 #[derive(Instance)]
 pub struct SimpleVoterContract {
     refs: ContractRefsStorage,
-    voting: VotingEngine,
+    voting_engine: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
     access_control: AccessControl,
 }
 
 impl SimpleVoterContractInterface for SimpleVoterContract {
     delegate! {
-        to self.voting {
+        to self.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voting(
                 &self,
@@ -131,8 +131,8 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512) {
         let voting_configuration = ConfigurationBuilder::new(&self.refs).build();
 
-        let info = self
-            .voting
+        let (info, _) = self
+            .voting_engine
             .create_voting(caller(), stake, voting_configuration);
 
         self.simple_votings
@@ -142,7 +142,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let voting_summary = self.voting.finish_voting(voting_id, voting_type);
+        let voting_summary = self.voting_engine.finish_voting(voting_id, voting_type);
 
         if let VotingType::Informal = voting_summary.voting_type() {
             match voting_summary.voting_type() {
@@ -165,13 +165,13 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting
+        self.voting_engine
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter, voting_id);
+        self.voting_engine.slash_voter(voter, voting_id);
     }
 }
 
