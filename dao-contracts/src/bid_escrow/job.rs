@@ -270,7 +270,12 @@ impl Job {
         &self.worker_type
     }
 
-    pub fn stake(&self) -> U512 {
+    /// If the worker's vote should be unbound - basically is the reputation real
+    pub fn is_unbound(&self) -> bool {
+        self.worker_type() != &WorkerType::Internal
+    }
+
+    pub fn get_stake(&self) -> U512 {
         self.stake
     }
 
