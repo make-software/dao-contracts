@@ -1,3 +1,11 @@
+//! Contains Admin Contract definitions and related abstractions.
+//! 
+//! The contract is used to manage the other contracts' [`access control`](AccessControl).
+//! 
+//! Three types of voting can be created:
+//! * add an [`Address`] to the whitelist.
+//! * remove an [`Address`] from the whitelist.
+//! * sets an [`Address`] as a new contract owner.
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
@@ -86,7 +94,7 @@ pub trait AdminContractInterface {
 ///
 /// Admin contract needs to have permissions to perform those actions.
 ///
-/// For details see [AdminContractInterface](AdminContractInterface)
+/// For details see [AdminContractInterface](AdminContractInterface).
 #[derive(Instance)]
 pub struct AdminContract {
     refs: ContractRefsStorage,
@@ -170,6 +178,7 @@ impl AdminContractInterface for AdminContract {
     }
 }
 
+/// Event emitted once voting is created. 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct AdminVotingCreated {
     contract_to_update: Address,

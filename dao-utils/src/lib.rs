@@ -5,25 +5,24 @@ pub use casper_contract;
 
 pub mod casper_env;
 mod events;
-pub mod instance;
+mod instance;
 mod parts;
 pub use casper_dao_macros;
 pub mod conversions;
 pub mod cspr;
-pub mod cspr_rate;
 pub mod definitions;
 pub mod math;
 
 #[cfg(feature = "test-support")]
 pub use conversions::BytesConversion;
+pub use instance::Instanced;
 pub use parts::{
     address::Address,
     collection::{Iter, List, OrderedCollection, Set},
     consts,
     contract_call::ContractCall,
     error::Error,
-    mapping::{Mapping, VecMapping},
-    sequence::SequenceGenerator,
+    mapping::{IndexedMapping, Mapping, VecMapping},
     types::{BlockTime, DocumentHash},
     variable::Variable,
 };

@@ -1,19 +1,18 @@
 use casper_dao_erc721::{
-    core::ERC721Token,
+    ERC721Token,
     BurnableERC721,
     MetadataERC721,
     MintableERC721,
     TokenId,
     TokenUri,
 };
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::{AccessControl, SequenceGenerator};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
     Address,
     Error,
     Mapping,
-    SequenceGenerator,
 };
 use casper_types::U512;
 use delegate::delegate;

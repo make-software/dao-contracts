@@ -1,14 +1,18 @@
+//! Data structures describing contracts and events metadata.
 use casper_types::{CLType, CLTyped};
 use serde::Serialize;
 
+/// Smart contract metadata. Should be implemented by every contract.
 pub trait ContractDefinition {
     fn contract_def() -> ContractDef;
 }
 
+/// Event metadata. Should be implemented by every event.
 pub trait EventDefinition {
     fn event_def() -> EventDef;
 }
 
+/// Represents a contract definition.
 #[derive(Debug, Clone, Serialize)]
 pub struct ContractDef {
     pub name: &'static str,
@@ -53,6 +57,7 @@ impl ContractDef {
     }
 }
 
+/// Represents contract entry point definition.
 #[derive(Debug, Clone, Serialize)]
 pub struct MethodDef {
     pub name: &'static str,
@@ -82,12 +87,14 @@ impl MethodDef {
     }
 }
 
+/// Represents an event definition.
 #[derive(Debug, Clone, Serialize)]
 pub struct EventDef {
     pub name: &'static str,
     pub fields: Vec<ElemDef>,
 }
 
+/// Represents a single event field.
 #[derive(Debug, Clone, Serialize)]
 pub struct ElemDef {
     pub name: &'static str,

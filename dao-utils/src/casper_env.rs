@@ -1,3 +1,4 @@
+//! Functions to interact with the host environment.
 use std::{collections::BTreeSet, convert::TryInto};
 
 use casper_contract::{
@@ -17,7 +18,7 @@ use casper_types::{
     URef,
 };
 
-use crate::{consts::CONTRACT_MAIN_PURSE, events::Events, Address};
+use crate::{consts::CONTRACT_MAIN_PURSE, events::Events, Address, BlockTime};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
@@ -108,6 +109,7 @@ pub fn call_contract<T: CLTyped + FromBytes>(
     runtime::call_versioned_contract(*contract_package_hash, None, entry_point, runtime_args)
 }
 
+/// Creates a new contract and initializes it by calling a constructor function.
 pub fn install_contract(
     package_hash: &str,
     entry_points: EntryPoints,
@@ -135,14 +137,17 @@ pub fn install_contract(
         .unwrap_or_revert();
 }
 
-pub fn get_block_time() -> u64 {
+/// Returns the current [`BlockTime`].
+pub fn get_block_time() -> BlockTime {
     u64::from(runtime::get_blocktime())
 }
 
+/// Stops execution of a contract and reverts execution effects with a given error.
 pub fn revert<T: Into<ApiError>>(error: T) -> ! {
     runtime::revert(error);
 }
 
+/// Returns an [`URef`] of the contracts' main purse.
 pub fn contract_main_purse() -> URef {
     match runtime::get_key(CONTRACT_MAIN_PURSE) {
         None => {

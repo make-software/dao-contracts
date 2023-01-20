@@ -190,6 +190,7 @@ impl Configuration {
         self.fiat_rate
     }
 
+    /// Calculates the value CSPRs in Fiat currency.
     pub fn convert_to_fiat(&self, cspr_amount: U512) -> Result<U512, Error> {
         if let Some(fiat_rate) = self.fiat_rate {
             if let Some(fiat_amount) = cspr_amount.checked_div(fiat_rate) {

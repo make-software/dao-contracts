@@ -159,10 +159,12 @@ fn emit<T: ToBytes>(_event: T) {
     casper_env::emit(_event);
 }
 
+/// Event definitions the module emits.
 pub mod events {
     use casper_dao_utils::{casper_dao_macros::Event, Address};
     use casper_types::U512;
 
+    /// Informs the tokens has been transferred.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Transfer {
         pub from: Option<Address>,
@@ -170,6 +172,7 @@ pub mod events {
         pub value: U512,
     }
 
+    /// Informs a spender has been approved,
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Approval {
         pub owner: Address,

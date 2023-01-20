@@ -1,4 +1,4 @@
-//! Utilities related to [ReputationContract](crate::reputation::ReputationContract).
+//! Contains Reputation Token Contract definition and related abstractions.
 mod agg;
 mod balances;
 mod stakes;

@@ -1,11 +1,11 @@
+use casper_dao_utils::{Variable, Instanced};
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     CLTyped,
 };
 use num_traits::{Num, One, Zero};
 
-use crate::{instance::Instanced, Variable};
-
+/// A module that stores a single value in the storage that can be read or incremented.
 pub struct SequenceGenerator<T>
 where
     T: Num + One + CLTyped + ToBytes + FromBytes,

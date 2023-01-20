@@ -1,3 +1,42 @@
+//! Contains Bid Escrow Contract definitions and related abstractions.
+//! 
+//! # Posting
+//! The first step of the `Bid Escrow` process is `Posting` a `Job Offer`. 
+//! It is done by `JobPoster` by sending a query to a `BidEscrow` contract containing:
+//! * Expected timeframe for completing a `Job`
+//! * Maximum budget for a `Job`
+//! With the query, the `JobPoster` sends a `DOS fee` in `CSPR`. The minimum amount of a `DOS fee` is defined in 
+//! [Variable Repository Contract](crate::variable_repository::VariableRepositoryContractInterface) 
+//! under the key`PostJobDOSFee`.
+//! This action creates a new object in the contract called `Job Offer` and starts the `Bidding process`.
+//! 
+//! # Bidding
+//! The `Bidding` process allows `Workers` to post `Bids` with the offer of completing a job. 
+//! 
+//! During the `Auction` process the `Job Poster` can pick a `Bid`.
+//! When no `Bid` is posted or selected by `Job Poster` during both auctions, the `Job` is cancelled, 
+//! `DOS Fee` is returned to the `Job Poster` and stakes sent by the `Bidders` are returned to them.
+//! 
+//! # Submitting a Job Proof
+//! Now the `Worker` has the time to complete the `Job` and submit its proof to the contract. 
+//! After the works have been completed, the `Worker` sends a query to the contract containing 
+//! the cryptographic hash of a document being a proof of `Work` done for a `Job Poster`.
+//! 
+//! # Grace Period
+//! However, if `External Worker` do not post a `Job Proof` in time, his `CSPR` stake is redistributed 
+//! between all `VA’s`. 
+//! In case of `Internal Worker`, his staked `Reputation` gets burned and it undergoes the 
+//! `Automated Reputation slashing` see [`JobEngine.slash_worker()`](crate::bid_escrow::job_engine::JobEngine::slash_worker()). 
+//! Then the process enters a `Grace period` (with the timeframe the same as the timeframe of the work for `Worker`). 
+//! During this period, anyone (`VA`, `External Worker`, even the original `Worker`) can submit the `Job Proof`, 
+//! becoming the new `Worker` and participating in the reward mechanism. Alongside the `Job Proof`, 
+//! a `Worker` needs to send a stake in form of `Reputation` (or `CSPR` for `External Worker`). 
+//! This stake will behave in the same manner as stake sent by the original `Worker`.
+//! If nobody submits the `Job Proof` during the grace period, the whole process ends.
+//! The `CSPR` paid by the `Job Poster` is returned along with the `DOS Fee`.
+//! 
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
 use std::borrow::Borrow;
 
 use casper_dao_modules::AccessControl;
@@ -212,6 +251,10 @@ pub trait BidEscrowContractInterface {
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 
+/// A contract that manages the full `Bid Escrow` process. 
+/// Uses [`VotingEngine`](crate::voting::VotingEngine) to conduct the voting process.
+/// 
+/// For details see [BidEscrowContractInterface](BidEscrowContractInterface).
 #[derive(Instance)]
 pub struct BidEscrowContract {
     refs: ContractRefsWithKycStorage,

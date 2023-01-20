@@ -3,6 +3,7 @@ use casper_types::RuntimeArgs;
 
 use crate::{casper_env::call_contract, Address};
 
+/// A serializable data structure that represent a contract call.
 #[derive(Debug, ToBytes, FromBytes, Clone, PartialEq, Eq)]
 pub struct ContractCall {
     pub address: Address,
@@ -26,6 +27,7 @@ impl ContractCall {
         self.runtime_args.clone()
     }
 
+    /// Calls the contract.
     pub fn call(&self) {
         call_contract(
             self.address(),

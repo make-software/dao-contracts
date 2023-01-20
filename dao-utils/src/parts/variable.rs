@@ -8,7 +8,7 @@ use casper_types::{
 
 use crate::{
     casper_env::{get_key, set_key},
-    instance::Instanced,
+    Instanced,
     Error,
 };
 

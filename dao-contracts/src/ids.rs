@@ -1,9 +1,8 @@
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::{AccessControl, SequenceGenerator};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
-    SequenceGenerator,
 };
 use delegate::delegate;
 
