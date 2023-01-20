@@ -6,10 +6,13 @@ mod token;
 
 #[cfg(feature = "test-support")]
 pub use token::ReputationContractTest;
-pub use token::{ReputationContract, ReputationContractInterface, ReputationContractCaller, events::*};
+pub use token::{
+    events::*,
+    ReputationContract,
+    ReputationContractCaller,
+    ReputationContractInterface,
+};
 
 pub mod submodules {
-    pub use super::agg::*;
-    pub use super::balances::BalanceStorage;
-    pub use super::stakes::StakesStorage;
+    pub use super::{agg::*, balances::BalanceStorage, stakes::StakesStorage};
 }

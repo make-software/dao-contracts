@@ -10,7 +10,7 @@ use casper_types::U512;
 use delegate::delegate;
 
 use super::{
-    agg::{AggregatedStake, AggregatedBalance, BalanceAggregates},
+    agg::{AggregatedBalance, AggregatedStake, BalanceAggregates},
     balances::BalanceStorage,
     stakes::StakesStorage,
 };
@@ -59,7 +59,7 @@ pub trait ReputationContractInterface {
     ///
     /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
-    /// 
+    ///
     /// // TODO: Fix events documentation
     /// It emits [`Burn`](events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U512);

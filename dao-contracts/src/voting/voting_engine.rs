@@ -1,8 +1,4 @@
 //! Governance Voting module.
-pub mod consts;
-pub mod events;
-pub mod voting_state_machine;
-
 use std::collections::BTreeMap;
 
 use casper_dao_utils::{
@@ -39,6 +35,10 @@ use crate::{
     va_nft::VaNftContractInterface,
     voting::validation::rules::can_create_voting::CanCreateVoting,
 };
+
+pub mod consts;
+pub mod events;
+pub mod voting_state_machine;
 
 /// Governance voting is a struct that contracts can use to implement voting. It consists of two phases:
 /// 1. Informal voting
@@ -80,7 +80,7 @@ impl VotingEngine {
         creator: Address,
         stake: U512,
         configuration: Configuration,
-    ) -> VotingCreatedInfo {
+    ) -> (VotingCreatedInfo, VotingStateMachine) {
         RulesBuilder::new()
             .add_validation(CanCreateVoting::create(
                 self.is_va(creator),
@@ -113,8 +113,8 @@ impl VotingEngine {
             used_stake,
             voting.voting_configuration(),
         );
-        self.set_voting(voting);
-        info
+        self.set_voting(voting.clone());
+        (info, voting)
     }
 
     /// Finishes voting.
@@ -225,8 +225,7 @@ impl VotingEngine {
 
         // Emit VotingEnded event.
         let voting_ended_event = VotingEnded::new(
-            voting_id,
-            summary.voting_type(),
+            &voting,
             summary.result(),
             stats,
             rep_unstakes,
@@ -260,16 +259,6 @@ impl VotingEngine {
         self.set_voting(voting);
 
         summary
-    }
-
-    pub fn summary(&self, voting_id: VotingId) -> VotingSummary {
-        let voting = self.get_voting_or_revert(voting_id);
-        let voters_len = self.voters.len((voting.voting_id(), voting.voting_type()));
-        VotingSummary::new(
-            voting.get_result(voters_len),
-            voting.voting_type(),
-            voting_id,
-        )
     }
 
     fn finish_informal_voting(&mut self, voting: &mut VotingStateMachine) -> VotingSummary {
@@ -364,7 +353,6 @@ impl VotingEngine {
         }
     }
 
-    // TODO: REFACTOR EVERYTHING
     pub fn cast_ballot(
         &mut self,
         voter: Address,

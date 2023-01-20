@@ -18,12 +18,12 @@ use crate::{
     refs::ContractRefsWithKycStorage,
     voting::{
         submodules::KycInfo,
-        VotingId,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingCreatedInfo,
         VotingEngine,
+        VotingId,
     },
 };
 
@@ -107,12 +107,12 @@ pub struct KycVoterContract {
     refs: ContractRefsWithKycStorage,
     kyc: KycInfo,
     access_control: AccessControl,
-    voting: VotingEngine,
+    voting_engine: VotingEngine,
 }
 
 impl KycVoterContractInterface for KycVoterContract {
     delegate! {
-        to self.voting {
+        to self.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -172,8 +172,8 @@ impl KycVoterContractInterface for KycVoterContract {
             })
             .build();
 
-        let info = self
-            .voting
+        let (info, _) = self
+            .voting_engine
             .create_voting(creator, stake, voting_configuration);
 
         self.kyc.set_voting(subject_address, info.voting_id);
@@ -182,18 +182,18 @@ impl KycVoterContractInterface for KycVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting
+        self.voting_engine
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let summary = self.voting.finish_voting(voting_id, voting_type);
+        let summary = self.voting_engine.finish_voting(voting_id, voting_type);
         // The voting is ended when:
         // 1. Informal voting has been rejected.
         // 2. Formal voting has been finish (regardless of the final result).
         if summary.is_voting_process_finished() {
             let voting = self
-                .voting
+                .voting_engine
                 .get_voting(voting_id)
                 .unwrap_or_revert_with(Error::VotingDoesNotExist);
             let address = self.kyc.get_voting_subject(voting.voting_id());
@@ -203,7 +203,7 @@ impl KycVoterContractInterface for KycVoterContract {
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter, voting_id);
+        self.voting_engine.slash_voter(voter, voting_id);
     }
 }
 

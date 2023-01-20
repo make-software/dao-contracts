@@ -31,15 +31,16 @@ fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStrea
                 .attrs
                 .iter()
                 .filter(|attr| attr.path.is_ident("scoped"))
-                .find_map(|attr| match attr.parse_meta().unwrap() {
+                .map(|attr| match attr.parse_meta().unwrap() {
                     syn::Meta::NameValue(name_value) => match name_value.lit {
                         syn::Lit::Str(str) => {
-                            Some(str.value().parse::<Scope>().unwrap_or(Scope::Invalid))
+                            str.value().parse::<Scope>().unwrap_or(Scope::Invalid)
                         }
-                        _ => Some(Scope::Invalid),
+                        _ => Scope::Invalid,
                     },
-                    _ => Some(Scope::Invalid),
+                    _ => Scope::Invalid,
                 })
+                .next()
                 .unwrap_or(Scope::None);
 
             match scope {

@@ -20,6 +20,8 @@ use crate::{
         types::JobId,
     },
     refs::{ContractRefs, ContractRefsWithKycStorage},
+    reputation::ReputationContractInterface,
+    va_nft::VaNftContractInterface,
     voting::{
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingType},
@@ -27,8 +29,6 @@ use crate::{
         VotingEngine,
         VotingId,
     },
-    reputation::ReputationContractInterface,
-    va_nft::VaNftContractInterface,
 };
 
 #[derive(Instance)]
@@ -40,7 +40,7 @@ pub struct JobEngine {
     #[scoped = "contract"]
     refs: ContractRefsWithKycStorage,
     #[scoped = "contract"]
-    pub voting: VotingEngine,
+    pub voting_engine: VotingEngine,
     #[scoped = "contract"]
     onboarding: OnboardingInfo,
     #[scoped = "contract"]
@@ -86,17 +86,14 @@ impl JobEngine {
             voting_configuration.bind_ballot_for_successful_voting(job.worker());
         }
 
-        let voting_info = self
-            .voting
-            .create_voting(worker, U512::zero(), voting_configuration);
+        let (voting_info, mut voting) =
+            self.voting_engine
+                .create_voting(worker, U512::zero(), voting_configuration);
 
         self.job_storage
             .store_job_for_voting(voting_info.voting_id, job_id);
 
-        // TODO: Do it without reloading voting.
-        let mut voting = self.voting.get_voting_or_revert(voting_info.voting_id);
-
-        self.voting.cast_ballot(
+        self.voting_engine.cast_ballot(
             worker,
             voting_info.voting_id,
             Choice::InFavor,
@@ -108,7 +105,7 @@ impl JobEngine {
         job.set_voting_id(voting_info.voting_id);
 
         self.job_storage.store_job(job);
-        self.voting.set_voting(voting);
+        self.voting_engine.set_voting(voting);
     }
 
     pub fn submit_job_proof_during_grace_period(
@@ -236,14 +233,14 @@ impl JobEngine {
         if caller == job.poster() || caller == job.worker() {
             revert(Error::CannotVoteOnOwnJob);
         }
-        self.voting
+        self.voting_engine
             .vote(caller, voting_id, voting_type, choice, stake);
     }
 
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let job = self.job_storage.get_job_by_voting_id(voting_id);
         let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
-        let voting_summary = self.voting.finish_voting(voting_id, voting_type);
+        let voting_summary = self.voting_engine.finish_voting(voting_id, voting_type);
         match voting_summary.voting_type() {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against => {
@@ -393,18 +390,18 @@ impl JobEngine {
 
     fn mint_reputation_for_voters(&mut self, job: &Job, amount: U512) {
         let voting = self
-            .voting
+            .voting_engine
             .get_voting(job.voting_id().unwrap_or_revert())
             .unwrap_or_revert();
 
         for i in 0..self
-            .voting
+            .voting_engine
             .voters()
             .len((voting.voting_id(), VotingType::Formal))
         {
-            let ballot = self
-                .voting
-                .get_ballot_at(voting.voting_id(), VotingType::Formal, i);
+            let ballot =
+                self.voting_engine
+                    .get_ballot_at(voting.voting_id(), VotingType::Formal, i);
             if ballot.unbound || ballot.canceled {
                 continue;
             }
@@ -481,7 +478,7 @@ impl JobEngine {
         let voting_id = job
             .voting_id()
             .unwrap_or_revert_with(Error::VotingDoesNotExist);
-        let all_voters = self.voting.all_voters(voting_id, VotingType::Formal);
+        let all_voters = self.voting_engine.all_voters(voting_id, VotingType::Formal);
 
         let balances = self.refs.reputation_token().partial_balances(all_voters);
         let partial_supply = balances.total_supply();

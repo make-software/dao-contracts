@@ -87,7 +87,7 @@ impl VotingSummary {
 
     /// Get a reference to the voting summary's ty.
     pub fn voting_type(&self) -> VotingType {
-        self.ty.clone()
+        self.ty
     }
 }
 

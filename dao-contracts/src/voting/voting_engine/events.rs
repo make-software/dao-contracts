@@ -14,7 +14,7 @@ use casper_types::{
 use super::voting_state_machine::{Stats, VotingResult, VotingType};
 use crate::{
     config::Configuration,
-    voting::{ballot::Choice, types::VotingId, Ballot},
+    voting::{ballot::Choice, types::VotingId, voting_state_machine::VotingStateMachine, Ballot},
 };
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -27,7 +27,7 @@ pub enum Reason {
 
 impl ToBytes for Reason {
     fn to_bytes(&self) -> Result<Vec<u8>, casper_types::bytesrepr::Error> {
-        (self.clone() as u32).to_bytes()
+        (*self as u32).to_bytes()
     }
 
     fn serialized_length(&self) -> usize {
@@ -137,8 +137,7 @@ pub struct VotingEnded {
 
 impl VotingEnded {
     pub fn new(
-        voting_id: VotingId,
-        voting_type: VotingType,
+        voting: &VotingStateMachine,
         voting_result: VotingResult,
         stats: &Stats,
         unstakes: BTreeMap<(Address, Reason), U512>,
@@ -147,8 +146,8 @@ impl VotingEnded {
         mints: BTreeMap<(Address, Reason), U512>,
     ) -> Self {
         Self {
-            voting_id,
-            voting_type,
+            voting_id: voting.voting_id(),
+            voting_type: voting.voting_type(),
             voting_result,
             stake_in_favor: stats.stake_in_favor,
             stake_against: stats.stake_against,

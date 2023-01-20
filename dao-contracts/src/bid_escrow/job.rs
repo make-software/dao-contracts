@@ -208,11 +208,6 @@ impl Job {
         self.start_time + self.time_for_job <= block_time
     }
 
-    pub fn is_grace_period(&self, _block_time: BlockTime) -> bool {
-        // TODO: Implement and use
-        false
-    }
-
     pub fn submit_proof(&mut self, request: SubmitJobProofRequest) {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);

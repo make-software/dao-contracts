@@ -16,6 +16,7 @@ use casper_dao_utils::{
 use casper_types::{URef, U512};
 use delegate::delegate;
 
+use self::{bid_engine::BidEngine, job_engine::JobEngine};
 use crate::{
     bid_escrow::{
         bid::Bid,
@@ -33,17 +34,15 @@ use crate::{
     },
 };
 
-use self::{job_engine::JobEngine, bid_engine::BidEngine};
-
 pub mod bid;
+pub mod bid_engine;
 pub mod events;
 pub mod job;
+pub mod job_engine;
 pub mod job_offer;
 pub mod storage;
 pub mod types;
 pub mod validation;
-pub mod bid_engine;
-pub mod job_engine;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -223,7 +222,7 @@ pub struct BidEscrowContract {
 
 impl BidEscrowContractInterface for BidEscrowContract {
     delegate! {
-        to self.job_engine.voting {
+        to self.job_engine.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -308,7 +307,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
 
     fn cancel_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.job_engine.voting.slash_voter(voter, voting_id);
+        self.job_engine.voting_engine.slash_voter(voter, voting_id);
     }
 
     fn slash_all_active_job_offers(&mut self, bidder: Address) {

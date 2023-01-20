@@ -46,7 +46,7 @@ pub fn all_contracts() -> Vec<ContractDef> {
     contracts
 }
 
-fn with_access_control_events(contracts: &mut Vec<ContractDef>) {
+fn with_access_control_events(contracts: &mut [ContractDef]) {
     for contract in contracts.iter_mut() {
         contract.add_event::<AddedToWhitelist>("init");
         contract.add_event::<OwnerChanged>("init");
@@ -56,7 +56,7 @@ fn with_access_control_events(contracts: &mut Vec<ContractDef>) {
     }
 }
 
-fn with_voting_events(contracts: &mut Vec<ContractDef>) {
+fn with_voting_events(contracts: &mut [ContractDef]) {
     for contract in contracts.iter_mut() {
         contract.add_event::<BallotCast>("vote");
         contract.add_event::<BallotCanceled>("slash_voter");
