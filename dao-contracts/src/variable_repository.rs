@@ -30,7 +30,7 @@
 //! | DefaultReputationSlash             | 0.1           | 100          | float   | How much reputation of an Internal Worker is slashed after not completing a Job                                                                                                                                                 |
 //! | VotingClearnessDelta               | 8             | 8000         | int     | If the difference between 50/50 and result of the Informal Voting is bigger than the value, the time between votings should be doubled.                                                                                         |
 //! | VotingStartAfterJobWorkerSubmisson | 3 days        | 259200       | seconds | Time between the worker job submission and the internal voting start.                                                                                                                                                           |
-//! | GovernancePaymentRatio             | 0.1           | 100          | float   | How much CSPR is sent to GovernanceWallet after the Job is finished                                                                                                                                                             |
+//! | BidEscrowPaymentRatio              | 0.1           | 100          | float   | How much CSPR is sent to GovernanceWallet after the Job is finished                                                                                                                                                             |
 //! | GovernanceWalletAddress            |               |              | address | An address of a multisig wallet of the DAO.         
 //!
 //!  [Repo Voting]: crate::repo_voter::RepoVoterContractInterface   

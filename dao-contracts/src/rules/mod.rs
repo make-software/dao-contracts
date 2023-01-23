@@ -5,9 +5,12 @@ use crate::{
     voting::voting_state_machine::VotingStateMachine,
 };
 
-pub mod action;
-pub mod builder;
+mod action;
+mod builder;
 pub mod validation;
+
+pub use action::Action;
+pub use builder::RulesBuilder;
 
 pub struct Rules {
     pub validations: Vec<Box<dyn Validation>>,

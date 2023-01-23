@@ -11,15 +11,12 @@ use crate::{
     bid_escrow::{
         job::PickBidRequest,
         types::JobOfferId,
-        validation::rules::{
-            CanJobOfferBeCancelled,
-            CanProgressJobOffer,
-            HasPermissionsToCancelJobOffer,
-            IsDosFeeEnough,
-        },
     },
     config::Configuration,
-    rules::{builder::RulesBuilder, validation::IsUserKyced},
+    rules::{RulesBuilder, validation::{IsUserKyced, bid_escrow::{CanJobOfferBeCancelled,
+        CanProgressJobOffer,
+        HasPermissionsToCancelJobOffer,
+        IsDosFeeEnough,}}},
 };
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq)]

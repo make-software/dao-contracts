@@ -10,8 +10,10 @@ use casper_types::U512;
 
 use super::types::{BidId, JobId, JobOfferId};
 use crate::{
-    bid_escrow::validation::rules::{CanPickBid, DoesProposedPaymentMatchTransferred},
-    rules::builder::RulesBuilder,
+    rules::{
+        RulesBuilder,
+        validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred}
+    },
     voting::VotingId,
 };
 

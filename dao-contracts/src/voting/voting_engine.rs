@@ -31,12 +31,11 @@ use super::{
 use crate::{
     config::Configuration,
     reputation::ReputationContractInterface,
-    rules::builder::RulesBuilder,
+    rules::RulesBuilder,
     va_nft::VaNftContractInterface,
-    voting::validation::rules::can_create_voting::CanCreateVoting,
+    rules::validation::voting::CanCreateVoting,
 };
 
-pub mod consts;
 pub mod events;
 pub mod voting_state_machine;
 
@@ -179,14 +178,12 @@ impl VotingEngine {
                     VotingResult::InFavor => {
                         if voting
                             .voting_configuration()
-                            .voting_configuration
-                            .bind_ballot_for_successful_voting
+                            .should_bind_ballot_for_successful_voting()
                         {
                             let worker = voting
                                 .voting_configuration()
-                                .voting_configuration
-                                .unbound_ballot_address
-                                .unwrap_or_revert_with(Error::ArithmeticOverflow);
+                                .get_unbound_ballot_address()
+                                .unwrap_or_revert_with(Error::InvalidAddress);
                             self.bound_ballot(&mut voting, worker, VotingType::Formal);
                         }
                         let yes_unstakes =

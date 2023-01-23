@@ -10,8 +10,9 @@ use crate::{
         job::{JobStatus, PickBidRequest},
         job_offer::{AuctionState, JobOfferStatus},
         types::{BidId, JobOfferId},
-        validation::rules::{
-            CanBeOnboarded,
+    },
+    rules::{RulesBuilder, validation::{IsUserKyced, bid_escrow::{
+        CanBeOnboarded,
             CanBidBeCancelled,
             CanBidOnAuctionState,
             CanBidOnOwnJob,
@@ -20,9 +21,7 @@ use crate::{
             HasPermissionsToCancelBid,
             IsGracePeriod,
             IsStakeNonZero,
-        },
-    },
-    rules::{builder::RulesBuilder, validation::IsUserKyced},
+    }}},
 };
 
 #[derive(CLTyped, ToBytes, FromBytes, Debug)]

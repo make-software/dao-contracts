@@ -9,15 +9,20 @@ use casper_types::U512;
 
 use crate::{
     config::Configuration,
+    rules::{RulesBuilder, validation::voting::{AfterFormalVoting, VotingNotCompleted, VoteInTime}},
     voting::{ballot::Choice, types::VotingId},
 };
 
 /// Result of a Voting
 #[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
 pub enum VotingResult {
+    /// Voting passed.
     InFavor,
+    /// Voting rejected.
     Against,
+    /// Too few VA's voted.
     QuorumNotReached,
+    /// Voting canceled.
     Canceled,
 }
 
@@ -31,14 +36,21 @@ pub enum VotingType {
 /// State of Voting
 #[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq, Eq)]
 pub enum VotingState {
+    /// Voting created but informal voting is not started.
     Created,
+    /// Informal voting started.
     Informal,
+    /// Informal voting ended, but the formal one hasn't started yet.
     BetweenVotings,
+    /// Formal voting started.
     Formal,
+    /// Formal voting ended.
     Finished,
+    /// The voting interrupted.
     Canceled,
 }
 
+/// The voting process progression.
 #[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq, Eq)]
 pub enum VotingStateInTime {
     BeforeInformal,
@@ -58,6 +70,7 @@ pub struct VotingSummary {
 }
 
 impl VotingSummary {
+    /// Creates a new instance of [`VotingSummary`].
     pub fn new(result: VotingResult, ty: VotingType, voting_id: VotingId) -> Self {
         Self {
             result,
@@ -66,6 +79,7 @@ impl VotingSummary {
         }
     }
 
+    /// Indicates if the voting process is completed.
     pub fn is_voting_process_finished(&self) -> bool {
         match self.ty {
             VotingType::Informal => self.is_rejected(),
@@ -73,31 +87,40 @@ impl VotingSummary {
         }
     }
 
+    /// Indicates if summary refers to formal voting .
     pub fn is_formal(&self) -> bool {
         self.voting_type() == VotingType::Formal
+    }
+
+    /// Returns voting result.
+    pub fn result(&self) -> VotingResult {
+        self.result.clone()
+    }
+
+    /// Gets the voting type.
+    pub fn voting_type(&self) -> VotingType {
+        self.ty
     }
 
     fn is_rejected(&self) -> bool {
         vec![VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
     }
-
-    pub fn result(&self) -> VotingResult {
-        self.result.clone()
-    }
-
-    /// Get a reference to the voting summary's ty.
-    pub fn voting_type(&self) -> VotingType {
-        self.ty
-    }
 }
 
+/// Voting statistics
 #[derive(Debug, Clone, Default, CLTyped, ToBytes, FromBytes)]
 pub struct Stats {
+    /// The total `in favor` stake.
     pub stake_in_favor: U512,
+    /// The total `against` stake.
     pub stake_against: U512,
+    /// The total unbounded `in favor` stake.
     pub unbound_stake_in_favor: U512,
+    /// The total unbounded `against` stake.
     pub unbound_stake_against: U512,
+    /// The number of VA's voted `in favor`.
     pub votes_in_favor: u32,
+    /// The number of VA's voted `against`.
     pub votes_against: u32,
 }
 
@@ -134,6 +157,7 @@ impl VotingStateMachine {
         }
     }
 
+    /// Ends the informal phase, verifies if the result is close, updates voting type to [Formal](VotingType::Formal).
     pub fn complete_informal_voting(&mut self) {
         self.state = VotingState::Formal;
         if self.is_result_close() {
@@ -142,10 +166,12 @@ impl VotingStateMachine {
         self.voting_type = VotingType::Formal;
     }
 
+    /// Ends the voting process gracefully.
     pub fn finish(&mut self) {
         self.state = VotingState::Finished;
     }
-
+    
+    /// Ends the voting process forcefully and cancels result.
     pub fn cancel(&mut self) {
         self.state = VotingState::Canceled;
     }
@@ -155,6 +181,7 @@ impl VotingStateMachine {
         self.voting_type
     }
 
+    /// Checks if voting is of type [Informal](VotingType::Informal) and stakes the reputation.
     pub fn is_informal_without_stake(&self) -> bool {
         !self.voting_configuration().informal_stake_reputation()
             && self.voting_type() == VotingType::Informal
@@ -175,19 +202,23 @@ impl VotingStateMachine {
         }
     }
 
+    /// Gets the informal phase end time.
     pub fn informal_voting_end_time(&self) -> BlockTime {
         self.informal_voting_start_time() + self.configuration.informal_voting_time()
     }
-
+    
+    /// Gets the informal-formal break end time.
     pub fn time_between_votings_end_time(&self) -> BlockTime {
         self.informal_voting_end_time()
-            + self.configuration.time_between_informal_and_formal_voting()
+        + self.configuration.time_between_informal_and_formal_voting()
     }
-
+    
+    /// Gets the informal phase end time.
     pub fn formal_voting_end_time(&self) -> BlockTime {
         self.time_between_votings_end_time() + self.configuration.formal_voting_time()
     }
 
+    /// Checks is the `in_favor` stake surpasses the `against` stake.
     pub fn is_in_favor(&self) -> bool {
         match self.voting_type() {
             VotingType::Informal => {
@@ -435,5 +466,22 @@ impl VotingStateMachine {
 
     pub fn formal_stats(&self) -> &Stats {
         &self.formal_stats
+    }
+}
+
+impl VotingStateMachine {
+    pub fn guard_vote(&self, block_time: BlockTime) {
+        RulesBuilder::new()
+            .add_voting_validation(VoteInTime::create(block_time))
+            .build()
+            .validate(self);
+    }
+
+    pub fn guard_finish_formal_voting(&self, block_time: BlockTime) {
+        RulesBuilder::new()
+            .add_voting_validation(AfterFormalVoting::create(block_time))
+            .add_voting_validation(VotingNotCompleted::create(block_time))
+            .build()
+            .validate(self);
     }
 }

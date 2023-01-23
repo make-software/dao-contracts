@@ -153,7 +153,6 @@ pub mod job_engine;
 pub mod job_offer;
 pub mod storage;
 pub mod types;
-pub mod validation;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {

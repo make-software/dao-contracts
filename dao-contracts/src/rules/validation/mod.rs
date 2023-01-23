@@ -1,5 +1,8 @@
 mod is_user_kyced;
 
+pub mod bid_escrow;
+pub mod voting;
+
 use casper_dao_utils::Error;
 pub use is_user_kyced::IsUserKyced;
 
