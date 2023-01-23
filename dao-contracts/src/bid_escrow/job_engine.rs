@@ -5,7 +5,6 @@ use casper_dao_utils::{
     casper_dao_macros::Instance,
     casper_env::{caller, get_block_time},
     cspr,
-    Address,
     DocumentHash,
     Error,
 };
@@ -19,6 +18,8 @@ use crate::{
         storage::{BidStorage, JobStorage},
         types::JobId,
     },
+    config::Configuration,
+    cspr_redistribution::{redistribute_cspr_to_all_vas, redistribute_to_governance},
     refs::{ContractRefs, ContractRefsWithKycStorage},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
@@ -62,27 +63,19 @@ impl JobEngine {
         let bid = self.bid_storage.get_bid_or_revert(job.bid_id());
         let worker = caller();
 
-        let submit_proof_request = SubmitJobProofRequest { proof };
-
-        job.submit_proof(submit_proof_request);
+        job.submit_proof(SubmitJobProofRequest { proof });
         // TODO: Emit event.
 
-        if job_offer.configuration.informal_stake_reputation() && !job.stake().is_zero() {
-            let bid = self.bid_storage.get_bid(job.bid_id()).unwrap();
-            self.refs
-                .reputation_token()
-                .unstake_bid(bid.borrow().into());
-        }
+        self.unstake_reputation_for_use_in_voting(
+            &bid,
+            &job,
+            voting_configuration.informal_stake_reputation(),
+        );
 
-        let stake = if job.external_worker_cspr_stake().is_zero() {
-            job.stake()
-        } else {
-            voting_configuration
-                .apply_reputation_conversion_rate_to(job.external_worker_cspr_stake())
-        };
+        let stake_for_voting =
+            Self::calculate_stake_for_voting(&mut job, &mut voting_configuration);
 
-        let is_unbound = job.worker_type() != &WorkerType::Internal;
-        if is_unbound && bid.onboard {
+        if job.is_unbound() && bid.onboard {
             voting_configuration.bind_ballot_for_successful_voting(job.worker());
         }
 
@@ -90,22 +83,21 @@ impl JobEngine {
             self.voting_engine
                 .create_voting(worker, U512::zero(), voting_configuration);
 
-        self.job_storage
-            .store_job_for_voting(voting_info.voting_id, job_id);
+        job.set_voting_id(voting_info.voting_id);
 
         self.voting_engine.cast_ballot(
             worker,
             voting_info.voting_id,
             Choice::InFavor,
-            stake,
-            is_unbound,
+            stake_for_voting,
+            job.is_unbound(),
             &mut voting,
         );
 
-        job.set_voting_id(voting_info.voting_id);
-
         self.job_storage.store_job(job);
         self.voting_engine.set_voting(voting);
+        self.job_storage
+            .store_job_for_voting(voting_info.voting_id, job_id);
     }
 
     pub fn submit_job_proof_during_grace_period(
@@ -126,11 +118,12 @@ impl JobEngine {
             .bid_storage
             .get_bid(old_job.bid_id())
             .unwrap_or_revert_with(Error::BidNotFound);
+        let configuration = self.bid_storage.get_job_offer_configuration(&old_job);
 
         // redistribute original cspr stake
         if let Some(cspr_stake) = old_bid.cspr_stake {
-            let left = self.redistribute_to_governance(&old_job, cspr_stake);
-            self.redistribute_cspr_to_all_vas(left);
+            let left = redistribute_to_governance(cspr_stake, &configuration);
+            redistribute_cspr_to_all_vas(left, &self.refs);
         }
 
         // burn original reputation stake
@@ -192,6 +185,7 @@ impl JobEngine {
 
     pub fn cancel_job(&mut self, job_id: JobId) {
         let mut job = self.job_storage.get_job_or_revert(job_id);
+        let configuration = self.bid_storage.get_job_offer_configuration(&job);
         let caller = caller();
 
         if let Err(e) = job.validate_cancel(get_block_time()) {
@@ -204,8 +198,8 @@ impl JobEngine {
 
         // redistribute cspr stake
         if let Some(cspr_stake) = bid.cspr_stake {
-            let left = self.redistribute_to_governance(&job, cspr_stake);
-            self.redistribute_cspr_to_all_vas(left);
+            let left = redistribute_to_governance(cspr_stake, &configuration);
+            redistribute_cspr_to_all_vas(left, &self.refs);
         }
 
         // burn reputation stake
@@ -262,7 +256,7 @@ impl JobEngine {
                     VotingResult::InFavor => match job.worker_type() {
                         WorkerType::Internal => {
                             self.mint_and_redistribute_reputation_for_internal_worker(&job);
-                            self.redistribute_cspr_internal_worker(&job);
+                            self.redistribute_cspr_internal_worker(&job, job_offer.configuration());
                             self.return_job_poster_dos_fee(&job);
                         }
                         WorkerType::ExternalToVA => {
@@ -272,12 +266,12 @@ impl JobEngine {
                             self.return_external_worker_cspr_stake(&job);
                             self.burn_external_worker_reputation(&job);
                             self.mint_and_redistribute_reputation_for_internal_worker(&job);
-                            self.redistribute_cspr_internal_worker(&job);
+                            self.redistribute_cspr_internal_worker(&job, job_offer.configuration());
                             self.return_job_poster_dos_fee(&job);
                         }
                         WorkerType::External => {
                             self.mint_and_redistribute_reputation_for_external_worker(&job);
-                            self.redistribute_cspr_external_worker(&job);
+                            self.redistribute_cspr_external_worker(&job, job_offer.configuration());
                             self.return_job_poster_dos_fee(&job);
                             self.return_external_worker_cspr_stake(&job);
                         }
@@ -289,7 +283,10 @@ impl JobEngine {
                         }
                         WorkerType::ExternalToVA | WorkerType::External => {
                             self.return_job_poster_payment_and_dos_fee(&job);
-                            self.redistribute_cspr_external_worker_failed(&job);
+                            self.redistribute_cspr_external_worker_failed(
+                                &job,
+                                job_offer.configuration(),
+                            );
                         }
                     },
                     VotingResult::QuorumNotReached => {
@@ -306,27 +303,17 @@ impl JobEngine {
 }
 
 impl JobEngine {
-    fn redistribute_to_governance(&mut self, job: &Job, payment: U512) -> U512 {
-        let configuration = self.bid_storage.get_job_offer_configuration(job);
-
-        let governance_wallet: Address = configuration.bid_escrow_wallet_address();
-        let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(payment);
-        cspr::withdraw(governance_wallet, governance_wallet_payment);
-
-        payment - governance_wallet_payment
-    }
-
-    fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let all_balances = self.refs.reputation_token().all_balances();
-        let total_supply = all_balances.total_supply();
-
-        for (address, balance) in all_balances.balances() {
-            let amount = to_redistribute * balance / total_supply;
-            cspr::withdraw(*address, amount);
+    /// Calculates the stake for voting - either the reputation staked, or the cspr staked converted to reputation
+    fn calculate_stake_for_voting(job: &mut Job, voting_configuration: &mut Configuration) -> U512 {
+        if job.external_worker_cspr_stake().is_zero() {
+            job.get_stake()
+        } else {
+            voting_configuration
+                .apply_reputation_conversion_rate_to(job.external_worker_cspr_stake())
         }
     }
 
-    fn burn_reputation_stake(&mut self, bid: &Bid) {
+    fn burn_reputation_stake(&self, bid: &Bid) {
         if bid.reputation_stake > U512::zero() {
             self.refs
                 .reputation_token()
@@ -334,6 +321,20 @@ impl JobEngine {
             self.refs
                 .reputation_token()
                 .burn(bid.worker, bid.reputation_stake);
+        }
+    }
+
+    /// Unstakes reputation from bid, so it can be used in voting.
+    fn unstake_reputation_for_use_in_voting(
+        &self,
+        bid: &Bid,
+        job: &Job,
+        informal_stake_reputation: bool,
+    ) {
+        if informal_stake_reputation && !job.get_stake().is_zero() {
+            self.refs
+                .reputation_token()
+                .unstake_bid(bid.borrow().into());
         }
     }
 
@@ -417,8 +418,8 @@ impl JobEngine {
         self.refs.reputation_token().burn(job.worker(), stake);
     }
 
-    fn redistribute_cspr_internal_worker(&mut self, job: &Job) {
-        let to_redistribute = self.redistribute_to_governance(job, job.payment());
+    fn redistribute_cspr_internal_worker(&mut self, job: &Job, configuration: &Configuration) {
+        let to_redistribute = redistribute_to_governance(job.payment(), &configuration);
         let redistribute_to_all_vas = self
             .bid_storage
             .get_job_offer_or_revert(job.job_offer_id())
@@ -427,14 +428,14 @@ impl JobEngine {
 
         // For VA's
         if redistribute_to_all_vas {
-            self.redistribute_cspr_to_all_vas(to_redistribute);
+            redistribute_cspr_to_all_vas(to_redistribute, &self.refs);
         } else {
             self.redistribute_cspr_to_voters(job, to_redistribute);
         }
     }
 
-    fn redistribute_cspr_external_worker(&mut self, job: &Job) {
-        let total_left = self.redistribute_to_governance(job, job.payment());
+    fn redistribute_cspr_external_worker(&mut self, job: &Job, configuration: &Configuration) {
+        let total_left = redistribute_to_governance(job.payment(), &configuration);
         let config = self.bid_storage.get_job_offer_configuration(job);
         let to_redistribute = config.apply_default_policing_rate_to(total_left);
         let to_worker = total_left - to_redistribute;
@@ -450,14 +451,19 @@ impl JobEngine {
 
         // For VA's
         if redistribute_to_all_vas {
-            self.redistribute_cspr_to_all_vas(to_redistribute);
+            redistribute_cspr_to_all_vas(to_redistribute, &self.refs);
         } else {
             self.redistribute_cspr_to_voters(job, to_redistribute);
         }
     }
 
-    fn redistribute_cspr_external_worker_failed(&mut self, job: &Job) {
-        let total_left = self.redistribute_to_governance(job, job.external_worker_cspr_stake());
+    fn redistribute_cspr_external_worker_failed(
+        &mut self,
+        job: &Job,
+        configuration: &Configuration,
+    ) {
+        let total_left =
+            redistribute_to_governance(job.external_worker_cspr_stake(), &configuration);
 
         // For VA's
         let all_balances = self.refs.reputation_token().all_balances();
