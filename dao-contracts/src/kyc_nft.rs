@@ -5,9 +5,11 @@
 //!
 //! # Purpose
 //! Ownership of a KYC token indicates the address has been successfully verified and is eligible to participate in the system.
-//! Minting token is usually done as a result of [KYC Voting](crate::kyc_voter::KycVoterContractInterface).
+//! Minting token is usually done as a result of [`KYC Voting`].
 //!
 //! Each [`Address`] can own only one KYC token.
+//! 
+//! [`KYC Voting`]: crate::kyc_voter::KycVoterContractInterface
 use casper_dao_erc721::{
     BurnableERC721,
     ERC721Token,

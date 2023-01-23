@@ -9,7 +9,10 @@
 //! is called in order to mint a token which formally ends the KYC process.
 //!
 //! # Voting
-//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
+//! The Voting process is managed by [`VotingEngine`]. There can be only one active voting for a given subject address.
+//! An address that is already KYC'd cannot be the subject of voting.
+//! 
+//! [`VotingEngine`]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
@@ -233,7 +236,6 @@ impl KycVoterContract {
         }
     }
 }
-
 
 /// Informs kyc voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]

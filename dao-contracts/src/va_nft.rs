@@ -7,9 +7,11 @@
 //! # Purpose
 //! Ownership of a VA token indicates the address is a VA and is eligible to participate in voting.
 //! If an `External Worker` finishes a job successfully, and wants to become a VA, receives a VA token
-//! as a reward. See [Bid Escrow](crate::bid_escrow::BidEscrowContractInterface).
+//! as a reward. See [`Bid Escrow`].
 //!
 //! Each [`Address`] can own only one VA token.
+//! 
+//! [`Bid Escrow`]: crate::bid_escrow::BidEscrowContractInterface.
 use casper_dao_erc721::{
     BurnableERC721,
     ERC721Token,

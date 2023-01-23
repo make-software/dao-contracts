@@ -1,4 +1,36 @@
 //! Contains Slashing Voter Contract definition and related abstractions.
+//! 
+//! # Definitions
+//! * Job Offer - A description of a Job posted by JobPoster
+//! * Bid - on offer that can be accepted by the Job Poster
+//! * JobPoster - user of the system that posts a Job Offer; it has to be KYC’d
+//! * Worker - the user who does a job
+//! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote
+//! 
+//! # Automated Reputation slashing
+//! It is a process of automated burning certain amount of `Reputation` of the `VA`. The amount of `Reputation` to burn 
+//! is calculated using a formula:
+//! 
+//! `reputation to burn = worker's total reputation * DefaultReputationSlash`
+//! 
+//! If the `Worker` has `Reputation` staked in other parts of the system, we burn it as soon as it is released, 
+//! until the required amount is burned.
+//! 
+//! If the range of [`DefaultReputationSlash`] is [0.01..0.99] tokens burnt is the only side effect but
+//! the value of `1.0` brings additional consequences:
+//!  
+//! * all the reputation is burnt,
+//! * fail all the `Jobs` where this `VA` is either the `Worker` or the `Job Poster`,
+//! * fail all the `voting` started by this `VA`,
+//! * remove all votes from all active `Voting`,
+//! * remove all `Bids` from all auctions,
+//! * remove [`VA Token`],
+//! 
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`]. The subject of voting cannot participate in the process.
+//! 
+//! [`DefaultReputationSlash`]: crate::variable_repository
+//! [`VA Token`]: crate::va_nft::VaNftContractInterface
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,

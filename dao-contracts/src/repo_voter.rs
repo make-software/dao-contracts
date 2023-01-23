@@ -1,12 +1,12 @@
 //! Contains Repo Voter Contract definition and related abstractions.
 //!
 //! # General
-//! The contract is used to update a value stored in the [Repository contract].
+//! The contract is used to update a value stored in the [`Repository contract`].
 //!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //!
-//! [Repository contract]: crate::variable_repository::VariableRepositoryContractInterface
+//! [`Repository contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [VotingEngine]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{

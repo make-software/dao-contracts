@@ -1,4 +1,16 @@
 //! Contains Simple Voter Contract definition and related abstractions.
+//! 
+//! # General
+//! Simple voting is a formal, on-chain confirmation of a resolution that has
+//! been made off-chain. The off-chain agreement has a form of a [`Document Hash`]
+//! that is the voting subject. None action is performed after the voting process
+//! is completed.
+//! 
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! [`Repository contract`]: crate::variable_repository::VariableRepositoryContractInterface
+//! [VotingEngine]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,

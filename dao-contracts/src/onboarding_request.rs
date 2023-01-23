@@ -11,7 +11,7 @@
 //!
 //! # Onboarding Request
 //! One of the side effects of completing a `Job` by an `External Worker` is the possibility to become a `Voting Associate`.
-//! It is also possible to become one without completing a `Job` using [Bid Escrow contract](crate::bid_escrow::BidEscrowContractInterface).
+//! It is also possible to become one without completing a `Job` using [`Bid Escrow contract`].
 //! To do this, an `External Worker` submits an `Onboarding Request` containing `Document Hash` of a document containing the reason
 //! why the `Onboarding` should be done and a `CSPR` stake.
 //!
@@ -20,7 +20,10 @@
 //! If the process fails, the `CSPR` stake of the `External Worker` is returned.
 //!
 //! # Voting
-//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
+//! The Voting process is managed by [`VotingEngine`].
+//! 
+//! [`Bid Escrow contract`]: crate::bid_escrow::BidEscrowContractInterface
+//! [`VotingEngine`]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
