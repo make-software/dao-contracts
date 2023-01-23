@@ -176,6 +176,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 }
 
+/// Informs simple voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct SimpleVotingCreated {
     document_hash: DocumentHash,

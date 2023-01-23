@@ -1,4 +1,26 @@
 //! Contains Onboarding Request Contract definition and related abstractions.
+//!
+//! # Definitions
+//! * Job Offer - A description of a Job posted by JobPoster
+//! * Bid - on offer that can be accepted by the Job Poster
+//! * JobPoster - user of the system that posts a Job Offer; it has to be KYC’d
+//! * External Worker - a Worker who completed the KYC and is not a Voting Associate
+//! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote
+//! * KYC - Know Your Customer, a process that validates that the user can be the user of the system
+//! * Bid Escrow Voting - Mints reputation
+//!
+//! # Onboarding Request
+//! One of the side effects of completing a `Job` by an `External Worker` is the possibility to become a `Voting Associate`.
+//! It is also possible to become one without completing a `Job` using [Bid Escrow contract](crate::bid_escrow::BidEscrowContractInterface).
+//! To do this, an `External Worker` submits an `Onboarding Request` containing `Document Hash` of a document containing the reason
+//! why the `Onboarding` should be done and a `CSPR` stake.
+//!
+//! The rest of the process is analogous to the regular `Job` submission process of an `External Worker`, except that instead of
+//! redistribution of `Job Payment` between `VA`’s we redistribute the stake of the `External Worker`.
+//! If the process fails, the `CSPR` stake of the `External Worker` is returned.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -190,6 +212,7 @@ impl OnboardingRequestContractTest {
     }
 }
 
+/// Informs onboarding voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct OnboardingVotingCreated {
     reason: DocumentHash,

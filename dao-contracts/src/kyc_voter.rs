@@ -1,5 +1,8 @@
 //! Contains KYC Voter Contract definition and related abstractions.
 //!
+//! # Definitions
+//! KYC - Know Your Customer, is a process that validates that the user can be the user of the system.
+//!
 //! # KYC process
 //! KYC Voting is a process in which the VAs validate a user submission.
 //! If VAs vote in favor, the address is considered verified and the KYC Token contract
@@ -231,6 +234,8 @@ impl KycVoterContract {
     }
 }
 
+
+/// Informs kyc voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct KycVotingCreated {
     subject_address: Address,

@@ -1,4 +1,17 @@
 //! Contains Reputation Voter Contract definition and related abstractions.
+//!
+//! # General
+//! The contract is used to operate on the [Reputation Token contract].
+//!
+//! Two types of voting can be created:
+//! * to `mint` tokens for a user,
+//! * to `burn` users' tokens.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! [Reputation Token contract]: crate::variable_repository::VariableRepositoryContractInterface
+//! [VotingEngine]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
@@ -208,6 +221,7 @@ impl ReputationVoterContractInterface for ReputationVoterContract {
     }
 }
 
+/// Informs reputation voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct ReputationVotingCreated {
     account: Address,

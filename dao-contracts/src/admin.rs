@@ -1,11 +1,15 @@
-//! Contains Admin Contract definitions and related abstractions.
+//! Contains Admin Contract definition and related abstractions.
 //!
+//! # General
 //! The contract is used to manage the other contracts' [`access control`](AccessControl).
 //!
 //! Three types of voting can be created:
 //! * add an [`Address`] to the whitelist.
 //! * remove an [`Address`] from the whitelist.
 //! * sets an [`Address`] as a new contract owner.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},

@@ -1,4 +1,15 @@
-//! Contains Bid Escrow Contract definitions and related abstractions.
+//! Contains Bid Escrow Contract definition and related abstractions.
+//!
+//! # Definitions
+//! * Job Offer - A description of a Job posted by JobPoster
+//! * Bid - on offer that can be accepted by the Job Poster
+//! * JobPoster - user of the system that posts a Job Offer; it has to be KYC’d
+//! * Worker - the user who does a job
+//! * Internal Worker - a Worker who completed the KYC and was voted to be a VotingAssociate
+//! * External Worker - a Worker who completed the KYC and is not a Voting Associate
+//! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote
+//! * KYC - Know Your Customer, a process that validates that the user can be the user of the system
+//! * Bid Escrow Voting - Mints reputation
 //!
 //! # Posting
 //! The first step of the `Bid Escrow` process is `Posting` a `Job Offer`.
@@ -22,6 +33,61 @@
 //! After the works have been completed, the `Worker` sends a query to the contract containing
 //! the cryptographic hash of a document being a proof of `Work` done for a `Job Poster`.
 //!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
+//!
+//! # Voting passed
+//! Besides yielding a positive result, the `Voting` passed means that the `Reputation` staked by the losing side is
+//! redistributed between the winning side, depending on the type of `Worker`.
+//! ## External Worker who wanted to become VA
+//! * The `External Worker` becomes VA.
+//! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
+//! * Reputation of the voters who voted `yes` is returned to them
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of reputation staked in the voting
+//! * Reputation minted for the `External Worker` and used in the voting process is burned.
+//! ## Internal Worker
+//! * Reputation of the voters who voted `yes` is returned to them
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of reputation staked in the voting
+//! ## External Worker
+//! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
+//! * Reputation minted for the `External Worker` and used in the voting process is burned.
+//! * Reputation of the voters who voted `yes` is returned to them, except for the Reputation minted for the Worker using `CSPR` stake
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of reputation staked in the voting (External Worker does not receive Reputation in this step)
+//!
+//! # Voting failed
+//! Besides yielding a negative result, the Voting passed means that the Reputation staked by the losing side is
+//! redistributed between the winning side, depending on the type of Worker.
+//!
+//! ## External Worker who wanted to become VA
+//! * The External Worked DOES NOT become a VA
+//! * The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s
+//! * The Reputation minted for the `External Worker` using `CSPR` stake is burned.
+//! * Reputation of the voters who voted `no` is returned to them
+//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of reputation staked in the voting
+//! ## Internal Worker
+//! * Reputation of the voters who voted `no` is returned to them
+//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of reputation staked in the voting
+//! ## External Worker
+//! The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s
+//! The Reputation minted for the `External Worker` using `CSPR` stake is burned.
+//! Reputation of the voters who voted `no` is returned to them
+//! Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of reputation staked in the voting
+//! ## CSPR
+//! If the `Voting` fails, the `CSPR` sent to the contract as a payment for `Job` is returned to the `Job Poster`. If the work
+//! has been attempted to do by an `External Worker` the `CSPR` that the `Worker` staked during the `Bid` process
+//! is redistributed between all `VA`’s.
+//!
+//! # Quorum not reached
+//! When the `Quorum` is not reached during the `Formal Voting`, following things happen:
+//! * The process ends here.
+//! * `VA’s` stakes are returned to them
+//! * `Job` Poster payment and `DOS fee is returned
+//! * `Internal Worker`’s Reputation and `External Worker`’s `CSPR` stake is returned.
+//! * `External Worker`’s Reputation that was minted using `CSPR` stake is burned.
+//!
+//! # Returning DOS Fee
+//! The final step of the process is returning the `CSPR` `DOS Fee` to the `Job Poster`.
+//!
 //! # Grace Period
 //! However, if `External Worker` do not post a `Job Proof` in time, his `CSPR` stake is redistributed
 //! between all `VA’s`.
@@ -35,8 +101,6 @@
 //! If nobody submits the `Job Proof` during the grace period, the whole process ends.
 //! The `CSPR` paid by the `Job Poster` is returned along with the `DOS Fee`.
 //!
-//! # Voting
-//! The Voting process is managed by [`VotingEngine`](crate::voting::VotingEngine).
 use std::borrow::Borrow;
 
 use casper_dao_modules::AccessControl;

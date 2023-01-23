@@ -1,5 +1,15 @@
 //! Contains VA NFT Contract definition and related abstractions.
-
+//!
+//! # Definitions
+//! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote.
+//! * External Worker - a Worker who completed the KYC and is not a Voting Associate.
+//!
+//! # Purpose
+//! Ownership of a VA token indicates the address is a VA and is eligible to participate in voting.
+//! If an `External Worker` finishes a job successfully, and wants to become a VA, receives a VA token
+//! as a reward. See [Bid Escrow](crate::bid_escrow::BidEscrowContractInterface).
+//!
+//! Each [`Address`] can own only one VA token.
 use casper_dao_erc721::{
     BurnableERC721,
     ERC721Token,

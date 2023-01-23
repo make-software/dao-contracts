@@ -1,4 +1,13 @@
 //! Contains Repo Voter Contract definition and related abstractions.
+//!
+//! # General
+//! The contract is used to update a value stored in the [Repository contract].
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! [Repository contract]: crate::variable_repository::VariableRepositoryContractInterface
+//! [VotingEngine]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -171,6 +180,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
     }
 }
 
+/// Informs repo voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct RepoVotingCreated {
     variable_repo_to_edit: Address,
