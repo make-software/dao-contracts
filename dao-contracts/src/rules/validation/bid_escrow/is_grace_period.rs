@@ -2,6 +2,10 @@ use casper_dao_utils::{casper_dao_macros::Rule, BlockTime, Error};
 
 use crate::{bid_escrow::job::JobStatus, rules::validation::Validation};
 
+/// Makes sure the [`Job`](crate::bid_escrow::job::Job) is in grace period state.
+/// May return [Error::CannotSubmitJobProof] or [Error::GracePeriodNotStarted].
+/// 
+/// Read more about [`grace period`](crate::bid_escrow).
 #[derive(Rule)]
 pub struct IsGracePeriod {
     job_status: JobStatus,

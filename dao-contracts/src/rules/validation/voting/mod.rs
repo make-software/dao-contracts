@@ -1,3 +1,4 @@
+//! Groups voting related validations.
 mod after_formal_voting;
 mod can_create_voting;
 mod vote_in_time;

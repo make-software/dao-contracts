@@ -127,7 +127,6 @@ use casper_dao_utils::{
 use casper_types::{URef, U512};
 use delegate::delegate;
 
-use self::{bid_engine::BidEngine, job_engine::JobEngine};
 use crate::{
     bid_escrow::{
         bid::Bid,
@@ -146,13 +145,16 @@ use crate::{
 };
 
 pub mod bid;
-pub mod bid_engine;
+mod bid_engine;
 pub mod events;
 pub mod job;
-pub mod job_engine;
+mod job_engine;
 pub mod job_offer;
 pub mod storage;
 pub mod types;
+
+pub use bid_engine::BidEngine;
+pub use job_engine::JobEngine;
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {

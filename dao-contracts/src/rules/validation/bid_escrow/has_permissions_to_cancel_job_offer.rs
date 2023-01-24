@@ -2,6 +2,8 @@ use casper_dao_utils::{casper_dao_macros::Rule, Address, Error};
 
 use crate::rules::validation::Validation;
 
+/// Makes sure the job poster is the one who picks the [`Job Offer`](crate::bid_escrow::job_offer::JobOffer). 
+/// May return [Error::OnlyJobPosterCanPickABid].
 #[derive(Rule)]
 pub struct HasPermissionsToCancelJobOffer {
     pub canceller: Address,

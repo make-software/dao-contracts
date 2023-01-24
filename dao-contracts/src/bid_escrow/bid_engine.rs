@@ -26,6 +26,7 @@ use crate::{
     },
 };
 
+/// Manages the Bidding process.
 #[derive(Instance)]
 pub struct BidEngine {
     #[scoped = "contract"]

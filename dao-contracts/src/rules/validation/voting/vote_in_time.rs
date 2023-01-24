@@ -1,12 +1,15 @@
-use casper_dao_utils::{BlockTime, Error};
+use casper_dao_utils::{BlockTime, Error, casper_dao_macros::Rule};
 
 use crate::{
     rules::validation::VotingValidation,
     voting::voting_state_machine::{VotingState, VotingStateMachine},
 };
 
+/// Verifies if a ballot is cast in the right time. May return [Error::InformalVotingNotStarted],
+/// [Error::VotingDuringTimeBetweenVotingsNotAllowed] or [Error::VoteOnCompletedVotingNotAllowed].
+#[derive(Rule)]
 pub struct VoteInTime {
-    pub block_time: BlockTime,
+    block_time: BlockTime,
 }
 
 impl VotingValidation for VoteInTime {
@@ -17,11 +20,5 @@ impl VotingValidation for VoteInTime {
             VotingState::Finished => Err(Error::VoteOnCompletedVotingNotAllowed),
             _ => Ok(()),
         }
-    }
-}
-
-impl VoteInTime {
-    pub fn create(block_time: BlockTime) -> Box<VoteInTime> {
-        Box::new(Self { block_time })
     }
 }

@@ -20,9 +20,7 @@ use delegate::delegate;
 pub struct Configuration {
     dao_configuration: DaoConfiguration,
     voting_configuration: VotingConfiguration,
-    /// The total number of VA's.
     total_onboarded: U512,
-    /// The current CSPR:Fiat rate.
     fiat_rate: Option<U512>,
 }
 

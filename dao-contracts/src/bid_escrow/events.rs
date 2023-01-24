@@ -4,15 +4,21 @@ use casper_types::U512;
 use super::types::BidId;
 use crate::bid_escrow::{job::Job, job_offer::JobOffer, types::JobOfferId};
 
+/// Informs a new [job offer](crate::bid_escrow::job_offer::JobOffer) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobOfferCreated {
-    pub job_offer_id: JobOfferId,
-    pub job_poster: Address,
-    pub max_budget: U512,
-    pub expected_timeframe: BlockTime,
+    /// The offer id.
+    job_offer_id: JobOfferId,
+    /// The address of an account that created the offer.
+    job_poster: Address,
+    /// Max CSPR amount to be paid to the `Worker`.
+    max_budget: U512,
+    /// Offer validity time.
+    expected_timeframe: BlockTime,
 }
 
 impl JobOfferCreated {
+    /// Creates a new event.
     pub fn new(job_offer: &JobOffer) -> Self {
         JobOfferCreated {
             job_offer_id: job_offer.job_offer_id,
@@ -23,19 +29,21 @@ impl JobOfferCreated {
     }
 }
 
+/// Informs a new [bid](crate::bid_escrow::bid::Bid) has been placed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BidSubmitted {
-    pub bid_id: BidId,
-    pub job_offer_id: JobOfferId,
-    pub worker: Address,
-    pub onboard: bool,
-    pub proposed_timeframe: BlockTime,
-    pub proposed_payment: U512,
-    pub reputation_stake: Option<U512>,
-    pub cspr_stake: Option<U512>,
+    bid_id: BidId,
+    job_offer_id: JobOfferId,
+    worker: Address,
+    onboard: bool,
+    proposed_timeframe: BlockTime,
+    proposed_payment: U512,
+    reputation_stake: Option<U512>,
+    cspr_stake: Option<U512>,
 }
 
 impl BidSubmitted {
+    /// Creates a new event.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         bid_id: BidId,
@@ -62,14 +70,15 @@ impl BidSubmitted {
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
-    pub bid_id: BidId,
-    pub job_poster: Address,
-    pub worker: Address,
-    pub finish_time: BlockTime,
-    pub payment: U512,
+    bid_id: BidId,
+    job_poster: Address,
+    worker: Address,
+    finish_time: BlockTime,
+    payment: U512,
 }
 
 impl JobCreated {
+    /// Creates a new event.
     pub fn new(job: &Job) -> JobCreated {
         JobCreated {
             bid_id: job.bid_id(),
@@ -83,12 +92,13 @@ impl JobCreated {
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobAccepted {
-    pub bid_id: BidId,
-    pub job_poster: Address,
-    pub worker: Address,
+    bid_id: BidId,
+    job_poster: Address,
+    worker: Address,
 }
 
 impl JobAccepted {
+    /// Creates a new event.
     pub fn new(job: &Job) -> JobAccepted {
         JobAccepted {
             bid_id: job.bid_id(),
@@ -100,13 +110,14 @@ impl JobAccepted {
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobSubmitted {
-    pub bid_id: BidId,
-    pub job_poster: Address,
-    pub worker: Address,
-    pub result: DocumentHash,
+    bid_id: BidId,
+    job_poster: Address,
+    worker: Address,
+    result: DocumentHash,
 }
 
 impl JobSubmitted {
+    /// Creates a new event.
     pub fn new(job: &Job) -> JobSubmitted {
         let result = match job.result() {
             None => DocumentHash::default(),
@@ -124,15 +135,16 @@ impl JobSubmitted {
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCancelled {
-    pub bid_id: BidId,
-    pub caller: Address,
-    pub job_poster: Address,
-    pub worker: Address,
-    pub reason: DocumentHash,
-    pub cspr_amount: U512,
+    bid_id: BidId,
+    caller: Address,
+    job_poster: Address,
+    worker: Address,
+    reason: DocumentHash,
+    cspr_amount: U512,
 }
 
 impl JobCancelled {
+    /// Creates a new event.
     pub fn new(job: &Job, caller: Address, reason: DocumentHash) -> JobCancelled {
         JobCancelled {
             bid_id: job.bid_id(),
@@ -147,14 +159,15 @@ impl JobCancelled {
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobDone {
-    pub bid_id: BidId,
-    pub caller: Address,
-    pub job_poster: Address,
-    pub worker: Address,
-    pub cspr_amount: U512,
+    bid_id: BidId,
+    caller: Address,
+    job_poster: Address,
+    worker: Address,
+    cspr_amount: U512,
 }
 
 impl JobDone {
+    /// Creates a new event.
     pub fn new(job: &Job, caller: Address) -> JobDone {
         JobDone {
             bid_id: job.bid_id(),
@@ -168,14 +181,15 @@ impl JobDone {
 
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobRejected {
-    pub bid_id: BidId,
-    pub caller: Address,
-    pub job_poster: Address,
-    pub worker: Address,
-    pub cspr_amount: U512,
+    bid_id: BidId,
+    caller: Address,
+    job_poster: Address,
+    worker: Address,
+    cspr_amount: U512,
 }
 
 impl JobRejected {
+    /// Creates a new event.
     pub fn new(job: &Job, caller: Address) -> JobRejected {
         JobRejected {
             bid_id: job.bid_id(),

@@ -124,7 +124,9 @@ pub struct Stats {
     pub votes_against: u32,
 }
 
-/// Voting struct
+/// A struct describing the current voting state.
+/// 
+/// Stores voting metadata, the configuration and the voting progress (stakes).
 #[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
 pub struct VotingStateMachine {
     voting_id: VotingId,
@@ -138,7 +140,7 @@ pub struct VotingStateMachine {
 }
 
 impl VotingStateMachine {
-    /// Creates new Voting with immutable VotingConfiguration
+    /// Creates new Voting with immutable VotingConfiguration.
     pub fn new(
         voting_id: VotingId,
         created_at: u64,
@@ -187,7 +189,7 @@ impl VotingStateMachine {
             && self.voting_type() == VotingType::Informal
     }
 
-    /// Returns if voting is still in voting phase
+    /// Returns if voting is still in voting phase.
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.voting_type() {
             VotingType::Informal => {
@@ -230,7 +232,7 @@ impl VotingStateMachine {
         }
     }
 
-    /// Depending on the result of the voting, returns the amount of reputation staked on the winning side
+    /// Depending on the result of the voting, returns the amount of reputation staked on the winning side.
     pub fn get_winning_stake(&self) -> U512 {
         match (self.voting_type(), self.is_in_favor()) {
             (VotingType::Informal, true) => self.informal_stats.stake_in_favor,
@@ -240,21 +242,7 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn is_result_close(&self) -> bool {
-        let stake_in_favor = self.stake_in_favor() + self.unbound_stake_in_favor();
-        let stake_against = self.stake_against() + self.unbound_stake_against();
-        let stake_diff = stake_in_favor.abs_diff(stake_against);
-        let stake_diff_percent = stake_diff.saturating_mul(U512::from(100)) / self.total_stake();
-        stake_diff_percent <= self.configuration.voting_clearness_delta()
-    }
-
-    pub fn get_quorum(&self) -> u32 {
-        match self.voting_type() {
-            VotingType::Informal => self.configuration.informal_voting_quorum(),
-            VotingType::Formal => self.configuration.formal_voting_quorum(),
-        }
-    }
-
+    /// Gets the current voting result.
     pub fn get_result(&self, voters_number: u32) -> VotingResult {
         if self.get_quorum() > voters_number {
             VotingResult::QuorumNotReached
@@ -265,6 +253,7 @@ impl VotingStateMachine {
         }
     }
 
+    /// Adds the `stake` to the total bound stake.
     pub fn add_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
         match (self.voting_type(), choice) {
@@ -275,6 +264,7 @@ impl VotingStateMachine {
         }
     }
 
+    /// Adds the `stake` to the total unbound stake.
     pub fn add_unbound_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
         match (self.voting_type(), choice) {
@@ -293,6 +283,7 @@ impl VotingStateMachine {
         }
     }
 
+    /// Removes the `stake` from the total bound stake.
     pub fn remove_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
         match (self.voting_type(), choice) {
@@ -303,6 +294,7 @@ impl VotingStateMachine {
         }
     }
 
+    /// Removes the `stake` from the total unbound stake.
     pub fn remove_unbound_stake(&mut self, stake: U512, choice: Choice) {
         // overflow is not possible due to reputation token having U512 as max
         match (self.voting_type(), choice) {
@@ -321,16 +313,19 @@ impl VotingStateMachine {
         }
     }
 
+    /// Removes the unbound stake and adds it to the bound stake.
     pub fn bind_stake(&mut self, stake: U512, choice: Choice) {
         self.remove_unbound_stake(stake, choice);
         self.add_stake(stake, choice);
     }
 
+    /// Gets the sum of bound and unbound stake.
     pub fn total_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
         self.total_bound_stake() + self.total_unbound_stake()
     }
 
+    /// Gets the total bound stake.
     pub fn total_bound_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
         match self.voting_type() {
@@ -343,6 +338,7 @@ impl VotingStateMachine {
         }
     }
 
+    /// Gets the total unbound stake.
     pub fn total_unbound_stake(&self) -> U512 {
         // overflow is not possible due to reputation token having U512 as max
         match self.voting_type() {
@@ -377,70 +373,32 @@ impl VotingStateMachine {
         }
     }
 
-    pub fn unbound_stake_in_favor(&self) -> U512 {
-        match self.voting_type() {
-            VotingType::Informal => self.informal_stats.unbound_stake_in_favor,
-            VotingType::Formal => self.formal_stats.unbound_stake_in_favor,
-        }
-    }
-
-    pub fn unbound_stake_against(&self) -> U512 {
-        match self.voting_type() {
-            VotingType::Informal => self.informal_stats.unbound_stake_against,
-            VotingType::Formal => self.formal_stats.unbound_stake_against,
-        }
-    }
-
-    /// Get the voting's formal voting quorum.
-    pub fn formal_voting_quorum(&self) -> u32 {
-        self.configuration.formal_voting_quorum()
-    }
-
-    /// Get the voting's informal voting quorum.
-    pub fn informal_voting_quorum(&self) -> u32 {
-        self.configuration.informal_voting_quorum()
-    }
-
-    pub fn informal_voting_start_time(&self) -> u64 {
-        self.created_at() + self.configuration.voting_delay()
-    }
-
-    pub fn created_at(&self) -> u64 {
-        self.created_at
-    }
-
-    /// Get the voting's formal voting time.
-    pub fn formal_voting_time(&self) -> u64 {
-        self.configuration.formal_voting_time()
-    }
-
-    /// Get the voting's informal voting time.
-    pub fn informal_voting_time(&self) -> u64 {
-        self.configuration.informal_voting_time()
-    }
-
-    /// Get the voting's contract call reference.
+    /// Gets the voting's contract call reference.
     pub fn contract_calls(&self) -> &Vec<ContractCall> {
         self.configuration.contract_calls()
     }
 
-    /// Get a reference to the voting's voting configuration.
+    /// Gets a reference to the voting's voting configuration.
     pub fn voting_configuration(&self) -> &Configuration {
         &self.configuration
     }
 
+    /// Gets the voting creator.
     pub fn creator(&self) -> &Address {
         &self.creator
     }
 
+    /// Gets the current voting state.
     pub fn state(&self) -> &VotingState {
         &self.state
     }
 
+    /// Indicates if the voting finished or canceled. 
     pub fn completed(&self) -> bool {
         self.state() == &VotingState::Finished || self.state() == &VotingState::Canceled
     }
 
+    /// Returns the voting state depending on a given `block_time`.
     pub fn state_in_time(&self, block_time: BlockTime) -> VotingState {
         let informal_voting_start = self.informal_voting_start_time();
         let informal_voting_end = self.informal_voting_end_time();
@@ -460,16 +418,58 @@ impl VotingStateMachine {
         }
     }
 
+    /// Gets the `Informal Voting` statistics.
     pub fn informal_stats(&self) -> &Stats {
         &self.informal_stats
     }
 
+    /// Gets the `Formal Voting` statistics.
     pub fn formal_stats(&self) -> &Stats {
         &self.formal_stats
+    }
+
+    fn informal_voting_start_time(&self) -> u64 {
+        self.created_at() + self.configuration.voting_delay()
+    }
+
+    fn created_at(&self) -> u64 {
+        self.created_at
+    }
+
+    fn is_result_close(&self) -> bool {
+        let stake_in_favor = self.stake_in_favor() + self.unbound_stake_in_favor();
+        let stake_against = self.stake_against() + self.unbound_stake_against();
+        let stake_diff = stake_in_favor.abs_diff(stake_against);
+        let stake_diff_percent = stake_diff.saturating_mul(U512::from(100)) / self.total_stake();
+        stake_diff_percent <= self.configuration.voting_clearness_delta()
+    }
+
+    fn get_quorum(&self) -> u32 {
+        match self.voting_type() {
+            VotingType::Informal => self.configuration.informal_voting_quorum(),
+            VotingType::Formal => self.configuration.formal_voting_quorum(),
+        }
+    }
+
+    fn unbound_stake_in_favor(&self) -> U512 {
+        match self.voting_type() {
+            VotingType::Informal => self.informal_stats.unbound_stake_in_favor,
+            VotingType::Formal => self.formal_stats.unbound_stake_in_favor,
+        }
+    }
+
+    fn unbound_stake_against(&self) -> U512 {
+        match self.voting_type() {
+            VotingType::Informal => self.informal_stats.unbound_stake_against,
+            VotingType::Formal => self.formal_stats.unbound_stake_against,
+        }
     }
 }
 
 impl VotingStateMachine {
+    /// Verifies if a ballot can be casted.
+    /// 
+    /// Stops contract execution if validation fails. See [`VoteInTime`].
     pub fn guard_vote(&self, block_time: BlockTime) {
         RulesBuilder::new()
             .add_voting_validation(VoteInTime::create(block_time))
@@ -477,10 +477,13 @@ impl VotingStateMachine {
             .validate(self);
     }
 
+    /// Verifies if the formal voting can be finished.
+    /// 
+    /// Stops contract execution if validation fails. See [`AfterFormalVoting`] and [`VotingNotCompleted`].
     pub fn guard_finish_formal_voting(&self, block_time: BlockTime) {
         RulesBuilder::new()
             .add_voting_validation(AfterFormalVoting::create(block_time))
-            .add_voting_validation(VotingNotCompleted::create(block_time))
+            .add_voting_validation(VotingNotCompleted::create())
             .build()
             .validate(self);
     }

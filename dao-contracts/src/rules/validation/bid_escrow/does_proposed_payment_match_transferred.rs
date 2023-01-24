@@ -3,10 +3,11 @@ use casper_types::U512;
 
 use crate::rules::validation::Validation;
 
+/// Verifies if the actual payment matches the proposed payment. May return [Error::PurseBalanceMismatch].
 #[derive(Rule)]
 pub struct DoesProposedPaymentMatchTransferred {
-    pub proposed_payment: U512,
-    pub transferred: U512,
+    proposed_payment: U512,
+    transferred: U512,
 }
 
 impl Validation for DoesProposedPaymentMatchTransferred {

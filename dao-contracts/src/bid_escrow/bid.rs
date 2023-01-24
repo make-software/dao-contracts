@@ -112,7 +112,8 @@ impl Bid {
                 request.worker_is_va,
                 request.va_can_bid_on_public_auction,
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         Bid {
             bid_id: request.bid_id,
@@ -148,7 +149,8 @@ impl Bid {
                 request.job_finish_time,
                 request.block_time,
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         let mut new_bid = self.clone();
         self.status = BidStatus::Reclaimed;
@@ -169,7 +171,8 @@ impl Bid {
     pub fn picked(&mut self, request: &PickBidRequest) {
         RulesBuilder::new()
             .add_validation(CanPickBid::create(request.caller, request.poster))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         self.status = BidStatus::Picked;
     }
@@ -190,7 +193,8 @@ impl Bid {
                 self.timestamp,
                 request.va_bid_acceptance_timeout,
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
         self.status = BidStatus::Canceled;
     }
 

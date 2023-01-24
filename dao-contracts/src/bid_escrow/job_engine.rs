@@ -31,6 +31,7 @@ use crate::{
     },
 };
 
+/// Manages Jobs lifecycle.
 #[derive(Instance)]
 pub struct JobEngine {
     #[scoped = "contract"]

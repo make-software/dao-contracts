@@ -5,6 +5,7 @@ use casper_types::U512;
 
 use crate::{config::Configuration, rules::validation::Validation};
 
+/// Makes sure the `Job DOS Fee` is high enough. May return [Error::DosFeeTooLow].
 #[derive(Rule)]
 pub struct IsDosFeeEnough {
     configuration: Rc<Configuration>,

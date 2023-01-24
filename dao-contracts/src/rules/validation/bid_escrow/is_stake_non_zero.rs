@@ -3,6 +3,7 @@ use casper_types::U512;
 
 use crate::rules::validation::Validation;
 
+/// Makes sure the stake is non-zero. May return [Error::ZeroStake].
 #[derive(Rule)]
 pub struct IsStakeNonZero {
     reputation_stake: U512,

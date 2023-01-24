@@ -1,3 +1,5 @@
+//! Groups [Bid Escrow](crate::bid_escrow)-related validations.
+
 mod can_be_onboarded;
 mod can_bid_be_cancelled;
 mod can_bid_on_auction_state;

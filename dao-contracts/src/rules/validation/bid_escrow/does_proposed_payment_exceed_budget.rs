@@ -3,6 +3,8 @@ use casper_types::U512;
 
 use crate::rules::validation::Validation;
 
+/// Verifies if the proposed payment does not exceeds the budget. 
+/// May return [Error::PaymentExceedsMaxBudget].
 #[derive(Rule)]
 pub struct DoesProposedPaymentExceedBudget {
     proposed_payment: U512,

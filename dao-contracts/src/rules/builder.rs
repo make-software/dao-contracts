@@ -3,12 +3,14 @@ use crate::rules::{
     Rules,
 };
 
+/// A utility to build a set of validation rules.
 pub struct RulesBuilder {
-    pub rules: Rules,
+    rules: Rules,
 }
 
 impl RulesBuilder {
-    pub fn new() -> RulesBuilder {
+    /// Creates an empty builder.
+    pub fn new() -> Self {
         Self {
             rules: Rules {
                 validations: vec![],
@@ -17,22 +19,21 @@ impl RulesBuilder {
         }
     }
 
+    /// Adds a generic validation rule.
     pub fn add_validation(mut self, validation: Box<dyn Validation>) -> RulesBuilder {
         self.rules.validations.push(validation);
         self
     }
 
+    /// Adds a voting validation rule.
     pub fn add_voting_validation(mut self, validation: Box<dyn VotingValidation>) -> RulesBuilder {
         self.rules.voting_validations.push(validation);
         self
     }
 
+    /// Builds a [Rules] struct.
     pub fn build(self) -> Rules {
         self.rules
-    }
-
-    pub fn validate(self) {
-        self.rules.validate_generic_validations();
     }
 }
 

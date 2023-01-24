@@ -69,7 +69,8 @@ impl JobOffer {
                 request.configuration.clone(),
                 request.dos_fee,
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         JobOffer {
             job_offer_id: request.job_offer_id,
@@ -86,7 +87,8 @@ impl JobOffer {
     pub fn in_progress(&mut self, request: &PickBidRequest) {
         RulesBuilder::new()
             .add_validation(CanProgressJobOffer::create(request.caller, self.job_poster))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         self.status = JobOfferStatus::InProgress;
     }
@@ -100,7 +102,8 @@ impl JobOffer {
             .add_validation(CanJobOfferBeCancelled::create(
                 self.auction_state(request.block_time),
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         self.status = JobOfferStatus::Cancelled;
     }

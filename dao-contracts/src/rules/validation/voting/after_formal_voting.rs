@@ -1,12 +1,14 @@
-use casper_dao_utils::{BlockTime, Error};
+use casper_dao_utils::{BlockTime, Error, casper_dao_macros::Rule};
 
 use crate::{
     rules::validation::VotingValidation,
     voting::voting_state_machine::{VotingState, VotingStateMachine},
 };
 
+/// Verifies if the `Formal Voting` has ended. May return [Error::FormalVotingNotCompleted].
+#[derive(Rule)]
 pub struct AfterFormalVoting {
-    pub block_time: BlockTime,
+    block_time: BlockTime,
 }
 
 impl VotingValidation for AfterFormalVoting {
@@ -16,11 +18,5 @@ impl VotingValidation for AfterFormalVoting {
         }
 
         Err(Error::FormalVotingNotCompleted)
-    }
-}
-
-impl AfterFormalVoting {
-    pub fn create(block_time: BlockTime) -> Box<AfterFormalVoting> {
-        Box::new(Self { block_time })
     }
 }

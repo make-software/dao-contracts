@@ -2,6 +2,9 @@ use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::{bid_escrow::job_offer::AuctionState, rules::validation::Validation};
 
+/// Verifies if the worker can place a [`Bid`](crate::bid_escrow::bid::Bid) in the given state.
+/// May return [Error::AuctionNotRunning], [Error::OnlyOnboardedWorkerCanBid]
+/// or [Error::OnboardedWorkerCannotBid].
 #[derive(Rule)]
 pub struct CanBidOnAuctionState {
     auction_state: AuctionState,

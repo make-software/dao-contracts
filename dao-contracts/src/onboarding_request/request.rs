@@ -34,7 +34,8 @@ impl Request {
             .add_validation(IsUserKyced::create(request.is_kyced))
             .add_validation(IsNotVa::create(request.is_va))
             .add_validation(ExistsOngoingVoting::create(request.exists_ongoing_voting))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         Request {
             creator: request.requestor,

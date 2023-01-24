@@ -94,7 +94,8 @@ impl Job {
                 request.payment,
                 request.transferred_cspr,
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         let worker_type = if request.is_worker_va {
             WorkerType::Internal

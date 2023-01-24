@@ -1,4 +1,5 @@
 //! Governance Voting module.
+//! 
 use std::collections::BTreeMap;
 
 use casper_dao_utils::{
@@ -61,19 +62,29 @@ pub struct VotingEngine {
 }
 
 impl VotingEngine {
-    /// Creates new informal [Voting](VotingStateMachine).
+    /// Creates new informal [Voting].
     ///
-    /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed  when formal voting passes.
+    /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed when formal voting passes.
     ///
-    /// It collects configuration from [Variable Repo](crate::variable_repository::VariableRepositoryContract) and persists it, so they won't change during the voting process.
-    ///
+    /// It collects configuration from [Variable Repo] and persists it, so they won't change during the voting process.
+    /// 
+    /// Interacts with [DaoIds Contract] to generate voting id. 
+    /// 
+    /// Depending on the configuration may [`cast`] the first vote.
     ///
     /// # Events
     /// // TODO: Fix events documentation
-    /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
+    /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`].
     ///
     /// # Errors
-    /// Throws [`Error::NotEnoughReputation`](Error::NotEnoughReputation) when the creator does not have enough reputation to create a voting
+    /// Throws [`Error::NotEnoughReputation`] when the creator does not have enough reputation to create a voting.
+    /// Throws [`Error::NotOnboarded`] if the configuration requires the creator to be a VA but is not.
+    /// 
+    /// [Voting]: VotingStateMachine
+    /// [Variable Repo]: crate::variable_repository::VariableRepositoryContract
+    /// [`Error::NotOnboarded`]: casper_dao_utils::Error::NotOnboarded
+    /// [DaoIds Contract]: crate::ids::DaoIdsContractInterface
+    /// [`cast`]: Self::cast_ballot()
     pub fn create_voting(
         &mut self,
         creator: Address,
@@ -85,7 +96,8 @@ impl VotingEngine {
                 self.is_va(creator),
                 configuration.only_va_can_create(),
             ))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         let should_cast_first_vote = configuration.should_cast_first_vote();
 
@@ -120,11 +132,11 @@ impl VotingEngine {
     ///
     /// Depending on type of voting, different actions are performed.
     ///
-    /// For informal voting a new formal voting can be created. Reputation staked for this voting is returned to the voters, except for creator. When voting
-    /// passes, it is used as a stake for a new voting, otherwise it is burned.
+    /// For informal voting a new formal voting can be created. Reputation staked for this voting is returned to the voters,
+    /// except for creator. When voting passes, it is used as a stake for a new voting, otherwise it is burned.
     ///
-    /// For formal voting an action will be performed if the result is in favor. Reputation is redistributed to the winning voters. When no quorum is reached,
-    /// the reputation is returned, except for the creator - its reputation is then burned.
+    /// For formal voting an action will be performed if the result is `in favor`. Reputation is redistributed to the winning voters. 
+    /// When no quorum is reached, the reputation is returned, except for the creator - its reputation is then burned.
     ///
     /// # Events
     /// // TODO: Fix events documentation
@@ -236,6 +248,11 @@ impl VotingEngine {
         summary
     }
 
+    /// Marks voting finished but do nothing with the staked reputation.
+    /// 
+    /// # Errors
+    /// [`Error::VotingDoesNotExist`] - voting with the given id does not exists.
+    /// [`Error::FinishingCompletedVotingNotAllowed`] - voting is finished already.
     pub fn finish_voting_without_token_redistribution(
         &mut self,
         voting_id: VotingId,
@@ -300,9 +317,9 @@ impl VotingEngine {
     /// Emits [`BallotCast`](BallotCast)
     ///
     /// # Errors
-    /// Throws [`VoteOnCompletedVotingNotAllowed`](Error::VoteOnCompletedVotingNotAllowed) if voting is completed
+    /// Throws [`VoteOnCompletedVotingNotAllowed`](Error::VoteOnCompletedVotingNotAllowed) if voting is completed.
     ///
-    /// Throws [`CannotVoteTwice`](Error::CannotVoteTwice) if voter already voted
+    /// Throws [`CannotVoteTwice`](Error::CannotVoteTwice) if voter already voted.
     pub fn vote(
         &mut self,
         voter: Address,
@@ -350,6 +367,16 @@ impl VotingEngine {
         }
     }
 
+    /// Records user's vote.
+    /// 
+    /// Writes into the storage the vote details and stakes reputation (for a bounded ballot).
+    /// 
+    /// Calls [Reputation Token Contract] to stake reputation.
+    /// 
+    /// # Events
+    /// Emits [`BallotCast`] event.
+    /// 
+    /// [Reputation Token Contract]: crate::reputation::ReputationContractInterface
     pub fn cast_ballot(
         &mut self,
         voter: Address,
@@ -393,11 +420,12 @@ impl VotingEngine {
         }
     }
 
+    /// Gets a vector of all voters addresses.
     pub fn all_voters(&self, voting_id: VotingId, voting_type: VotingType) -> Vec<Address> {
         self.voters.get_all((voting_id, voting_type))
     }
 
-    /// Returns the [Ballot](Ballot) of voter with `address` and cast on `voting_id`
+    /// Returns the [`Ballot`] of voter with `address` and cast on `voting_id`.
     pub fn get_ballot(
         &self,
         voting_id: VotingId,
@@ -407,7 +435,7 @@ impl VotingEngine {
         self.ballots.get_or_none(&(voting_id, voting_type, address))
     }
 
-    /// Returns the nth [Ballot](Ballot) of cast on `voting_id`
+    /// Returns the nth [Ballot](Ballot) of cast on `voting_id`.
     pub fn get_ballot_at(&self, voting_id: VotingId, voting_type: VotingType, i: u32) -> Ballot {
         let address = self
             .get_voter(voting_id, voting_type, i)
@@ -416,7 +444,7 @@ impl VotingEngine {
             .unwrap_or_revert_with(Error::BallotDoesNotExist)
     }
 
-    /// Returns the address of nth voter who voted on Voting with `voting_id`
+    /// Returns the address of nth voter who voted on Voting with `voting_id`.
     pub fn get_voter(
         &self,
         voting_id: VotingId,
@@ -426,18 +454,23 @@ impl VotingEngine {
         self.voters.get_or_none((voting_id, voting_type), at)
     }
 
-    /// Returns the [Voting](VotingStateMachine) for given id
+    /// Returns the [Voting](VotingStateMachine) for given id.
     pub fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine> {
         self.voting_states
             .get_or_none(&voting_id)
             .map(|x| x.unwrap_or_revert())
     }
 
+    /// Gets voting with a given id or stops contract execution.
+    /// 
+    /// # Errors
+    /// Reverts with [Error::VotingDoesNotExist] if the given id does not exist.
     pub fn get_voting_or_revert(&self, voting_id: VotingId) -> VotingStateMachine {
         self.get_voting(voting_id)
             .unwrap_or_revert_with(Error::VotingDoesNotExist)
     }
 
+    /// Updates voting storage.
     pub fn set_voting(&self, voting: VotingStateMachine) {
         self.voting_states.set(&voting.voting_id(), Some(voting))
     }
@@ -449,6 +482,9 @@ impl VotingEngine {
         }
     }
 
+    /// Iterates over all the ballots and unstakes reputation. Returns a map of address to it's stake.
+    /// 
+    /// Calls [Reputation Token Contract](crate::reputation::ReputationContractInterface) to perform unstake operation.
     pub fn unstake_all_reputation(
         &mut self,
         voting_id: VotingId,
@@ -470,7 +506,7 @@ impl VotingEngine {
         transfers
     }
 
-    pub fn recast_creators_ballot_from_informal_to_formal(
+    fn recast_creators_ballot_from_informal_to_formal(
         &mut self,
         voting: &mut VotingStateMachine,
     ) {
@@ -490,7 +526,7 @@ impl VotingEngine {
         );
     }
 
-    pub fn return_yes_voters_rep(
+    fn return_yes_voters_rep(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
@@ -510,7 +546,7 @@ impl VotingEngine {
         summary
     }
 
-    pub fn return_no_voters_rep(
+    fn return_no_voters_rep(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
@@ -530,7 +566,7 @@ impl VotingEngine {
         summary
     }
 
-    pub fn redistribute_reputation_of_no_voters(
+    fn redistribute_reputation_of_no_voters(
         &self,
         voting: &VotingStateMachine,
         voting_type: VotingType,
@@ -564,7 +600,7 @@ impl VotingEngine {
         (mints, burns)
     }
 
-    pub fn redistribute_reputation_of_yes_voters(
+    fn redistribute_reputation_of_yes_voters(
         &self,
         voting: &VotingStateMachine,
         voting_type: VotingType,
@@ -606,32 +642,34 @@ impl VotingEngine {
         &self.voters
     }
 
+    /// Gets the total number of users participated in voting.
     pub fn voters_count(&self, voting_id: VotingId, voting_type: VotingType) -> u32 {
         self.voters().len((voting_id, voting_type))
     }
 
-    pub fn bound_ballot(
+    fn bound_ballot(
         &mut self,
         voting: &mut VotingStateMachine,
-        worker: Address,
+        address: Address,
         voting_type: VotingType,
     ) {
         let mut ballot = self
-            .get_ballot(voting.voting_id(), voting_type, worker)
+            .get_ballot(voting.voting_id(), voting_type, address)
             .unwrap_or_revert_with(Error::BallotDoesNotExist);
 
         voting.bind_stake(ballot.stake, ballot.choice);
 
-        self.refs.reputation_token().mint(worker, ballot.stake);
+        self.refs.reputation_token().mint(address, ballot.stake);
         self.refs
             .reputation_token()
             .stake_voting(voting.voting_id(), ballot.clone().into());
 
         ballot.unbound = false;
         self.ballots
-            .set(&(voting.voting_id(), voting_type, worker), ballot);
+            .set(&(voting.voting_id(), voting_type, address), ballot);
     }
 
+    /// Checks if voting with the given id and type exists. 
     pub fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
         let voting = self.get_voting(voting_id);
         match voting {
@@ -640,6 +678,10 @@ impl VotingEngine {
         }
     }
 
+    /// Erases the voter from the given voting.
+    /// 
+    /// If the voter is also the creator, voting is canceled.
+    /// If not, only his vote is invalidated.
     pub fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         let voting = self.get_voting_or_revert(voting_id);
         if &voter == voting.creator() {

@@ -10,7 +10,9 @@ use crate::voting::VotingId;
 /// Choice enum, can be converted to bool using `is_in_favor()`
 #[derive(Debug, FromBytes, ToBytes, CLTyped, PartialEq, Eq, Clone, Copy)]
 pub enum Choice {
+    /// `No` vote.
     Against,
+    /// `Yes` vote.
     InFavor,
 }
 
@@ -27,15 +29,22 @@ impl Choice {
     }
 }
 
-/// Ballot struct
+/// Represents user's vote.
 #[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
 pub struct Ballot {
+    /// The voter's address.
     pub voter: Address,
+    /// A unique voting id.
     pub voting_id: VotingId,
+    /// Voting type.
     pub voting_type: VotingType,
+    /// Selected option.
     pub choice: Choice,
+    /// Vote power.
     pub stake: U512,
+    /// Indicates if the vote counts in the total voting stake.
     pub unbound: bool,
+    /// Indicates if it reverts the previous ballot casted by the voter.
     pub canceled: bool,
 }
 
@@ -61,13 +70,15 @@ impl Ballot {
     }
 }
 
-/// ShortenedBallot struct
+/// Short version of [`Ballot`] struct.
 ///
 /// Derives from the [`Ballot`] struct.
 /// Contains only the essential fields from the original [`Ballot`] required in cross-contract communication.
 #[derive(Debug, FromBytes, ToBytes, CLTyped, Clone)]
 pub struct ShortenedBallot {
+    /// The voter's address.
     pub voter: Address,
+    /// Vote power.
     pub stake: U512,
 }
 
