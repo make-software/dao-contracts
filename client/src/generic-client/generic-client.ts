@@ -7,7 +7,6 @@ import {
   CLU128,
   CLU512,
   CLU32,
-  CLU512,
   CLU64,
   CLU8,
   Contracts,
@@ -55,7 +54,7 @@ const CLTypeDict = {
   U32: CLU32,
   U64: CLU64,
   U128: CLU128,
-  U512: CLU512,: CLU512,
+  U512: CLU512,
   Bool: CLBool,
 };
 
