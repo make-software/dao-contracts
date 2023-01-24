@@ -26,7 +26,7 @@ const contractClient = new Contracts.Contract(new CasperClient(config.node_rpc_u
 async function main() {
   const status = await rpcAPI.getStatus();
 
-  const pk = Keys.Ed25519.loadKeyPairFromPrivateFile(config.private_key_path);
+  const pk = Keys.Ed25519.loadKeyPairFromPrivateFile(process.env.PRIVATE_KEY_PATH || config.private_key_path);
 
   console.log(`
     Info: Installing contracts:
