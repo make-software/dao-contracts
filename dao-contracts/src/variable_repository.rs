@@ -2,9 +2,11 @@ use std::collections::BTreeMap;
 
 use casper_dao_modules::{AccessControl, Record, Repository};
 use casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
+    Error,
 };
 use casper_types::bytesrepr::Bytes;
 use delegate::delegate;
@@ -146,9 +148,22 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     fn all_variables(&self) -> BTreeMap<String, Bytes> {
         let mut result: BTreeMap<String, Bytes> = BTreeMap::new();
 
-        for key in 0..self.repository.keys.length.get().unwrap() {
-            let repo_key = self.repository.keys.get(key).unwrap();
-            let value = self.repository.get(repo_key.clone()).unwrap();
+        for key in 0..self
+            .repository
+            .keys
+            .length
+            .get()
+            .unwrap_or_revert_with(Error::RepositoryError)
+        {
+            let repo_key = self
+                .repository
+                .keys
+                .get(key)
+                .unwrap_or_revert_with(Error::RepositoryError);
+            let value = self
+                .repository
+                .get(repo_key.clone())
+                .unwrap_or_revert_with(Error::RepositoryError);
             result.insert(repo_key, value);
         }
 

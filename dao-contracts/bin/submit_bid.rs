@@ -10,6 +10,7 @@ use casper_dao_utils::{
     },
     Address,
     BlockTime,
+    Error,
 };
 use casper_types::{URef, U512};
 
@@ -24,7 +25,8 @@ fn call() {
     let cspr_amount: U512 = get_named_arg("cspr_amount");
     let main_purse: URef = get_main_purse();
     let cargo_purse: URef = create_purse();
-    transfer_from_purse_to_purse(main_purse, cargo_purse, cspr_amount, None).unwrap_or_revert();
+    transfer_from_purse_to_purse(main_purse, cargo_purse, cspr_amount, None)
+        .unwrap_or_revert_with(Error::TransferError);
 
     BidEscrowContractCaller::at(bid_escrow_address).submit_bid(
         job_offer_id,

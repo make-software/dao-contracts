@@ -9,6 +9,7 @@ use casper_dao_utils::{
         unwrap_or_revert::UnwrapOrRevert,
     },
     Address,
+    Error,
 };
 use casper_types::{URef, U512};
 
@@ -21,7 +22,8 @@ fn call() {
 
     let main_purse: URef = get_main_purse();
     let cargo_purse: URef = create_purse();
-    transfer_from_purse_to_purse(main_purse, cargo_purse, token_amount, None).unwrap_or_revert();
+    transfer_from_purse_to_purse(main_purse, cargo_purse, token_amount, None)
+        .unwrap_or_revert_with(Error::TransferError);
 
     BidEscrowContractCaller::at(bid_escrow_address).pick_bid(job_offer_id, bid_id, cargo_purse);
 }

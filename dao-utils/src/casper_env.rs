@@ -17,15 +17,25 @@ use casper_types::{
     URef,
 };
 
-use crate::{consts::CONTRACT_MAIN_PURSE, events::Events, Address};
+use crate::{
+    consts::CONTRACT_MAIN_PURSE,
+    events::Events,
+    Address,
+    Error,
+    Error::KeyValueStorageError,
+};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
     match runtime::get_key(name) {
         None => None,
         Some(value) => {
-            let key = value.try_into().unwrap_or_revert();
-            let value = storage::read(key).unwrap_or_revert().unwrap_or_revert();
+            let key = value
+                .try_into()
+                .unwrap_or_revert_with(Error::KeyValueStorageError);
+            let value = storage::read(key)
+                .unwrap_or_revert_with(Error::KeyValueStorageError)
+                .unwrap_or_revert_with(KeyValueStorageError);
             Some(value)
         }
     }
@@ -35,7 +45,9 @@ pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
 pub fn set_key<T: ToBytes + CLTyped>(name: &str, value: T) {
     match runtime::get_key(name) {
         Some(key) => {
-            let key_ref = key.try_into().unwrap_or_revert();
+            let key_ref = key
+                .try_into()
+                .unwrap_or_revert_with(Error::KeyValueStorageError);
             storage::write(key_ref, value);
         }
         None => {
@@ -68,7 +80,7 @@ fn take_call_stack_elem(n: usize) -> CallStackElement {
     runtime::get_call_stack()
         .into_iter()
         .nth_back(n)
-        .unwrap_or_revert()
+        .unwrap_or_revert_with(Error::VMInternalError)
 }
 
 /// Gets the immediate session caller of the current execution.
@@ -93,7 +105,9 @@ pub fn emit<T: ToBytes>(event: T) {
 
 /// Convert any key to hash.
 pub fn to_dictionary_key<T: ToBytes>(key: &T) -> String {
-    let preimage = key.to_bytes().unwrap_or_revert();
+    let preimage = key
+        .to_bytes()
+        .unwrap_or_revert_with(Error::BytesConversionError);
     let bytes = runtime::blake2b(preimage);
     hex::encode(bytes)
 }
@@ -104,7 +118,9 @@ pub fn call_contract<T: CLTyped + FromBytes>(
     entry_point: &str,
     runtime_args: RuntimeArgs,
 ) -> T {
-    let contract_package_hash = address.as_contract_package_hash().unwrap_or_revert();
+    let contract_package_hash = address
+        .as_contract_package_hash()
+        .unwrap_or_revert_with(Error::InvalidAddress);
     runtime::call_versioned_contract(*contract_package_hash, None, entry_point, runtime_args)
 }
 
@@ -119,20 +135,20 @@ pub fn install_contract(
 
     let init_access: URef =
         storage::create_contract_user_group(contract_package_hash, "init", 1, Default::default())
-            .unwrap_or_revert()
+            .unwrap_or_revert_with(Error::VMInternalError)
             .pop()
-            .unwrap_or_revert();
+            .unwrap_or_revert_with(Error::VMInternalError);
 
     storage::add_contract_version(contract_package_hash, entry_points, NamedKeys::new());
 
-    // Call contrustor method.
+    // Call constructor method.
     initializer(contract_package_hash);
 
     // Revoke access to init.
     let mut urefs = BTreeSet::new();
     urefs.insert(init_access);
     storage::remove_contract_user_group_urefs(contract_package_hash, "init", urefs)
-        .unwrap_or_revert();
+        .unwrap_or_revert_with(Error::VMInternalError);
 }
 
 pub fn get_block_time() -> u64 {
@@ -150,6 +166,6 @@ pub fn contract_main_purse() -> URef {
             runtime::put_key(CONTRACT_MAIN_PURSE, Key::from(main_purse));
             main_purse
         }
-        Some(value) => *value.as_uref().unwrap_or_revert(),
+        Some(value) => *value.as_uref().unwrap_or_revert_with(Error::PurseError),
     }
 }

@@ -91,6 +91,7 @@ dao_errors!(
     VotingAlreadyFinished => 3412,
     VotingWithGivenTypeNotInProgress => 3413,
     VotingIdNotFound => 3414,
+    VotingAddressNotFound => 3415,
 
     // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,
@@ -134,7 +135,14 @@ dao_errors!(
     BidStakeDoesntExists => 4502,
 
     InvalidAddress => 5000,
+    RepositoryError => 5001,
+    KeyValueStorageError => 5002,
+    DictionaryStorageError => 5003,
+    StorageError => 5004,
+    VMInternalError => 5005,
+    CLValueError => 5006,
     TransferError => 6000,
+
 
     ExpectedInformal => 7000,
     ExpectedFormalToBeOn => 7001,

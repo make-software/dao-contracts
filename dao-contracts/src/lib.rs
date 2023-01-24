@@ -3,6 +3,7 @@
 pub mod admin;
 pub mod bid_escrow;
 pub mod config;
+pub mod cspr_redistribution;
 pub mod ids;
 pub mod kyc_nft;
 pub mod kyc_voter;
@@ -20,4 +21,3 @@ pub mod slashing_voter;
 pub mod va_nft;
 pub mod variable_repository;
 pub mod voting;
-pub mod cspr_redistribution;

@@ -59,7 +59,8 @@ impl Configuration {
             false => self.dao_configuration.formal_quorum_ratio,
         };
 
-        math::per_mil_of_as_u32(ratio, self.total_onboarded()).unwrap_or_revert()
+        math::per_mil_of_as_u32(ratio, self.total_onboarded())
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     pub fn informal_voting_quorum(&self) -> u32 {
@@ -68,7 +69,8 @@ impl Configuration {
             false => self.dao_configuration.informal_quorum_ratio,
         };
 
-        math::per_mil_of_as_u32(ratio, self.total_onboarded()).unwrap_or_revert()
+        math::per_mil_of_as_u32(ratio, self.total_onboarded())
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     pub fn informal_voting_time(&self) -> BlockTime {
@@ -170,20 +172,23 @@ impl Configuration {
     }
 
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
-        math::per_mil_of(amount, self.dao_configuration.default_policing_rate).unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.default_policing_rate)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     pub fn apply_bid_escrow_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::per_mil_of(amount, self.dao_configuration.bid_escrow_payment_ratio).unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.bid_escrow_payment_ratio)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
         math::per_mil_of(amount, self.dao_configuration.reputation_conversion_rate)
-            .unwrap_or_revert()
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
-        math::per_mil_of(amount, self.dao_configuration.default_reputation_slash).unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.default_reputation_slash)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     pub fn fiat_rate(&self) -> Option<U512> {

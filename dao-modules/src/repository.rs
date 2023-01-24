@@ -106,7 +106,11 @@ impl RepositoryDefaults {
     #[cfg(not(feature = "test-support"))]
     pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
         use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
-        let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        let value: Bytes = Bytes::from(
+            value
+                .to_bytes()
+                .unwrap_or_revert_with(Error::BytesConversionError),
+        );
         self.items.push((String::from(key), value));
     }
 

@@ -2,6 +2,7 @@ use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     Address,
+    Error,
     Mapping,
 };
 
@@ -41,6 +42,8 @@ impl KycInfo {
 
     /// Gets the address of the voting subject.
     pub fn get_voting_subject(&self, voting_id: VotingId) -> Address {
-        self.addresses.get(&voting_id).unwrap_or_revert()
+        self.addresses
+            .get(&voting_id)
+            .unwrap_or_revert_with(Error::VotingAddressNotFound)
     }
 }

@@ -194,7 +194,10 @@ impl JobEngine {
 
         self.return_job_poster_payment_and_dos_fee(&job);
 
-        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+        let bid = self
+            .bid_storage
+            .get_bid(job.bid_id())
+            .unwrap_or_revert_with(Error::BidNotFound);
 
         // redistribute cspr stake
         if let Some(cspr_stake) = bid.cspr_stake {
@@ -239,7 +242,10 @@ impl JobEngine {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        let bid = self
+                            .bid_storage
+                            .get_bid(job.bid_id())
+                            .unwrap_or_revert_with(Error::BidNotFound);
                         self.refs
                             .reputation_token()
                             .unstake_bid(bid.borrow().into());
@@ -392,8 +398,11 @@ impl JobEngine {
     fn mint_reputation_for_voters(&mut self, job: &Job, amount: U512) {
         let voting = self
             .voting_engine
-            .get_voting(job.voting_id().unwrap_or_revert())
-            .unwrap_or_revert();
+            .get_voting(
+                job.voting_id()
+                    .unwrap_or_revert_with(Error::VotingIdNotFound),
+            )
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
         for i in 0..self
             .voting_engine

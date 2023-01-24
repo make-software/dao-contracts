@@ -57,7 +57,8 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
 
     /// Read `key` from the storage or return none.
     pub fn get_or_none(&self, key: &K) -> Option<V> {
-        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key)).unwrap_or_revert()
+        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
+            .unwrap_or_revert_with(Error::DictionaryStorageError)
     }
 
     /// Set `value` under `key` to the storage. It overrides by default.
@@ -79,11 +80,13 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
                 let key: Key = match runtime::get_key(&self.name) {
                     Some(key) => key,
                     None => {
-                        storage::new_dictionary(&self.name).unwrap_or_revert();
-                        runtime::get_key(&self.name).unwrap_or_revert()
+                        storage::new_dictionary(&self.name)
+                            .unwrap_or_revert_with(Error::DictionaryStorageError);
+                        runtime::get_key(&self.name)
+                            .unwrap_or_revert_with(Error::KeyValueStorageError)
                     }
                 };
-                let seed: URef = *key.as_uref().unwrap_or_revert();
+                let seed: URef = *key.as_uref().unwrap_or_revert_with(Error::VMInternalError);
                 seeds.insert(self.name.clone(), seed);
                 seed
             }

@@ -7,7 +7,7 @@ use casper_types::{
 };
 
 use super::mapping::IndexedMapping;
-use crate::{consts, instance::Instanced, Variable};
+use crate::{consts, instance::Instanced, Error, Variable};
 
 pub struct OrderedCollection<T> {
     pub values: IndexedMapping<T>,
@@ -47,7 +47,8 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
 
     fn move_item(&mut self, from: u32, to: u32) {
         let value = self.values.get(from);
-        self.values.set(to, value.unwrap_or_revert());
+        self.values
+            .set(to, value.unwrap_or_revert_with(Error::StorageError));
         self.values.unset(from);
     }
 
