@@ -70,7 +70,7 @@ jobs:
         run: cd client && NODE_ENV=ci npm run e2e:generic-client
   run-install-script:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     # Service containers to run with `runner-job`
     env:
       FAUCET_FOLDER: /tmp/net-1/faucet
@@ -93,24 +93,16 @@ jobs:
         volumes:
           - /tmp:/home/casper/casper-node/utils/nctl/assets
     steps:
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
-
-      - name: Setup contracts
-        run: make prepare && make build-all
-
-      - name: Fix keys permission
-        run: sudo chown runner $FAUCET_FOLDER/*/*
-
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup NodeJS
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: "18"
-
+      - name: Setup contracts
+        run: make prepare && make build-all
+      - name: Fix keys permission
+        run: sudo chown runner $FAUCET_FOLDER/*
       - name: Setup script
-        run: cd scripts/install-contracts && npm install && cp config.js.example config.js
-
+        run: cd scripts/install-contracts && npm install && cp config.json.example config.json
       - name: Test install contracts script
-        run: PRIVATE_KEY_PATH=$FAUCET_FOLDER/secret_key.pem && node scripts/install-contracts/index.js
+        run: PRIVATE_KEY_PATH=$FAUCET_FOLDER/secret_key.pem node scripts/install-contracts/index.js
