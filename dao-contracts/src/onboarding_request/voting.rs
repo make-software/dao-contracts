@@ -13,6 +13,7 @@ use casper_types::U512;
 use super::request::{OnboardingRequest, Request};
 use crate::{
     config::{Configuration, ConfigurationBuilder},
+    cspr_redistribution::{redistribute_cspr_to_all_vas, redistribute_to_governance},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
@@ -202,7 +203,7 @@ impl Onboarding {
 
     fn on_formal_voting_against(&mut self, voting_id: VotingId, request: &Request) {
         let configuration = self.configurations.get_or_revert(&voting_id);
-        let amount = self.redistribute_to_governance(&configuration, request.cspr_deposit());
+        let amount = redistribute_to_governance(request.cspr_deposit(), &configuration);
         cspr::withdraw(request.creator(), amount);
     }
 }
@@ -244,26 +245,8 @@ impl Onboarding {
     }
 
     fn redistribute_cspr(&mut self, configuration: &Configuration, amount: U512) {
-        let to_redistribute = self.redistribute_to_governance(configuration, amount);
-        self.redistribute_cspr_to_all_vas(to_redistribute);
-    }
-
-    fn redistribute_to_governance(&mut self, configuration: &Configuration, amount: U512) -> U512 {
-        let governance_wallet: Address = configuration.bid_escrow_wallet_address();
-        let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(amount);
-        cspr::withdraw(governance_wallet, governance_wallet_payment);
-
-        amount - governance_wallet_payment
-    }
-
-    fn redistribute_cspr_to_all_vas(&mut self, to_redistribute: U512) {
-        let all_balances = self.refs.reputation_token().all_balances();
-        let total_supply = all_balances.total_supply();
-
-        for (address, balance) in all_balances.balances() {
-            let amount = to_redistribute * balance / total_supply;
-            cspr::withdraw(*address, amount);
-        }
+        let to_redistribute = redistribute_to_governance(amount, configuration);
+        redistribute_cspr_to_all_vas(to_redistribute, &self.refs);
     }
 
     fn burn_requestor_reputation(&self, request: &Request) {

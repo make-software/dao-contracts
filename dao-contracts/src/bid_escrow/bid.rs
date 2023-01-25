@@ -295,7 +295,7 @@ impl Bid {
 ///
 /// Derives from the [`Bid`] struct.
 /// Contains only the essential fields from the original [`Bid`] required in cross-contract communication.
-#[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
+#[derive(CLTyped, ToBytes, FromBytes, Debug, Clone, Copy)]
 pub struct ShortenedBid {
     pub bid_id: BidId,
     pub reputation_stake: U512,
