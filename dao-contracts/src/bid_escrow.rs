@@ -54,8 +54,44 @@
 //! * Reputation minted for the `External Worker` and used in the voting process is burned.
 //! * Reputation of the voters who voted `yes` is returned to them, except for the Reputation minted for the Worker using `CSPR` stake
 //! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
-//! reputation staked in the voting (External Worker does not receive Reputation in this step)
+//! reputation staked in the voting (External Worker does not receive Reputation in this step).
+//! 
+//! ## Payment CSPR Redistribution
+//! Reputation used for the Voting and minted after a successful `Job` has been redistributed during the above process, 
+//! but there is `CSPR` to redistribute that was allocated to the `Job`. How much resources is redistributed and to whom 
+//! depends on the type of `Worker` and whether it wanted to become a `VA`.
 //!
+//! ### Payment pool
+//! The `CSPR` to redistribute is calculated using a formula:
+//! `payment pool = job price`
+//!
+//! ### External Worker who wants to become VA
+//! As the External Worker now is the VA, it is considered to be an `Internal Worker` in this scenario.
+//!
+//! ### Internal Worker
+//! Firstly the Governance Payment is calculated using a formula:
+//! 
+//! `governance payment = payment pool * BidEscrowPaymentRatio` [Read more](crate::variable_repository#available-keys). 
+//!
+//! The `Governance Payment` is then transferred to a multisig wallet, which address is held in the [`Variable Repository Contract`] 
+//! called [`BidEscrowWalletAddress`](crate::variable_repository#available-keys).
+//! The rest of the payment is redistributed between all of the `VAs'`.
+//! 
+//! `remaining amount = payment pool - governance payment`
+//! 
+//! ### External Worker
+//! If the `Job` was done by an `External Worker` who didn’t want to become a `VA`, the first step is the same
+//! as in the case of `Internal Worker` - Governance Payment is being made. However the rest is then divided between 
+//! the `External Worker` and the `VAs’`.
+//!
+//! Firstly to get the amount that VA’s receive we use a formula:
+//! 
+//! `VA payment amount = remaining amount * DefaultPolicingRate` [Read more](crate::variable_repository#available-keys)
+//!
+//! Then, the rest is transferred to the `External Worker`:
+//!
+//! `External Worker payment amount = payment pool- governance payment - VA payment amount`
+//!  
 //! # Voting failed
 //! Besides yielding a negative result, the Voting passed means that the Reputation staked by the losing side is
 //! redistributed between the winning side, depending on the type of Worker.
@@ -93,7 +129,6 @@
 //! # Returning DOS Fee
 //! The final step of the process is returning the `CSPR` `DOS Fee` to the `Job Poster`.
 //! 
-//! //TODO: redistrubtion rules
 //!
 //! # Grace Period
 //! However, if `External Worker` do not post a `Job Proof` in time, his `CSPR` stake is redistributed
@@ -107,7 +142,8 @@
 //! This stake will behave in the same manner as stake sent by the original `Worker`.
 //! If nobody submits the `Job Proof` during the grace period, the whole process ends.
 //! The `CSPR` paid by the `Job Poster` is returned along with the `DOS Fee`.
-//!
+//! This is a special implementation of [positional parameters].
+//! 
 //! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [`Slashing Voter`]: crate::slashing_voter

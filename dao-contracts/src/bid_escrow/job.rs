@@ -1,3 +1,4 @@
+//! Bid-related structs.
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     casper_env::revert,
@@ -17,8 +18,10 @@ use crate::{
     voting::VotingId,
 };
 
+/// Serializable Job status.
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
+    //TODO: docs
     Created,
     Accepted,
     Cancelled,
@@ -34,7 +37,9 @@ impl Default for JobStatus {
     }
 }
 
+/// Data required to pick the Bid.
 pub struct PickBidRequest {
+    //TODO: docs
     pub job_id: JobId,
     pub job_offer_id: JobOfferId,
     pub bid_id: BidId,
@@ -51,7 +56,9 @@ pub struct PickBidRequest {
     pub external_worker_cspr_stake: U512,
 }
 
+/// Data required to reclaim the Job.
 pub struct ReclaimJobRequest {
+    //TODO: docs
     pub new_job_id: JobId,
     pub new_bid_id: BidId,
     pub proposed_timeframe: BlockTime,
@@ -62,11 +69,12 @@ pub struct ReclaimJobRequest {
     pub block_time: BlockTime,
 }
 
+/// Data required to submit job proof.
 pub struct SubmitJobProofRequest {
     pub proof: DocumentHash,
 }
 
-/// Struct holding Job
+/// Serializable representation of a `Job`.
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
 pub struct Job {
     job_id: JobId,
@@ -87,6 +95,7 @@ pub struct Job {
 }
 
 impl Job {
+    //TODO: docs
     pub fn new(request: &PickBidRequest) -> Self {
         RulesBuilder::new()
             .add_validation(CanPickBid::create(request.caller, request.poster))
@@ -124,6 +133,7 @@ impl Job {
         }
     }
 
+    //TODO: docs
     pub fn reclaim(&mut self, request: ReclaimJobRequest) -> Job {
         self.status = JobStatus::Completed;
         self.followed_by = Some(request.new_job_id);
@@ -153,28 +163,7 @@ impl Job {
         }
     }
 
-    /// Changes status to the Accepted
-    pub fn accept(&mut self, caller: Address, block_time: BlockTime) -> Result<(), Error> {
-        if !self.can_be_accepted(caller, block_time) {
-            return Err(Error::CannotAcceptJob);
-        }
-
-        self.status = JobStatus::Accepted;
-        Ok(())
-    }
-
-    fn can_be_accepted(&self, caller: Address, block_time: BlockTime) -> bool {
-        if self.status() != JobStatus::Created {
-            return false;
-        }
-
-        if self.worker() == caller && !self.has_time_ended(block_time) {
-            return true;
-        }
-
-        false
-    }
-
+    //TODO: docs
     pub fn validate_cancel(&self, block_time: BlockTime) -> Result<(), Error> {
         if self.status() != JobStatus::Created {
             return Err(Error::CannotCancelJob);
@@ -207,10 +196,12 @@ impl Job {
         self.status = JobStatus::NotCompleted;
     }
 
+    //TODO: docs
     pub fn has_time_ended(&self, block_time: BlockTime) -> bool {
         self.start_time + self.time_for_job <= block_time
     }
 
+    //TODO: docs
     pub fn submit_proof(&mut self, request: SubmitJobProofRequest) {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);
@@ -220,83 +211,94 @@ impl Job {
         self.status = JobStatus::Submitted;
     }
 
-    /// Get the job's status.
+    /// Gets the job's status.
     pub fn status(&self) -> JobStatus {
         self.status
     }
 
-    /// Get the job's worker.
+    /// Gets the job's worker.
     pub fn worker(&self) -> Address {
         self.worker
     }
 
-    /// Get the job's poster.    
+    /// Gets the job's poster.    
     pub fn poster(&self) -> Address {
         self.poster
     }
 
-    /// Get the job's result.
+    /// Gets the job's result.
     pub fn result(&self) -> Option<&DocumentHash> {
         self.job_proof.as_ref()
     }
 
-    /// Get the job's bid id.
+    /// Gets the job's bid id.
     pub fn bid_id(&self) -> BidId {
         self.bid_id
     }
 
-    /// Get the job's offer id.
+    /// Gets the job's offer id.
     pub fn job_offer_id(&self) -> JobOfferId {
         self.job_offer_id
     }
 
-    /// Get the job's payment amount
+    /// Gets the job's payment amount.
     pub fn payment(&self) -> U512 {
         self.payment
     }
 
-    /// Get the job's voting id.
+    /// Gets the job's voting id.
     pub fn voting_id(&self) -> Option<VotingId> {
         self.voting_id
     }
 
+    /// Gets confirmation the job has been done.
     pub fn job_proof(&self) -> Option<&DocumentHash> {
         self.job_proof.as_ref()
     }
 
-    /// Get the job's finish time
+    /// Gets the job's finish time.
     pub fn finish_time(&self) -> BlockTime {
         self.start_time + self.time_for_job
     }
 
+    /// Gets the job's worker type.
     pub fn worker_type(&self) -> &WorkerType {
         &self.worker_type
     }
 
+    /// Gets the job's stake.
     pub fn stake(&self) -> U512 {
         self.stake
     }
 
+    /// Gets the job's CSPR stake.
     pub fn external_worker_cspr_stake(&self) -> U512 {
         self.external_worker_cspr_stake
     }
 
+    /// Links job with [Voting](crate::voting::voting_state_machine::VotingStateMachine).
     pub fn set_voting_id(&mut self, voting_id: VotingId) {
         self.voting_id = Some(voting_id);
     }
 
+    /// Gets the job's CSPR stake.
     pub fn job_id(&self) -> JobId {
         self.job_id
     }
 
+    /// When [Grace Period](crate::bid_escrow#grace-period) starts.
     fn grace_period(&self) -> BlockTime {
         self.time_for_job
     }
 }
 
+/// Serializable [Worker](crate::bid_escrow#definitions) type.
 #[derive(CLTyped, ToBytes, FromBytes, Debug, PartialEq, Clone)]
 pub enum WorkerType {
+    /// [VA](crate::bid_escrow#definitions)
     Internal,
+    /// Non-VA who becomes a VA once the Job is accepted.
     ExternalToVA,
+    /// Non-VA who does not want to become a VA.
     External,
 }
