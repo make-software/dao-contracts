@@ -41,9 +41,8 @@ use crate::voting::{
     voting_state_machine::{VotingStateMachine, VotingType},
     Ballot,
     Choice,
-    VotingCreatedInfo,
     VotingEngine,
-    VotingId,
+    VotingId, events::VotingCreatedInfo,
 };
 
 pub mod request;
@@ -71,54 +70,58 @@ pub trait OnboardingRequestContractInterface {
         kyc_token: Address,
         va_token: Address,
     );
-
-    /// Submits onboarding request. If the request is valid voting starts.
-    fn create_voting(&mut self, reason: DocumentHash, purse: URef);
-    /// Casts a vote over a job
+    /// Submits an onboarding request. If the request is valid voting starts.
+    /// 
     /// # Events
-    /// // TODO: Fix events documentation
-    /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
-
-    /// # Errors
-    /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
+    /// [`OnboardingVotingCreated`]
+    fn create_voting(&mut self, reason: DocumentHash, purse: URef);
+    /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
     /// with a refund or convert the requestor to a VA.
-    /// # Events
-    /// // TODO: Fix events documentation
-    /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
-    /// # Errors
-    /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
     /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns [Voting](VotingStateMachine) for given id.
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns the Voter's [`Ballot`].
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-
+    /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
     /// Returns the CSPR balance of the contract
     fn get_cspr_balance(&self) -> U512;
-
-    // Whitelisting set.
+    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    ///
+    /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
+    /// Adds a new address to the whitelist.
+    ///
+    /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
+    /// Remove address from the whitelist.
+    ///
+    /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
-    fn get_owner(&self) -> Option<Address>;
+    /// Checks whether the given address is added to the whitelist.
+    /// 
+    /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
-
-    // Slashing
-    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    /// Returns the address of the current owner.
+    /// 
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
 }
 
 #[derive(Instance)]

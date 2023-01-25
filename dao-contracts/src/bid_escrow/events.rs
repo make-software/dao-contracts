@@ -1,10 +1,11 @@
+//! BidEscrow-related events.
 use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
 use casper_types::U512;
 
 use super::types::BidId;
 use crate::bid_escrow::{job::Job, job_offer::JobOffer, types::JobOfferId};
 
-/// Informs a new [job offer](crate::bid_escrow::job_offer::JobOffer) has been created.
+/// Informs a new [Job Offer](crate::bid_escrow::job_offer::JobOffer) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobOfferCreated {
     /// The offer id.
@@ -29,7 +30,7 @@ impl JobOfferCreated {
     }
 }
 
-/// Informs a new [bid](crate::bid_escrow::bid::Bid) has been placed.
+/// Informs a new [Bid](crate::bid_escrow::bid::Bid) has been placed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BidSubmitted {
     bid_id: BidId,
@@ -68,6 +69,7 @@ impl BidSubmitted {
     }
 }
 
+/// Informs a new [Job](crate::bid_escrow::job::Job) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
     bid_id: BidId,
@@ -90,6 +92,7 @@ impl JobCreated {
     }
 }
 
+/// Informs a new [Job](crate::bid_escrow::job::Job) has been accepted by the `Job Poster`.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobAccepted {
     bid_id: BidId,
@@ -108,6 +111,7 @@ impl JobAccepted {
     }
 }
 
+/// Informs the [Job](crate::bid_escrow::job::Job) proof has been submitted by the `Worker`.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobSubmitted {
     bid_id: BidId,
@@ -133,6 +137,7 @@ impl JobSubmitted {
     }
 }
 
+/// Informs the [Job](crate::bid_escrow::job::Job) has been canceled.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCancelled {
     bid_id: BidId,
@@ -157,6 +162,7 @@ impl JobCancelled {
     }
 }
 
+/// Informs `Voting` on the [Job](crate::bid_escrow::job::Job) passed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobDone {
     bid_id: BidId,
@@ -179,6 +185,7 @@ impl JobDone {
     }
 }
 
+/// Informs `Voting` on the [Job](crate::bid_escrow::job::Job) failed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobRejected {
     bid_id: BidId,

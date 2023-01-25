@@ -39,7 +39,7 @@ pub const ARG_TO: &str = "to";
 /// The name of `token_id` entry point argument.
 pub const ARG_TOKEN_ID: &str = "token_id";
 
-/// The key the length of [`OrderedCollection`](OrderedCollection) is stored under.
+/// The key the collection length is stored under.
 pub const LENGTH_SUFFIX: &str = "_length";
 /// The key the contracts' events are stored under.
 pub const NAME_EVENTS: &str = "events";

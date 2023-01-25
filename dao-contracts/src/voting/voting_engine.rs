@@ -20,14 +20,11 @@ use self::{
 use super::{
     ballot::Choice,
     ids,
+    events::{BallotCanceled, Reason, VotingCanceled, VotingEnded},
     refs::{ContractRefs, ContractRefsStorage},
     types::VotingId,
     Ballot,
-    BallotCanceled,
-    Reason,
     ShortenedBallot,
-    VotingCanceled,
-    VotingEnded,
 };
 use crate::{
     config::Configuration,
@@ -71,10 +68,6 @@ impl VotingEngine {
     /// Interacts with [DaoIds Contract] to generate voting id. 
     /// 
     /// Depending on the configuration may [`cast`] the first vote.
-    ///
-    /// # Events
-    /// // TODO: Fix events documentation
-    /// Emits [`VotingCreated`](VotingCreated), [`BallotCast`].
     ///
     /// # Errors
     /// Throws [`Error::NotEnoughReputation`] when the creator does not have enough reputation to create a voting.
@@ -139,8 +132,7 @@ impl VotingEngine {
     /// When no quorum is reached, the reputation is returned, except for the creator - its reputation is then burned.
     ///
     /// # Events
-    /// // TODO: Fix events documentation
-    /// Emits [`VotingEnded`](VotingEnded), [`VotingCreated`](VotingCreated), [`BallotCast`](BallotCast)
+    /// Emits [`VotingEnded`](VotingEnded), [`BallotCast`](BallotCast)
     ///
     /// # Errors
     /// Throws [`FinishingCompletedVotingNotAllowed`](Error::FinishingCompletedVotingNotAllowed) if trying to complete already finished voting
@@ -425,7 +417,7 @@ impl VotingEngine {
         self.voters.get_all((voting_id, voting_type))
     }
 
-    /// Returns the [`Ballot`] of voter with `address` and cast on `voting_id`.
+    /// Returns the Voter's [`Ballot`].
     pub fn get_ballot(
         &self,
         voting_id: VotingId,

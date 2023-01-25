@@ -11,8 +11,7 @@ use casper_dao_contracts::{
     simple_voter::{SimpleVoterContract, SimpleVotingCreated},
     slashing_voter::{SlashingVoterContract, SlashingVotingCreated},
     va_nft::VaNftContract,
-    variable_repository::VariableRepositoryContract,
-    voting::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
+    variable_repository::VariableRepositoryContract, voting::events::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
 };
 use casper_dao_modules::events::{
     AddedToWhitelist,

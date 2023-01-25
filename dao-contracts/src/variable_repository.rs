@@ -66,23 +66,27 @@ pub trait VariableRepositoryContractInterface {
     /// * multiple [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) events,
     /// one per value of the default repository configuration.
     fn init(&mut self);
-
     /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
-    /// Only the current owner is permited to call this method.
+    /// Only the current owner is permitted to call this method.
     ///
-    /// See [`AccessControl`](AccessControl::change_ownership())
+    /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
-
     /// Adds a new address to the whitelist.
     ///
-    /// See [`AccessControl`](AccessControl::add_to_whitelist())
+    /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
-
     /// Remove address from the whitelist.
     ///
-    /// See [`AccessControl`](AccessControl::remove_from_whitelist())
+    /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
-
+    /// Checks whether the given address is added to the whitelist.
+    /// 
+    /// [`Read more`](AccessControl::is_whitelisted()).
+    fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// 
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
     /// Inserts or updates the value under the given key.
     ///
     /// # Note
@@ -102,18 +106,15 @@ pub trait VariableRepositoryContractInterface {
     /// * Throws [`ValueNotAvailable`](casper_dao_utils::Error::ValueNotAvailable) on
     /// the future value update if the current value has not been set.
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
-
     /// Returns the value stored under the given key.
     ///
     /// If the key does not exist, the `None` value is returned.
     fn get(&self, key: String) -> Option<Bytes>;
-
     /// Returns the full (current and future) value stored under the given key.
     /// See [`Record`](casper_dao_modules::Record).
     ///
     /// If the key does not exist, the `None` value is returned.
     fn get_full_value(&self, key: String) -> Option<Record>;
-
     /// Returns the value stored under the given index.
     ///
     /// Every freshly added key has the previous key index increased by 1.
@@ -121,16 +122,9 @@ pub trait VariableRepositoryContractInterface {
     ///
     /// If the given index exceeds #keys-1 the `None` value is returned.
     fn get_key_at(&self, index: u32) -> Option<String>;
-
     /// Returns the number of existing keys in the [`Repository`](casper_dao_modules::Repository).
     fn keys_count(&self) -> u32;
-
-    /// Returns the address of the current owner.
-    fn get_owner(&self) -> Option<Address>;
-
-    /// Checks whether the given address is added to the whitelist.
-    fn is_whitelisted(&self, address: Address) -> bool;
-
+    /// Reads all the stored variables and returns a map key to value.
     fn all_variables(&self) -> BTreeMap<String, Bytes>;
 }
 

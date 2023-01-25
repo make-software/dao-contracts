@@ -37,23 +37,27 @@ pub trait KycNftContractInterface {
     ///
     /// See [MetadataERC721](MetadataERC721::init()), [AccessControl](AccessControl::init())
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri);
-    /// Change ownership of the contract. Transfer the ownership to the `owner`. Only current owner
-    /// is permitted to call this method.
+    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
     ///
-    /// See [AccessControl](AccessControl::change_ownership())
+    /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
-    /// Add new address to the whitelist.
+    /// Adds a new address to the whitelist.
     ///
-    /// See [AccessControl](AccessControl::add_to_whitelist())
+    /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
     ///
-    /// See [AccessControl](AccessControl::remove_from_whitelist())
+    /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
-    /// Returns the address of the current owner.
-    fn get_owner(&self) -> Option<Address>;
     /// Checks whether the given address is added to the whitelist.
+    /// 
+    /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// 
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
     /// Returns a descriptive name for a collection of tokens in this contract
     fn name(&self) -> String;
     /// Gets an abbreviated name for tokens in this contract
@@ -99,8 +103,7 @@ pub trait KycNftContractInterface {
     /// is not whitelisted.
     ///
     /// # Events
-    /// // TODO: Fix events documentation
-    /// Emits [`Burn`](casper_dao_modules::events::Burn) event.
+    /// Emits [`Transfer`](casper_dao_erc721::events::Transfer) event when burnt successfully.
     fn burn(&mut self, owner: Address);
 }
 

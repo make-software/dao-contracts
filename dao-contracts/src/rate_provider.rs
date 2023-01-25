@@ -24,6 +24,8 @@ pub trait CSPRRateProviderContractInterface {
     /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if the caller is not the contract owner.
     fn set_rate(&mut self, rate: U512);
     /// Returns the address of the current owner.
+    /// 
+    /// [`Read more`](Owner::get_owner()).
     fn get_owner(&self) -> Option<Address>;
 }
 

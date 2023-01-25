@@ -55,9 +55,8 @@ use crate::{
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        VotingCreatedInfo,
         VotingEngine,
-        VotingId,
+        VotingId, events::VotingCreatedInfo,
     },
 };
 
@@ -67,8 +66,8 @@ pub trait SlashingVoterContractInterface {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract).
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`],
+    /// [`Reputation Token`], [`VA Token`].
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
@@ -76,37 +75,67 @@ pub trait SlashingVoterContractInterface {
     /// Emits:
     /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    /// 
+    /// [`Variable Repository`]: crate::variable_repository::VariableRepositoryContract
+    /// [`Reputation Token`]: crate::reputation::ReputationContract
+    /// [`VA Token`]: crate::va_nft::VaNftContract
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
-
+    /// Creates new Slashing voting.
+    ///
+    /// # Arguments
+    /// * `address_to_slash` - the [Address] of an account the be slashed,
+    /// * `slash_ratio` - the percentage of tokens to slash, if the ratio == 1000, full slashing
+    /// is performed. 
+    /// 
+    /// # Events
+    /// [`SlashingVotingCreated`]
     fn create_voting(&mut self, address_to_slash: Address, slash_ratio: u32, stake: U512);
-    /// see [VotingEngine](VotingEngine::vote())
+    /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [VotingEngine](VotingEngine::finish_voting())
+    /// Finishes voting. Depending on type of voting, different actions are performed.
+    /// [Read more](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
     /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_voting())
+    /// Returns [Voting](VotingStateMachine) for given id.
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-    /// see [VotingEngine](VotingEngine::get_ballot())
+    /// Returns the Voter's [`Ballot`].
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [VotingEngine](VotingEngine::get_voter())
+    /// Returns the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    /// Overrides the stored [`Bid Escrow Contract`](crate::bid_escrow) addresses.
     fn update_bid_escrow_list(&mut self, bid_escrows: Vec<Address>);
-
-    // Whitelisting set.
+    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    ///
+    /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
+    /// Adds a new address to the whitelist.
+    ///
+    /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
+    /// Remove address from the whitelist.
+    ///
+    /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
-    fn get_owner(&self) -> Option<Address>;
+    /// Checks whether the given address is added to the whitelist.
+    /// 
+    /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// 
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
+    /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
+    /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
 }
 

@@ -20,9 +20,8 @@ use crate::{
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
-        VotingCreatedInfo,
         VotingEngine,
-        VotingId,
+        VotingId, events::VotingCreatedInfo,
     },
 };
 

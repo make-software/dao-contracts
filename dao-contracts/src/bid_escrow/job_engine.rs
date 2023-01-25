@@ -41,7 +41,7 @@ pub struct JobEngine {
     #[scoped = "contract"]
     refs: ContractRefsWithKycStorage,
     #[scoped = "contract"]
-    pub voting_engine: VotingEngine,
+    voting_engine: VotingEngine,
     #[scoped = "contract"]
     onboarding: OnboardingInfo,
     #[scoped = "contract"]
@@ -51,11 +51,18 @@ pub struct JobEngine {
 impl JobEngine {
     delegate! {
         to self.job_storage {
+            /// Returns the total number of jobs.
             pub fn jobs_count(&self) -> u32;
+            /// Gets the [job](crate::bid_escrow::job::Job) with a given id or `None`. 
             pub fn get_job(&self, job_id: JobId) -> Option<Job>;
         }
     }
 
+    /// Validates the correctness of proof submission.
+    /// If the submission is correct, the [`Job Storage`](JobStorage) is updated, the Voting process starts.
+    /// 
+    /// # Errors
+    /// If a proof has been submitted before, reverts with [`Error::JobAlreadySubmitted`].
     pub fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
         let mut job = self.job_storage.get_job_or_revert(job_id);
         let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
@@ -109,6 +116,11 @@ impl JobEngine {
         self.voting_engine.set_voting(voting);
     }
 
+    /// Updates the old [Bid] and [Job], the job is assigned to a new `Worker`. The rest goes the same
+    /// as regular proof submission. See [submit_job_proof()][Self::submit_job_proof].
+    /// The old `Worker` who didn't submit the proof in time, is getting slashed.
+    /// 
+    /// See the Grace Period section in the module [description](crate::bid_escrow). 
     pub fn submit_job_proof_during_grace_period(
         &mut self,
         job_id: JobId,
@@ -138,7 +150,6 @@ impl JobEngine {
         self.burn_reputation_stake(&old_bid);
 
         // slash original worker
-
         if self.onboarding.is_onboarded(&old_bid.worker) {
             self.slash_worker(&old_job);
         }
@@ -191,6 +202,15 @@ impl JobEngine {
         self.submit_job_proof(new_job_id, proof);
     }
 
+
+    /// Terminates the Voting process and slashes the `Worker`.
+    /// 
+    /// * the bid stake is redistributed along the VAs' and the multisig wallet.
+    /// * `DOS Fee` is returned to the `Job Poster`.
+    /// 
+    /// # Error
+    /// If the state in which the process cannot be canceled, the execution reverts with
+    /// [Error::CannotCancelJob] or [Error::JobCannotBeYetCanceled].
     pub fn cancel_job(&mut self, job_id: JobId) {
         let mut job = self.job_storage.get_job_or_revert(job_id);
         let caller = caller();
@@ -221,6 +241,11 @@ impl JobEngine {
         self.job_storage.store_job(job);
     }
 
+
+    /// Records vote in [Voting](crate::voting::voting_state_machine::VotingStateMachine).
+    /// 
+    /// # Error
+    /// * [`Error::CannotVoteOnOwnJob`].
     pub fn vote(
         &mut self,
         voting_id: VotingId,
@@ -238,6 +263,10 @@ impl JobEngine {
             .vote(caller, voting_id, voting_type, choice, stake);
     }
 
+    /// Ends the current voting phase and redistributes funds.
+    /// 
+    /// Interacts with [`Reputation Token Contract`](crate::reputation::ReputationContractInterface) to
+    /// redistribute reputation.
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
         let job = self.job_storage.get_job_by_voting_id(voting_id);
         let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
