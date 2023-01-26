@@ -19,18 +19,18 @@
 //! If the range of [`DefaultReputationSlash`] is [0.01..0.99] tokens burnt is the only side effect but
 //! the value of `1.0` brings additional consequences:
 //!  
-//! * all the reputation is burnt,
+//! * all the `Reputation` is burnt,
 //! * fail all the `Jobs` where this `VA` is either the `Worker` or the `Job Poster`,
-//! * fail all the `voting` started by this `VA`,
-//! * remove all votes from all active `Voting`,
-//! * remove all `Bids` from all auctions,
-//! * remove [`VA Token`],
+//! * fail all the `Voting` started by this `VA`,
+//! * remove all the votes from all active `Voting`,
+//! * remove all the `Bids` from all auctions,
+//! * remove [`VA Token`].
 //! 
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`]. The subject of voting cannot participate in the process.
 //! 
 //! [`DefaultReputationSlash`]: crate::variable_repository
-//! [`VA Token`]: crate::va_nft::VaNftContractInterface
+//! [`VA Token`]: crate::va_nft
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
@@ -72,7 +72,6 @@ pub trait SlashingVoterContractInterface {
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits:
     /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     /// 
@@ -106,31 +105,26 @@ pub trait SlashingVoterContractInterface {
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
-        address: Address,
+        voter: Address,
     ) -> Option<Ballot>;
     /// Returns the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Overrides the stored [`Bid Escrow Contract`](crate::bid_escrow) addresses.
     fn update_bid_escrow_list(&mut self, bid_escrows: Vec<Address>);
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
     /// Checks if voting of a given type and id exists.
@@ -166,7 +160,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
                 &self,
                 voting_id: VotingId,
                 voting_type: VotingType,
-                address: Address,
+                voter: Address,
             ) -> Option<Ballot>;
         }
 

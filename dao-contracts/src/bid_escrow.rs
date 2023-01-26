@@ -12,7 +12,7 @@
 //! * Bid Escrow Voting - Mints reputation
 //!
 //! # Posting
-//! The first step of the `Bid Escrow` process is `Posting` a `Job Offer`.
+//! The first step of the `Bid Escrow` process is `Posting` a [`Job Offer`](crate::bid_escrow::job_offer::JobOffer).
 //! It is done by `JobPoster` by sending a query to a `BidEscrow` contract containing:
 //! * Expected timeframe for completing a `Job`
 //! * Maximum budget for a `Job`
@@ -21,8 +21,37 @@
 //! This action creates a new object in the contract called `Job Offer` and starts the `Bidding process`.
 //!
 //! # Bidding
-//! The `Bidding` process allows `Workers` to post `Bids` with the offer of completing a job.
+//! The `Bidding` process allows `Workers` to post [`Bids`](crate::bid_escrow::bid::Bid) with the offer of completing a job.
+//! It is divided into two main parts.
+//! 
+//! ### Internal Auction
+//! During this part of the Bidding process only the `VAs` can bid. As the `VAs` have `Reputation`, they are bidding using 
+//! [`Reputation`] as a stake. The `Bid` query to the contract consists of:
+//! * Proposed timeframe for completing the `Job`.
+//! * Proposed payment for the `Job`.
+//! * The amount of `Reputation` the `Internal Worker` stakes on this `Job`.
+//! 
+//! The Bid is then added to a list of available bids in the contract storage and is available for picking by the `Job Poster`.
+//! The time of an `Internal Auction` is defined in a [`Governance Variable`] `InternalAuctionTime`. 
+//! The bidding process can already be completed here, if the `JobPoster` decides to chose one of the posted Bids before `Internal Auction` ends. 
+//! However, if no `Bid` is picked during this time, the process becomes a `Public Auction`.
+//! 
+//! ### Public Auction
+//! If no `Internal Worker` decides to post a `Bid` on a `Job Offer`, or the `Job Poster` did not pick any bid during `Internal Auction`, 
+//! the `External Workers` have a chance of submitting their bids during `Public Auction` time. As `External Workers` do not have any 
+//! `Reputation` to stake, they are staking `CSPR`.
+//! 
+//! A query to the contract in case of `External Workers` consists of:
+//! * Proposed timeframe for completing the `Job`.
+//! * Proposed payment for the `Job`.
+//! * Decision if the `Worker` wants to become a `Voting Associate` if the `Job` is completed.
+//! * `CSPR` stake sent alongside the query
+//! `Internal Workers` by default cannot to submit their bids during `Public Auction`, however this behavior is configurable using 
+//! `VACanBidOnPublicAuction` [`Governance Variable`].
+//! 
+//! The time of a `Public Auction` is defined in a [`Governance Variable`] `PublicAuctionTime`.
 //!
+//! # Picking a Bid
 //! During the `Auction` process the `Job Poster` can pick a `Bid`.
 //! When no `Bid` is posted or selected by `Job Poster` during both auctions, the `Job` is cancelled,
 //! `DOS Fee` is returned to the `Job Poster` and stakes sent by the `Bidders` are returned to them.
@@ -31,6 +60,9 @@
 //! Now the `Worker` has the time to complete the `Job` and submit its proof to the contract.
 //! After the works have been completed, the `Worker` sends a query to the contract containing
 //! the cryptographic hash of a document being a proof of `Work` done for a `Job Poster`.
+//! 
+//! When no `Bid` is posted or selected by the `Job Poster` during both auctions, the `Job` is cancelled, 
+//! `DOS Fee` is returned to the `Job Poster` and stakes sent by the `Bidders` are returned to them.
 //!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
@@ -38,25 +70,27 @@
 //! # Voting passed
 //! Besides yielding a positive result, the `Voting` passed means that the `Reputation` staked by the losing side is
 //! redistributed between the winning side, depending on the type of `Worker`.
-//! ## External Worker who wanted to become VA
+//! ### External Worker who wanted to become VA
 //! * The `External Worker` becomes VA.
 //! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
-//! * Reputation of the voters who voted `yes` is returned to them
+//! * Reputation of the voters who voted `yes` is returned to them.
 //! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
-//! reputation staked in the voting
+//! reputation staked in the voting.
 //! * Reputation minted for the `External Worker` and used in the voting process is burned.
-//! ## Internal Worker
-//! * Reputation of the voters who voted `yes` is returned to them
+//! 
+//! ### Internal Worker
+//! * Reputation of the voters who voted `yes` is returned to them.
 //! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
-//! reputation staked in the voting
-//! ## External Worker
+//! reputation staked in the voting.
+//! 
+//! ### External Worker
 //! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
 //! * Reputation minted for the `External Worker` and used in the voting process is burned.
-//! * Reputation of the voters who voted `yes` is returned to them, except for the Reputation minted for the Worker using `CSPR` stake
+//! * Reputation of the voters who voted `yes` is returned to them, except for the Reputation minted for the Worker using `CSPR` stake.
 //! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
 //! reputation staked in the voting (External Worker does not receive Reputation in this step).
 //! 
-//! ## Payment CSPR Redistribution
+//! ### Payment CSPR Redistribution
 //! Reputation used for the Voting and minted after a successful `Job` has been redistributed during the above process, 
 //! but there is `CSPR` to redistribute that was allocated to the `Job`. How much resources is redistributed and to whom 
 //! depends on the type of `Worker` and whether it wanted to become a `VA`.
@@ -96,24 +130,27 @@
 //! Besides yielding a negative result, the Voting passed means that the Reputation staked by the losing side is
 //! redistributed between the winning side, depending on the type of Worker.
 //!
-//! ## External Worker who wanted to become VA
-//! * The External Worked DOES NOT become a VA
-//! * The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s
+//! ### External Worker who wanted to become VA
+//! * The External Worked DOES NOT become a VA.
+//! * The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s.
 //! * The Reputation minted for the `External Worker` using `CSPR` stake is burned.
-//! * Reputation of the voters who voted `no` is returned to them
+//! * Reputation of the voters who voted `no` is returned to them.
 //! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
-//! reputation staked in the voting
-//! ## Internal Worker
-//! * Reputation of the voters who voted `no` is returned to them
+//! reputation staked in the voting.
+//! 
+//! ### Internal Worker
+//! * Reputation of the voters who voted `no` is returned to them.
 //! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
-//! reputation staked in the voting
-//! ## External Worker
-//! The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s
+//! reputation staked in the voting.
+//! 
+//! ### External Worker
+//! The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s.
 //! The Reputation minted for the `External Worker` using `CSPR` stake is burned.
-//! Reputation of the voters who voted `no` is returned to them
+//! Reputation of the voters who voted `no` is returned to them.
 //! Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
-//! reputation staked in the voting
-//! ## CSPR
+//! reputation staked in the voting.
+//! 
+//! ### CSPR
 //! If the `Voting` fails, the `CSPR` sent to the contract as a payment for `Job` is returned to the `Job Poster`. If the work
 //! has been attempted to do by an `External Worker` the `CSPR` that the `Worker` staked during the `Bid` process
 //! is redistributed between all `VA`’s.
@@ -121,15 +158,14 @@
 //! # Quorum not reached
 //! When the `Quorum` is not reached during the `Formal Voting`, following things happen:
 //! * The process ends here.
-//! * `VA’s` stakes are returned to them
-//! * `Job` Poster payment and `DOS fee is returned
+//! * `VA’s` stakes are returned to them.
+//! * `Job` Poster payment and `DOS fee is returned.
 //! * `Internal Worker`’s Reputation and `External Worker`’s `CSPR` stake is returned.
 //! * `External Worker`’s Reputation that was minted using `CSPR` stake is burned.
 //!
 //! # Returning DOS Fee
 //! The final step of the process is returning the `CSPR` `DOS Fee` to the `Job Poster`.
 //! 
-//!
 //! # Grace Period
 //! However, if `External Worker` do not post a `Job Proof` in time, his `CSPR` stake is redistributed
 //! between all `VA’s`.
@@ -147,6 +183,8 @@
 //! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [`Slashing Voter`]: crate::slashing_voter
+//! [`Reputation`]: crate::reputation::ReputationContractInterface
+//! [`Governance Variable`]: crate::variable_repository#available-keys
 use std::borrow::Borrow;
 
 use casper_dao_modules::AccessControl;
@@ -362,25 +400,20 @@ pub trait BidEscrowContractInterface {
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
     /// Erases the voter from the given voting. [`Read more`](VotingEngine::slash_voter()).
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
 }

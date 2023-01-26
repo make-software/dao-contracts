@@ -37,36 +37,31 @@ pub trait KycNftContractInterface {
     ///
     /// See [MetadataERC721](MetadataERC721::init()), [AccessControl](AccessControl::init())
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri);
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
-    /// Returns a descriptive name for a collection of tokens in this contract
+    /// Returns a descriptive name for a collection of tokens in this contract.
     fn name(&self) -> String;
-    /// Gets an abbreviated name for tokens in this contract
+    /// Gets an abbreviated name for tokens in this contract.
     fn symbol(&self) -> String;
     /// Returns the address of the owner of the token.
     ///
     /// If the given `token_id` does not exist the None value is returned.
     fn owner_of(&self, token_id: TokenId) -> Option<Address>;
-    /// Returns a token id for the given the `address`.
+    /// Returns the token id for a given `address`.
     ///
     /// If the `owner` does not own any token the None value is returned.
     fn token_id(&self, address: Address) -> Option<TokenId>;
@@ -82,28 +77,26 @@ pub trait KycNftContractInterface {
     /// Increments the total supply and the balance of the `to` address.
     ///
     /// # Note
-    /// Only whitelisted addresses are permitted to call this
-    /// method.
+    /// Only whitelisted addresses are permitted to call this function.
     ///
     /// Each user is entitled to own only one token.
     ///
     /// # Errors
-    ///
-    /// Throws [`UserAlreadyOwnsToken`](Error::UserAlreadyOwnsToken) if the `to` address
+    /// * [`UserAlreadyOwnsToken`](Error::UserAlreadyOwnsToken) if the `to` address
     /// already owns a token.
     ///
     /// # Events
-    /// Emits [`Transfer`](casper_dao_erc721::events::Transfer) event when minted successfully.
+    /// * [`Transfer`](casper_dao_erc721::events::Transfer) event when minted successfully.
     fn mint(&mut self, to: Address);
     /// Burns a token with the given id. Decrements the balance of the token owner
     /// and decrements the total supply.
     ///
     /// # Errors
-    /// Throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if the caller
     /// is not whitelisted.
     ///
     /// # Events
-    /// Emits [`Transfer`](casper_dao_erc721::events::Transfer) event when burnt successfully.
+    /// * [`Transfer`](casper_dao_erc721::events::Transfer) event when burnt successfully.
     fn burn(&mut self, owner: Address);
 }
 

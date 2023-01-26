@@ -21,13 +21,11 @@ use crate::{
 /// Serializable Job status.
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
-    //TODO: docs
+    /// Job 
     Created,
-    Accepted,
     Cancelled,
+    /// Job proof submitted.
     Submitted,
-    Reclaimed,
-    NotCompleted,
     Completed,
 }
 
@@ -39,33 +37,53 @@ impl Default for JobStatus {
 
 /// Data required to pick the Bid.
 pub struct PickBidRequest {
-    //TODO: docs
+    /// Job id.
     pub job_id: JobId,
+    /// Related [`JobOffer`](super::job_offer::JobOffer) id.
     pub job_offer_id: JobOfferId,
+    /// Picked Bid id.
     pub bid_id: BidId,
+    /// The request creator.
     pub caller: Address,
+    /// [JobPoster](crate::bid_escrow#definitions) address.
     pub poster: Address,
+    /// [Worker](crate::bid_escrow#definitions) address.
     pub worker: Address,
+    /// If the `Worker` is a `VA`.
     pub is_worker_va: bool,
+    /// Should be onborded when the Job is done.
     pub onboard: bool,
+    /// Time the bid is picked.
     pub block_time: BlockTime,
+    /// Time to complete the Job.
     pub timeframe: BlockTime,
+    /// Job reward.
     pub payment: U512,
+    /// The amount transferred by `Job Poster`.
     pub transferred_cspr: U512,
+    /// Bid reputation stake.
     pub stake: U512,
+    /// Bid CSPR stake - for an [External Worker](crate::bid_escrow#definitions).
     pub external_worker_cspr_stake: U512,
 }
 
 /// Data required to reclaim the Job.
 pub struct ReclaimJobRequest {
-    //TODO: docs
+    /// Job id to update.
     pub new_job_id: JobId,
+    /// Bid id to updated.
     pub new_bid_id: BidId,
+    /// Time to complete the Job.
     pub proposed_timeframe: BlockTime,
+    /// [Worker](crate::bid_escrow#definitions) address.
     pub worker: Address,
-    pub cspr_stake: Option<U512>,
+    /// Bid reputation stake.
     pub reputation_stake: U512,
+    /// Bid CSPR stake - for an [External Worker](crate::bid_escrow#definitions).
+    pub cspr_stake: Option<U512>,
+    /// Should be onborded when the Job is done.
     pub onboard: bool,
+    /// Reclaim time.
     pub block_time: BlockTime,
 }
 
@@ -95,7 +113,13 @@ pub struct Job {
 }
 
 impl Job {
-    //TODO: docs
+    /// Conditionally creates a new instance of Job.
+    /// 
+    /// Runs validation:
+    /// * [`CanPickBid`]
+    /// * [`DoesProposedPaymentMatchTransferred`]
+    /// 
+    /// Stops contract execution if any validation fails.
     pub fn new(request: &PickBidRequest) -> Self {
         RulesBuilder::new()
             .add_validation(CanPickBid::create(request.caller, request.poster))
@@ -133,7 +157,8 @@ impl Job {
         }
     }
 
-    //TODO: docs
+    /// Changes the status to [Completed](JobStatus::Completed), creates a new job
+    /// with a new `Worker` and `BidId`.
     pub fn reclaim(&mut self, request: ReclaimJobRequest) -> Job {
         self.status = JobStatus::Completed;
         self.followed_by = Some(request.new_job_id);
@@ -163,7 +188,11 @@ impl Job {
         }
     }
 
-    //TODO: docs
+    /// Verifies if the job can be canceled at a given time.
+    /// 
+    /// # Errors
+    /// * [`Error::CannotCancelJob`]
+    /// * [`Error::JobCannotBeYetCanceled`]
     pub fn validate_cancel(&self, block_time: BlockTime) -> Result<(), Error> {
         if self.status() != JobStatus::Created {
             return Err(Error::CannotCancelJob);
@@ -191,17 +220,10 @@ impl Job {
         self.status = JobStatus::Completed;
     }
 
-    /// Changes status to the NotCompleted
-    pub fn not_completed(&mut self) {
-        self.status = JobStatus::NotCompleted;
-    }
-
-    //TODO: docs
-    pub fn has_time_ended(&self, block_time: BlockTime) -> bool {
-        self.start_time + self.time_for_job <= block_time
-    }
-
-    //TODO: docs
+    /// Sets a proof and updates the state to [`Submitted`](JobStatus::Submitted).
+    /// 
+    /// # Errors
+    /// * [`Error::JobAlreadySubmitted`]
     pub fn submit_proof(&mut self, request: SubmitJobProofRequest) {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);

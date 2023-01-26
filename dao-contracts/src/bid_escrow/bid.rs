@@ -186,7 +186,7 @@ impl Bid {
         }
     }
 
-    /// Conditionally changes the status to [Reclaimed](BidStatus::Reclaimed), creates a new build
+    /// Conditionally changes the status to [Reclaimed](BidStatus::Reclaimed), creates a new bid
     /// with a new proposed timeframe.
     /// 
     /// Runs validation:

@@ -3,14 +3,16 @@
 //! # General
 //! Simple voting is a formal, on-chain confirmation of a resolution that has
 //! been made off-chain. The off-chain agreement has a form of a [`Document Hash`]
-//! that is the voting subject. None action is performed after the voting process
-//! is completed.
+//! that is the voting subject.
+//! 
+//! None action is performed after the voting process is completed.
 //! 
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //!
 //! [`Repository contract`]: crate::variable_repository::VariableRepositoryContractInterface
-//! [VotingEngine]: crate::voting::VotingEngine
+//! [`VotingEngine`]: crate::voting::VotingEngine
+//! [`Document Hash`]: casper_dao_utils::DocumentHash
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
@@ -49,16 +51,15 @@ pub trait SimpleVoterContractInterface {
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits:
-    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged)
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist)
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
     /// Creates new SimpleVoter voting.
     ///
     /// # Arguments
-    /// *`variable_repo_to_edit` takes an [Address] of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
+    /// * `variable_repo_to_edit` takes an [Address] of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
     /// instance that will be updated
-    /// *`key`, `value` and `activation_time` are parameters that will be passed to `update_at`
+    /// * `key`, `value` and `activation_time` are parameters that will be passed to `update_at`
     /// method of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
     /// 
     /// # Events
@@ -82,33 +83,28 @@ pub trait SimpleVoterContractInterface {
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [VotingEngine](VotingEngine::get_voter())
+    /// Returns the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    /// Returns document hash being voted on for given voting id.
+    /// Returns document hash being voted on for a given voting id.
     fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash>;
     /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-    /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
+    /// Erases the voter from Voting with a given id. [Read more](VotingEngine::slash_voter).
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
 }

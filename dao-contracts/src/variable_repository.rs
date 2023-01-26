@@ -1,7 +1,7 @@
 //! Contains Variable Repository Contract definition and related abstractions.
 //!
 //!  Variable Repository Contract stores governance variables. Values can be altered
-//!  as a result of voting in [Repo Voting]
+//!  as a result of [Repo Voting].
 //!
 //! # Available keys
 //!
@@ -31,7 +31,7 @@
 //! | VotingClearnessDelta               | 8             | 8000         | int     | If the difference between 50/50 and result of the Informal Voting is bigger than the value, the time between votings should be doubled.                                                                                         |
 //! | VotingStartAfterJobWorkerSubmisson | 3 days        | 259200       | seconds | Time between the worker job submission and the internal voting start.                                                                                                                                                           |
 //! | BidEscrowPaymentRatio              | 0.1           | 100          | float   | How much CSPR is sent to GovernanceWallet after the Job is finished                                                                                                                                                             |
-//! | GovernanceWalletAddress            |               |              | address | An address of a multisig wallet of the DAO.         
+//! | BidEscrowWalletAddress             |               |              | address | An address of a multisig wallet of the DAO.         
 //!
 //!  [Repo Voting]: crate::repo_voter::RepoVoterContractInterface   
 use std::collections::BTreeMap;
@@ -60,50 +60,44 @@ pub trait VariableRepositoryContractInterface {
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits:
     /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     /// * multiple [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) events,
     /// one per value of the default repository configuration.
     fn init(&mut self);
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
     /// Inserts or updates the value under the given key.
     ///
     /// # Note
     /// * The activation time is represented as a unix timestamp.
-    /// * If the activitation time is `None` the value is updated immediately.
+    /// * If the activation time is `None` the value is updated immediately.
     /// * If some future time in the future is passed as an argument, the [`Self::get`] function
     /// returns the previously set value.
     ///
     /// # Events
-    /// * Emits [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) event.
+    /// * [`ValueUpdated`](casper_dao_modules::events::ValueUpdated).
     ///
     /// # Errors
-    /// * Throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if the caller
+    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if the caller
     /// is not a whitelisted user.
-    /// * Throws [`ActivationTimeInPast`](casper_dao_utils::Error::ActivationTimeInPast) if
+    /// * [`ActivationTimeInPast`](casper_dao_utils::Error::ActivationTimeInPast) if
     /// the activation time has passed already.
-    /// * Throws [`ValueNotAvailable`](casper_dao_utils::Error::ValueNotAvailable) on
+    /// * [`ValueNotAvailable`](casper_dao_utils::Error::ValueNotAvailable) on
     /// the future value update if the current value has not been set.
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
     /// Returns the value stored under the given key.

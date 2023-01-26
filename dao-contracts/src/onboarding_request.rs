@@ -11,19 +11,20 @@
 //!
 //! # Onboarding Request
 //! One of the side effects of completing a `Job` by an `External Worker` is the possibility to become a `Voting Associate`.
-//! It is also possible to become one without completing a `Job` using [`Bid Escrow contract`].
+//! It is also possible to become one without completing a `Job` using [`Bid Escrow Contract`].
 //! To do this, an `External Worker` submits an `Onboarding Request` containing `Document Hash` of a document containing the reason
 //! why the `Onboarding` should be done and a `CSPR` stake.
 //!
-//! The rest of the process is analogous to the regular `Job` submission process of an `External Worker`, except that instead of
+//! The rest of the process is analogous to the regular `Job` [submission process] of an `External Worker`, except that instead of
 //! redistribution of `Job Payment` between `VA`’s we redistribute the stake of the `External Worker`.
 //! If the process fails, the `CSPR` stake of the `External Worker` is returned.
 //!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //! 
-//! [`Bid Escrow contract`]: crate::bid_escrow::BidEscrowContractInterface
+//! [`Bid Escrow Contract`]: crate::bid_escrow::BidEscrowContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
+//! [submission process]: crate::bid_escrow#submitting-a-job-proof
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -60,7 +61,6 @@ pub trait OnboardingRequestContractInterface {
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits:
     /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
@@ -73,7 +73,7 @@ pub trait OnboardingRequestContractInterface {
     /// Submits an onboarding request. If the request is valid voting starts.
     /// 
     /// # Events
-    /// [`OnboardingVotingCreated`]
+    /// * [`OnboardingVotingCreated`]
     fn create_voting(&mut self, reason: DocumentHash, purse: URef);
     /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
@@ -93,37 +93,33 @@ pub trait OnboardingRequestContractInterface {
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// Returns the address of nth voter who voted on Voting with `voting_id`.
+    /// Gets the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
     /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
-    /// Returns the CSPR balance of the contract
+    /// Gets the CSPR balance of the contract.
     fn get_cspr_balance(&self) -> U512;
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
 }
 
+/// TODO: docs
 #[derive(Instance)]
 pub struct OnboardingRequestContract {
     refs: ContractRefsWithKycStorage,

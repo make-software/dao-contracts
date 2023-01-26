@@ -13,7 +13,7 @@ use crate::{
     voting::{ballot::Choice, types::VotingId},
 };
 
-/// Result of a Voting
+/// Result of Voting.
 #[derive(PartialEq, Eq, Clone, CLTyped, FromBytes, ToBytes, Debug)]
 pub enum VotingResult {
     /// Voting passed.
@@ -26,14 +26,14 @@ pub enum VotingResult {
     Canceled,
 }
 
-/// Type of Voting (Formal or Informal)
+/// Type of Voting (Formal or Informal).
 #[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum VotingType {
     Informal,
     Formal,
 }
 
-/// State of Voting
+/// State of Voting.
 #[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq, Eq)]
 pub enum VotingState {
     /// Voting created but informal voting is not started.
@@ -50,7 +50,7 @@ pub enum VotingState {
     Canceled,
 }
 
-/// The voting process progression.
+/// The Voting process progression.
 #[derive(CLTyped, FromBytes, ToBytes, Debug, Clone, PartialEq, Eq)]
 pub enum VotingStateInTime {
     BeforeInformal,
@@ -60,7 +60,7 @@ pub enum VotingStateInTime {
     AfterFormal,
 }
 
-/// Finished Voting summary
+/// Serializable finished Voting summary.
 #[allow(dead_code)]
 #[derive(CLTyped, FromBytes, ToBytes, Clone, Debug)]
 pub struct VotingSummary {
@@ -107,7 +107,7 @@ impl VotingSummary {
     }
 }
 
-/// Voting statistics
+/// Voting statistics.
 #[derive(Debug, Clone, Default, CLTyped, ToBytes, FromBytes)]
 pub struct Stats {
     /// The total `in favor` stake.
@@ -124,7 +124,7 @@ pub struct Stats {
     pub votes_against: u32,
 }
 
-/// A struct describing the current voting state.
+/// Serializable voting state with a state machine capabilities.
 /// 
 /// Stores voting metadata, the configuration and the voting progress (stakes).
 #[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
@@ -140,7 +140,7 @@ pub struct VotingStateMachine {
 }
 
 impl VotingStateMachine {
-    /// Creates new Voting with immutable VotingConfiguration.
+    /// Creates new Voting with immutable [`VotingConfiguration`](Configuration).
     pub fn new(
         voting_id: VotingId,
         created_at: u64,
@@ -173,23 +173,23 @@ impl VotingStateMachine {
         self.state = VotingState::Finished;
     }
     
-    /// Ends the voting process forcefully and cancels result.
+    /// Ends the voting process forcefully and cancels the result.
     pub fn cancel(&mut self) {
         self.state = VotingState::Canceled;
     }
 
-    /// Returns the type of voting
+    /// Returns the type of Voting.
     pub fn voting_type(&self) -> VotingType {
         self.voting_type
     }
 
-    /// Checks if voting is of type [Informal](VotingType::Informal) and stakes the reputation.
+    /// Checks if Voting is of type [Informal](VotingType::Informal) and stakes the reputation.
     pub fn is_informal_without_stake(&self) -> bool {
         !self.voting_configuration().informal_stake_reputation()
             && self.voting_type() == VotingType::Informal
     }
 
-    /// Returns if voting is still in voting phase.
+    /// Checks if Voting is still in the voting phase.
     pub fn is_in_time(&self, block_time: u64) -> bool {
         match self.voting_type() {
             VotingType::Informal => {
@@ -393,7 +393,7 @@ impl VotingStateMachine {
         &self.state
     }
 
-    /// Indicates if the voting finished or canceled. 
+    /// Indicates if Voting is finished or canceled. 
     pub fn completed(&self) -> bool {
         self.state() == &VotingState::Finished || self.state() == &VotingState::Canceled
     }

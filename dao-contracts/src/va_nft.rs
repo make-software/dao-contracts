@@ -5,7 +5,7 @@
 //! * External Worker - a Worker who completed the KYC and is not a Voting Associate.
 //!
 //! # Purpose
-//! Ownership of a VA token indicates the address is a VA and is eligible to participate in voting.
+//! Ownership of a VA token indicates the address is a VA and is eligible to participate in Voting.
 //! If an `External Worker` finishes a job successfully, and wants to become a VA, receives a VA token
 //! as a reward. See [`Bid Escrow`].
 //!
@@ -39,30 +39,25 @@ pub trait VaNftContractInterface {
     ///
     /// See [MetadataERC721](MetadataERC721::init()), [AccessControl](AccessControl::init())
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri);
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
-    /// Returns a descriptive name for a collection of tokens in this contract
+    /// Returns a descriptive name for a collection of tokens in this contract.
     fn name(&self) -> String;
-    /// Gets an abbreviated name for tokens in this contract
+    /// Gets an abbreviated name for tokens in this contract.
     fn symbol(&self) -> String;
     /// Returns the address of the owner of the token.
     ///
@@ -96,7 +91,7 @@ pub trait VaNftContractInterface {
     /// # Events
     /// * [`Transfer`](casper_dao_erc721::events::Transfer) when minted successfully.
     fn mint(&mut self, to: Address);
-    /// Burns a token with the given id. Decrements the balance of the token owner
+    /// Burns a token with a given id. Decrements the balance of the token owner
     /// and decrements the total supply.
     ///
     /// # Errors

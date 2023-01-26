@@ -4,7 +4,7 @@
 //! KYC - Know Your Customer, is a process that validates that the user can be the user of the system.
 //!
 //! # KYC process
-//! KYC Voting is a process in which the VAs validate a user submission.
+//! A type of Governance Voting which the VAs validate a user KYC submission.
 //! If VAs vote in favor, the address is considered verified and the KYC Token contract
 //! is called in order to mint a token which formally ends the KYC process.
 //!
@@ -53,7 +53,6 @@ pub trait KycVoterContractInterface {
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits:
     /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
@@ -63,7 +62,7 @@ pub trait KycVoterContractInterface {
         va_token: Address,
         kyc_token: Address,
     );
-    /// Creates new kyc voting. Once the voting passes a kyc token is minted to the `subject_address`.
+    /// Creates a new KYC Voting. Once the voting passes a KYC Token is minted to the `subject_address`.
     ///
     /// # Prerequisites
     ///
@@ -71,8 +70,8 @@ pub trait KycVoterContractInterface {
     /// * `subject_address` does not own a kyc token.
     ///
     /// # Arguments
-    /// * `subject_address` - [address](Address) of a user to be verified.
-    /// * `document_hash` - a hash of a document that verify the user. The hash is used as an id of a freshly minted  kyc token.
+    /// * `subject_address` - [address](Address) of a user to be verified,
+    /// * `document_hash` - a hash of a document that verifies the user. The hash is used as an id of a freshly minted kyc token,
     /// * `subject_address` - an [Address] to be on/offboarded.
     /// 
     /// # Events
@@ -104,25 +103,20 @@ pub trait KycVoterContractInterface {
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
     /// Returns the address of [KYC Token](crate::kyc_nft::KycNftContract) contract.
     fn kyc_token_address(&self) -> Address;
-    /// Changes the ownership of the contract. Transfers the ownership to the `owner`.
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
-    ///
     /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
     /// Adds a new address to the whitelist.
-    ///
     /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
     /// Remove address from the whitelist.
-    ///
     /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
     /// Checks whether the given address is added to the whitelist.
-    /// 
     /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
     /// Returns the address of the current owner.
-    /// 
     /// [`Read more`](AccessControl::get_owner()).
     fn get_owner(&self) -> Option<Address>;
 }

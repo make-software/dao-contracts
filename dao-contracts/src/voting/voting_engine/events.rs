@@ -1,3 +1,4 @@
+//! Set of voting events.
 use std::collections::BTreeMap;
 
 use casper_dao_utils::{
@@ -59,7 +60,7 @@ impl CLTyped for Reason {
     }
 }
 
-/// Event thrown after ballot is cast
+/// Event thrown after ballot is cast.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BallotCast {
     /// The voter's address.
@@ -86,7 +87,7 @@ impl BallotCast {
     }
 }
 
-/// Event thrown after voting is created
+/// Event thrown after voting is created.
 #[derive(Debug, PartialEq, Eq, ToBytes, FromBytes, CLTyped)]
 pub struct VotingCreatedInfo {
     /// The creator's address.
@@ -137,7 +138,7 @@ impl VotingCreatedInfo {
     }
 }
 
-/// Event thrown when voting ends
+/// Event thrown when voting ends.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct VotingEnded {
     pub voting_id: VotingId,

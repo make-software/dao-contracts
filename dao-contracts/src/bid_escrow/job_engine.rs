@@ -19,10 +19,10 @@ use crate::{
         types::JobId,
     },
     config::Configuration,
-    cspr_redistribution::{redistribute_cspr_to_all_vas, redistribute_to_governance},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        redistribute_cspr_to_all_vas, redistribute_to_governance,
         refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingType},

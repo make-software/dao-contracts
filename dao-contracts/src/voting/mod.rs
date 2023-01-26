@@ -1,4 +1,9 @@
 //! Voting utilities.
+//! 
+//! # Choice
+//! Voting is a binary choice. Each voter may vote:
+//! * In favor - `yes` vote
+//! * Against - `no` vote.
 //!
 //! # Calculating Quorum
 //! During both types of `Voting` a specific amount of votes is required to be cast - the `Quorum`. 
@@ -15,9 +20,9 @@
 //! 
 //! # Informal Voting
 //! The Informal Voting is the first phase of the Voting process. Its parameters are configurable:
-//! [Informal Voting Time](crate::config::Configuration::informal_voting_time()) - how long the voting lasts,
-//! [Informal Quorum Ratio](crate::config::Configuration::informal_voting_quorum()) - how many VA votes are needed,
-//! [Informal Stake Reputation](crate::config::Configuration::informal_stake_reputation()) - if the `Reputation` 
+//! * [Informal Voting Time](crate::config::Configuration::informal_voting_time()) - how long the voting lasts,
+//! * [Informal Quorum Ratio](crate::config::Configuration::informal_voting_quorum()) - how many VA votes are needed,
+//! * [Informal Stake Reputation](crate::config::Configuration::informal_stake_reputation()) - if the `Reputation` 
 //! used for `Informal Voting` should be staked or not.
 //! 
 //! The first vote in the `Informal Voting` may be casted automatically at creation time
@@ -63,7 +68,7 @@
 //! ## Quorum not reached
 //! When the Quorum is not reached during the `Formal Voting`, following things happen:
 //! * The process ends here.
-//! * `VAs'` stakes are returned to them
+//! * `VAs'` stakes are returned to them.
 mod ballot;
 mod ids;
 mod kyc_info;
@@ -71,7 +76,9 @@ mod onboarding_info;
 pub mod refs;
 mod types;
 mod voting_engine;
+mod cspr_redistribution;
 
+pub use cspr_redistribution::{redistribute_cspr_to_all_vas, redistribute_to_governance};
 pub use ballot::{Ballot, Choice, ShortenedBallot};
 pub use types::VotingId;
 pub use voting_engine::{events, voting_state_machine, VotingEngine};

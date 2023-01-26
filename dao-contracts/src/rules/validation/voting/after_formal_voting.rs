@@ -5,7 +5,7 @@ use crate::{
     voting::voting_state_machine::{VotingState, VotingStateMachine},
 };
 
-/// Verifies if the `Formal Voting` has ended. May return [Error::FormalVotingNotCompleted].
+/// Verifies if the `Formal Voting` ended. May return [Error::FormalVotingNotCompleted].
 #[derive(Rule)]
 pub struct AfterFormalVoting {
     block_time: BlockTime,

@@ -5,7 +5,7 @@ use crate::{
     voting::voting_state_machine::{VotingState, VotingStateMachine},
 };
 
-/// Verifies voting is still in progress. May return [Error::VotingAlreadyFinished],
+/// Verifies voting is still in progress. May return [Error::VotingAlreadyFinished].
 #[derive(Rule)]
 pub struct VotingNotCompleted {}
 
