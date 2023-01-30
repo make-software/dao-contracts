@@ -15,6 +15,7 @@ use crate::{
     TokenId,
 };
 
+/// A module implementing ERC721 standard interface.
 #[derive(Instance)]
 pub struct ERC721Token {
     total_supply: Variable<U512>,
@@ -29,6 +30,10 @@ pub struct ERC721Token {
 }
 
 impl ERC721Token {
+    /// Finds the owner of a token with the given id.
+    ///
+    /// # Errors
+    /// Reverts with [`Error::TokenDoesNotExist`] if token with the given id does not exists.
     pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
@@ -36,14 +41,23 @@ impl ERC721Token {
         self.owners.get(&token_id).unwrap_or(None)
     }
 
+    /// Counts all tokens assigned to an owner.
     pub fn balance_of(&self, owner: Address) -> U512 {
         self.balances.get(&owner).unwrap_or_default()
     }
 
+    /// Return the total number of tokens.
     pub fn total_supply(&self) -> U512 {
         self.total_supply.get().unwrap_or_default()
     }
 
+    /// Sets or revokes the approved address for a token.
+    ///
+    /// # Errors
+    /// Reverts with [`Error::TokenDoesNotExist`]  if token with the given id does not exists.
+    /// Reverts with [`Error::ApprovalToCurrentOwner`] to the approved address is the owner.
+    /// Reverts with [`Error::ApproveCallerIsNotOwnerNorApprovedForAll`] if the caller is neither the owner not approved for all.
+    /// See [ERC721Token::set_approval_for_all()].
     pub fn approve(&mut self, approved: Option<Address>, token_id: TokenId) {
         let owner = self.owner_of_or_revert(token_id);
         if Some(owner) == approved {
@@ -57,6 +71,7 @@ impl ERC721Token {
         self.approve_owner(Some(owner), approved, token_id);
     }
 
+    /// Gets the approved address for a token.
     pub fn get_approved(&self, token_id: TokenId) -> Option<Address> {
         if !self.exists(&token_id) {
             casper_env::revert(Error::TokenDoesNotExist)
@@ -65,6 +80,10 @@ impl ERC721Token {
         self.token_approvals.get(&token_id).unwrap_or(None)
     }
 
+    /// Enables or disables approval for a third party ("operator") to manage all of caller's tokens
+    ///
+    /// # Errors
+    /// Reverts with [`Error::ApproveToCaller`] the caller tries to approve himself.
     pub fn set_approval_for_all(&mut self, operator: Address, approved: bool) {
         let caller = casper_env::caller();
         if caller == operator {
@@ -79,12 +98,18 @@ impl ERC721Token {
         });
     }
 
+    /// Checks if an address is an authorized operator for another address
     pub fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool {
         self.operator_approvals
             .get(&(owner, operator))
             .unwrap_or(false)
     }
 
+    /// Transfers the ownership of a token from one address to another address.
+    ///
+    /// # Errors
+    /// The caller must be an owner or be an approved address, otherwise the contract reverts with
+    /// [`Error::CallerIsNotOwnerNorApproved`].
     pub fn transfer_from(&mut self, owner: Address, recipient: Address, token_id: TokenId) {
         if !self.is_approved_or_owner(casper_env::caller(), token_id) {
             casper_env::revert(Error::CallerIsNotOwnerNorApproved)
@@ -92,6 +117,13 @@ impl ERC721Token {
         self.transfer(owner, recipient, token_id);
     }
 
+    /// Transfers the ownership of a token from one address to another address.
+    ///
+    /// Verifies whether the recipient is a smart contract that implements [`ERC721Receiver`](crate::receiver::IERC721Receiver).
+    ///
+    /// # Errors
+    /// The caller must be an owner or be an approved address, otherwise the contract reverts with
+    /// [`Error::CallerIsNotOwnerNorApproved`].
     pub fn safe_transfer_from(
         &mut self,
         owner: Address,

@@ -1,4 +1,3 @@
-use casper_dao_contracts::voting::BallotCast;
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::TestContract;
 

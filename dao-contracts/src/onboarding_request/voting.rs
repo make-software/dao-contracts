@@ -1,3 +1,4 @@
+//! TODO: docs
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
     casper_dao_macros::Instance,
@@ -13,15 +14,16 @@ use casper_types::U512;
 use super::request::{OnboardingRequest, Request};
 use crate::{
     config::{Configuration, ConfigurationBuilder},
-    cspr_redistribution::{redistribute_cspr_to_all_vas, redistribute_to_governance},
-    refs::{ContractRefs, ContractRefsWithKycStorage},
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        events::VotingCreatedInfo,
+        redistribute_cspr_to_all_vas,
+        redistribute_to_governance,
+        refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
-        VotingCreatedInfo,
         VotingEngine,
         VotingId,
     },

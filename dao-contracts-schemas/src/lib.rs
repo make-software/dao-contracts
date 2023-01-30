@@ -12,7 +12,7 @@ use casper_dao_contracts::{
     slashing_voter::{SlashingVoterContract, SlashingVotingCreated},
     va_nft::VaNftContract,
     variable_repository::VariableRepositoryContract,
-    voting::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
+    voting::events::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
 };
 use casper_dao_modules::events::{
     AddedToWhitelist,

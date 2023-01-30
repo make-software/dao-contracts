@@ -7,14 +7,20 @@ use casper_types::{
 };
 
 use super::mapping::IndexedMapping;
-use crate::{consts, instance::Instanced, Error, Variable};
+use crate::{consts, Error, Instanced, Variable};
 
+/// Data structure for storing indexed values.
+///
+/// It's is a wrapper on top of:
+/// [`Variable`] - stores the current collection length.
+/// [`IndexedMapping`] - stores index-value pairs.
 pub struct OrderedCollection<T> {
     pub values: IndexedMapping<T>,
     pub length: Variable<u32>,
 }
 
 impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollection<T> {
+    /// Creates a new OrderedCollection instance.
     pub fn new(name: &str) -> Self {
         Self {
             values: IndexedMapping::new(name.to_string()),
@@ -22,6 +28,9 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
         }
     }
 
+    /// Tries to delete the given `item`. If succeeds, returns true, otherwise, returns false.
+    ///
+    /// Reindexes collection after successful removal.
     pub fn delete(&mut self, item: T) -> bool {
         let length = self.size();
         let (is_deleted, item_index) = self.values.remove(item);
@@ -41,6 +50,7 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
         true
     }
 
+    /// Gets the value under the given index. Returns `None` if the index does not exist.
     pub fn get(&self, index: u32) -> Option<T> {
         self.values.get(index)
     }
@@ -65,11 +75,13 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
 }
 
 impl<T> OrderedCollection<T> {
+    /// Returns the collection size.
     pub fn size(&self) -> u32 {
         self.length.get().unwrap_or(0)
     }
 }
 
+/// A collection acts like a set.
 pub trait Set<T> {
     fn add(&mut self, item: T);
 }
@@ -82,6 +94,7 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> Set<T> for Ord
     }
 }
 
+/// A collection acts like a list.
 pub trait List<T> {
     fn add(&mut self, item: T);
 }
@@ -101,6 +114,7 @@ impl<T: FromBytes + ToBytes + CLTyped> Instanced for OrderedCollection<T> {
     }
 }
 
+/// [`OrderedCollection`] iterator.
 pub struct Iter<'a, T> {
     collection: &'a OrderedCollection<T>,
     range: Range<u32>,

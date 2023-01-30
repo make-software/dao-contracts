@@ -1,9 +1,13 @@
+//! Types conversion.
 use casper_types::bytesrepr::{Bytes, FromBytes, ToBytes};
 
 use crate::Error;
 
+/// Error-safe conversion from/to bytes.
 pub trait BytesConversion: Sized {
+    /// Converts the struct to [`Bytes`] or returns an [`Error`].
     fn convert_to_bytes(&self) -> Result<Bytes, Error>;
+    /// Converts [`Bytes`] to a struct or returns an [`Error`].
     fn convert_from_bytes(bytes: Bytes) -> Result<Self, Error>;
 }
 

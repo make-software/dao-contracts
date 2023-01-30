@@ -20,8 +20,6 @@ use crate::{
 };
 
 /// A module that stores information about stakes.
-///
-///
 #[derive(Instance)]
 pub struct StakesStorage {
     total_stake: Mapping<Address, U512>,

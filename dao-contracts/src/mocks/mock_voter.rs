@@ -10,8 +10,8 @@ use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
-    refs::ContractRefsStorage,
     voting::{
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,

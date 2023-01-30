@@ -1,3 +1,4 @@
+//! TODO: docs
 use casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
@@ -5,9 +6,12 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::{
-    bid_escrow::validation::rules::{ExistsOngoingVoting, IsNotVa},
-    rules::{builder::RulesBuilder, validation::IsUserKyced},
+use crate::rules::{
+    validation::{
+        bid_escrow::{ExistsOngoingVoting, IsNotVa},
+        IsUserKyced,
+    },
+    RulesBuilder,
 };
 
 pub struct OnboardingRequest {
@@ -34,7 +38,8 @@ impl Request {
             .add_validation(IsUserKyced::create(request.is_kyced))
             .add_validation(IsNotVa::create(request.is_va))
             .add_validation(ExistsOngoingVoting::create(request.exists_ongoing_voting))
-            .validate();
+            .build()
+            .validate_generic_validations();
 
         Request {
             creator: request.requestor,

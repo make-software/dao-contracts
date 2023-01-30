@@ -217,6 +217,7 @@ version = "0.1.0"
 dependencies = [
  "casper-dao-utils",
  "casper-types",
+ "num-traits",
 ]
 
 [[package]]
@@ -232,7 +233,6 @@ dependencies = [
  "casper-types",
  "hex",
  "lazy_static",
- "num-traits",
  "serde",
 ]
 
