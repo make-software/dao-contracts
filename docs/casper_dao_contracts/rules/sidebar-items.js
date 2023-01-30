@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["validation","Groups validations."]],"struct":[["Rules","A set of validation rules."],["RulesBuilder","A utility to build a set of validation rules."]]};

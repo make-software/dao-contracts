@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["deposit","Transfers all the funds from the given `cargo_purse` to the currently executing contract main purse."],["main_purse_balance","Gets the balance of the currently executing contract main purse."],["withdraw","Withdraws funds from the currently executing contract main purse to the given [`Address`]."]]};

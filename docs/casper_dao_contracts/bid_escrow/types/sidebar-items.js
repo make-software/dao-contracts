@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"type":[["BidId","A unique bid id."],["JobId","A unique job id."],["JobOfferId","A unique job offer id."]]};

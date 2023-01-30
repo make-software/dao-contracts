@@ -1,0 +1,1306 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `dao-contracts/src/bid_escrow.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bid_escrow.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../casper_dao_contracts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../casper_dao_contracts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Contains Bid Escrow Contract definition and related abstractions.
+//!
+//! # Definitions
+//! * Job Offer - A description of a Job posted by JobPoster
+//! * Bid - on offer that can be accepted by the Job Poster
+//! * JobPoster - user of the system that posts a Job Offer; it has to be KYC’d
+//! * Worker - the user who does a job
+//! * Internal Worker - a Worker who completed the KYC and was voted to be a VotingAssociate
+//! * External Worker - a Worker who completed the KYC and is not a Voting Associate
+//! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote
+//! * KYC - Know Your Customer, a process that validates that the user can be the user of the system
+//! * Bid Escrow Voting - Mints reputation
+//!
+//! # Posting
+//! The first step of the `Bid Escrow` process is `Posting` a [`Job Offer`](crate::bid_escrow::job_offer::JobOffer).
+//! It is done by `JobPoster` by sending a query to a `BidEscrow` contract containing:
+//! * Expected timeframe for completing a `Job`
+//! * Maximum budget for a `Job`
+//! With the query, the `JobPoster` sends a `DOS fee` in `CSPR`. The minimum amount of a `DOS fee` is defined in
+//! [`Variable Repository Contract`] under the key`PostJobDOSFee`.
+//! This action creates a new object in the contract called `Job Offer` and starts the `Bidding process`.
+//!
+//! # Bidding
+//! The `Bidding` process allows `Workers` to post [`Bids`](crate::bid_escrow::bid::Bid) with the offer of completing a job.
+//! It is divided into two main parts.
+//! 
+//! ### Internal Auction
+//! During this part of the Bidding process only the `VAs` can bid. As the `VAs` have `Reputation`, they are bidding using 
+//! [`Reputation`] as a stake. The `Bid` query to the contract consists of:
+//! * Proposed timeframe for completing the `Job`.
+//! * Proposed payment for the `Job`.
+//! * The amount of `Reputation` the `Internal Worker` stakes on this `Job`.
+//! 
+//! The Bid is then added to a list of available bids in the contract storage and is available for picking by the `Job Poster`.
+//! The time of an `Internal Auction` is defined in a [`Governance Variable`] `InternalAuctionTime`. 
+//! The bidding process can already be completed here, if the `JobPoster` decides to chose one of the posted Bids before `Internal Auction` ends. 
+//! However, if no `Bid` is picked during this time, the process becomes a `Public Auction`.
+//! 
+//! ### Public Auction
+//! If no `Internal Worker` decides to post a `Bid` on a `Job Offer`, or the `Job Poster` did not pick any bid during `Internal Auction`, 
+//! the `External Workers` have a chance of submitting their bids during `Public Auction` time. As `External Workers` do not have any 
+//! `Reputation` to stake, they are staking `CSPR`.
+//! 
+//! A query to the contract in case of `External Workers` consists of:
+//! * Proposed timeframe for completing the `Job`.
+//! * Proposed payment for the `Job`.
+//! * Decision if the `Worker` wants to become a `Voting Associate` if the `Job` is completed.
+//! * `CSPR` stake sent alongside the query
+//! `Internal Workers` by default cannot to submit their bids during `Public Auction`, however this behavior is configurable using 
+//! `VACanBidOnPublicAuction` [`Governance Variable`].
+//! 
+//! The time of a `Public Auction` is defined in a [`Governance Variable`] `PublicAuctionTime`.
+//!
+//! # Picking a Bid
+//! During the `Auction` process the `Job Poster` can pick a `Bid`.
+//! When no `Bid` is posted or selected by `Job Poster` during both auctions, the `Job` is cancelled,
+//! `DOS Fee` is returned to the `Job Poster` and stakes sent by the `Bidders` are returned to them.
+//!
+//! # Submitting a Job Proof
+//! Now the `Worker` has the time to complete the `Job` and submit its proof to the contract.
+//! After the works have been completed, the `Worker` sends a query to the contract containing
+//! the cryptographic hash of a document being a proof of `Work` done for a `Job Poster`.
+//! 
+//! When no `Bid` is posted or selected by the `Job Poster` during both auctions, the `Job` is cancelled, 
+//! `DOS Fee` is returned to the `Job Poster` and stakes sent by the `Bidders` are returned to them.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! # Voting passed
+//! Besides yielding a positive result, the `Voting` passed means that the `Reputation` staked by the losing side is
+//! redistributed between the winning side, depending on the type of `Worker`.
+//! ### External Worker who wanted to become VA
+//! * The `External Worker` becomes VA.
+//! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
+//! * Reputation of the voters who voted `yes` is returned to them.
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
+//! reputation staked in the voting.
+//! * Reputation minted for the `External Worker` and used in the voting process is burned.
+//! 
+//! ### Internal Worker
+//! * Reputation of the voters who voted `yes` is returned to them.
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
+//! reputation staked in the voting.
+//! 
+//! ### External Worker
+//! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
+//! * Reputation minted for the `External Worker` and used in the voting process is burned.
+//! * Reputation of the voters who voted `yes` is returned to them, except for the Reputation minted for the Worker using `CSPR` stake.
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
+//! reputation staked in the voting (External Worker does not receive Reputation in this step).
+//! 
+//! ### Payment CSPR Redistribution
+//! Reputation used for the Voting and minted after a successful `Job` has been redistributed during the above process, 
+//! but there is `CSPR` to redistribute that was allocated to the `Job`. How much resources is redistributed and to whom 
+//! depends on the type of `Worker` and whether it wanted to become a `VA`.
+//!
+//! ### Payment pool
+//! The `CSPR` to redistribute is calculated using a formula:
+//! `payment pool = job price`
+//!
+//! ### External Worker who wants to become VA
+//! As the External Worker now is the VA, it is considered to be an `Internal Worker` in this scenario.
+//!
+//! ### Internal Worker
+//! Firstly the Governance Payment is calculated using a formula:
+//! 
+//! `governance payment = payment pool * BidEscrowPaymentRatio` [Read more](crate::variable_repository#available-keys). 
+//!
+//! The `Governance Payment` is then transferred to a multisig wallet, which address is held in the [`Variable Repository Contract`] 
+//! called [`BidEscrowWalletAddress`](crate::variable_repository#available-keys).
+//! The rest of the payment is redistributed between all of the `VAs&#39;`.
+//! 
+//! `remaining amount = payment pool - governance payment`
+//! 
+//! ### External Worker
+//! If the `Job` was done by an `External Worker` who didn’t want to become a `VA`, the first step is the same
+//! as in the case of `Internal Worker` - Governance Payment is being made. However the rest is then divided between 
+//! the `External Worker` and the `VAs’`.
+//!
+//! Firstly to get the amount that VA’s receive we use a formula:
+//! 
+//! `VA payment amount = remaining amount * DefaultPolicingRate` [Read more](crate::variable_repository#available-keys)
+//!
+//! Then, the rest is transferred to the `External Worker`:
+//!
+//! `External Worker payment amount = payment pool- governance payment - VA payment amount`
+//!  
+//! # Voting failed
+//! Besides yielding a negative result, the Voting passed means that the Reputation staked by the losing side is
+//! redistributed between the winning side, depending on the type of Worker.
+//!
+//! ### External Worker who wanted to become VA
+//! * The External Worked DOES NOT become a VA.
+//! * The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s.
+//! * The Reputation minted for the `External Worker` using `CSPR` stake is burned.
+//! * Reputation of the voters who voted `no` is returned to them.
+//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
+//! reputation staked in the voting.
+//! 
+//! ### Internal Worker
+//! * Reputation of the voters who voted `no` is returned to them.
+//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
+//! reputation staked in the voting.
+//! 
+//! ### External Worker
+//! The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s.
+//! The Reputation minted for the `External Worker` using `CSPR` stake is burned.
+//! Reputation of the voters who voted `no` is returned to them.
+//! Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
+//! reputation staked in the voting.
+//! 
+//! ### CSPR
+//! If the `Voting` fails, the `CSPR` sent to the contract as a payment for `Job` is returned to the `Job Poster`. If the work
+//! has been attempted to do by an `External Worker` the `CSPR` that the `Worker` staked during the `Bid` process
+//! is redistributed between all `VA`’s.
+//!
+//! # Quorum not reached
+//! When the `Quorum` is not reached during the `Formal Voting`, following things happen:
+//! * The process ends here.
+//! * `VA’s` stakes are returned to them.
+//! * `Job` Poster payment and `DOS fee is returned.
+//! * `Internal Worker`’s Reputation and `External Worker`’s `CSPR` stake is returned.
+//! * `External Worker`’s Reputation that was minted using `CSPR` stake is burned.
+//!
+//! # Returning DOS Fee
+//! The final step of the process is returning the `CSPR` `DOS Fee` to the `Job Poster`.
+//! 
+//! # Grace Period
+//! However, if `External Worker` do not post a `Job Proof` in time, his `CSPR` stake is redistributed
+//! between all `VA’s`.
+//! In case of `Internal Worker`, his staked `Reputation` gets burned and it undergoes the
+//! `Automated Reputation slashing` see [`Slashing Voter`].
+//! Then the process enters a `Grace period` (with the timeframe the same as the timeframe of the work for `Worker`).
+//! During this period, anyone (`VA`, `External Worker`, even the original `Worker`) can submit the `Job Proof`,
+//! becoming the new `Worker` and participating in the reward mechanism. Alongside the `Job Proof`,
+//! a `Worker` needs to send a stake in form of `Reputation` (or `CSPR` for `External Worker`).
+//! This stake will behave in the same manner as stake sent by the original `Worker`.
+//! If nobody submits the `Job Proof` during the grace period, the whole process ends.
+//! The `CSPR` paid by the `Job Poster` is returned along with the `DOS Fee`.
+//! This is a special implementation of [positional parameters].
+//! 
+//! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
+//! [`VotingEngine`]: crate::voting::VotingEngine
+//! [`Slashing Voter`]: crate::slashing_voter
+//! [`Reputation`]: crate::reputation::ReputationContractInterface
+//! [`Governance Variable`]: crate::variable_repository#available-keys
+</span><span class="kw">use </span>std::borrow::Borrow;
+
+<span class="kw">use </span>casper_dao_modules::AccessControl;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;test-support&quot;</span>)]
+</span><span class="kw">use </span>casper_dao_utils::TestContract;
+<span class="kw">use </span>casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{caller, revert},
+    cspr,
+    Address,
+    BlockTime,
+    DocumentHash,
+    Error,
+};
+<span class="kw">use </span>casper_types::{URef, U512};
+<span class="kw">use </span>delegate::delegate;
+
+<span class="kw">use crate</span>::{
+    bid_escrow::{
+        bid::Bid,
+        job::Job,
+        job_offer::{JobOffer, JobOfferStatus},
+        types::{BidId, JobId, JobOfferId},
+    },
+    reputation::ReputationContractInterface,
+    voting::{
+        refs::{ContractRefs, ContractRefsWithKycStorage},
+        voting_state_machine::{VotingStateMachine, VotingType},
+        Ballot,
+        Choice,
+        VotingId, VotingEngine,
+    },
+};
+
+<span class="kw">pub mod </span>bid;
+<span class="kw">mod </span>bid_engine;
+<span class="kw">pub mod </span>events;
+<span class="kw">pub mod </span>job;
+<span class="kw">mod </span>job_engine;
+<span class="kw">pub mod </span>job_offer;
+<span class="kw">pub mod </span>storage;
+<span class="kw">pub mod </span>types;
+
+<span class="kw">pub use </span>bid_engine::BidEngine;
+<span class="kw">pub use </span>job_engine::JobEngine;
+
+<span class="attribute">#[casper_contract_interface]
+</span><span class="kw">pub trait </span>BidEscrowContractInterface {
+    <span class="doccomment">/// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
+    ///
+    /// # Events
+    /// Emits:
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    </span><span class="kw">fn </span>init(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        variable_repository: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    );
+
+    <span class="doccomment">/// Job Poster post a new Job Offer.
+    /// 
+    /// # Parameters:
+    /// * expected_timeframe - Expected timeframe for completing a Job
+    /// * budget - Maximum budget for a Job
+    /// Alongside Job Offer, Job Poster also sends DOS Fee in CSPR
+    ///
+    /// # Events
+    /// * [`JobOfferCreated`](crate::bid_escrow::events::JobOfferCreated)
+    </span><span class="kw">fn </span>post_job_offer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, expected_timeframe: BlockTime, budget: U512, purse: URef);
+    <span class="doccomment">/// Worker submits a [Bid] for a [Job].
+    /// 
+    /// # Parameters:
+    /// * time - proposed timeframe for completing a Job
+    /// * payment - proposed payment for a Job
+    /// * reputation_stake - reputation stake for a Job if Worker is an Internal Worker
+    /// * onboard - if Worker is an External Worker, then Worker can request to be onboarded after
+    /// completing a Job
+    /// * purse: purse containing stake from External Worker
+    ///
+    /// # Events
+    /// * [`BidSubmitted`](crate::bid_escrow::events::BidSubmitted)
+    </span><span class="kw">fn </span>submit_bid(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        job_offer_id: JobOfferId,
+        time: BlockTime,
+        payment: U512,
+        reputation_stake: U512,
+        onboard: bool,
+        purse: <span class="prelude-ty">Option</span>&lt;URef&gt;,
+    );
+    <span class="doccomment">/// Worker cancels a [Bid] for a [Job].
+    /// 
+    /// Bid can be cancelled only after VABidAcceptanceTimeout time has passed after submitting a Bid.
+    /// 
+    /// # Parameters:
+    /// * bid_id - Bid Id
+    </span><span class="kw">fn </span>cancel_bid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bid_id: BidId);
+    <span class="doccomment">/// Job poster picks a bid. This creates a new Job object and saves it in a storage.
+    /// If worker is not onboarded, the job is accepted automatically.
+    /// Otherwise, worker needs to accept job.
+    ///
+    /// # Events
+    /// * [`JobCreated`](crate::bid_escrow::events::JobCreated)
+    /// * [`JobAccepted`](crate::bid_escrow::events::JobAccepted)
+    ///
+    /// # Errors
+    /// * [`CannotPostJobForSelf`](Error::CannotPostJobForSelf) when trying to create job for
+    /// self.
+    /// * [`JobPosterNotKycd`](Error::JobPosterNotKycd) or [`Error::WorkerNotKycd`](Error::WorkerNotKycd)
+    /// When either Job Poster or Worker has not completed the KYC process
+    </span><span class="kw">fn </span>pick_bid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_offer_id: u32, bid_id: u32, purse: URef);
+    <span class="doccomment">/// Submits a job proof. This is called by a `Worker` or any KYC&#39;d user during Grace Period.
+    /// This starts a new voting over the result.
+    /// 
+    /// # Events
+    /// * [`JobSubmitted`](crate::bid_escrow::events::JobSubmitted)
+    ///
+    /// # Errors
+    /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted.
+    /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
+    /// job submission is not met.
+    </span><span class="kw">fn </span>submit_job_proof(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_id: JobId, proof: DocumentHash); 
+    <span class="doccomment">/// Updates the old [`Bid`] and [`Job`], the job is assigned to a new `Worker`. The rest goes the same
+    /// as regular proof submission. See [submit_job_proof()][Self::submit_job_proof].
+    /// The old `Worker` who didn&#39;t submit the proof in time, is getting slashed.
+    </span><span class="kw">fn </span>submit_job_proof_during_grace_period(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        job_id: JobId,
+        proof: DocumentHash,
+        reputation_stake: U512,
+        onboard: bool,
+        purse: <span class="prelude-ty">Option</span>&lt;URef&gt;,
+    );
+    <span class="doccomment">/// Casts a vote over a job.
+    /// 
+    /// # Events
+    /// * [`BallotCast`](crate::voting::events::BallotCast)
+    /// # Errors
+    /// * [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
+    /// * [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
+    </span><span class="kw">fn </span>vote(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
+    <span class="doccomment">/// Finishes voting. Depending on type of voting, different actions are performed.
+    /// [Read more](VotingEngine::finish_voting())
+    </span><span class="kw">fn </span>finish_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType);
+    <span class="doccomment">/// Returns a job with given [JobId].
+    </span><span class="kw">fn </span>get_job(<span class="kw-2">&amp;</span><span class="self">self</span>, job_id: JobId) -&gt; <span class="prelude-ty">Option</span>&lt;Job&gt;;
+    <span class="doccomment">/// Returns a JobOffer with given [JobOfferId].
+    </span><span class="kw">fn </span>get_job_offer(<span class="kw-2">&amp;</span><span class="self">self</span>, job_offer_id: JobOfferId) -&gt; <span class="prelude-ty">Option</span>&lt;JobOffer&gt;;
+    <span class="doccomment">/// Returns a Bid with given [BidId].
+    </span><span class="kw">fn </span>get_bid(<span class="kw-2">&amp;</span><span class="self">self</span>, bid_id: BidId) -&gt; <span class="prelude-ty">Option</span>&lt;Bid&gt;;
+     <span class="doccomment">/// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    </span><span class="kw">fn </span>variable_repository_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
+    <span class="doccomment">/// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
+    </span><span class="kw">fn </span>reputation_token_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
+    <span class="doccomment">/// Returns [Voting](VotingStateMachine) for given id.
+    </span><span class="kw">fn </span>get_voting(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId) -&gt; <span class="prelude-ty">Option</span>&lt;VotingStateMachine&gt;;
+    <span class="doccomment">/// Returns the Voter&#39;s [`Ballot`].
+    </span><span class="kw">fn </span>get_ballot(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        voting_id: VotingId,
+        voting_type: VotingType,
+        address: Address,
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;Ballot&gt;;
+    <span class="doccomment">/// Returns the address of nth voter who voted on Voting with `voting_id`.
+    </span><span class="kw">fn </span>get_voter(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType, at: u32) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+    <span class="doccomment">/// Returns the CSPR balance of the contract.
+    </span><span class="kw">fn </span>get_cspr_balance(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U512;
+    <span class="doccomment">/// Returns the total number of job offers.
+    </span><span class="kw">fn </span>job_offers_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+    <span class="doccomment">/// Returns the total number of jobs.
+    </span><span class="kw">fn </span>jobs_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+    <span class="doccomment">/// Returns the total number of bids.
+    </span><span class="kw">fn </span>bids_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+    <span class="doccomment">/// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
+    </span><span class="kw">fn </span>cancel_voter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voter: Address, voting_id: VotingId);
+    <span class="doccomment">/// Invalidates the [`Job Offer`](JobOffer), returns `DOS Fee` to the `Job Poster`, returns funds to `Bidders`.
+    /// [`Read more`](BidEngine::cancel_job_offer()).
+    </span><span class="kw">fn </span>cancel_job_offer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_offer_id: JobOfferId);
+    <span class="doccomment">/// Terminates the Voting process and slashes the `Worker`. [`Read more`](JobEngine::cancel_job()).
+    </span><span class="kw">fn </span>cancel_job(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_id: JobId);
+    <span class="doccomment">/// Invalidates all the active [JobOffer]s, returns `DOS Fee`s to the `Job Poster`s, returns funds to `Bidders`.
+    /// 
+    /// Only a whitelisted account is permitted to call this method.
+    /// Interacts with [Reputation Token Contract](crate::reputation::ReputationContractInterface).
+    /// 
+    /// # Errors
+    /// * [Error::BidNotFound]
+    /// * [Error::JobOfferNotFound]
+    /// * [Error::CannotCancelBidOnCompletedJobOffer]
+    </span><span class="kw">fn </span>slash_all_active_job_offers(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bidder: Address);
+    <span class="doccomment">/// Updates the [Bid] status and returns locked reputation to the Bidder.
+    /// 
+    /// Only a whitelisted account is permitted to call this method.
+    /// Interacts with [Reputation Token Contract](crate::reputation::ReputationContractInterface).
+    /// 
+    /// # Errors
+    /// * [Error::BidNotFound]
+    /// * [Error::JobOfferNotFound]
+    /// * [Error::CannotCancelBidOnCompletedJobOffer]
+    </span><span class="kw">fn </span>slash_bid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bid_id: BidId);
+    <span class="doccomment">/// Checks if voting of a given type and id exists.
+    </span><span class="kw">fn </span>voting_exists(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType) -&gt; bool;
+    <span class="doccomment">/// Erases the voter from the given voting. [`Read more`](VotingEngine::slash_voter()).
+    </span><span class="kw">fn </span>slash_voter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voter: Address, voting_id: VotingId);
+    <span class="doccomment">/// Changes the ownership of the contract. Transfers ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    /// [`Read more`](AccessControl::change_ownership())
+    </span><span class="kw">fn </span>change_ownership(<span class="kw-2">&amp;mut </span><span class="self">self</span>, owner: Address);
+    <span class="doccomment">/// Adds a new address to the whitelist.
+    /// [`Read more`](AccessControl::add_to_whitelist())
+    </span><span class="kw">fn </span>add_to_whitelist(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: Address);
+    <span class="doccomment">/// Remove address from the whitelist.
+    /// [`Read more`](AccessControl::remove_from_whitelist())
+    </span><span class="kw">fn </span>remove_from_whitelist(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: Address);
+    <span class="doccomment">/// Checks whether the given address is added to the whitelist.
+    /// [`Read more`](AccessControl::is_whitelisted()).
+    </span><span class="kw">fn </span>is_whitelisted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: Address) -&gt; bool;
+    <span class="doccomment">/// Returns the address of the current owner.
+    /// [`Read more`](AccessControl::get_owner()).
+    </span><span class="kw">fn </span>get_owner(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+}
+
+<span class="doccomment">/// A contract that manages the full `Bid Escrow` process.
+/// Uses [`VotingEngine`](crate::voting::VotingEngine) to conduct the voting process.
+///
+/// For details see [BidEscrowContractInterface](BidEscrowContractInterface).
+</span><span class="attribute">#[derive(Instance)]
+</span><span class="kw">pub struct </span>BidEscrowContract {
+    refs: ContractRefsWithKycStorage,
+    access_control: AccessControl,
+    job_engine: JobEngine,
+    bid_engine: BidEngine,
+    voting_engine: VotingEngine,
+}
+
+<span class="kw">impl </span>BidEscrowContractInterface <span class="kw">for </span>BidEscrowContract {
+    <span class="macro">delegate! </span>{
+        to <span class="self">self</span>.voting_engine {
+            <span class="kw">fn </span>voting_exists(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType) -&gt; bool;
+            <span class="kw">fn </span>get_ballot(
+                <span class="kw-2">&amp;</span><span class="self">self</span>,
+                voting_id: VotingId,
+                voting_type: VotingType,
+                address: Address,
+            ) -&gt; <span class="prelude-ty">Option</span>&lt;Ballot&gt;;
+            <span class="kw">fn </span>get_voter(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType, at: u32) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+            <span class="kw">fn </span>get_voting(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId) -&gt; <span class="prelude-ty">Option</span>&lt;VotingStateMachine&gt;;
+        }
+
+        to <span class="self">self</span>.bid_engine {
+            <span class="kw">fn </span>post_job_offer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, expected_timeframe: BlockTime, budget: U512, purse: URef);
+            <span class="kw">fn </span>submit_bid(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                job_offer_id: JobOfferId,
+                time: BlockTime,
+                payment: U512,
+                reputation_stake: U512,
+                onboard: bool,
+                purse: <span class="prelude-ty">Option</span>&lt;URef&gt;,
+            );
+            <span class="kw">fn </span>cancel_bid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bid_id: BidId);
+            <span class="kw">fn </span>cancel_job_offer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_offer_id: JobOfferId);
+            <span class="kw">fn </span>pick_bid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_offer_id: u32, bid_id: u32, purse: URef);
+            <span class="kw">fn </span>job_offers_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+            <span class="kw">fn </span>bids_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+            <span class="kw">fn </span>get_job_offer(<span class="kw-2">&amp;</span><span class="self">self</span>, job_offer_id: JobOfferId) -&gt; <span class="prelude-ty">Option</span>&lt;JobOffer&gt;;
+            <span class="kw">fn </span>get_bid(<span class="kw-2">&amp;</span><span class="self">self</span>, bid_id: BidId) -&gt; <span class="prelude-ty">Option</span>&lt;Bid&gt;;
+        }
+
+        to <span class="self">self</span>.job_engine {
+            <span class="kw">fn </span>submit_job_proof(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_id: JobId, proof: DocumentHash);
+            <span class="kw">fn </span>submit_job_proof_during_grace_period(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+                job_id: JobId,
+                proof: DocumentHash,
+                reputation_stake: U512,
+                onboard: bool,
+                purse: <span class="prelude-ty">Option</span>&lt;URef&gt;,
+            );
+            <span class="kw">fn </span>cancel_job(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_id: JobId);
+            <span class="kw">fn </span>vote(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
+            <span class="kw">fn </span>finish_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType);
+        }
+
+        to <span class="self">self</span>.access_control {
+            <span class="kw">fn </span>change_ownership(<span class="kw-2">&amp;mut </span><span class="self">self</span>, owner: Address);
+            <span class="kw">fn </span>add_to_whitelist(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: Address);
+            <span class="kw">fn </span>remove_from_whitelist(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: Address);
+            <span class="kw">fn </span>is_whitelisted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: Address) -&gt; bool;
+            <span class="kw">fn </span>get_owner(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+        }
+
+        to <span class="self">self</span>.job_engine {
+            <span class="kw">fn </span>jobs_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+            <span class="kw">fn </span>get_job(<span class="kw-2">&amp;</span><span class="self">self</span>, job_id: JobId) -&gt; <span class="prelude-ty">Option</span>&lt;Job&gt;;
+        }
+
+        to <span class="self">self</span>.refs {
+            <span class="kw">fn </span>variable_repository_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
+            <span class="kw">fn </span>reputation_token_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
+        }
+    }
+
+    <span class="kw">fn </span>init(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        variable_repository: Address,
+        reputation_token: Address,
+        kyc_token: Address,
+        va_token: Address,
+    ) {
+        <span class="self">self</span>.refs
+            .init(variable_repository, reputation_token, va_token, kyc_token);
+        <span class="self">self</span>.access_control.init(caller());
+    }
+
+    <span class="kw">fn </span>get_cspr_balance(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U512 {
+        cspr::main_purse_balance()
+    }
+
+    <span class="kw">fn </span>cancel_voter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voter: Address, voting_id: VotingId) {
+        <span class="self">self</span>.access_control.ensure_whitelisted();
+        <span class="self">self</span>.voting_engine.slash_voter(voter, voting_id);
+    }
+
+    <span class="kw">fn </span>slash_all_active_job_offers(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bidder: Address) {
+        <span class="self">self</span>.access_control.ensure_whitelisted();
+        <span class="comment">// Cancel job offers created by the bidder.
+        </span><span class="kw">let </span>job_offer_ids = <span class="self">self</span>.bid_engine.clear_active_job_offers_ids(<span class="kw-2">&amp;</span>bidder);
+        <span class="kw">for </span>job_offer_id <span class="kw">in </span>job_offer_ids {
+            <span class="self">self</span>.bid_engine.cancel_all_bids(job_offer_id);
+            <span class="self">self</span>.bid_engine
+                .return_job_offer_poster_dos_fee(job_offer_id);
+        }
+    }
+
+    <span class="kw">fn </span>slash_bid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bid_id: BidId) {
+        <span class="self">self</span>.access_control.ensure_whitelisted();
+
+        <span class="kw">let </span><span class="kw-2">mut </span>bid = <span class="self">self
+            </span>.get_bid(bid_id)
+            .unwrap_or_revert_with(Error::BidNotFound);
+
+        <span class="kw">let </span>job_offer = <span class="self">self
+            </span>.get_job_offer(bid.job_offer_id)
+            .unwrap_or_revert_with(Error::JobOfferNotFound);
+
+        <span class="kw">if </span>job_offer.status != JobOfferStatus::Created {
+            revert(Error::CannotCancelBidOnCompletedJobOffer);
+        }
+
+        bid.cancel_without_validation();
+
+        <span class="self">self</span>.refs
+            .reputation_token()
+            .unstake_bid(bid.borrow().into());
+
+        <span class="comment">// TODO: Implement Event
+        </span><span class="self">self</span>.bid_engine.store_bid(bid);
+    }
+
+    <span class="kw">fn </span>slash_voter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _voter: Address, _voting_id: VotingId) {
+        <span class="self">self</span>.access_control.ensure_whitelisted();
+        <span class="macro">unimplemented!</span>()
+    }
+}
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;test-support&quot;</span>)]
+</span><span class="kw">impl </span>BidEscrowContractTest {
+    <span class="kw">pub fn </span>pick_bid_with_cspr_amount(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        job_offer_id: u32,
+        bid_id: u32,
+        cspr_amount: U512,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+        <span class="kw">use </span>casper_types::{runtime_args, RuntimeArgs};
+        <span class="self">self</span>.env.deploy_wasm_file(
+            <span class="string">&quot;pick_bid.wasm&quot;</span>,
+            <span class="macro">runtime_args! </span>{
+                <span class="string">&quot;bid_escrow_address&quot; </span>=&gt; <span class="self">self</span>.address(),
+                <span class="string">&quot;job_offer_id&quot; </span>=&gt; job_offer_id,
+                <span class="string">&quot;bid_id&quot; </span>=&gt; bid_id,
+                <span class="string">&quot;cspr_amount&quot; </span>=&gt; cspr_amount,
+                <span class="string">&quot;amount&quot; </span>=&gt; cspr_amount,
+            },
+        )
+    }
+
+    <span class="kw">pub fn </span>post_job_offer_with_cspr_amount(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        expected_timeframe: BlockTime,
+        budget: U512,
+        cspr_amount: U512,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+        <span class="kw">use </span>casper_types::{runtime_args, RuntimeArgs};
+        <span class="self">self</span>.env.deploy_wasm_file(
+            <span class="string">&quot;post_job_offer.wasm&quot;</span>,
+            <span class="macro">runtime_args! </span>{
+                <span class="string">&quot;bid_escrow_address&quot; </span>=&gt; <span class="self">self</span>.address(),
+                <span class="string">&quot;expected_timeframe&quot; </span>=&gt; expected_timeframe,
+                <span class="string">&quot;budget&quot; </span>=&gt; budget,
+                <span class="string">&quot;cspr_amount&quot; </span>=&gt; cspr_amount,
+                <span class="string">&quot;amount&quot; </span>=&gt; cspr_amount,
+            },
+        )
+    }
+
+    <span class="kw">pub fn </span>submit_bid_with_cspr_amount(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        job_offer_id: JobOfferId,
+        time: BlockTime,
+        payment: U512,
+        reputation_stake: U512,
+        onboard: bool,
+        cspr_amount: U512,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+        <span class="kw">use </span>casper_types::{runtime_args, RuntimeArgs};
+        <span class="self">self</span>.env.deploy_wasm_file(
+            <span class="string">&quot;submit_bid.wasm&quot;</span>,
+            <span class="macro">runtime_args! </span>{
+                <span class="string">&quot;bid_escrow_address&quot; </span>=&gt; <span class="self">self</span>.address(),
+                <span class="string">&quot;job_offer_id&quot; </span>=&gt; job_offer_id,
+                <span class="string">&quot;time&quot; </span>=&gt; time,
+                <span class="string">&quot;payment&quot; </span>=&gt; payment,
+                <span class="string">&quot;reputation_stake&quot; </span>=&gt; reputation_stake,
+                <span class="string">&quot;onboard&quot; </span>=&gt; onboard,
+                <span class="string">&quot;cspr_amount&quot; </span>=&gt; cspr_amount,
+                <span class="string">&quot;amount&quot; </span>=&gt; cspr_amount,
+            },
+        )
+    }
+
+    <span class="kw">pub fn </span>submit_job_proof_during_grace_period_with_cspr_amount(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        job_id: JobId,
+        proof: DocumentHash,
+        reputation_stake: U512,
+        onboard: bool,
+        cspr_amount: U512,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+        <span class="kw">use </span>casper_types::{runtime_args, RuntimeArgs};
+        <span class="self">self</span>.env.deploy_wasm_file(
+            <span class="string">&quot;submit_job_proof_during_grace_period.wasm&quot;</span>,
+            <span class="macro">runtime_args! </span>{
+                <span class="string">&quot;bid_escrow_address&quot; </span>=&gt; <span class="self">self</span>.address(),
+                <span class="string">&quot;job_id&quot; </span>=&gt; job_id,
+                <span class="string">&quot;proof&quot; </span>=&gt; proof,
+                <span class="string">&quot;reputation_stake&quot; </span>=&gt; reputation_stake,
+                <span class="string">&quot;onboard&quot; </span>=&gt; onboard,
+                <span class="string">&quot;cspr_amount&quot; </span>=&gt; cspr_amount,
+                <span class="string">&quot;amount&quot; </span>=&gt; cspr_amount,
+            },
+        )
+    }
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="casper_dao_contracts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (b8b5caee0 2022-10-16)" ></div></body></html>

@@ -10,17 +10,18 @@ Repository contains following modules:
 
 ## General Documentation
 
-- [Usage](docs/usage.md)
-- [Architecture](docs/architecture.md)
-- [Adding a new contract](docs/adding_new_contract.md)
-- [BDD Testing with Gherkin](docs/gherkin.md)
+- [Usage](docs-high-level/usage.md)
+- [Architecture](docs-high-level/architecture.md)
+- [Adding a new contract](docs-high-level/adding_new_contract.md)
+- [BDD Testing with Gherkin](docs-high-level/gherkin.md)
 
 ## Technical documentation
 To generate `rustdoc` execute the following:
 ```bash
-make docs
+make build-docs
 ```
-It opens a new browser window.
+
+Live version: https://make-software.github.io/dao-contracts.
 
 ## Quickstart
 
