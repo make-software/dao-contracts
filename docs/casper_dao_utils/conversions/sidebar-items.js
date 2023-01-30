@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["BytesConversion","Error-safe conversion from/to bytes."]]};

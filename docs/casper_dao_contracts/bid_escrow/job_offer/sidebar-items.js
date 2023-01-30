@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["AuctionState","Auction state representation."],["JobOfferStatus","Serializable JobOffer status representation."]],"struct":[["CancelJobOfferRequest","Data required to cancel a job offer."],["JobOffer","Writeable/readable representation of a `Job Offer`."],["PostJobOfferRequest","Data required to post a job offer."]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["per_mil_of","Multiplies two number and return per mile of their product."],["per_mil_of_as_u32","Multiplies two number and return per mile of their product casted as u32."],["to_per_mils","Returns the number divided by 1000."]]};
