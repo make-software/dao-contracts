@@ -6,7 +6,7 @@
       "is_mutable": true,
       "args": [
         {
-          "name": "variable_repo",
+          "name": "variable_repository",
           "ty": "Key"
         },
         {
@@ -217,11 +217,11 @@
               "ty": "U512"
             },
             {
-              "name": "unbounded_stake_in_favor",
+              "name": "unbound_stake_in_favor",
               "ty": "U512"
             },
             {
-              "name": "unbounded_stake_against",
+              "name": "unbound_stake_against",
               "ty": "U512"
             },
             {
@@ -293,7 +293,7 @@
       ]
     },
     {
-      "name": "variable_repo_address",
+      "name": "variable_repository_address",
       "is_mutable": false,
       "args": [],
       "return_ty": "Key",
@@ -320,57 +320,6 @@
         }
       ],
       "return_ty": "Bool",
-      "events": []
-    },
-    {
-      "name": "get_ballot",
-      "is_mutable": false,
-      "args": [
-        {
-          "name": "voting_id",
-          "ty": "U32"
-        },
-        {
-          "name": "voting_type",
-          "ty": "Any"
-        },
-        {
-          "name": "address",
-          "ty": "Key"
-        }
-      ],
-      "return_ty": {
-        "Option": "Any"
-      },
-      "events": []
-    },
-    {
-      "name": "get_voter",
-      "is_mutable": false,
-      "args": [
-        {
-          "name": "voting_id",
-          "ty": "U32"
-        },
-        {
-          "name": "voting_type",
-          "ty": "Any"
-        },
-        {
-          "name": "at",
-          "ty": "U32"
-        }
-      ],
-      "return_ty": {
-        "Option": "Key"
-      },
-      "events": []
-    },
-    {
-      "name": "get_kyc_token_address",
-      "is_mutable": false,
-      "args": [],
-      "return_ty": "Key",
       "events": []
     },
     {
@@ -436,6 +385,71 @@
           ]
         }
       ]
+    },
+    {
+      "name": "get_voting",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": {
+        "Option": "Any"
+      },
+      "events": []
+    },
+    {
+      "name": "get_ballot",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "Any"
+        },
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": {
+        "Option": "Any"
+      },
+      "events": []
+    },
+    {
+      "name": "get_voter",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "Any"
+        },
+        {
+          "name": "at",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "events": []
+    },
+    {
+      "name": "kyc_token_address",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "Key",
+      "events": []
     },
     {
       "name": "change_ownership",
@@ -504,15 +518,6 @@
       ]
     },
     {
-      "name": "get_owner",
-      "is_mutable": false,
-      "args": [],
-      "return_ty": {
-        "Option": "Key"
-      },
-      "events": []
-    },
-    {
       "name": "is_whitelisted",
       "is_mutable": false,
       "args": [
@@ -522,6 +527,15 @@
         }
       ],
       "return_ty": "Bool",
+      "events": []
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      },
       "events": []
     }
   ]
