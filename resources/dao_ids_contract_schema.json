@@ -101,15 +101,6 @@
       ]
     },
     {
-      "name": "get_owner",
-      "is_mutable": false,
-      "args": [],
-      "return_ty": {
-        "Option": "Key"
-      },
-      "events": []
-    },
-    {
       "name": "is_whitelisted",
       "is_mutable": false,
       "args": [
@@ -119,6 +110,15 @@
         }
       ],
       "return_ty": "Bool",
+      "events": []
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      },
       "events": []
     }
   ]

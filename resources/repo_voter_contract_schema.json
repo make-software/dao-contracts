@@ -6,7 +6,7 @@
       "is_mutable": true,
       "args": [
         {
-          "name": "variable_repo",
+          "name": "variable_repository",
           "ty": "Key"
         },
         {
@@ -233,11 +233,11 @@
               "ty": "U512"
             },
             {
-              "name": "unbounded_stake_in_favor",
+              "name": "unbound_stake_in_favor",
               "ty": "U512"
             },
             {
-              "name": "unbounded_stake_against",
+              "name": "unbound_stake_against",
               "ty": "U512"
             },
             {
@@ -309,7 +309,7 @@
       ]
     },
     {
-      "name": "variable_repo_address",
+      "name": "variable_repository_address",
       "is_mutable": false,
       "args": [],
       "return_ty": "Key",
@@ -397,6 +397,70 @@
       "events": []
     },
     {
+      "name": "slash_voter",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": "Unit",
+      "events": [
+        {
+          "name": "BallotCanceled",
+          "fields": [
+            {
+              "name": "voter",
+              "ty": "Key"
+            },
+            {
+              "name": "voting_id",
+              "ty": "U32"
+            },
+            {
+              "name": "voting_type",
+              "ty": "Any"
+            },
+            {
+              "name": "choice",
+              "ty": "Any"
+            },
+            {
+              "name": "stake",
+              "ty": "U512"
+            }
+          ]
+        },
+        {
+          "name": "VotingCanceled",
+          "fields": [
+            {
+              "name": "voting_id",
+              "ty": "U32"
+            },
+            {
+              "name": "voting_type",
+              "ty": "Any"
+            },
+            {
+              "name": "unstakes",
+              "ty": {
+                "Map": {
+                  "key": "Key",
+                  "value": "U512"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "change_ownership",
       "is_mutable": true,
       "args": [
@@ -463,15 +527,6 @@
       ]
     },
     {
-      "name": "get_owner",
-      "is_mutable": false,
-      "args": [],
-      "return_ty": {
-        "Option": "Key"
-      },
-      "events": []
-    },
-    {
       "name": "is_whitelisted",
       "is_mutable": false,
       "args": [
@@ -484,68 +539,13 @@
       "events": []
     },
     {
-      "name": "slash_voter",
-      "is_mutable": true,
-      "args": [
-        {
-          "name": "voter",
-          "ty": "Key"
-        },
-        {
-          "name": "voting_id",
-          "ty": "U32"
-        }
-      ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "BallotCanceled",
-          "fields": [
-            {
-              "name": "voter",
-              "ty": "Key"
-            },
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "voting_type",
-              "ty": "Any"
-            },
-            {
-              "name": "choice",
-              "ty": "Any"
-            },
-            {
-              "name": "stake",
-              "ty": "U512"
-            }
-          ]
-        },
-        {
-          "name": "VotingCanceled",
-          "fields": [
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "voting_type",
-              "ty": "Any"
-            },
-            {
-              "name": "unstakes",
-              "ty": {
-                "Map": {
-                  "key": "Key",
-                  "value": "U512"
-                }
-              }
-            }
-          ]
-        }
-      ]
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "events": []
     }
   ]
 }

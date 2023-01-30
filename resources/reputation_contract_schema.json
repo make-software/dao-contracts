@@ -214,20 +214,12 @@
       "is_mutable": true,
       "args": [
         {
-          "name": "voter",
-          "ty": "Key"
-        },
-        {
           "name": "voting_id",
           "ty": "U32"
         },
         {
-          "name": "choice",
+          "name": "ballot",
           "ty": "Any"
-        },
-        {
-          "name": "amount",
-          "ty": "U512"
         }
       ],
       "return_ty": "Unit",
@@ -238,12 +230,30 @@
       "is_mutable": true,
       "args": [
         {
-          "name": "voter",
-          "ty": "Key"
+          "name": "voting_id",
+          "ty": "U32"
         },
+        {
+          "name": "ballot",
+          "ty": "Any"
+        }
+      ],
+      "return_ty": "Unit",
+      "events": []
+    },
+    {
+      "name": "bulk_unstake_voting",
+      "is_mutable": true,
+      "args": [
         {
           "name": "voting_id",
           "ty": "U32"
+        },
+        {
+          "name": "ballots",
+          "ty": {
+            "List": "Any"
+          }
         }
       ],
       "return_ty": "Unit",
@@ -254,16 +264,8 @@
       "is_mutable": true,
       "args": [
         {
-          "name": "voter",
-          "ty": "Key"
-        },
-        {
-          "name": "bid_id",
-          "ty": "U32"
-        },
-        {
-          "name": "amount",
-          "ty": "U512"
+          "name": "bid",
+          "ty": "Any"
         }
       ],
       "return_ty": "Unit",
@@ -274,12 +276,22 @@
       "is_mutable": true,
       "args": [
         {
-          "name": "voter",
-          "ty": "Key"
-        },
+          "name": "bid",
+          "ty": "Any"
+        }
+      ],
+      "return_ty": "Unit",
+      "events": []
+    },
+    {
+      "name": "bulk_unstake_bid",
+      "is_mutable": true,
+      "args": [
         {
-          "name": "bid_id",
-          "ty": "U32"
+          "name": "bids",
+          "ty": {
+            "List": "Any"
+          }
         }
       ],
       "return_ty": "Unit",
@@ -301,12 +313,7 @@
       "name": "all_balances",
       "is_mutable": false,
       "args": [],
-      "return_ty": {
-        "Tuple2": [
-          "U512",
-          "Any"
-        ]
-      },
+      "return_ty": "Any",
       "events": []
     },
     {
@@ -320,12 +327,7 @@
           }
         }
       ],
-      "return_ty": {
-        "Tuple2": [
-          "U512",
-          "Any"
-        ]
-      },
+      "return_ty": "Any",
       "events": []
     },
     {
