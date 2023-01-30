@@ -1,4 +1,6 @@
-//! Utilities related to [ReputationContract](crate::reputation::ReputationContract).
+//! Contains Reputation Token Contract definition and related abstractions.
+//!
+//! New reputation is minted as a result of engagement in the DAO - voting or doing jobs.
 mod agg;
 mod balances;
 mod stakes;
@@ -13,6 +15,7 @@ pub use token::{
     ReputationContractInterface,
 };
 
+/// Building blocks of Reputation Token.
 pub mod submodules {
     pub use super::{agg::*, balances::BalanceStorage, stakes::StakesStorage};
 }

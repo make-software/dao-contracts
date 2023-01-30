@@ -1,3 +1,4 @@
+//! Functions for interacting with purses.
 use casper_contract::{
     contract_api::system::{
         get_purse_balance,
@@ -14,10 +15,14 @@ use crate::{
     Error,
 };
 
+/// Gets the balance of the currently executing contract main purse.
 pub fn main_purse_balance() -> U512 {
     get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
 }
 
+/// Transfers all the funds from the given `cargo_purse` to the currently executing contract main purse.
+///
+/// Reverts if the `cargo_purse` is empty or transfer from purse to purse fails.
 pub fn deposit(cargo_purse: URef) -> U512 {
     let main_purse = casper_env::contract_main_purse();
     let amount = get_purse_balance(cargo_purse).unwrap_or_revert_with(Error::PurseError);
@@ -31,6 +36,9 @@ pub fn deposit(cargo_purse: URef) -> U512 {
     amount
 }
 
+/// Withdraws funds from the currently executing contract main purse to the given [`Address`].
+///
+/// Reverts if the `address` is invalid or transfer from purse to account fails.
 pub fn withdraw(address: Address, amount: U512) {
     let main_purse = casper_env::contract_main_purse();
     transfer_from_purse_to_account(

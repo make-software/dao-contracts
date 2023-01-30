@@ -19,11 +19,14 @@ use crate::{
         types::{BidId, JobOfferId},
     },
     config::{Configuration, ConfigurationBuilder},
-    refs::{ContractRefs, ContractRefsWithKycStorage},
     reputation::ReputationContractInterface,
-    voting::submodules::{KycInfo, OnboardingInfo},
+    voting::{
+        refs::{ContractRefs, ContractRefsWithKycStorage},
+        submodules::{KycInfo, OnboardingInfo},
+    },
 };
 
+/// Manages the Bidding process.
 #[derive(Instance)]
 pub struct BidEngine {
     #[scoped = "contract"]
@@ -41,15 +44,25 @@ pub struct BidEngine {
 impl BidEngine {
     delegate! {
         to self.bid_storage {
+            /// Gets the total number of [JobOffer]s.
             pub fn job_offers_count(&self) -> u32;
+            /// Gets the total number of [Bid]s.
             pub fn bids_count(&self) -> u32;
+            /// Gets the [JobOffer] with a given id or `None`.
             pub fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer>;
+            /// Gets the [JobOffer] with a given id or reverts with [JobOfferNotFound](casper_dao_utils::Error::JobOfferNotFound).
             pub fn get_job_offer_or_revert(&self, job_offer_id: JobOfferId) -> JobOffer;
+            /// Gets the [Bid] with a given id or `None`.
             pub fn get_bid(&self, bid_id: BidId) -> Option<Bid>;
+            /// Gets the [Bid] with a given id or reverts with [BidNotFound](casper_dao_utils::Error::BidNotFound).
             pub fn get_bid_or_revert(&self, bid_id: BidId) -> Bid;
+            /// Increments bid counter.
             pub fn next_bid_id(&mut self) -> BidId;
+            /// Writes the [Bid] to the storage.
             pub fn store_bid(&mut self, bid: Bid);
+            /// Removes all active job offer ids of the Bidder form the storage.
             pub fn clear_active_job_offers_ids(&mut self, bidder: &Address) -> Vec<JobOfferId>;
+            /// Gets the [Configuration] of the [Job].
             pub fn get_job_offer_configuration(&self, job: &Job) -> Configuration;
         }
     }
@@ -138,13 +151,21 @@ impl BidEngine {
         self.bid_storage.store_bid(bid);
     }
 
+    /// Invalidates the [`Job Offer`](JobOffer), returns `DOS Fee` to the `Job Poster`, returns funds to `Bidders`.
+    /// 
+    /// If a Job with the given id does not exists, contract execution stop with [`Error::JobOfferNotFound`].
+    /// 
+    /// Executes validations: [`HasPermissionsToCancelJobOffer`] and [`CanJobOfferBeCancelled`].
+    /// 
+    /// [`HasPermissionsToCancelJobOffer`]: crate::rules::validation::bid_escrow::HasPermissionsToCancelJobOffer
+    /// [`CanJobOfferBeCancelled`]: crate::rules::validation::bid_escrow::CanJobOfferBeCancelled
+    /// [`Error::JobOfferNotFound`]: casper_dao_utils::Error::JobOfferNotFound
     pub fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
         let mut job_offer = self.bid_storage.get_job_offer_or_revert(job_offer_id);
         let cancel_job_offer_request = CancelJobOfferRequest {
             caller: caller(),
             block_time: get_block_time(),
         };
-
         job_offer.cancel(&cancel_job_offer_request);
 
         self.cancel_all_bids(job_offer_id);

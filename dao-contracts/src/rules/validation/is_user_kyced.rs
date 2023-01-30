@@ -2,9 +2,10 @@ use casper_dao_utils::{casper_dao_macros::Rule, Error};
 
 use crate::rules::validation::Validation;
 
+/// Validates if a user is kyc'd. May return [Error::NotKyced].
 #[derive(Rule)]
 pub struct IsUserKyced {
-    pub user_kyced: bool,
+    user_kyced: bool,
 }
 
 impl Validation for IsUserKyced {

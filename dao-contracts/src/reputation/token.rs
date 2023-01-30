@@ -33,43 +33,47 @@ pub trait ReputationContractInterface {
     /// * Set [`caller`] as the owner of the contract.
     /// * Add [`caller`] to the whitelist.
     ///
-    /// It emits [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist) events.
+    /// # Events
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist).
     fn init(&mut self);
 
     /// Mints new tokens. Adds `amount` of new tokens to the balance of the `recipient` and
     /// increments the total supply. Only whitelisted addresses are permitted to call this method.
     ///
-    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// # Errors
+    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// // TODO: Fix events documentation
-    /// It emits [`Mint`](events::Mint) event.
+    /// # Events
+    /// * [`Mint`](events::Mint).
     fn mint(&mut self, recipient: Address, amount: U512);
 
     /// Increases the balance of the passive reputation of the given address.
     ///
-    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// # Errors
+    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     fn mint_passive(&mut self, recipient: Address, amount: U512);
 
     /// Burns existing tokens. Removes `amount` of existing tokens from the balance of the `owner`
     /// and decrements the total supply. Only whitelisted addresses are permitted to call this
     /// method.
-    ///
-    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// 
+    /// # Errors
+    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     ///
-    /// // TODO: Fix events documentation
-    /// It emits [`Burn`](events::Burn) event.
+    /// # Events
+    /// * [`Burn`](events::Burn) event.
     fn burn(&mut self, owner: Address, amount: U512);
 
     /// Decreases the balance of the passive reputation of the given address.
     ///
-    /// It throws [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
+    /// # Errors
+    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
-    ///
-    /// It throws [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance) if the passed
+    /// * [`InsufficientBalance`](casper_dao_utils::Error::InsufficientBalance) if the passed
     /// amount exceeds the balance of the passive reputation of the given address.
     fn burn_passive(&mut self, owner: Address, amount: U512);
 
@@ -206,12 +210,14 @@ pub mod events {
     use casper_dao_utils::{casper_dao_macros::Event, Address};
     use casper_types::U512;
 
+    /// Informs tokens have been burnt.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Burn {
         pub address: Address,
         pub amount: U512,
     }
 
+    /// Informs tokens have been minted.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Mint {
         pub address: Address,

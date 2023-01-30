@@ -74,7 +74,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                     use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
 
                     #casper_args
-                    let #mutability_token contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
+                    let #mutability_token contract: #contract_ident = casper_dao_utils::Instanced::instance("contract");
                     let result = #contract_interface_ident::#ident(&#mutability_token contract, #punctuated_args);
                     let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
                     casper_dao_utils::casper_contract::contract_api::runtime::ret(result);
@@ -85,7 +85,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                 #[no_mangle]
                 fn #ident() {
                     #casper_args
-                    let #mutability_token contract: #contract_ident = casper_dao_utils::instance::Instanced::instance("contract");
+                    let #mutability_token contract: #contract_ident = casper_dao_utils::Instanced::instance("contract");
                     #[allow(clippy::unnecessary_mut_passed)]
                     #contract_interface_ident::#ident(&#mutability_token contract, #punctuated_args);
                 }
@@ -122,7 +122,7 @@ mod tests {
 
                     #[no_mangle]
                     fn init() {
-                        let mut contract: Contract = casper_dao_utils::instance::Instanced::instance("contract");
+                        let mut contract: Contract = casper_dao_utils::Instanced::instance("contract");
                         #[allow(clippy::unnecessary_mut_passed)]
                         ContractTrait::init(&mut contract,);
                     }
@@ -130,7 +130,7 @@ mod tests {
                     #[no_mangle]
                     fn do_something() {
                         let amount = casper_dao_utils::casper_contract::contract_api::runtime::get_named_arg(stringify!(amount));
-                        let mut contract: Contract = casper_dao_utils::instance::Instanced::instance("contract");
+                        let mut contract: Contract = casper_dao_utils::Instanced::instance("contract");
                         #[allow(clippy::unnecessary_mut_passed)]
                         ContractTrait::do_something(&mut contract, amount,);
                     }

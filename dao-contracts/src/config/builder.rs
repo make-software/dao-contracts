@@ -15,16 +15,18 @@ use casper_types::{
 
 use crate::{
     config::{Configuration, DaoConfiguration, VotingConfiguration},
-    refs::ContractRefs,
     va_nft::VaNftContractInterface,
     variable_repository::VariableRepositoryContractInterface,
+    voting::refs::ContractRefs,
 };
 
+/// Utility to crate a [Configuration] instance.
 pub struct ConfigurationBuilder {
     configuration: Configuration,
 }
 
 impl ConfigurationBuilder {
+    /// Creates a new instance of ConfigurationBuilder.
     pub fn new<T: ContractRefs>(refs: &T) -> Self {
         let total_onboarded = refs.va_token().total_supply();
         let variables = refs.variable_repository().all_variables();
@@ -117,59 +119,63 @@ impl ConfigurationBuilder {
         }
     }
 
-    pub fn get_variable<T: FromBytes>(key: &str, variables: &BTreeMap<String, Bytes>) -> T {
-        let variable = variables.get(key);
-        let bytes = match variable {
-            None => revert(Error::ValueNotAvailable),
-            Some(bytes) => bytes,
-        };
-
-        let (result, bytes) = <T>::from_bytes(bytes).unwrap_or_else(|_| {
-            revert(Error::ValueNotAvailable);
-        });
-        if !bytes.is_empty() {
-            revert(Error::ValueNotAvailable)
-        }
-
-        result
-    }
-
+    /// Sets the `contract_calls` field with a vec with a single call.
     pub fn contract_call(self, contract_call: ContractCall) -> Self {
         self.contract_calls(vec![contract_call])
     }
 
+    /// Sets the `contract_calls` field.
     pub fn contract_calls(mut self, contract_calls: Vec<ContractCall>) -> Self {
-        self.configuration.voting_configuration.contract_calls = contract_calls;
+        self.configuration.set_contract_calls(contract_calls);
         self
     }
 
+    /// Sets the `only_va_can_create` field.
     pub fn only_va_can_create(mut self, only_va_can_create: bool) -> Self {
-        self.configuration.voting_configuration.only_va_can_create = only_va_can_create;
+        self.configuration.set_only_va_can_create(only_va_can_create);
         self
     }
 
+    /// Sets the `is_bid_escrow` field and inits the fiat rate.
     pub fn is_bid_escrow(mut self, is_bid_escrow: bool) -> ConfigurationBuilder {
         let rate: U512 = call_contract(
             self.configuration.fiat_conversion_rate_address(),
             "get_rate",
             RuntimeArgs::new(),
         );
-        self.configuration.fiat_rate = Some(rate);
-        self.configuration.voting_configuration.is_bid_escrow = is_bid_escrow;
+        self.configuration.set_fiat_rate(Some(rate));
+        self.configuration.set_is_bid_escrow(is_bid_escrow);
         self
     }
 
+    /// Sets the `unbound_ballot_address` field.
     pub fn bind_ballot_for_successful_voting(mut self, address: Address) -> ConfigurationBuilder {
         self.configuration
-            .voting_configuration
-            .bind_ballot_for_successful_voting = true;
+            .set_bind_ballot_for_successful_voting(true);
         self.configuration
-            .voting_configuration
-            .unbound_ballot_address = Some(address);
+            .set_unbound_ballot_address(Some(address));
         self
     }
 
+    /// Builds the final [Configuration].
     pub fn build(self) -> Configuration {
         self.configuration
+    }
+
+    fn get_variable<T: FromBytes>(key: &str, variables: &BTreeMap<String, Bytes>) -> T {
+        let variable = variables.get(key);
+        let bytes = match variable {
+            None => revert(Error::ValueNotAvailable),
+            Some(bytes) => bytes,
+        };
+    
+        let (result, bytes) = <T>::from_bytes(bytes).unwrap_or_else(|_| {
+            revert(Error::ValueNotAvailable);
+        });
+        if !bytes.is_empty() {
+            revert(Error::ValueNotAvailable)
+        }
+    
+        result
     }
 }
