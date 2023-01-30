@@ -12,8 +12,8 @@ use casper_types::U512;
 use super::types::{BidId, JobId, JobOfferId};
 use crate::{
     rules::{
+        validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred},
         RulesBuilder,
-        validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred}
     },
     voting::VotingId,
 };
@@ -21,7 +21,7 @@ use crate::{
 /// Serializable Job status.
 #[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum JobStatus {
-    /// Job 
+    /// Job
     Created,
     Cancelled,
     /// Job proof submitted.
@@ -114,11 +114,11 @@ pub struct Job {
 
 impl Job {
     /// Conditionally creates a new instance of Job.
-    /// 
+    ///
     /// Runs validation:
     /// * [`CanPickBid`]
     /// * [`DoesProposedPaymentMatchTransferred`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     pub fn new(request: &PickBidRequest) -> Self {
         RulesBuilder::new()
@@ -189,7 +189,7 @@ impl Job {
     }
 
     /// Verifies if the job can be canceled at a given time.
-    /// 
+    ///
     /// # Errors
     /// * [`Error::CannotCancelJob`]
     /// * [`Error::JobCannotBeYetCanceled`]
@@ -221,7 +221,7 @@ impl Job {
     }
 
     /// Sets a proof and updates the state to [`Submitted`](JobStatus::Submitted).
-    /// 
+    ///
     /// # Errors
     /// * [`Error::JobAlreadySubmitted`]
     pub fn submit_proof(&mut self, request: SubmitJobProofRequest) {
@@ -292,7 +292,7 @@ impl Job {
     pub fn is_unbound(&self) -> bool {
         self.worker_type() != &WorkerType::Internal
     }
-        
+
     /// Gets the job's stake.
     pub fn get_stake(&self) -> U512 {
         self.stake

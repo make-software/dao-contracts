@@ -12,17 +12,23 @@ use crate::{
         job_offer::{AuctionState, JobOfferStatus},
         types::{BidId, JobOfferId},
     },
-    rules::{RulesBuilder, validation::{IsUserKyced, bid_escrow::{
-        CanBeOnboarded,
-            CanBidBeCancelled,
-            CanBidOnAuctionState,
-            CanBidOnOwnJob,
-            CanPickBid,
-            DoesProposedPaymentExceedBudget,
-            HasPermissionsToCancelBid,
-            IsGracePeriod,
-            IsStakeNonZero,
-    }}},
+    rules::{
+        validation::{
+            bid_escrow::{
+                CanBeOnboarded,
+                CanBidBeCancelled,
+                CanBidOnAuctionState,
+                CanBidOnOwnJob,
+                CanPickBid,
+                DoesProposedPaymentExceedBudget,
+                HasPermissionsToCancelBid,
+                IsGracePeriod,
+                IsStakeNonZero,
+            },
+            IsUserKyced,
+        },
+        RulesBuilder,
+    },
 };
 
 /// Bid status representation
@@ -39,7 +45,6 @@ pub enum BidStatus {
     /// Cancel due eg. the `Job Poster` was slashed.
     Canceled,
 }
-
 
 /// Data required to create a Bid.
 pub struct SubmitBidRequest {
@@ -142,14 +147,14 @@ pub struct Bid {
 
 impl Bid {
     /// Conditionally creates a new instance of Bid.
-    /// 
+    ///
     /// Runs validation:
     /// * [`IsUserKyced`]
     /// * [`CanBidOnOwnJob`]
     /// * [`CanBeOnboarded`]
     /// * [`DoesProposedPaymentExceedBudget`]
     /// * [`CanBidOnAuctionState`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     #[allow(clippy::too_many_arguments)]
     pub fn new(request: SubmitBidRequest) -> Bid {
@@ -188,14 +193,14 @@ impl Bid {
 
     /// Conditionally changes the status to [Reclaimed](BidStatus::Reclaimed), creates a new bid
     /// with a new proposed timeframe.
-    /// 
+    ///
     /// Runs validation:
     /// * [`IsUserKyced`]
     /// * [`CanBidOnOwnJob`]
     /// * [`CanBeOnboarded`]
     /// * [`IsStakeNonZero`]
     /// * [`IsGracePeriod`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     pub fn reclaim(&mut self, request: &ReclaimBidRequest) -> Bid {
         RulesBuilder::new()
@@ -237,10 +242,10 @@ impl Bid {
     }
 
     /// Conditionally changes the status to [Picked](BidStatus::Picked).
-    /// 
+    ///
     /// Runs validation:
     /// * [`CanPickBid`]
-    /// 
+    ///
     /// Stops contract execution if the validation fails.
     pub fn picked(&mut self, request: &PickBidRequest) {
         RulesBuilder::new()
@@ -257,11 +262,11 @@ impl Bid {
     }
 
     /// Conditionally changes the status to [Canceled](BidStatus::Canceled).
-    /// 
+    ///
     /// Runs validation:
     /// * [`HasPermissionsToCancelBid`]
     /// * [`CanBidBeCancelled`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     pub fn cancel(&mut self, request: CancelBidRequest) {
         RulesBuilder::new()

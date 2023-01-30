@@ -12,8 +12,7 @@ pub use extensions::{BurnableERC721, MetadataERC721, MintableERC721};
 pub use receiver::tests::MockERC721NonReceiverTest;
 #[cfg(feature = "test-support")]
 pub use receiver::tests::MockERC721ReceiverTest;
-pub use receiver::tests::*;
-pub use receiver::IERC721Receiver;
+pub use receiver::{tests::*, IERC721Receiver};
 pub use types::*;
 
 pub use crate::core::ERC721Token;

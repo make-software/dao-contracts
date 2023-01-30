@@ -6,9 +6,12 @@ use casper_dao_utils::{
 };
 use casper_types::U512;
 
-use crate::{
-    rules::validation::bid_escrow::{ExistsOngoingVoting, IsNotVa},
-    rules::{RulesBuilder, validation::IsUserKyced},
+use crate::rules::{
+    validation::{
+        bid_escrow::{ExistsOngoingVoting, IsNotVa},
+        IsUserKyced,
+    },
+    RulesBuilder,
 };
 
 pub struct OnboardingRequest {

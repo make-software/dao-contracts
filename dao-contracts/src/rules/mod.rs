@@ -1,4 +1,4 @@
-//! Abstractions facilitating error handling. 
+//! Abstractions facilitating error handling.
 use casper_dao_utils::casper_env::revert;
 
 use crate::{
@@ -12,10 +12,10 @@ pub mod validation;
 pub use builder::RulesBuilder;
 
 /// A set of validation rules.
-/// 
+///
 /// If any rule fail, the current contract execution stops, and reverts
 /// if the error raised by the first falling rule.
-/// 
+///
 /// Rules related to voting must be given voting state.
 pub struct Rules {
     validations: Vec<Box<dyn Validation>>,

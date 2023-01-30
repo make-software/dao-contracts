@@ -76,7 +76,7 @@ fn generate_interface_methods(contract: &CasperContractItem) -> TokenStream {
                     #casper_args
                     let #mutability_token contract: #contract_ident = casper_dao_utils::Instanced::instance("contract");
                     let result = #contract_interface_ident::#ident(&#mutability_token contract, #punctuated_args);
-                    let result = casper_types::CLValue::from_t(result).unwrap_or_revert();
+                    let result = casper_types::CLValue::from_t(result).unwrap_or_revert_with(casper_dao_utils::Error::CLValueError);
                     casper_dao_utils::casper_contract::contract_api::runtime::ret(result);
                 }
             }

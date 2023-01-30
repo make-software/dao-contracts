@@ -31,8 +31,7 @@ pub fn deposit(cargo_purse: URef) -> U512 {
         revert(Error::CannotDepositZeroAmount);
     }
 
-    transfer_from_purse_to_purse(cargo_purse, main_purse, amount, None)
-        .unwrap_or_revert_with(Error::TransferError);
+    transfer_p2p(cargo_purse, main_purse, amount);
     amount
 }
 
@@ -50,4 +49,12 @@ pub fn withdraw(address: Address, amount: U512) {
         None,
     )
     .unwrap_or_revert_with(Error::TransferError);
+}
+
+/// Transfers all the funds from the given `from` purse to the `to` purse.
+///
+/// Reverts if the transfer from purse to purse fails.
+pub fn transfer_p2p(from: URef, to: URef, amount: U512) {
+    transfer_from_purse_to_purse(from, to, amount, None)
+        .unwrap_or_revert_with(Error::TransferError);
 }

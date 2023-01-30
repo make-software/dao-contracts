@@ -23,32 +23,32 @@
 //! # Bidding
 //! The `Bidding` process allows `Workers` to post [`Bids`](crate::bid_escrow::bid::Bid) with the offer of completing a job.
 //! It is divided into two main parts.
-//! 
+//!
 //! ### Internal Auction
-//! During this part of the Bidding process only the `VAs` can bid. As the `VAs` have `Reputation`, they are bidding using 
+//! During this part of the Bidding process only the `VAs` can bid. As the `VAs` have `Reputation`, they are bidding using
 //! [`Reputation`] as a stake. The `Bid` query to the contract consists of:
 //! * Proposed timeframe for completing the `Job`.
 //! * Proposed payment for the `Job`.
 //! * The amount of `Reputation` the `Internal Worker` stakes on this `Job`.
-//! 
+//!
 //! The Bid is then added to a list of available bids in the contract storage and is available for picking by the `Job Poster`.
-//! The time of an `Internal Auction` is defined in a [`Governance Variable`] `InternalAuctionTime`. 
-//! The bidding process can already be completed here, if the `JobPoster` decides to chose one of the posted Bids before `Internal Auction` ends. 
+//! The time of an `Internal Auction` is defined in a [`Governance Variable`] `InternalAuctionTime`.
+//! The bidding process can already be completed here, if the `JobPoster` decides to chose one of the posted Bids before `Internal Auction` ends.
 //! However, if no `Bid` is picked during this time, the process becomes a `Public Auction`.
-//! 
+//!
 //! ### Public Auction
-//! If no `Internal Worker` decides to post a `Bid` on a `Job Offer`, or the `Job Poster` did not pick any bid during `Internal Auction`, 
-//! the `External Workers` have a chance of submitting their bids during `Public Auction` time. As `External Workers` do not have any 
+//! If no `Internal Worker` decides to post a `Bid` on a `Job Offer`, or the `Job Poster` did not pick any bid during `Internal Auction`,
+//! the `External Workers` have a chance of submitting their bids during `Public Auction` time. As `External Workers` do not have any
 //! `Reputation` to stake, they are staking `CSPR`.
-//! 
+//!
 //! A query to the contract in case of `External Workers` consists of:
 //! * Proposed timeframe for completing the `Job`.
 //! * Proposed payment for the `Job`.
 //! * Decision if the `Worker` wants to become a `Voting Associate` if the `Job` is completed.
 //! * `CSPR` stake sent alongside the query
-//! `Internal Workers` by default cannot to submit their bids during `Public Auction`, however this behavior is configurable using 
+//! `Internal Workers` by default cannot to submit their bids during `Public Auction`, however this behavior is configurable using
 //! `VACanBidOnPublicAuction` [`Governance Variable`].
-//! 
+//!
 //! The time of a `Public Auction` is defined in a [`Governance Variable`] `PublicAuctionTime`.
 //!
 //! # Picking a Bid
@@ -60,8 +60,8 @@
 //! Now the `Worker` has the time to complete the `Job` and submit its proof to the contract.
 //! After the works have been completed, the `Worker` sends a query to the contract containing
 //! the cryptographic hash of a document being a proof of `Work` done for a `Job Poster`.
-//! 
-//! When no `Bid` is posted or selected by the `Job Poster` during both auctions, the `Job` is cancelled, 
+//!
+//! When no `Bid` is posted or selected by the `Job Poster` during both auctions, the `Job` is cancelled,
 //! `DOS Fee` is returned to the `Job Poster` and stakes sent by the `Bidders` are returned to them.
 //!
 //! # Voting
@@ -74,25 +74,25 @@
 //! * The `External Worker` becomes VA.
 //! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
 //! * Reputation of the voters who voted `yes` is returned to them.
-//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of
 //! reputation staked in the voting.
 //! * Reputation minted for the `External Worker` and used in the voting process is burned.
-//! 
+//!
 //! ### Internal Worker
 //! * Reputation of the voters who voted `yes` is returned to them.
-//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of
 //! reputation staked in the voting.
-//! 
+//!
 //! ### External Worker
 //! * The `CSPR` that were sent by the `External Worker` as a stake is returned to the `External Worker`.
 //! * Reputation minted for the `External Worker` and used in the voting process is burned.
 //! * Reputation of the voters who voted `yes` is returned to them, except for the Reputation minted for the Worker using `CSPR` stake.
-//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of 
+//! * Reputation of the voters who voted `no` is redistributed between the voters who voted `yes` proportional to the amount of
 //! reputation staked in the voting (External Worker does not receive Reputation in this step).
-//! 
+//!
 //! ### Payment CSPR Redistribution
-//! Reputation used for the Voting and minted after a successful `Job` has been redistributed during the above process, 
-//! but there is `CSPR` to redistribute that was allocated to the `Job`. How much resources is redistributed and to whom 
+//! Reputation used for the Voting and minted after a successful `Job` has been redistributed during the above process,
+//! but there is `CSPR` to redistribute that was allocated to the `Job`. How much resources is redistributed and to whom
 //! depends on the type of `Worker` and whether it wanted to become a `VA`.
 //!
 //! ### Payment pool
@@ -104,22 +104,22 @@
 //!
 //! ### Internal Worker
 //! Firstly the Governance Payment is calculated using a formula:
-//! 
-//! `governance payment = payment pool * BidEscrowPaymentRatio` [Read more](crate::variable_repository#available-keys). 
 //!
-//! The `Governance Payment` is then transferred to a multisig wallet, which address is held in the [`Variable Repository Contract`] 
+//! `governance payment = payment pool * BidEscrowPaymentRatio` [Read more](crate::variable_repository#available-keys).
+//!
+//! The `Governance Payment` is then transferred to a multisig wallet, which address is held in the [`Variable Repository Contract`]
 //! called [`BidEscrowWalletAddress`](crate::variable_repository#available-keys).
 //! The rest of the payment is redistributed between all of the `VAs'`.
-//! 
+//!
 //! `remaining amount = payment pool - governance payment`
-//! 
+//!
 //! ### External Worker
 //! If the `Job` was done by an `External Worker` who didn’t want to become a `VA`, the first step is the same
-//! as in the case of `Internal Worker` - Governance Payment is being made. However the rest is then divided between 
+//! as in the case of `Internal Worker` - Governance Payment is being made. However the rest is then divided between
 //! the `External Worker` and the `VAs’`.
 //!
 //! Firstly to get the amount that VA’s receive we use a formula:
-//! 
+//!
 //! `VA payment amount = remaining amount * DefaultPolicingRate` [Read more](crate::variable_repository#available-keys)
 //!
 //! Then, the rest is transferred to the `External Worker`:
@@ -135,21 +135,21 @@
 //! * The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s.
 //! * The Reputation minted for the `External Worker` using `CSPR` stake is burned.
 //! * Reputation of the voters who voted `no` is returned to them.
-//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
+//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of
 //! reputation staked in the voting.
-//! 
+//!
 //! ### Internal Worker
 //! * Reputation of the voters who voted `no` is returned to them.
-//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
+//! * Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of
 //! reputation staked in the voting.
-//! 
+//!
 //! ### External Worker
 //! The `CSPR` that were sent by the `External Worker` as a stake is redistributed between the `VA`’s.
 //! The Reputation minted for the `External Worker` using `CSPR` stake is burned.
 //! Reputation of the voters who voted `no` is returned to them.
-//! Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of 
+//! Reputation of the voters who voted `yes` is redistributed between the voters who voted `no` proportional to the amount of
 //! reputation staked in the voting.
-//! 
+//!
 //! ### CSPR
 //! If the `Voting` fails, the `CSPR` sent to the contract as a payment for `Job` is returned to the `Job Poster`. If the work
 //! has been attempted to do by an `External Worker` the `CSPR` that the `Worker` staked during the `Bid` process
@@ -165,7 +165,7 @@
 //!
 //! # Returning DOS Fee
 //! The final step of the process is returning the `CSPR` `DOS Fee` to the `Job Poster`.
-//! 
+//!
 //! # Grace Period
 //! However, if `External Worker` do not post a `Job Proof` in time, his `CSPR` stake is redistributed
 //! between all `VA’s`.
@@ -179,7 +179,7 @@
 //! If nobody submits the `Job Proof` during the grace period, the whole process ends.
 //! The `CSPR` paid by the `Job Poster` is returned along with the `DOS Fee`.
 //! This is a special implementation of [positional parameters].
-//! 
+//!
 //! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [`Slashing Voter`]: crate::slashing_voter
@@ -216,7 +216,8 @@ use crate::{
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        VotingId, VotingEngine,
+        VotingEngine,
+        VotingId,
     },
 };
 
@@ -256,7 +257,7 @@ pub trait BidEscrowContractInterface {
     );
 
     /// Job Poster post a new Job Offer.
-    /// 
+    ///
     /// # Parameters:
     /// * expected_timeframe - Expected timeframe for completing a Job
     /// * budget - Maximum budget for a Job
@@ -266,7 +267,7 @@ pub trait BidEscrowContractInterface {
     /// * [`JobOfferCreated`](crate::bid_escrow::events::JobOfferCreated)
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
     /// Worker submits a [Bid] for a [Job].
-    /// 
+    ///
     /// # Parameters:
     /// * time - proposed timeframe for completing a Job
     /// * payment - proposed payment for a Job
@@ -287,9 +288,9 @@ pub trait BidEscrowContractInterface {
         purse: Option<URef>,
     );
     /// Worker cancels a [Bid] for a [Job].
-    /// 
+    ///
     /// Bid can be cancelled only after VABidAcceptanceTimeout time has passed after submitting a Bid.
-    /// 
+    ///
     /// # Parameters:
     /// * bid_id - Bid Id
     fn cancel_bid(&mut self, bid_id: BidId);
@@ -309,7 +310,7 @@ pub trait BidEscrowContractInterface {
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef);
     /// Submits a job proof. This is called by a `Worker` or any KYC'd user during Grace Period.
     /// This starts a new voting over the result.
-    /// 
+    ///
     /// # Events
     /// * [`JobSubmitted`](crate::bid_escrow::events::JobSubmitted)
     ///
@@ -317,7 +318,7 @@ pub trait BidEscrowContractInterface {
     /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted.
     /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
     /// job submission is not met.
-    fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash); 
+    fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash);
     /// Updates the old [`Bid`] and [`Job`], the job is assigned to a new `Worker`. The rest goes the same
     /// as regular proof submission. See [submit_job_proof()][Self::submit_job_proof].
     /// The old `Worker` who didn't submit the proof in time, is getting slashed.
@@ -330,7 +331,7 @@ pub trait BidEscrowContractInterface {
         purse: Option<URef>,
     );
     /// Casts a vote over a job.
-    /// 
+    ///
     /// # Events
     /// * [`BallotCast`](crate::voting::events::BallotCast)
     /// # Errors
@@ -346,7 +347,7 @@ pub trait BidEscrowContractInterface {
     fn get_job_offer(&self, job_offer_id: JobOfferId) -> Option<JobOffer>;
     /// Returns a Bid with given [BidId].
     fn get_bid(&self, bid_id: BidId) -> Option<Bid>;
-     /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
     /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
@@ -377,20 +378,20 @@ pub trait BidEscrowContractInterface {
     /// Terminates the Voting process and slashes the `Worker`. [`Read more`](JobEngine::cancel_job()).
     fn cancel_job(&mut self, job_id: JobId);
     /// Invalidates all the active [JobOffer]s, returns `DOS Fee`s to the `Job Poster`s, returns funds to `Bidders`.
-    /// 
+    ///
     /// Only a whitelisted account is permitted to call this method.
     /// Interacts with [Reputation Token Contract](crate::reputation::ReputationContractInterface).
-    /// 
+    ///
     /// # Errors
     /// * [Error::BidNotFound]
     /// * [Error::JobOfferNotFound]
     /// * [Error::CannotCancelBidOnCompletedJobOffer]
     fn slash_all_active_job_offers(&mut self, bidder: Address);
     /// Updates the [Bid] status and returns locked reputation to the Bidder.
-    /// 
+    ///
     /// Only a whitelisted account is permitted to call this method.
     /// Interacts with [Reputation Token Contract](crate::reputation::ReputationContractInterface).
-    /// 
+    ///
     /// # Errors
     /// * [Error::BidNotFound]
     /// * [Error::JobOfferNotFound]

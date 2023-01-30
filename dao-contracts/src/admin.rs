@@ -27,8 +27,8 @@ use delegate::delegate;
 use crate::{
     config::ConfigurationBuilder,
     voting::{
-        refs::ContractRefsStorage,
         events::VotingCreatedInfo,
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
@@ -59,7 +59,7 @@ pub trait AdminContractInterface {
     /// * `contract_to_update` is an [Address] of a contract that will be updated,
     /// * `action` is an [Action] that will be performed on given contract,
     /// * `address` is a parameter for given action - the [Address] which permissions will be changed.
-    /// 
+    ///
     /// # Events
     /// * [`AdminVotingCreated`]
     fn create_voting(

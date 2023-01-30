@@ -132,7 +132,8 @@ impl ConfigurationBuilder {
 
     /// Sets the `only_va_can_create` field.
     pub fn only_va_can_create(mut self, only_va_can_create: bool) -> Self {
-        self.configuration.set_only_va_can_create(only_va_can_create);
+        self.configuration
+            .set_only_va_can_create(only_va_can_create);
         self
     }
 
@@ -152,8 +153,7 @@ impl ConfigurationBuilder {
     pub fn bind_ballot_for_successful_voting(mut self, address: Address) -> ConfigurationBuilder {
         self.configuration
             .set_bind_ballot_for_successful_voting(true);
-        self.configuration
-            .set_unbound_ballot_address(Some(address));
+        self.configuration.set_unbound_ballot_address(Some(address));
         self
     }
 
@@ -168,14 +168,14 @@ impl ConfigurationBuilder {
             None => revert(Error::ValueNotAvailable),
             Some(bytes) => bytes,
         };
-    
+
         let (result, bytes) = <T>::from_bytes(bytes).unwrap_or_else(|_| {
             revert(Error::ValueNotAvailable);
         });
         if !bytes.is_empty() {
             revert(Error::ValueNotAvailable)
         }
-    
+
         result
     }
 }

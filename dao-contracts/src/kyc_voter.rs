@@ -11,7 +11,7 @@
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`]. There can be only one active voting for a given subject address.
 //! An address that is already KYC'd cannot be the subject of voting.
-//! 
+//!
 //! [`VotingEngine`]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
@@ -31,13 +31,14 @@ use delegate::delegate;
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsWithKycStorage,
         submodules::KycInfo,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -73,7 +74,7 @@ pub trait KycVoterContractInterface {
     /// * `subject_address` - [address](Address) of a user to be verified,
     /// * `document_hash` - a hash of a document that verifies the user. The hash is used as an id of a freshly minted kyc token,
     /// * `subject_address` - an [Address] to be on/offboarded.
-    /// 
+    ///
     /// # Events
     /// * [`KycVotingCreated`]
     fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U512);
@@ -82,7 +83,7 @@ pub trait KycVoterContractInterface {
     /// Finishes voting. Depending on type of voting, different actions are performed.
     /// [Read more](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-     /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
     /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;

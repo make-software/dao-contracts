@@ -7,7 +7,7 @@ use casper_types::{
 };
 
 use super::mapping::IndexedMapping;
-use crate::{consts, Instanced, Variable};
+use crate::{consts, Error, Instanced, Variable};
 
 /// Data structure for storing indexed values.
 ///
@@ -30,7 +30,7 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
 
     /// Tries to delete the given `item`. If succeeds, returns true, otherwise, returns false.
     ///
-    /// Reindexes collection after successful removal.  
+    /// Reindexes collection after successful removal.
     pub fn delete(&mut self, item: T) -> bool {
         let length = self.size();
         let (is_deleted, item_index) = self.values.remove(item);
@@ -57,7 +57,8 @@ impl<T: ToBytes + FromBytes + CLTyped + PartialEq + Debug + Hash> OrderedCollect
 
     fn move_item(&mut self, from: u32, to: u32) {
         let value = self.values.get(from);
-        self.values.set(to, value.unwrap_or_revert());
+        self.values
+            .set(to, value.unwrap_or_revert_with(Error::StorageError));
         self.values.unset(from);
     }
 

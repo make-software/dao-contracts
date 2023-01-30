@@ -1,5 +1,5 @@
 //! Contains CSPR Rate Provider Contract definition and related abstractions.
-//! 
+//!
 //! TODO: short desc
 use casper_dao_modules::Owner;
 use casper_dao_utils::{
@@ -13,7 +13,7 @@ use casper_types::U512;
 #[casper_contract_interface]
 pub trait CSPRRateProviderContractInterface {
     ///  Contract constructor.
-    /// 
+    ///
     ///  * sets the initial CSPR:Fiat rate.
     ///  * sets the deployer as the owner.
     ///

@@ -22,7 +22,8 @@ use crate::{
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
-        redistribute_cspr_to_all_vas, redistribute_to_governance,
+        redistribute_cspr_to_all_vas,
+        redistribute_to_governance,
         refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingType},
@@ -54,14 +55,14 @@ impl JobEngine {
         to self.job_storage {
             /// Returns the total number of jobs.
             pub fn jobs_count(&self) -> u32;
-            /// Gets the [job](crate::bid_escrow::job::Job) with a given id or `None`. 
+            /// Gets the [job](crate::bid_escrow::job::Job) with a given id or `None`.
             pub fn get_job(&self, job_id: JobId) -> Option<Job>;
         }
     }
 
     /// Validates the correctness of proof submission.
     /// If the submission is correct, the [`Job Storage`](JobStorage) is updated, the Voting process starts.
-    /// 
+    ///
     /// # Errors
     /// If a proof has been submitted before, reverts with [`Error::JobAlreadySubmitted`].
     pub fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash) {
@@ -111,8 +112,8 @@ impl JobEngine {
     /// Updates the old [Bid] and [Job], the job is assigned to a new `Worker`. The rest goes the same
     /// as regular proof submission. See [submit_job_proof()][Self::submit_job_proof].
     /// The old `Worker` who didn't submit the proof in time, is getting slashed.
-    /// 
-    /// See the Grace Period section in the module [description](crate::bid_escrow). 
+    ///
+    /// See the Grace Period section in the module [description](crate::bid_escrow).
     pub fn submit_job_proof_during_grace_period(
         &mut self,
         job_id: JobId,
@@ -195,12 +196,11 @@ impl JobEngine {
         self.submit_job_proof(new_job_id, proof);
     }
 
-
     /// Terminates the Voting process and slashes the `Worker`.
-    /// 
+    ///
     /// * the bid stake is redistributed along the VAs' and the multisig wallet.
     /// * `DOS Fee` is returned to the `Job Poster`.
-    /// 
+    ///
     /// # Error
     /// If the state in which the process cannot be canceled, the execution reverts with
     /// [Error::CannotCancelJob] or [Error::JobCannotBeYetCanceled].
@@ -215,7 +215,10 @@ impl JobEngine {
 
         self.return_job_poster_payment_and_dos_fee(&job);
 
-        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+        let bid = self
+            .bid_storage
+            .get_bid(job.bid_id())
+            .unwrap_or_revert_with(Error::BidNotFound);
 
         // redistribute cspr stake
         if let Some(cspr_stake) = bid.cspr_stake {
@@ -235,9 +238,8 @@ impl JobEngine {
         self.job_storage.store_job(job);
     }
 
-
     /// Records vote in [Voting](crate::voting::voting_state_machine::VotingStateMachine).
-    /// 
+    ///
     /// # Error
     /// * [`Error::CannotVoteOnOwnJob`].
     pub fn vote(
@@ -258,7 +260,7 @@ impl JobEngine {
     }
 
     /// Ends the current voting phase and redistributes funds.
-    /// 
+    ///
     /// Interacts with [`Reputation Token Contract`](crate::reputation::ReputationContractInterface) to
     /// redistribute reputation.
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
@@ -269,7 +271,10 @@ impl JobEngine {
             VotingType::Informal => match voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against => {
                     if !job_offer.configuration.informal_stake_reputation() {
-                        let bid = self.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        let bid = self
+                            .bid_storage
+                            .get_bid(job.bid_id())
+                            .unwrap_or_revert_with(Error::BidNotFound);
                         self.refs
                             .reputation_token()
                             .unstake_bid(bid.borrow().into());
@@ -422,8 +427,11 @@ impl JobEngine {
     fn mint_reputation_for_voters(&mut self, job: &Job, amount: U512) {
         let voting = self
             .voting_engine
-            .get_voting(job.voting_id().unwrap_or_revert())
-            .unwrap_or_revert();
+            .get_voting(
+                job.voting_id()
+                    .unwrap_or_revert_with(Error::VotingIdNotFound),
+            )
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
         for i in 0..self
             .voting_engine

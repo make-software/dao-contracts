@@ -21,7 +21,7 @@
 //!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
-//! 
+//!
 //! [`Bid Escrow Contract`]: crate::bid_escrow::BidEscrowContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [submission process]: crate::bid_escrow#submitting-a-job-proof
@@ -38,12 +38,13 @@ use casper_types::{URef, U512};
 use delegate::delegate;
 
 use crate::voting::{
+    events::VotingCreatedInfo,
     refs::ContractRefsWithKycStorage,
     voting_state_machine::{VotingStateMachine, VotingType},
     Ballot,
     Choice,
     VotingEngine,
-    VotingId, events::VotingCreatedInfo,
+    VotingId,
 };
 
 pub mod request;
@@ -71,7 +72,7 @@ pub trait OnboardingRequestContractInterface {
         va_token: Address,
     );
     /// Submits an onboarding request. If the request is valid voting starts.
-    /// 
+    ///
     /// # Events
     /// * [`OnboardingVotingCreated`]
     fn create_voting(&mut self, reason: DocumentHash, purse: URef);

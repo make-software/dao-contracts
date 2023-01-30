@@ -9,15 +9,20 @@ use casper_dao_utils::{
 use casper_types::U512;
 
 use crate::{
-    bid_escrow::{
-        job::PickBidRequest,
-        types::JobOfferId,
-    },
+    bid_escrow::{job::PickBidRequest, types::JobOfferId},
     config::Configuration,
-    rules::{RulesBuilder, validation::{IsUserKyced, bid_escrow::{CanJobOfferBeCancelled,
-        CanProgressJobOffer,
-        HasPermissionsToCancelJobOffer,
-        IsDosFeeEnough,}}},
+    rules::{
+        validation::{
+            bid_escrow::{
+                CanJobOfferBeCancelled,
+                CanProgressJobOffer,
+                HasPermissionsToCancelJobOffer,
+                IsDosFeeEnough,
+            },
+            IsUserKyced,
+        },
+        RulesBuilder,
+    },
 };
 
 /// Serializable JobOffer status representation.
@@ -93,7 +98,7 @@ pub struct JobOffer {
 
 impl JobOffer {
     /// Conditionally creates a new instance of JobOffer.
-    /// 
+    ///
     /// Runs validation:
     /// * [`IsUserKyced`]
     /// * [`IsDosFeeEnough`]
@@ -121,10 +126,10 @@ impl JobOffer {
     }
 
     /// Conditionally changes the status to [InProgress](JobOfferStatus::InProgress).
-    /// 
+    ///
     /// Runs validation:
     /// * [`CanProgressJobOffer`]
-    /// 
+    ///
     /// Stops contract execution if the validation fails.
     pub fn in_progress(&mut self, request: &PickBidRequest) {
         RulesBuilder::new()
@@ -136,11 +141,11 @@ impl JobOffer {
     }
 
     /// Conditionally changes the status to [Cancelled](JobOfferStatus::Cancelled).
-    /// 
+    ///
     /// Runs validation:
     /// * [`HasPermissionsToCancelJobOffer`]
     /// * [`CanJobOfferBeCancelled`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     pub fn cancel(&mut self, request: &CancelJobOfferRequest) {
         RulesBuilder::new()

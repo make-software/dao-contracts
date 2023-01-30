@@ -9,7 +9,10 @@ use casper_types::U512;
 
 use crate::{
     config::Configuration,
-    rules::{RulesBuilder, validation::voting::{AfterFormalVoting, VotingNotCompleted, VoteInTime}},
+    rules::{
+        validation::voting::{AfterFormalVoting, VoteInTime, VotingNotCompleted},
+        RulesBuilder,
+    },
     voting::{ballot::Choice, types::VotingId},
 };
 
@@ -125,7 +128,7 @@ pub struct Stats {
 }
 
 /// Serializable voting state with a state machine capabilities.
-/// 
+///
 /// Stores voting metadata, the configuration and the voting progress (stakes).
 #[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
 pub struct VotingStateMachine {
@@ -172,7 +175,7 @@ impl VotingStateMachine {
     pub fn finish(&mut self) {
         self.state = VotingState::Finished;
     }
-    
+
     /// Ends the voting process forcefully and cancels the result.
     pub fn cancel(&mut self) {
         self.state = VotingState::Canceled;
@@ -208,13 +211,13 @@ impl VotingStateMachine {
     pub fn informal_voting_end_time(&self) -> BlockTime {
         self.informal_voting_start_time() + self.configuration.informal_voting_time()
     }
-    
+
     /// Gets the informal-formal break end time.
     pub fn time_between_votings_end_time(&self) -> BlockTime {
         self.informal_voting_end_time()
-        + self.configuration.time_between_informal_and_formal_voting()
+            + self.configuration.time_between_informal_and_formal_voting()
     }
-    
+
     /// Gets the informal phase end time.
     pub fn formal_voting_end_time(&self) -> BlockTime {
         self.time_between_votings_end_time() + self.configuration.formal_voting_time()
@@ -393,7 +396,7 @@ impl VotingStateMachine {
         &self.state
     }
 
-    /// Indicates if Voting is finished or canceled. 
+    /// Indicates if Voting is finished or canceled.
     pub fn completed(&self) -> bool {
         self.state() == &VotingState::Finished || self.state() == &VotingState::Canceled
     }
@@ -468,7 +471,7 @@ impl VotingStateMachine {
 
 impl VotingStateMachine {
     /// Verifies if a ballot can be casted.
-    /// 
+    ///
     /// Stops contract execution if validation fails. See [`VoteInTime`].
     pub fn guard_vote(&self, block_time: BlockTime) {
         RulesBuilder::new()
@@ -478,7 +481,7 @@ impl VotingStateMachine {
     }
 
     /// Verifies if the formal voting can be finished.
-    /// 
+    ///
     /// Stops contract execution if validation fails. See [`AfterFormalVoting`] and [`VotingNotCompleted`].
     pub fn guard_finish_formal_voting(&self, block_time: BlockTime) {
         RulesBuilder::new()

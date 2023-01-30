@@ -27,12 +27,13 @@ use delegate::delegate;
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -100,7 +101,7 @@ pub trait ReputationVoterContractInterface {
     /// * `action` - action to perform (burn/mint),
     /// * `amount` - how many tokens to burn/mint,
     /// * `document_hash` - hash of the document explaining an action.
-    /// 
+    ///
     /// # Events
     /// * [`ReputationVotingCreated`]
     fn create_voting(
@@ -116,7 +117,7 @@ pub trait ReputationVoterContractInterface {
     /// Finishes voting. Depending on type of voting, different actions are performed.
     /// [Read more](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-     /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     fn variable_repository_address(&self) -> Address;
     /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;

@@ -8,7 +8,7 @@
 //! Minting token is usually done as a result of [`KYC Voting`].
 //!
 //! Each [`Address`] can own only one KYC token.
-//! 
+//!
 //! [`KYC Voting`]: crate::kyc_voter::KycVoterContractInterface
 use casper_dao_erc721::{
     BurnableERC721,

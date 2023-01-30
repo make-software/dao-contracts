@@ -1,21 +1,21 @@
 //! Contains Slashing Voter Contract definition and related abstractions.
-//! 
+//!
 //! # Definitions
 //! * Job Offer - A description of a Job posted by JobPoster
 //! * Bid - on offer that can be accepted by the Job Poster
 //! * JobPoster - user of the system that posts a Job Offer; it has to be KYC’d
 //! * Worker - the user who does a job
 //! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote
-//! 
+//!
 //! # Automated Reputation slashing
-//! It is a process of automated burning certain amount of `Reputation` of the `VA`. The amount of `Reputation` to burn 
+//! It is a process of automated burning certain amount of `Reputation` of the `VA`. The amount of `Reputation` to burn
 //! is calculated using a formula:
-//! 
+//!
 //! `reputation to burn = worker's total reputation * DefaultReputationSlash`
-//! 
-//! If the `Worker` has `Reputation` staked in other parts of the system, we burn it as soon as it is released, 
+//!
+//! If the `Worker` has `Reputation` staked in other parts of the system, we burn it as soon as it is released,
 //! until the required amount is burned.
-//! 
+//!
 //! If the range of [`DefaultReputationSlash`] is [0.01..0.99] tokens burnt is the only side effect but
 //! the value of `1.0` brings additional consequences:
 //!  
@@ -25,10 +25,10 @@
 //! * remove all the votes from all active `Voting`,
 //! * remove all the `Bids` from all auctions,
 //! * remove [`VA Token`].
-//! 
+//!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`]. The subject of voting cannot participate in the process.
-//! 
+//!
 //! [`DefaultReputationSlash`]: crate::variable_repository
 //! [`VA Token`]: crate::va_nft
 use casper_dao_modules::AccessControl;
@@ -51,12 +51,13 @@ use crate::{
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        events::VotingCreatedInfo,
         refs::{ContractRefs, ContractRefsStorage},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -74,7 +75,7 @@ pub trait SlashingVoterContractInterface {
     /// # Events
     /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
-    /// 
+    ///
     /// [`Variable Repository`]: crate::variable_repository::VariableRepositoryContract
     /// [`Reputation Token`]: crate::reputation::ReputationContract
     /// [`VA Token`]: crate::va_nft::VaNftContract
@@ -84,8 +85,8 @@ pub trait SlashingVoterContractInterface {
     /// # Arguments
     /// * `address_to_slash` - the [Address] of an account the be slashed,
     /// * `slash_ratio` - the percentage of tokens to slash, if the ratio == 1000, full slashing
-    /// is performed. 
-    /// 
+    /// is performed.
+    ///
     /// # Events
     /// [`SlashingVotingCreated`]
     fn create_voting(&mut self, address_to_slash: Address, slash_ratio: u32, stake: U512);

@@ -15,7 +15,10 @@ pub struct VotingConfiguration {
 }
 
 impl VotingConfiguration {
-    pub fn set_bind_ballot_for_successful_voting(&mut self, bind_ballot_for_successful_voting: bool) {
+    pub fn set_bind_ballot_for_successful_voting(
+        &mut self,
+        bind_ballot_for_successful_voting: bool,
+    ) {
         self.bind_ballot_for_successful_voting = bind_ballot_for_successful_voting;
     }
 

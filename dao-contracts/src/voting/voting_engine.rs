@@ -1,5 +1,5 @@
 //! Governance Voting module.
-//! 
+//!
 use std::collections::BTreeMap;
 
 use casper_dao_utils::{
@@ -19,8 +19,8 @@ use self::{
 };
 use super::{
     ballot::Choice,
-    ids,
     events::{BallotCanceled, Reason, VotingCanceled, VotingEnded},
+    ids,
     refs::{ContractRefs, ContractRefsStorage},
     types::VotingId,
     Ballot,
@@ -29,16 +29,15 @@ use super::{
 use crate::{
     config::Configuration,
     reputation::ReputationContractInterface,
-    rules::RulesBuilder,
+    rules::{validation::voting::CanCreateVoting, RulesBuilder},
     va_nft::VaNftContractInterface,
-    rules::validation::voting::CanCreateVoting,
 };
 
 pub mod events;
 pub mod voting_state_machine;
 
-/// Governance voting is a struct that contracts can use to implement voting. 
-/// 
+/// Governance voting is a struct that contracts can use to implement voting.
+///
 /// It consists of two phases:
 /// 1. Informal voting
 /// 2. Formal voting
@@ -67,15 +66,15 @@ impl VotingEngine {
     /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed when formal voting passes.
     ///
     /// It collects configuration from [Variable Repo] and persists it, so they won't change during the voting process.
-    /// 
-    /// Interacts with [Dao Ids Contract] to generate voting id. 
-    /// 
+    ///
+    /// Interacts with [Dao Ids Contract] to generate voting id.
+    ///
     /// Depending on the configuration may [`cast`] the first vote.
     ///
     /// # Errors
     /// * [`Error::NotEnoughReputation`] when the creator does not have enough reputation to create a voting.
     /// * [`Error::NotOnboarded`] if the configuration requires the creator to be a VA but is not.
-    /// 
+    ///
     /// [Voting]: VotingStateMachine
     /// [Variable Repo]: crate::variable_repository::VariableRepositoryContract
     /// [`Error::NotOnboarded`]: casper_dao_utils::Error::NotOnboarded
@@ -131,7 +130,7 @@ impl VotingEngine {
     /// For informal voting a new formal voting can be created. Reputation staked for this voting is returned to the voters,
     /// except for the creator. When voting passes, it is used as a stake for a new voting, otherwise it is burned.
     ///
-    /// For formal voting an action will be performed if the result is `in favor`. Reputation is redistributed to the winning voters. 
+    /// For formal voting an action will be performed if the result is `in favor`. Reputation is redistributed to the winning voters.
     /// When no quorum is reached, the reputation is returned, except for the creator - its reputation is then burned.
     ///
     /// # Events
@@ -242,7 +241,7 @@ impl VotingEngine {
     }
 
     /// Marks voting finished but do nothing with the staked reputation.
-    /// 
+    ///
     /// # Errors
     /// * [`Error::VotingDoesNotExist`] - voting with the given id does not exists.
     /// * [`Error::FinishingCompletedVotingNotAllowed`] - voting is finished already.
@@ -360,14 +359,14 @@ impl VotingEngine {
     }
 
     /// Records voter's vote.
-    /// 
+    ///
     /// Writes into the storage the vote details and stakes reputation (for a bound ballot).
-    /// 
+    ///
     /// Calls [Reputation Token Contract] to stake reputation.
-    /// 
+    ///
     /// # Events
     /// * [`BallotCast`] event.
-    /// 
+    ///
     /// [Reputation Token Contract]: crate::reputation::ReputationContractInterface
     pub fn cast_ballot(
         &mut self,
@@ -454,7 +453,7 @@ impl VotingEngine {
     }
 
     /// Gets voting with a given id or stops contract execution.
-    /// 
+    ///
     /// # Errors
     /// * [Error::VotingDoesNotExist] if the given id does not exist.
     pub fn get_voting_or_revert(&self, voting_id: VotingId) -> VotingStateMachine {
@@ -475,7 +474,7 @@ impl VotingEngine {
     }
 
     /// Iterates over all the ballots and unstakes reputation. Returns a map of address to it's stake.
-    /// 
+    ///
     /// Calls [Reputation Token Contract](crate::reputation::ReputationContractInterface) to perform unstake operation.
     pub fn unstake_all_reputation(
         &mut self,
@@ -498,10 +497,7 @@ impl VotingEngine {
         transfers
     }
 
-    fn recast_creators_ballot_from_informal_to_formal(
-        &mut self,
-        voting: &mut VotingStateMachine,
-    ) {
+    fn recast_creators_ballot_from_informal_to_formal(&mut self, voting: &mut VotingStateMachine) {
         let voting_id = voting.voting_id();
         let creator = voting.creator();
         let creator_ballot = self
@@ -661,7 +657,7 @@ impl VotingEngine {
             .set(&(voting.voting_id(), voting_type, address), ballot);
     }
 
-    /// Checks if voting with the given id and type exists. 
+    /// Checks if voting with the given id and type exists.
     pub fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool {
         let voting = self.get_voting(voting_id);
         match voting {
@@ -671,7 +667,7 @@ impl VotingEngine {
     }
 
     /// Erases a voter from a given voting.
-    /// 
+    ///
     /// If the voter is also the creator, voting is canceled.
     /// Otherwise, only his vote is invalidated.
     pub fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {

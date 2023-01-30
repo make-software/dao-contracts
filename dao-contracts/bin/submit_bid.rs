@@ -1,13 +1,11 @@
 use casper_dao_contracts::bid_escrow::{BidEscrowContractCaller, BidEscrowContractInterface};
 use casper_dao_utils::{
-    casper_contract::{
-        contract_api::{
-            account::get_main_purse,
-            runtime::get_named_arg,
-            system::{create_purse, transfer_from_purse_to_purse},
-        },
-        unwrap_or_revert::UnwrapOrRevert,
+    casper_contract::contract_api::{
+        account::get_main_purse,
+        runtime::get_named_arg,
+        system::create_purse,
     },
+    cspr::transfer_p2p,
     Address,
     BlockTime,
 };
@@ -24,7 +22,7 @@ fn call() {
     let cspr_amount: U512 = get_named_arg("cspr_amount");
     let main_purse: URef = get_main_purse();
     let cargo_purse: URef = create_purse();
-    transfer_from_purse_to_purse(main_purse, cargo_purse, cspr_amount, None).unwrap_or_revert();
+    transfer_p2p(main_purse, cargo_purse, cspr_amount);
 
     BidEscrowContractCaller::at(bid_escrow_address).submit_bid(
         job_offer_id,

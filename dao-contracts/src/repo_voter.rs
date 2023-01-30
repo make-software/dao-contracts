@@ -22,12 +22,13 @@ use delegate::delegate;
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -49,11 +50,11 @@ pub trait RepoVoterContractInterface {
     /// Creates new RepoVoter voting.
     ///
     /// # Arguments
-    /// * `variable_repo_to_edit` takes an [Address] of the[Variable Repo](crate::variable_repository::VariableRepositoryContract) 
+    /// * `variable_repo_to_edit` takes an [Address] of the[Variable Repo](crate::variable_repository::VariableRepositoryContract)
     /// instance that will be updated
     /// * `key`, `value` and `activation_time` are parameters that will be passed to `update_at`
     /// method of the [Variable Repo](crate::variable_repository::VariableRepositoryContract)
-    /// 
+    ///
     /// # Events
     /// * [`RepoVotingCreated`]
     fn create_voting(

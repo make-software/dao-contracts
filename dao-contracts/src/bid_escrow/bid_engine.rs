@@ -152,11 +152,11 @@ impl BidEngine {
     }
 
     /// Invalidates the [`Job Offer`](JobOffer), returns `DOS Fee` to the `Job Poster`, returns funds to `Bidders`.
-    /// 
+    ///
     /// If a Job with the given id does not exists, contract execution stop with [`Error::JobOfferNotFound`].
-    /// 
+    ///
     /// Executes validations: [`HasPermissionsToCancelJobOffer`] and [`CanJobOfferBeCancelled`].
-    /// 
+    ///
     /// [`HasPermissionsToCancelJobOffer`]: crate::rules::validation::bid_escrow::HasPermissionsToCancelJobOffer
     /// [`CanJobOfferBeCancelled`]: crate::rules::validation::bid_escrow::CanJobOfferBeCancelled
     /// [`Error::JobOfferNotFound`]: casper_dao_utils::Error::JobOfferNotFound

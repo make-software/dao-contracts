@@ -59,7 +59,7 @@ pub trait ReputationContractInterface {
     /// Burns existing tokens. Removes `amount` of existing tokens from the balance of the `owner`
     /// and decrements the total supply. Only whitelisted addresses are permitted to call this
     /// method.
-    /// 
+    ///
     /// # Errors
     /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.

@@ -1,4 +1,4 @@
-use casper_dao_utils::{BlockTime, Error, casper_dao_macros::Rule};
+use casper_dao_utils::{casper_dao_macros::Rule, BlockTime, Error};
 
 use crate::{
     rules::validation::VotingValidation,

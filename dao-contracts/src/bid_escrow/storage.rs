@@ -193,15 +193,10 @@ impl JobStorage {
 mod test {
     use crate::bid_escrow::types::JobOfferId;
 
-
     #[test]
     fn asa() {
         let offers: Vec<JobOfferId> = vec![112, 13, 124];
-        let offers: Vec<JobOfferId> = offers
-            .iter()
-            .filter(|id| id == &&124)
-            .cloned()
-            .collect();
+        let offers: Vec<JobOfferId> = offers.iter().filter(|id| id == &&124).cloned().collect();
 
         dbg!(offers);
     }

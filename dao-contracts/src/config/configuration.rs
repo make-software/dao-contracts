@@ -8,12 +8,12 @@ use casper_dao_utils::{
     Error,
 };
 use casper_types::U512;
+use delegate::delegate;
 
 use crate::config::{
     dao_configuration::DaoConfiguration,
     voting_configuration::VotingConfiguration,
 };
-use delegate::delegate;
 
 /// Represents the current system configuration.
 #[derive(CLTyped, ToBytes, FromBytes, Debug, Clone)]
@@ -25,23 +25,6 @@ pub struct Configuration {
 }
 
 impl Configuration {
-    pub(super) fn new(
-        dao_configuration: DaoConfiguration,
-        voting_configuration: VotingConfiguration,
-        total_onboarded: U512,
-    ) -> Configuration {
-        Configuration {
-            dao_configuration,
-            voting_configuration,
-            total_onboarded,
-            fiat_rate: None,
-        }
-    }
-
-    pub (super) fn set_fiat_rate(&mut self, fiat_rate: Option<U512>) {
-        self.fiat_rate = fiat_rate;
-    }
-
     delegate! {
         to self.voting_configuration {
             pub (super) fn set_bind_ballot_for_successful_voting(&mut self, bind_ballot_for_successful_voting: bool);
@@ -56,6 +39,23 @@ impl Configuration {
         }
     }
 
+    pub(super) fn new(
+        dao_configuration: DaoConfiguration,
+        voting_configuration: VotingConfiguration,
+        total_onboarded: U512,
+    ) -> Configuration {
+        Configuration {
+            dao_configuration,
+            voting_configuration,
+            total_onboarded,
+            fiat_rate: None,
+        }
+    }
+
+    pub(super) fn set_fiat_rate(&mut self, fiat_rate: Option<U512>) {
+        self.fiat_rate = fiat_rate;
+    }
+
     /// Sets the flag `bind_ballot_for_successful_voting` and the address of the voter.
     pub fn bind_ballot_for_successful_voting(&mut self, address: Address) {
         self.voting_configuration.bind_ballot_for_successful_voting = true;
@@ -68,7 +68,7 @@ impl Configuration {
     }
 
     /// Indicates if the time between informal and formal voting should be doubled.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) TimeBetweenInformalAndFormalVoting
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn should_double_time_between_votings(&self) -> bool {
@@ -76,7 +76,7 @@ impl Configuration {
     }
 
     /// Gets the address of the contract holding the current fiat conversion rate.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) FiatConversionRateAddress
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn fiat_conversion_rate_address(&self) -> Address {
@@ -84,7 +84,7 @@ impl Configuration {
     }
 
     /// Gets formal voting quorum.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) BidEscrowFormalQuorumRatio/FormalQuorumRatio
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn formal_voting_quorum(&self) -> u32 {
@@ -93,11 +93,12 @@ impl Configuration {
             false => self.dao_configuration.formal_quorum_ratio,
         };
 
-        math::per_mil_of_as_u32(ratio, self.total_onboarded()).unwrap_or_revert()
+        math::per_mil_of_as_u32(ratio, self.total_onboarded())
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     /// Gets informal voting quorum.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) BidEscrowInformalQuorumRatio/InformalQuorumRatio
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn informal_voting_quorum(&self) -> u32 {
@@ -106,11 +107,12 @@ impl Configuration {
             false => self.dao_configuration.informal_quorum_ratio,
         };
 
-        math::per_mil_of_as_u32(ratio, self.total_onboarded()).unwrap_or_revert()
+        math::per_mil_of_as_u32(ratio, self.total_onboarded())
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     /// Gets informal voting time.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) BidEscrowInformalVotingTime/InformalVotingTime
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn informal_voting_time(&self) -> BlockTime {
@@ -121,7 +123,7 @@ impl Configuration {
     }
 
     /// Gets formal voting time.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) BidEscrowInformalVotingTime/InformalVotingTime
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn formal_voting_time(&self) -> BlockTime {
@@ -132,7 +134,7 @@ impl Configuration {
     }
 
     /// Gets formal voting time.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) InformalStakeReputation
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn informal_stake_reputation(&self) -> bool {
@@ -140,7 +142,7 @@ impl Configuration {
     }
 
     /// Gets the time between informal and formal voting.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) TimeBetweenInformalAndFormalVoting
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn time_between_informal_and_formal_voting(&self) -> BlockTime {
@@ -155,7 +157,7 @@ impl Configuration {
     }
 
     /// Gets the address of a multisig wallet of the DAO.   
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) BidEscrowWalletAddress
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn bid_escrow_wallet_address(&self) -> Address {
@@ -163,7 +165,7 @@ impl Configuration {
     }
 
     /// Gets the default reputation slash ratio.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) DefaultReputationSlash
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn default_reputation_slash(&self) -> U512 {
@@ -171,7 +173,7 @@ impl Configuration {
     }
 
     /// Gets the voting clearness delta.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) VotingClearnessDelta
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn voting_clearness_delta(&self) -> U512 {
@@ -179,9 +181,9 @@ impl Configuration {
     }
 
     /// Gets the time between voting creation and the actual voting start.
-    /// 
+    ///
     /// Non-BidEscrow voting always starts instantly.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) VotingClearnessDelta
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn voting_delay(&self) -> BlockTime {
@@ -194,7 +196,7 @@ impl Configuration {
     }
 
     /// Indicates if the attached DOS Fee is too low.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) PostJobDOSFee
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn is_post_job_dos_fee_too_low(&self, fiat_value: U512) -> bool {
@@ -212,7 +214,7 @@ impl Configuration {
     }
 
     /// Gets the bid acceptance timeout.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) VABidAcceptanceTimeout
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn va_bid_acceptance_timeout(&self) -> BlockTime {
@@ -220,7 +222,7 @@ impl Configuration {
     }
 
     /// Indicates if a VA can bid on a public auction.
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) VACanBidOnPublicAuction
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn va_can_bid_on_public_auction(&self) -> bool {
@@ -228,7 +230,7 @@ impl Configuration {
     }
 
     /// Indicates if the payment for the job should be distributed between all VA’s or only to those who voted
-    /// 
+    ///
     /// See [Variable Repository](crate::variable_repository) DistributePaymentToNonVoters.
     /// ([available keys](crate::variable_repository#available-keys)).
     pub fn distribute_payment_to_non_voters(&self) -> bool {
@@ -267,23 +269,26 @@ impl Configuration {
 
     /// Applies the value of `DefaultPolicingRate` variable to a given amount.
     pub fn apply_default_policing_rate_to(&self, amount: U512) -> U512 {
-        math::per_mil_of(amount, self.dao_configuration.default_policing_rate).unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.default_policing_rate)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     /// Applies the value of `BidEscrowPaymentRatio` variable to a given amount.
     pub fn apply_bid_escrow_payment_ratio_to(&self, amount: U512) -> U512 {
-        math::per_mil_of(amount, self.dao_configuration.bid_escrow_payment_ratio).unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.bid_escrow_payment_ratio)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     /// Applies the value of `ReputationConversionRate` variable to a given amount.
     pub fn apply_reputation_conversion_rate_to(&self, amount: U512) -> U512 {
         math::per_mil_of(amount, self.dao_configuration.reputation_conversion_rate)
-            .unwrap_or_revert()
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     /// Applies the value of `DefaultReputationSlash` variable to a given amount.
     pub fn apply_default_reputation_slash_to(&self, amount: U512) -> U512 {
-        math::per_mil_of(amount, self.dao_configuration.default_reputation_slash).unwrap_or_revert()
+        math::per_mil_of(amount, self.dao_configuration.default_reputation_slash)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow)
     }
 
     /// Gets the current CSPR:Fiat rate.

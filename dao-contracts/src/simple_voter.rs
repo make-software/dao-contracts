@@ -1,12 +1,12 @@
 //! Contains Simple Voter Contract definition and related abstractions.
-//! 
+//!
 //! # General
 //! Simple voting is a formal, on-chain confirmation of a resolution that has
 //! been made off-chain. The off-chain agreement has a form of a [`Document Hash`]
 //! that is the voting subject.
-//! 
+//!
 //! None action is performed after the voting process is completed.
-//! 
+//!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //!
@@ -30,12 +30,13 @@ use delegate::delegate;
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -61,7 +62,7 @@ pub trait SimpleVoterContractInterface {
     /// instance that will be updated
     /// * `key`, `value` and `activation_time` are parameters that will be passed to `update_at`
     /// method of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
-    /// 
+    ///
     /// # Events
     /// [`SimpleVotingCreated`]
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512);

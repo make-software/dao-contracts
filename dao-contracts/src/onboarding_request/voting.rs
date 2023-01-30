@@ -17,13 +17,15 @@ use crate::{
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
-        redistribute_cspr_to_all_vas, redistribute_to_governance,
+        events::VotingCreatedInfo,
+        redistribute_cspr_to_all_vas,
+        redistribute_to_governance,
         refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 

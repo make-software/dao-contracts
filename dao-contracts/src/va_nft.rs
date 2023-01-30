@@ -10,7 +10,7 @@
 //! as a reward. See [`Bid Escrow`].
 //!
 //! Each [`Address`] can own only one VA token.
-//! 
+//!
 //! [`Bid Escrow`]: crate::bid_escrow::BidEscrowContractInterface.
 use casper_dao_erc721::{
     BurnableERC721,

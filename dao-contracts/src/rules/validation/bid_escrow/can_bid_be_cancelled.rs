@@ -2,7 +2,7 @@ use casper_dao_utils::{casper_dao_macros::Rule, BlockTime, Error};
 
 use crate::{bid_escrow::job_offer::JobOfferStatus, rules::validation::Validation};
 
-/// Verifies if the [`Bid`](crate::bid_escrow::bid::Bid) can be canceled. 
+/// Verifies if the [`Bid`](crate::bid_escrow::bid::Bid) can be canceled.
 /// May return [Error::CannotCancelBidOnCompletedJobOffer] or [Error::CannotCancelBidBeforeAcceptanceTimeout].
 #[derive(Rule)]
 pub struct CanBidBeCancelled {
