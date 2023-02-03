@@ -28,6 +28,8 @@ async function main() {
 
   const pk = Keys.Ed25519.loadKeyPairFromPrivateFile(process.env.PRIVATE_KEY_PATH || config.private_key_path);
 
+  let totalCost = 0;
+
   console.log(`
     Info: Installing contracts:
       1) VariableRepositoryContract
@@ -53,7 +55,10 @@ async function main() {
 
   let contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), {});
 
-  contractDeploymentResults.forEach(logContractOutput);
+  contractDeploymentResults.forEach((c) => {
+    logContractOutput(c);
+    totalCost += parseInt(c.actualCost);
+  });
 
   console.log(`
     Info: Installing contracts:
@@ -83,7 +88,10 @@ async function main() {
 
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
 
-  contractDeploymentResults.forEach(logContractOutput);
+  contractDeploymentResults.forEach((c) => {
+    logContractOutput(c);
+    totalCost += parseInt(c.actualCost);
+  });
 
   console.log(`
     Info: Installing contracts:
@@ -122,7 +130,10 @@ async function main() {
 
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
 
-  contractDeploymentResults.forEach(logContractOutput);
+  contractDeploymentResults.forEach((c) => {
+    logContractOutput(c);
+    totalCost += parseInt(c.actualCost);
+  });
 
   console.log(`
     Info: Installing contracts:
@@ -158,7 +169,10 @@ async function main() {
 
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
 
-  contractDeploymentResults.forEach(logContractOutput);
+  contractDeploymentResults.forEach((c) => {
+    logContractOutput(c);
+    totalCost += parseInt(c.actualCost);
+  });
 
   console.log(`
     Info: Setupping contracts:
@@ -242,7 +256,12 @@ async function main() {
     return { name: c.name, actualCost: executionResult.cost, deployHash: processedDeploy.deploy.hash };
   }));
 
-  results.map(logContractCallOutput);
+  results.map((c) => {
+    logContractCallOutput(c);
+    totalCost += parseInt(c.actualCost);
+  });
+
+  console.log(`Total installation cost in motes: ${totalCost}`);
 }
 
 function logContractOutput(contract) {
