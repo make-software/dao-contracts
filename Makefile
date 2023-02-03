@@ -52,8 +52,7 @@ build-all: build-dao-contracts build-erc20 build-erc721
 
 test: build-all test-dao-macros test-dao-contracts test-erc20 test-erc721
 
-install-all:
-	build-all
+install-all: build-all
 	cd ./scripts/install-contracts && npm install
 	node ./scripts/install-contracts/index.js
 
