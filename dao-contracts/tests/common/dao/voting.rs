@@ -73,17 +73,17 @@ impl DaoWorld {
     pub fn create_test_voting(&mut self, contract: Contract, creator: Account, stake: Balance) {
         let alice = self.get_address(&Account::Alice);
         let creator = self.get_address(&creator);
-        let document_hash = Bytes::from(vec![1u8]);
+        let document_hash = DocumentHash::from("123");
         match contract {
             Contract::KycVoter => {
                 self.kyc_voter
                     .as_account(creator)
-                    .create_voting(alice, Bytes::new(), *stake)
+                    .create_voting(alice, document_hash, *stake)
             }
             Contract::RepoVoter => self.repo_voter.as_account(creator).create_voting(
                 self.variable_repository.address(),
                 String::from("key"),
-                document_hash,
+                Bytes::from(vec![1u8]),
                 None,
                 *stake,
             ),

@@ -22,7 +22,7 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::rules::validation::Validation;
 
-<span class="doccomment">/// Makes sure the job poster is the one who picks the [`Job Offer`](crate::bid_escrow::job_offer::JobOffer). 
+<span class="doccomment">/// Makes sure the job poster is the one who picks the [`Job Offer`](crate::bid_escrow::job_offer::JobOffer).
 /// May return [Error::OnlyJobPosterCanPickABid].
 </span><span class="attribute">#[derive(Rule)]
 </span><span class="kw">pub struct </span>HasPermissionsToCancelJobOffer {

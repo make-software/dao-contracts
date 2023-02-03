@@ -343,8 +343,8 @@
 <span class="kw">use </span><span class="kw">super</span>::types::{BidId, JobId, JobOfferId};
 <span class="kw">use crate</span>::{
     rules::{
+        validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred},
         RulesBuilder,
-        validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred}
     },
     voting::VotingId,
 };
@@ -352,7 +352,7 @@
 <span class="doccomment">/// Serializable Job status.
 </span><span class="attribute">#[derive(CLTyped, ToBytes, FromBytes, PartialEq, Eq, Clone, Copy, Debug)]
 </span><span class="kw">pub enum </span>JobStatus {
-    <span class="doccomment">/// Job 
+    <span class="doccomment">/// Job
     </span>Created,
     Cancelled,
     <span class="doccomment">/// Job proof submitted.
@@ -445,11 +445,11 @@
 
 <span class="kw">impl </span>Job {
     <span class="doccomment">/// Conditionally creates a new instance of Job.
-    /// 
+    ///
     /// Runs validation:
     /// * [`CanPickBid`]
     /// * [`DoesProposedPaymentMatchTransferred`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     </span><span class="kw">pub fn </span>new(request: <span class="kw-2">&amp;</span>PickBidRequest) -&gt; <span class="self">Self </span>{
         RulesBuilder::new()
@@ -520,7 +520,7 @@
     }
 
     <span class="doccomment">/// Verifies if the job can be canceled at a given time.
-    /// 
+    ///
     /// # Errors
     /// * [`Error::CannotCancelJob`]
     /// * [`Error::JobCannotBeYetCanceled`]
@@ -552,7 +552,7 @@
     }
 
     <span class="doccomment">/// Sets a proof and updates the state to [`Submitted`](JobStatus::Submitted).
-    /// 
+    ///
     /// # Errors
     /// * [`Error::JobAlreadySubmitted`]
     </span><span class="kw">pub fn </span>submit_proof(<span class="kw-2">&amp;mut </span><span class="self">self</span>, request: SubmitJobProofRequest) {
@@ -623,7 +623,7 @@
     </span><span class="kw">pub fn </span>is_unbound(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="self">self</span>.worker_type() != <span class="kw-2">&amp;</span>WorkerType::Internal
     }
-        
+
     <span class="doccomment">/// Gets the job&#39;s stake.
     </span><span class="kw">pub fn </span>get_stake(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U512 {
         <span class="self">self</span>.stake

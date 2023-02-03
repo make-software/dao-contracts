@@ -732,12 +732,8 @@
 <span id="732">732</span>
 <span id="733">733</span>
 <span id="734">734</span>
-<span id="735">735</span>
-<span id="736">736</span>
-<span id="737">737</span>
-<span id="738">738</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Governance Voting module.
-//! 
+//!
 </span><span class="kw">use </span>std::collections::BTreeMap;
 
 <span class="kw">use </span>casper_dao_utils::{
@@ -757,8 +753,8 @@
 };
 <span class="kw">use super</span>::{
     ballot::Choice,
-    ids,
     events::{BallotCanceled, Reason, VotingCanceled, VotingEnded},
+    ids,
     refs::{ContractRefs, ContractRefsStorage},
     types::VotingId,
     Ballot,
@@ -767,16 +763,15 @@
 <span class="kw">use crate</span>::{
     config::Configuration,
     reputation::ReputationContractInterface,
-    rules::RulesBuilder,
+    rules::{validation::voting::CanCreateVoting, RulesBuilder},
     va_nft::VaNftContractInterface,
-    rules::validation::voting::CanCreateVoting,
 };
 
 <span class="kw">pub mod </span>events;
 <span class="kw">pub mod </span>voting_state_machine;
 
-<span class="doccomment">/// Governance voting is a struct that contracts can use to implement voting. 
-/// 
+<span class="doccomment">/// Governance voting is a struct that contracts can use to implement voting.
+///
 /// It consists of two phases:
 /// 1. Informal voting
 /// 2. Formal voting
@@ -805,15 +800,15 @@
     /// `contract_to_call`, `entry_point` and `runtime_args` parameters define an action that will be performed when formal voting passes.
     ///
     /// It collects configuration from [Variable Repo] and persists it, so they won&#39;t change during the voting process.
-    /// 
-    /// Interacts with [Dao Ids Contract] to generate voting id. 
-    /// 
+    ///
+    /// Interacts with [Dao Ids Contract] to generate voting id.
+    ///
     /// Depending on the configuration may [`cast`] the first vote.
     ///
     /// # Errors
     /// * [`Error::NotEnoughReputation`] when the creator does not have enough reputation to create a voting.
     /// * [`Error::NotOnboarded`] if the configuration requires the creator to be a VA but is not.
-    /// 
+    ///
     /// [Voting]: VotingStateMachine
     /// [Variable Repo]: crate::variable_repository::VariableRepositoryContract
     /// [`Error::NotOnboarded`]: casper_dao_utils::Error::NotOnboarded
@@ -869,7 +864,7 @@
     /// For informal voting a new formal voting can be created. Reputation staked for this voting is returned to the voters,
     /// except for the creator. When voting passes, it is used as a stake for a new voting, otherwise it is burned.
     ///
-    /// For formal voting an action will be performed if the result is `in favor`. Reputation is redistributed to the winning voters. 
+    /// For formal voting an action will be performed if the result is `in favor`. Reputation is redistributed to the winning voters.
     /// When no quorum is reached, the reputation is returned, except for the creator - its reputation is then burned.
     ///
     /// # Events
@@ -980,7 +975,7 @@
     }
 
     <span class="doccomment">/// Marks voting finished but do nothing with the staked reputation.
-    /// 
+    ///
     /// # Errors
     /// * [`Error::VotingDoesNotExist`] - voting with the given id does not exists.
     /// * [`Error::FinishingCompletedVotingNotAllowed`] - voting is finished already.
@@ -1098,14 +1093,14 @@
     }
 
     <span class="doccomment">/// Records voter&#39;s vote.
-    /// 
+    ///
     /// Writes into the storage the vote details and stakes reputation (for a bound ballot).
-    /// 
+    ///
     /// Calls [Reputation Token Contract] to stake reputation.
-    /// 
+    ///
     /// # Events
     /// * [`BallotCast`] event.
-    /// 
+    ///
     /// [Reputation Token Contract]: crate::reputation::ReputationContractInterface
     </span><span class="kw">pub fn </span>cast_ballot(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -1192,7 +1187,7 @@
     }
 
     <span class="doccomment">/// Gets voting with a given id or stops contract execution.
-    /// 
+    ///
     /// # Errors
     /// * [Error::VotingDoesNotExist] if the given id does not exist.
     </span><span class="kw">pub fn </span>get_voting_or_revert(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId) -&gt; VotingStateMachine {
@@ -1213,7 +1208,7 @@
     }
 
     <span class="doccomment">/// Iterates over all the ballots and unstakes reputation. Returns a map of address to it&#39;s stake.
-    /// 
+    ///
     /// Calls [Reputation Token Contract](crate::reputation::ReputationContractInterface) to perform unstake operation.
     </span><span class="kw">pub fn </span>unstake_all_reputation(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -1236,10 +1231,7 @@
         transfers
     }
 
-    <span class="kw">fn </span>recast_creators_ballot_from_informal_to_formal(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-        voting: <span class="kw-2">&amp;mut </span>VotingStateMachine,
-    ) {
+    <span class="kw">fn </span>recast_creators_ballot_from_informal_to_formal(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting: <span class="kw-2">&amp;mut </span>VotingStateMachine) {
         <span class="kw">let </span>voting_id = voting.voting_id();
         <span class="kw">let </span>creator = voting.creator();
         <span class="kw">let </span>creator_ballot = <span class="self">self
@@ -1399,7 +1391,7 @@
             .set(<span class="kw-2">&amp;</span>(voting.voting_id(), voting_type, address), ballot);
     }
 
-    <span class="doccomment">/// Checks if voting with the given id and type exists. 
+    <span class="doccomment">/// Checks if voting with the given id and type exists.
     </span><span class="kw">pub fn </span>voting_exists(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType) -&gt; bool {
         <span class="kw">let </span>voting = <span class="self">self</span>.get_voting(voting_id);
         <span class="kw">match </span>voting {
@@ -1409,7 +1401,7 @@
     }
 
     <span class="doccomment">/// Erases a voter from a given voting.
-    /// 
+    ///
     /// If the voter is also the creator, voting is canceled.
     /// Otherwise, only his vote is invalidated.
     </span><span class="kw">pub fn </span>slash_voter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voter: Address, voting_id: VotingId) {

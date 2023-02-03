@@ -26,13 +26,21 @@
 <span id="26">26</span>
 <span id="27">27</span>
 <span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
 </pre><pre class="rust"><code><span class="kw">use </span>casper_dao_utils::{cspr, Address};
 <span class="kw">use </span>casper_types::U512;
 
-<span class="kw">use crate</span>::{config::Configuration, reputation::ReputationContractInterface, voting::refs::ContractRefs};
+<span class="kw">use crate</span>::{
+    config::Configuration,
+    reputation::ReputationContractInterface,
+    voting::refs::ContractRefs,
+};
 
 <span class="doccomment">/// Transfers CSPRs to all VAs&#39;. Each VA gets the amount of CSPR proportionally to their reputation.
-/// 
+///
 /// Interacts with [`Reputation Token Contract`](crate::reputation::ReputationContractInterface) to get balances information.
 </span><span class="kw">pub fn </span>redistribute_cspr_to_all_vas(to_redistribute: U512, refs: <span class="kw-2">&amp;</span><span class="kw">dyn </span>ContractRefs) {
     <span class="kw">let </span>all_balances = refs.reputation_token().all_balances();
@@ -45,7 +53,7 @@
 }
 
 <span class="doccomment">/// Transfers some part of a given amount to `Bid Escrow Wallet` and returns the remaining amount.
-/// 
+///
 /// See [`Configuration::bid_escrow_wallet_address()`](crate::config::Configuration::bid_escrow_wallet_address()).
 </span><span class="kw">pub fn </span>redistribute_to_governance(amount: U512, configuration: <span class="kw-2">&amp;</span>Configuration) -&gt; U512 {
     <span class="kw">let </span>governance_wallet: Address = configuration.bid_escrow_wallet_address();

@@ -16,7 +16,6 @@
 <span id="16">16</span>
 <span id="17">17</span>
 <span id="18">18</span>
-<span id="19">19</span>
 </pre><pre class="rust"><code><span class="kw">mod </span>core;
 <span class="attribute">#[doc(hidden)]
 </span><span class="kw">pub mod </span>erc721;
@@ -31,8 +30,7 @@
 </span><span class="kw">pub use </span>receiver::tests::MockERC721NonReceiverTest;
 <span class="attribute">#[cfg(feature = <span class="string">&quot;test-support&quot;</span>)]
 </span><span class="kw">pub use </span>receiver::tests::MockERC721ReceiverTest;
-<span class="kw">pub use </span>receiver::tests::<span class="kw-2">*</span>;
-<span class="kw">pub use </span>receiver::IERC721Receiver;
+<span class="kw">pub use </span>receiver::{tests::<span class="kw-2">*</span>, IERC721Receiver};
 <span class="kw">pub use </span>types::<span class="kw-2">*</span>;
 
 <span class="kw">pub use </span><span class="kw">crate</span>::core::ERC721Token;

@@ -176,6 +176,7 @@
 <span id="176">176</span>
 <span id="177">177</span>
 <span id="178">178</span>
+<span id="179">179</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::{fmt::Debug, hash::Hash, ops::Range};
 
 <span class="kw">use </span>casper_contract::unwrap_or_revert::UnwrapOrRevert;
@@ -185,7 +186,7 @@
 };
 
 <span class="kw">use </span><span class="kw">super</span>::mapping::IndexedMapping;
-<span class="kw">use crate</span>::{consts, Instanced, Variable};
+<span class="kw">use crate</span>::{consts, Error, Instanced, Variable};
 
 <span class="doccomment">/// Data structure for storing indexed values.
 ///
@@ -208,7 +209,7 @@
 
     <span class="doccomment">/// Tries to delete the given `item`. If succeeds, returns true, otherwise, returns false.
     ///
-    /// Reindexes collection after successful removal.  
+    /// Reindexes collection after successful removal.
     </span><span class="kw">pub fn </span>delete(<span class="kw-2">&amp;mut </span><span class="self">self</span>, item: T) -&gt; bool {
         <span class="kw">let </span>length = <span class="self">self</span>.size();
         <span class="kw">let </span>(is_deleted, item_index) = <span class="self">self</span>.values.remove(item);
@@ -235,7 +236,8 @@
 
     <span class="kw">fn </span>move_item(<span class="kw-2">&amp;mut </span><span class="self">self</span>, from: u32, to: u32) {
         <span class="kw">let </span>value = <span class="self">self</span>.values.get(from);
-        <span class="self">self</span>.values.set(to, value.unwrap_or_revert());
+        <span class="self">self</span>.values
+            .set(to, value.unwrap_or_revert_with(Error::StorageError));
         <span class="self">self</span>.values.unset(from);
     }
 

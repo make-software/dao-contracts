@@ -92,7 +92,7 @@ fn submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
-        .submit_job_proof(job_id, DocumentHash::from(b"Job Proof".to_vec()))
+        .submit_job_proof(job_id, DocumentHash::from("Job Proof"))
         .unwrap();
 }
 
@@ -112,7 +112,7 @@ fn submit_job_proof_during_grace_period_external(
         .as_account(worker)
         .submit_job_proof_during_grace_period_with_cspr_amount(
             job_id,
-            DocumentHash::from(b"Job Proof".to_vec()),
+            DocumentHash::from("Job Proof"),
             U512::zero(),
             onboarding,
             *cspr_stake,
@@ -132,7 +132,7 @@ fn submit_job_proof_during_grace_period_internal(
         .as_account(worker)
         .submit_job_proof_during_grace_period(
             job_id,
-            DocumentHash::from(b"Job Proof".to_vec()),
+            DocumentHash::from("Job Proof"),
             *rep_stake,
             false,
             None,

@@ -242,6 +242,7 @@
 <span id="242">242</span>
 <span id="243">243</span>
 <span id="244">244</span>
+<span id="245">245</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Contains Repo Voter Contract definition and related abstractions.
 //!
 //! # General
@@ -266,12 +267,13 @@
 <span class="kw">use crate</span>::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -293,11 +295,11 @@
     <span class="doccomment">/// Creates new RepoVoter voting.
     ///
     /// # Arguments
-    /// * `variable_repo_to_edit` takes an [Address] of the[Variable Repo](crate::variable_repository::VariableRepositoryContract) 
+    /// * `variable_repo_to_edit` takes an [Address] of the[Variable Repo](crate::variable_repository::VariableRepositoryContract)
     /// instance that will be updated
     /// * `key`, `value` and `activation_time` are parameters that will be passed to `update_at`
     /// method of the [Variable Repo](crate::variable_repository::VariableRepositoryContract)
-    /// 
+    ///
     /// # Events
     /// * [`RepoVotingCreated`]
     </span><span class="kw">fn </span>create_voting(

@@ -140,9 +140,7 @@
         },
         {
           "name": "proof",
-          "ty": {
-            "List": "U8"
-          }
+          "ty": "String"
         }
       ],
       "return_ty": "Unit",
@@ -158,9 +156,7 @@
         },
         {
           "name": "proof",
-          "ty": {
-            "List": "U8"
-          }
+          "ty": "String"
         },
         {
           "name": "reputation_stake",

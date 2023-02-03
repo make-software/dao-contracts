@@ -294,6 +294,9 @@
 <span id="294">294</span>
 <span id="295">295</span>
 <span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::{
     collections::{hash_map::DefaultHasher, BTreeMap},
     hash::{Hash, Hasher},
@@ -353,7 +356,8 @@
 
     <span class="doccomment">/// Read `key` from the storage or return none.
     </span><span class="kw">pub fn </span>get_or_none(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>K) -&gt; <span class="prelude-ty">Option</span>&lt;V&gt; {
-        storage::dictionary_get(<span class="self">self</span>.get_uref(), <span class="kw-2">&amp;</span>to_dictionary_key(key)).unwrap_or_revert()
+        storage::dictionary_get(<span class="self">self</span>.get_uref(), <span class="kw-2">&amp;</span>to_dictionary_key(key))
+            .unwrap_or_revert_with(Error::DictionaryStorageError)
     }
 
     <span class="doccomment">/// Set `value` under `key` to the storage. It overrides by default.
@@ -375,11 +379,13 @@
                 <span class="kw">let </span>key: Key = <span class="kw">match </span>runtime::get_key(<span class="kw-2">&amp;</span><span class="self">self</span>.name) {
                     <span class="prelude-val">Some</span>(key) =&gt; key,
                     <span class="prelude-val">None </span>=&gt; {
-                        storage::new_dictionary(<span class="kw-2">&amp;</span><span class="self">self</span>.name).unwrap_or_revert();
-                        runtime::get_key(<span class="kw-2">&amp;</span><span class="self">self</span>.name).unwrap_or_revert()
+                        storage::new_dictionary(<span class="kw-2">&amp;</span><span class="self">self</span>.name)
+                            .unwrap_or_revert_with(Error::DictionaryStorageError);
+                        runtime::get_key(<span class="kw-2">&amp;</span><span class="self">self</span>.name)
+                            .unwrap_or_revert_with(Error::KeyValueStorageError)
                     }
                 };
-                <span class="kw">let </span>seed: URef = <span class="kw-2">*</span>key.as_uref().unwrap_or_revert();
+                <span class="kw">let </span>seed: URef = <span class="kw-2">*</span>key.as_uref().unwrap_or_revert_with(Error::VMInternalError);
                 seeds.insert(<span class="self">self</span>.name.clone(), seed);
                 seed
             }

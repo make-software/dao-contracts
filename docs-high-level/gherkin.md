@@ -52,7 +52,7 @@ fn submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
-        .submit_job_proof(job_id, DocumentHash::from(b"Job Proof".to_vec()))
+        .submit_job_proof(job_id, DocumentHash::from("Job Proof"))
         .unwrap();
 }
 ```

@@ -51,6 +51,13 @@
 <span id="51">51</span>
 <span id="52">52</span>
 <span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Functions for interacting with purses.
 </span><span class="kw">use </span>casper_contract::{
     contract_api::system::{
@@ -84,8 +91,7 @@
         revert(Error::CannotDepositZeroAmount);
     }
 
-    transfer_from_purse_to_purse(cargo_purse, main_purse, amount, <span class="prelude-val">None</span>)
-        .unwrap_or_revert_with(Error::TransferError);
+    transfer_p2p(cargo_purse, main_purse, amount);
     amount
 }
 
@@ -103,6 +109,14 @@
         <span class="prelude-val">None</span>,
     )
     .unwrap_or_revert_with(Error::TransferError);
+}
+
+<span class="doccomment">/// Transfers all the funds from the given `from` purse to the `to` purse.
+///
+/// Reverts if the transfer from purse to purse fails.
+</span><span class="kw">pub fn </span>transfer_p2p(from: URef, to: URef, amount: U512) {
+    transfer_from_purse_to_purse(from, to, amount, <span class="prelude-val">None</span>)
+        .unwrap_or_revert_with(Error::TransferError);
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="casper_dao_utils" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (b8b5caee0 2022-10-16)" ></div></body></html>

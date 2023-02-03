@@ -46,9 +46,7 @@
       "args": [
         {
           "name": "document_hash",
-          "ty": {
-            "List": "U8"
-          }
+          "ty": "String"
         },
         {
           "name": "stake",
@@ -62,9 +60,7 @@
           "fields": [
             {
               "name": "document_hash",
-              "ty": {
-                "List": "U8"
-              }
+              "ty": "String"
             },
             {
               "name": "creator",
@@ -362,9 +358,7 @@
         }
       ],
       "return_ty": {
-        "Option": {
-          "List": "U8"
-        }
+        "Option": "String"
       },
       "events": []
     },

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Contains Bid Escrow Contract definition and related abstractions."><meta name="keywords" content="rust, rustlang, rust-lang, bid_escrow"><title>casper_dao_contracts::bid_escrow - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../casper_dao_contracts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../casper_dao_contracts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"><a href="#">Module bid_escrow</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../casper_dao_contracts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn">Module <a href="../index.html">casper_dao_contracts</a>::<wbr><a class="mod" href="#">bid_escrow</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/casper_dao_contracts/bid_escrow.rs.html#1-652">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Contains Bid Escrow Contract definition and related abstractions.</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Contains Bid Escrow Contract definition and related abstractions."><meta name="keywords" content="rust, rustlang, rust-lang, bid_escrow"><title>casper_dao_contracts::bid_escrow - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../casper_dao_contracts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../casper_dao_contracts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"><a href="#">Module bid_escrow</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../casper_dao_contracts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn">Module <a href="../index.html">casper_dao_contracts</a>::<wbr><a class="mod" href="#">bid_escrow</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/casper_dao_contracts/bid_escrow.rs.html#1-653">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Contains Bid Escrow Contract definition and related abstractions.</p>
 <h2 id="definitions"><a href="#definitions">Definitions</a></h2>
 <ul>
 <li>Job Offer - A description of a Job posted by JobPoster</li>
@@ -25,7 +25,7 @@ This action creates a new object in the contract called <code>Job Offer</code> a
 <p>The <code>Bidding</code> process allows <code>Workers</code> to post <a href="bid/struct.Bid.html"><code>Bids</code></a> with the offer of completing a job.
 It is divided into two main parts.</p>
 <h4 id="internal-auction"><a href="#internal-auction">Internal Auction</a></h4>
-<p>During this part of the Bidding process only the <code>VAs</code> can bid. As the <code>VAs</code> have <code>Reputation</code>, they are bidding using 
+<p>During this part of the Bidding process only the <code>VAs</code> can bid. As the <code>VAs</code> have <code>Reputation</code>, they are bidding using
 <a href="../reputation/trait.ReputationContractInterface.html"><code>Reputation</code></a> as a stake. The <code>Bid</code> query to the contract consists of:</p>
 <ul>
 <li>Proposed timeframe for completing the <code>Job</code>.</li>
@@ -33,12 +33,12 @@ It is divided into two main parts.</p>
 <li>The amount of <code>Reputation</code> the <code>Internal Worker</code> stakes on this <code>Job</code>.</li>
 </ul>
 <p>The Bid is then added to a list of available bids in the contract storage and is available for picking by the <code>Job Poster</code>.
-The time of an <code>Internal Auction</code> is defined in a <a href="../variable_repository/index.html#available-keys"><code>Governance Variable</code></a> <code>InternalAuctionTime</code>. 
-The bidding process can already be completed here, if the <code>JobPoster</code> decides to chose one of the posted Bids before <code>Internal Auction</code> ends. 
+The time of an <code>Internal Auction</code> is defined in a <a href="../variable_repository/index.html#available-keys"><code>Governance Variable</code></a> <code>InternalAuctionTime</code>.
+The bidding process can already be completed here, if the <code>JobPoster</code> decides to chose one of the posted Bids before <code>Internal Auction</code> ends.
 However, if no <code>Bid</code> is picked during this time, the process becomes a <code>Public Auction</code>.</p>
 <h4 id="public-auction"><a href="#public-auction">Public Auction</a></h4>
-<p>If no <code>Internal Worker</code> decides to post a <code>Bid</code> on a <code>Job Offer</code>, or the <code>Job Poster</code> did not pick any bid during <code>Internal Auction</code>, 
-the <code>External Workers</code> have a chance of submitting their bids during <code>Public Auction</code> time. As <code>External Workers</code> do not have any 
+<p>If no <code>Internal Worker</code> decides to post a <code>Bid</code> on a <code>Job Offer</code>, or the <code>Job Poster</code> did not pick any bid during <code>Internal Auction</code>,
+the <code>External Workers</code> have a chance of submitting their bids during <code>Public Auction</code> time. As <code>External Workers</code> do not have any
 <code>Reputation</code> to stake, they are staking <code>CSPR</code>.</p>
 <p>A query to the contract in case of <code>External Workers</code> consists of:</p>
 <ul>
@@ -46,7 +46,7 @@ the <code>External Workers</code> have a chance of submitting their bids during 
 <li>Proposed payment for the <code>Job</code>.</li>
 <li>Decision if the <code>Worker</code> wants to become a <code>Voting Associate</code> if the <code>Job</code> is completed.</li>
 <li><code>CSPR</code> stake sent alongside the query
-<code>Internal Workers</code> by default cannot to submit their bids during <code>Public Auction</code>, however this behavior is configurable using 
+<code>Internal Workers</code> by default cannot to submit their bids during <code>Public Auction</code>, however this behavior is configurable using
 <code>VACanBidOnPublicAuction</code> <a href="../variable_repository/index.html#available-keys"><code>Governance Variable</code></a>.</li>
 </ul>
 <p>The time of a <code>Public Auction</code> is defined in a <a href="../variable_repository/index.html#available-keys"><code>Governance Variable</code></a> <code>PublicAuctionTime</code>.</p>
@@ -58,7 +58,7 @@ When no <code>Bid</code> is posted or selected by <code>Job Poster</code> during
 <p>Now the <code>Worker</code> has the time to complete the <code>Job</code> and submit its proof to the contract.
 After the works have been completed, the <code>Worker</code> sends a query to the contract containing
 the cryptographic hash of a document being a proof of <code>Work</code> done for a <code>Job Poster</code>.</p>
-<p>When no <code>Bid</code> is posted or selected by the <code>Job Poster</code> during both auctions, the <code>Job</code> is cancelled, 
+<p>When no <code>Bid</code> is posted or selected by the <code>Job Poster</code> during both auctions, the <code>Job</code> is cancelled,
 <code>DOS Fee</code> is returned to the <code>Job Poster</code> and stakes sent by the <code>Bidders</code> are returned to them.</p>
 <h2 id="voting"><a href="#voting">Voting</a></h2>
 <p>The Voting process is managed by <a href="../voting/struct.VotingEngine.html"><code>VotingEngine</code></a>.</p>
@@ -70,14 +70,14 @@ redistributed between the winning side, depending on the type of <code>Worker</c
 <li>The <code>External Worker</code> becomes VA.</li>
 <li>The <code>CSPR</code> that were sent by the <code>External Worker</code> as a stake is returned to the <code>External Worker</code>.</li>
 <li>Reputation of the voters who voted <code>yes</code> is returned to them.</li>
-<li>Reputation of the voters who voted <code>no</code> is redistributed between the voters who voted <code>yes</code> proportional to the amount of 
+<li>Reputation of the voters who voted <code>no</code> is redistributed between the voters who voted <code>yes</code> proportional to the amount of
 reputation staked in the voting.</li>
 <li>Reputation minted for the <code>External Worker</code> and used in the voting process is burned.</li>
 </ul>
 <h4 id="internal-worker"><a href="#internal-worker">Internal Worker</a></h4>
 <ul>
 <li>Reputation of the voters who voted <code>yes</code> is returned to them.</li>
-<li>Reputation of the voters who voted <code>no</code> is redistributed between the voters who voted <code>yes</code> proportional to the amount of 
+<li>Reputation of the voters who voted <code>no</code> is redistributed between the voters who voted <code>yes</code> proportional to the amount of
 reputation staked in the voting.</li>
 </ul>
 <h4 id="external-worker"><a href="#external-worker">External Worker</a></h4>
@@ -85,12 +85,12 @@ reputation staked in the voting.</li>
 <li>The <code>CSPR</code> that were sent by the <code>External Worker</code> as a stake is returned to the <code>External Worker</code>.</li>
 <li>Reputation minted for the <code>External Worker</code> and used in the voting process is burned.</li>
 <li>Reputation of the voters who voted <code>yes</code> is returned to them, except for the Reputation minted for the Worker using <code>CSPR</code> stake.</li>
-<li>Reputation of the voters who voted <code>no</code> is redistributed between the voters who voted <code>yes</code> proportional to the amount of 
+<li>Reputation of the voters who voted <code>no</code> is redistributed between the voters who voted <code>yes</code> proportional to the amount of
 reputation staked in the voting (External Worker does not receive Reputation in this step).</li>
 </ul>
 <h4 id="payment-cspr-redistribution"><a href="#payment-cspr-redistribution">Payment CSPR Redistribution</a></h4>
-<p>Reputation used for the Voting and minted after a successful <code>Job</code> has been redistributed during the above process, 
-but there is <code>CSPR</code> to redistribute that was allocated to the <code>Job</code>. How much resources is redistributed and to whom 
+<p>Reputation used for the Voting and minted after a successful <code>Job</code> has been redistributed during the above process,
+but there is <code>CSPR</code> to redistribute that was allocated to the <code>Job</code>. How much resources is redistributed and to whom
 depends on the type of <code>Worker</code> and whether it wanted to become a <code>VA</code>.</p>
 <h4 id="payment-pool"><a href="#payment-pool">Payment pool</a></h4>
 <p>The <code>CSPR</code> to redistribute is calculated using a formula:
@@ -99,14 +99,14 @@ depends on the type of <code>Worker</code> and whether it wanted to become a <co
 <p>As the External Worker now is the VA, it is considered to be an <code>Internal Worker</code> in this scenario.</p>
 <h4 id="internal-worker-1"><a href="#internal-worker-1">Internal Worker</a></h4>
 <p>Firstly the Governance Payment is calculated using a formula:</p>
-<p><code>governance payment = payment pool * BidEscrowPaymentRatio</code> <a href="../variable_repository/index.html#available-keys">Read more</a>. </p>
-<p>The <code>Governance Payment</code> is then transferred to a multisig wallet, which address is held in the <a href="../variable_repository/trait.VariableRepositoryContractInterface.html"><code>Variable Repository Contract</code></a> 
+<p><code>governance payment = payment pool * BidEscrowPaymentRatio</code> <a href="../variable_repository/index.html#available-keys">Read more</a>.</p>
+<p>The <code>Governance Payment</code> is then transferred to a multisig wallet, which address is held in the <a href="../variable_repository/trait.VariableRepositoryContractInterface.html"><code>Variable Repository Contract</code></a>
 called <a href="../variable_repository/index.html#available-keys"><code>BidEscrowWalletAddress</code></a>.
 The rest of the payment is redistributed between all of the <code>VAs'</code>.</p>
 <p><code>remaining amount = payment pool - governance payment</code></p>
 <h4 id="external-worker-1"><a href="#external-worker-1">External Worker</a></h4>
 <p>If the <code>Job</code> was done by an <code>External Worker</code> who didn’t want to become a <code>VA</code>, the first step is the same
-as in the case of <code>Internal Worker</code> - Governance Payment is being made. However the rest is then divided between 
+as in the case of <code>Internal Worker</code> - Governance Payment is being made. However the rest is then divided between
 the <code>External Worker</code> and the <code>VAs’</code>.</p>
 <p>Firstly to get the amount that VA’s receive we use a formula:</p>
 <p><code>VA payment amount = remaining amount * DefaultPolicingRate</code> <a href="../variable_repository/index.html#available-keys">Read more</a></p>
@@ -121,20 +121,20 @@ redistributed between the winning side, depending on the type of Worker.</p>
 <li>The <code>CSPR</code> that were sent by the <code>External Worker</code> as a stake is redistributed between the <code>VA</code>’s.</li>
 <li>The Reputation minted for the <code>External Worker</code> using <code>CSPR</code> stake is burned.</li>
 <li>Reputation of the voters who voted <code>no</code> is returned to them.</li>
-<li>Reputation of the voters who voted <code>yes</code> is redistributed between the voters who voted <code>no</code> proportional to the amount of 
+<li>Reputation of the voters who voted <code>yes</code> is redistributed between the voters who voted <code>no</code> proportional to the amount of
 reputation staked in the voting.</li>
 </ul>
 <h4 id="internal-worker-2"><a href="#internal-worker-2">Internal Worker</a></h4>
 <ul>
 <li>Reputation of the voters who voted <code>no</code> is returned to them.</li>
-<li>Reputation of the voters who voted <code>yes</code> is redistributed between the voters who voted <code>no</code> proportional to the amount of 
+<li>Reputation of the voters who voted <code>yes</code> is redistributed between the voters who voted <code>no</code> proportional to the amount of
 reputation staked in the voting.</li>
 </ul>
 <h4 id="external-worker-2"><a href="#external-worker-2">External Worker</a></h4>
 <p>The <code>CSPR</code> that were sent by the <code>External Worker</code> as a stake is redistributed between the <code>VA</code>’s.
 The Reputation minted for the <code>External Worker</code> using <code>CSPR</code> stake is burned.
 Reputation of the voters who voted <code>no</code> is returned to them.
-Reputation of the voters who voted <code>yes</code> is redistributed between the voters who voted <code>no</code> proportional to the amount of 
+Reputation of the voters who voted <code>yes</code> is redistributed between the voters who voted <code>no</code> proportional to the amount of
 reputation staked in the voting.</p>
 <h4 id="cspr"><a href="#cspr">CSPR</a></h4>
 <p>If the <code>Voting</code> fails, the <code>CSPR</code> sent to the contract as a payment for <code>Job</code> is returned to the <code>Job Poster</code>. If the work

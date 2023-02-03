@@ -50,9 +50,7 @@
       "args": [
         {
           "name": "reason",
-          "ty": {
-            "List": "U8"
-          }
+          "ty": "String"
         },
         {
           "name": "purse",
@@ -66,9 +64,7 @@
           "fields": [
             {
               "name": "reason",
-              "ty": {
-                "List": "U8"
-              }
+              "ty": "String"
             },
             {
               "name": "cspr_deposit",

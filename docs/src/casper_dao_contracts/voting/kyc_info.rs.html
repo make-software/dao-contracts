@@ -44,10 +44,14 @@
 <span id="44">44</span>
 <span id="45">45</span>
 <span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
 </pre><pre class="rust"><code><span class="kw">use </span>casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
     Address,
+    Error,
     Mapping,
 };
 
@@ -87,7 +91,9 @@
 
     <span class="doccomment">/// Gets the address of the voting subject.
     </span><span class="kw">pub fn </span>get_voting_subject(<span class="kw-2">&amp;</span><span class="self">self</span>, voting_id: VotingId) -&gt; Address {
-        <span class="self">self</span>.addresses.get(<span class="kw-2">&amp;</span>voting_id).unwrap_or_revert()
+        <span class="self">self</span>.addresses
+            .get(<span class="kw-2">&amp;</span>voting_id)
+            .unwrap_or_revert_with(Error::VotingAddressNotFound)
     }
 }
 </code></pre></div>

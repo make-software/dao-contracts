@@ -21,10 +21,13 @@
 <span id="21">21</span>
 <span id="22">22</span>
 <span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
 </pre><pre class="rust"><code><span class="kw">use </span>casper_contract::unwrap_or_revert::UnwrapOrRevert;
 <span class="kw">use </span>casper_types::bytesrepr::{Bytes, ToBytes};
 
-<span class="kw">use crate</span>::{consts, List, OrderedCollection};
+<span class="kw">use crate</span>::{consts, Error, List, OrderedCollection};
 
 <span class="kw">pub struct </span>Events {
     <span class="kw">pub </span>events: OrderedCollection&lt;Bytes&gt;,
@@ -40,7 +43,10 @@
 
 <span class="kw">impl </span>Events {
     <span class="kw">pub fn </span>emit&lt;T: ToBytes&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, event: T) {
-        <span class="kw">let </span>bytes: Bytes = event.to_bytes().unwrap_or_revert().into();
+        <span class="kw">let </span>bytes: Bytes = event
+            .to_bytes()
+            .unwrap_or_revert_with(Error::BytesConversionError)
+            .into();
         <span class="self">self</span>.events.add(bytes);
     }
 }

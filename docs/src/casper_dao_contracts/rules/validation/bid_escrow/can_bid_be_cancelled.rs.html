@@ -29,7 +29,7 @@
 
 <span class="kw">use crate</span>::{bid_escrow::job_offer::JobOfferStatus, rules::validation::Validation};
 
-<span class="doccomment">/// Verifies if the [`Bid`](crate::bid_escrow::bid::Bid) can be canceled. 
+<span class="doccomment">/// Verifies if the [`Bid`](crate::bid_escrow::bid::Bid) can be canceled.
 /// May return [Error::CannotCancelBidOnCompletedJobOffer] or [Error::CannotCancelBidBeforeAcceptanceTimeout].
 </span><span class="attribute">#[derive(Rule)]
 </span><span class="kw">pub struct </span>CanBidBeCancelled {

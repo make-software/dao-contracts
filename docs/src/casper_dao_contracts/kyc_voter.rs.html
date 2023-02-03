@@ -288,6 +288,7 @@
 <span id="288">288</span>
 <span id="289">289</span>
 <span id="290">290</span>
+<span id="291">291</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Contains KYC Voter Contract definition and related abstractions.
 //!
 //! # Definitions
@@ -301,7 +302,7 @@
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`]. There can be only one active voting for a given subject address.
 //! An address that is already KYC&#39;d cannot be the subject of voting.
-//! 
+//!
 //! [`VotingEngine`]: crate::voting::VotingEngine
 </span><span class="kw">use </span>casper_dao_modules::AccessControl;
 <span class="kw">use </span>casper_dao_utils::{
@@ -321,13 +322,14 @@
 <span class="kw">use crate</span>::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsWithKycStorage,
         submodules::KycInfo,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -363,7 +365,7 @@
     /// * `subject_address` - [address](Address) of a user to be verified,
     /// * `document_hash` - a hash of a document that verifies the user. The hash is used as an id of a freshly minted kyc token,
     /// * `subject_address` - an [Address] to be on/offboarded.
-    /// 
+    ///
     /// # Events
     /// * [`KycVotingCreated`]
     </span><span class="kw">fn </span>create_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, subject_address: Address, document_hash: DocumentHash, stake: U512);
@@ -372,7 +374,7 @@
     <span class="doccomment">/// Finishes voting. Depending on type of voting, different actions are performed.
     /// [Read more](VotingEngine::finish_voting())
     </span><span class="kw">fn </span>finish_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType);
-     <span class="doccomment">/// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    <span class="doccomment">/// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     </span><span class="kw">fn </span>variable_repository_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
     <span class="doccomment">/// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     </span><span class="kw">fn </span>reputation_token_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
