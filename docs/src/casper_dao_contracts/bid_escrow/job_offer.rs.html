@@ -177,6 +177,11 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
 </pre><pre class="rust"><code><span class="doccomment">//! JobOffer-related structs.
 </span><span class="kw">use </span>std::rc::Rc;
 
@@ -188,15 +193,20 @@
 <span class="kw">use </span>casper_types::U512;
 
 <span class="kw">use crate</span>::{
-    bid_escrow::{
-        job::PickBidRequest,
-        types::JobOfferId,
-    },
+    bid_escrow::{job::PickBidRequest, types::JobOfferId},
     config::Configuration,
-    rules::{RulesBuilder, validation::{IsUserKyced, bid_escrow::{CanJobOfferBeCancelled,
-        CanProgressJobOffer,
-        HasPermissionsToCancelJobOffer,
-        IsDosFeeEnough,}}},
+    rules::{
+        validation::{
+            bid_escrow::{
+                CanJobOfferBeCancelled,
+                CanProgressJobOffer,
+                HasPermissionsToCancelJobOffer,
+                IsDosFeeEnough,
+            },
+            IsUserKyced,
+        },
+        RulesBuilder,
+    },
 };
 
 <span class="doccomment">/// Serializable JobOffer status representation.
@@ -272,7 +282,7 @@
 
 <span class="kw">impl </span>JobOffer {
     <span class="doccomment">/// Conditionally creates a new instance of JobOffer.
-    /// 
+    ///
     /// Runs validation:
     /// * [`IsUserKyced`]
     /// * [`IsDosFeeEnough`]
@@ -300,10 +310,10 @@
     }
 
     <span class="doccomment">/// Conditionally changes the status to [InProgress](JobOfferStatus::InProgress).
-    /// 
+    ///
     /// Runs validation:
     /// * [`CanProgressJobOffer`]
-    /// 
+    ///
     /// Stops contract execution if the validation fails.
     </span><span class="kw">pub fn </span>in_progress(<span class="kw-2">&amp;mut </span><span class="self">self</span>, request: <span class="kw-2">&amp;</span>PickBidRequest) {
         RulesBuilder::new()
@@ -315,11 +325,11 @@
     }
 
     <span class="doccomment">/// Conditionally changes the status to [Cancelled](JobOfferStatus::Cancelled).
-    /// 
+    ///
     /// Runs validation:
     /// * [`HasPermissionsToCancelJobOffer`]
     /// * [`CanJobOfferBeCancelled`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     </span><span class="kw">pub fn </span>cancel(<span class="kw-2">&amp;mut </span><span class="self">self</span>, request: <span class="kw-2">&amp;</span>CancelJobOfferRequest) {
         RulesBuilder::new()

@@ -58,9 +58,7 @@
         },
         {
           "name": "document_hash",
-          "ty": {
-            "List": "U8"
-          }
+          "ty": "String"
         },
         {
           "name": "stake",
@@ -86,9 +84,7 @@
             },
             {
               "name": "document_hash",
-              "ty": {
-                "List": "U8"
-              }
+              "ty": "String"
             },
             {
               "name": "creator",

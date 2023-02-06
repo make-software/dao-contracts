@@ -524,6 +524,14 @@
 <span id="524">524</span>
 <span id="525">525</span>
 <span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::borrow::Borrow;
 
 <span class="kw">use </span>casper_dao_utils::{
@@ -548,7 +556,8 @@
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
-        redistribute_cspr_to_all_vas, redistribute_to_governance,
+        redistribute_cspr_to_all_vas,
+        redistribute_to_governance,
         refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingType},
@@ -580,14 +589,14 @@
         to <span class="self">self</span>.job_storage {
             <span class="doccomment">/// Returns the total number of jobs.
             </span><span class="kw">pub fn </span>jobs_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
-            <span class="doccomment">/// Gets the [job](crate::bid_escrow::job::Job) with a given id or `None`. 
+            <span class="doccomment">/// Gets the [job](crate::bid_escrow::job::Job) with a given id or `None`.
             </span><span class="kw">pub fn </span>get_job(<span class="kw-2">&amp;</span><span class="self">self</span>, job_id: JobId) -&gt; <span class="prelude-ty">Option</span>&lt;Job&gt;;
         }
     }
 
     <span class="doccomment">/// Validates the correctness of proof submission.
     /// If the submission is correct, the [`Job Storage`](JobStorage) is updated, the Voting process starts.
-    /// 
+    ///
     /// # Errors
     /// If a proof has been submitted before, reverts with [`Error::JobAlreadySubmitted`].
     </span><span class="kw">pub fn </span>submit_job_proof(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job_id: JobId, proof: DocumentHash) {
@@ -637,8 +646,8 @@
     <span class="doccomment">/// Updates the old [Bid] and [Job], the job is assigned to a new `Worker`. The rest goes the same
     /// as regular proof submission. See [submit_job_proof()][Self::submit_job_proof].
     /// The old `Worker` who didn&#39;t submit the proof in time, is getting slashed.
-    /// 
-    /// See the Grace Period section in the module [description](crate::bid_escrow). 
+    ///
+    /// See the Grace Period section in the module [description](crate::bid_escrow).
     </span><span class="kw">pub fn </span>submit_job_proof_during_grace_period(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         job_id: JobId,
@@ -721,12 +730,11 @@
         </span><span class="self">self</span>.submit_job_proof(new_job_id, proof);
     }
 
-
     <span class="doccomment">/// Terminates the Voting process and slashes the `Worker`.
-    /// 
+    ///
     /// * the bid stake is redistributed along the VAs&#39; and the multisig wallet.
     /// * `DOS Fee` is returned to the `Job Poster`.
-    /// 
+    ///
     /// # Error
     /// If the state in which the process cannot be canceled, the execution reverts with
     /// [Error::CannotCancelJob] or [Error::JobCannotBeYetCanceled].
@@ -741,7 +749,10 @@
 
         <span class="self">self</span>.return_job_poster_payment_and_dos_fee(<span class="kw-2">&amp;</span>job);
 
-        <span class="kw">let </span>bid = <span class="self">self</span>.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+        <span class="kw">let </span>bid = <span class="self">self
+            </span>.bid_storage
+            .get_bid(job.bid_id())
+            .unwrap_or_revert_with(Error::BidNotFound);
 
         <span class="comment">// redistribute cspr stake
         </span><span class="kw">if let </span><span class="prelude-val">Some</span>(cspr_stake) = bid.cspr_stake {
@@ -761,9 +772,8 @@
         <span class="self">self</span>.job_storage.store_job(job);
     }
 
-
     <span class="doccomment">/// Records vote in [Voting](crate::voting::voting_state_machine::VotingStateMachine).
-    /// 
+    ///
     /// # Error
     /// * [`Error::CannotVoteOnOwnJob`].
     </span><span class="kw">pub fn </span>vote(
@@ -784,7 +794,7 @@
     }
 
     <span class="doccomment">/// Ends the current voting phase and redistributes funds.
-    /// 
+    ///
     /// Interacts with [`Reputation Token Contract`](crate::reputation::ReputationContractInterface) to
     /// redistribute reputation.
     </span><span class="kw">pub fn </span>finish_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType) {
@@ -795,7 +805,10 @@
             VotingType::Informal =&gt; <span class="kw">match </span>voting_summary.result() {
                 VotingResult::InFavor | VotingResult::Against =&gt; {
                     <span class="kw">if </span>!job_offer.configuration.informal_stake_reputation() {
-                        <span class="kw">let </span>bid = <span class="self">self</span>.bid_storage.get_bid(job.bid_id()).unwrap_or_revert();
+                        <span class="kw">let </span>bid = <span class="self">self
+                            </span>.bid_storage
+                            .get_bid(job.bid_id())
+                            .unwrap_or_revert_with(Error::BidNotFound);
                         <span class="self">self</span>.refs
                             .reputation_token()
                             .unstake_bid(bid.borrow().into());
@@ -948,8 +961,11 @@
     <span class="kw">fn </span>mint_reputation_for_voters(<span class="kw-2">&amp;mut </span><span class="self">self</span>, job: <span class="kw-2">&amp;</span>Job, amount: U512) {
         <span class="kw">let </span>voting = <span class="self">self
             </span>.voting_engine
-            .get_voting(job.voting_id().unwrap_or_revert())
-            .unwrap_or_revert();
+            .get_voting(
+                job.voting_id()
+                    .unwrap_or_revert_with(Error::VotingIdNotFound),
+            )
+            .unwrap_or_revert_with(Error::VotingDoesNotExist);
 
         <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="self">self
             </span>.voting_engine

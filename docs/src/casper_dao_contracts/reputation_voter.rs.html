@@ -285,6 +285,7 @@
 <span id="285">285</span>
 <span id="286">286</span>
 <span id="287">287</span>
+<span id="288">288</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Contains Reputation Voter Contract definition and related abstractions.
 //!
 //! # General
@@ -314,12 +315,13 @@
 <span class="kw">use crate</span>::{
     config::ConfigurationBuilder,
     voting::{
+        events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
@@ -387,7 +389,7 @@
     /// * `action` - action to perform (burn/mint),
     /// * `amount` - how many tokens to burn/mint,
     /// * `document_hash` - hash of the document explaining an action.
-    /// 
+    ///
     /// # Events
     /// * [`ReputationVotingCreated`]
     </span><span class="kw">fn </span>create_voting(
@@ -403,7 +405,7 @@
     <span class="doccomment">/// Finishes voting. Depending on type of voting, different actions are performed.
     /// [Read more](VotingEngine::finish_voting())
     </span><span class="kw">fn </span>finish_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voting_id: VotingId, voting_type: VotingType);
-     <span class="doccomment">/// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    <span class="doccomment">/// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
     </span><span class="kw">fn </span>variable_repository_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
     <span class="doccomment">/// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     </span><span class="kw">fn </span>reputation_token_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;

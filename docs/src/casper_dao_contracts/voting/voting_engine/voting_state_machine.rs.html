@@ -488,6 +488,9 @@
 <span id="488">488</span>
 <span id="489">489</span>
 <span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Voting struct with logic for governance voting
 </span><span class="kw">use </span>casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
@@ -499,7 +502,10 @@
 
 <span class="kw">use crate</span>::{
     config::Configuration,
-    rules::{RulesBuilder, validation::voting::{AfterFormalVoting, VotingNotCompleted, VoteInTime}},
+    rules::{
+        validation::voting::{AfterFormalVoting, VoteInTime, VotingNotCompleted},
+        RulesBuilder,
+    },
     voting::{ballot::Choice, types::VotingId},
 };
 
@@ -615,7 +621,7 @@
 }
 
 <span class="doccomment">/// Serializable voting state with a state machine capabilities.
-/// 
+///
 /// Stores voting metadata, the configuration and the voting progress (stakes).
 </span><span class="attribute">#[derive(Debug, Clone, CLTyped, ToBytes, FromBytes)]
 </span><span class="kw">pub struct </span>VotingStateMachine {
@@ -662,7 +668,7 @@
     </span><span class="kw">pub fn </span>finish(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="self">self</span>.state = VotingState::Finished;
     }
-    
+
     <span class="doccomment">/// Ends the voting process forcefully and cancels the result.
     </span><span class="kw">pub fn </span>cancel(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="self">self</span>.state = VotingState::Canceled;
@@ -698,13 +704,13 @@
     </span><span class="kw">pub fn </span>informal_voting_end_time(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BlockTime {
         <span class="self">self</span>.informal_voting_start_time() + <span class="self">self</span>.configuration.informal_voting_time()
     }
-    
+
     <span class="doccomment">/// Gets the informal-formal break end time.
     </span><span class="kw">pub fn </span>time_between_votings_end_time(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BlockTime {
         <span class="self">self</span>.informal_voting_end_time()
-        + <span class="self">self</span>.configuration.time_between_informal_and_formal_voting()
+            + <span class="self">self</span>.configuration.time_between_informal_and_formal_voting()
     }
-    
+
     <span class="doccomment">/// Gets the informal phase end time.
     </span><span class="kw">pub fn </span>formal_voting_end_time(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BlockTime {
         <span class="self">self</span>.time_between_votings_end_time() + <span class="self">self</span>.configuration.formal_voting_time()
@@ -883,7 +889,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>.state
     }
 
-    <span class="doccomment">/// Indicates if Voting is finished or canceled. 
+    <span class="doccomment">/// Indicates if Voting is finished or canceled.
     </span><span class="kw">pub fn </span>completed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="self">self</span>.state() == <span class="kw-2">&amp;</span>VotingState::Finished || <span class="self">self</span>.state() == <span class="kw-2">&amp;</span>VotingState::Canceled
     }
@@ -958,7 +964,7 @@
 
 <span class="kw">impl </span>VotingStateMachine {
     <span class="doccomment">/// Verifies if a ballot can be casted.
-    /// 
+    ///
     /// Stops contract execution if validation fails. See [`VoteInTime`].
     </span><span class="kw">pub fn </span>guard_vote(<span class="kw-2">&amp;</span><span class="self">self</span>, block_time: BlockTime) {
         RulesBuilder::new()
@@ -968,7 +974,7 @@
     }
 
     <span class="doccomment">/// Verifies if the formal voting can be finished.
-    /// 
+    ///
     /// Stops contract execution if validation fails. See [`AfterFormalVoting`] and [`VotingNotCompleted`].
     </span><span class="kw">pub fn </span>guard_finish_formal_voting(<span class="kw-2">&amp;</span><span class="self">self</span>, block_time: BlockTime) {
         RulesBuilder::new()

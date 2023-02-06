@@ -179,6 +179,10 @@
 <span id="179">179</span>
 <span id="180">180</span>
 <span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
 </pre><pre class="rust"><code><span class="kw">use </span>casper_dao_utils::{
     casper_dao_macros::Instance,
     casper_env::{<span class="self">self</span>, emit, get_block_time},
@@ -291,7 +295,11 @@
     <span class="attribute">#[cfg(not(feature = <span class="string">&quot;test-support&quot;</span>))]
     </span><span class="kw">pub fn </span>push&lt;T: ToBytes&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>str, value: T) {
         <span class="kw">use </span>casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
-        <span class="kw">let </span>value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        <span class="kw">let </span>value: Bytes = Bytes::from(
+            value
+                .to_bytes()
+                .unwrap_or_revert_with(Error::BytesConversionError),
+        );
         <span class="self">self</span>.items.push((String::from(key), value));
     }
 

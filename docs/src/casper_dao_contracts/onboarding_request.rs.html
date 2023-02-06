@@ -252,6 +252,7 @@
 <span id="252">252</span>
 <span id="253">253</span>
 <span id="254">254</span>
+<span id="255">255</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Contains Onboarding Request Contract definition and related abstractions.
 //!
 //! # Definitions
@@ -275,7 +276,7 @@
 //!
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
-//! 
+//!
 //! [`Bid Escrow Contract`]: crate::bid_escrow::BidEscrowContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [submission process]: crate::bid_escrow#submitting-a-job-proof
@@ -292,12 +293,13 @@
 <span class="kw">use </span>delegate::delegate;
 
 <span class="kw">use </span><span class="kw">crate</span>::voting::{
+    events::VotingCreatedInfo,
     refs::ContractRefsWithKycStorage,
     voting_state_machine::{VotingStateMachine, VotingType},
     Ballot,
     Choice,
     VotingEngine,
-    VotingId, events::VotingCreatedInfo,
+    VotingId,
 };
 
 <span class="kw">pub mod </span>request;
@@ -325,7 +327,7 @@
         va_token: Address,
     );
     <span class="doccomment">/// Submits an onboarding request. If the request is valid voting starts.
-    /// 
+    ///
     /// # Events
     /// * [`OnboardingVotingCreated`]
     </span><span class="kw">fn </span>create_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, reason: DocumentHash, purse: URef);

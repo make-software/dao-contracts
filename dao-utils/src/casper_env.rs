@@ -133,8 +133,9 @@ pub fn install_contract(
     initializer: impl FnOnce(ContractPackageHash),
 ) {
     // Create a new contract package hash for the contract.
-    let (contract_package_hash, _) = storage::create_contract_package_at_hash();
+    let (contract_package_hash, owner_token) = storage::create_contract_package_at_hash();
     runtime::put_key(package_hash, contract_package_hash.into());
+    runtime::put_key(&format!("{package_hash}_owner_token"), owner_token.into());
 
     let init_access: URef =
         storage::create_contract_user_group(contract_package_hash, "init", 1, Default::default())

@@ -43,6 +43,9 @@
 <span id="43">43</span>
 <span id="44">44</span>
 <span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
 </pre><pre class="rust"><code><span class="kw">use </span>casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
@@ -60,7 +63,10 @@
 }
 
 <span class="kw">impl </span>VotingConfiguration {
-    <span class="kw">pub fn </span>set_bind_ballot_for_successful_voting(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bind_ballot_for_successful_voting: bool) {
+    <span class="kw">pub fn </span>set_bind_ballot_for_successful_voting(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        bind_ballot_for_successful_voting: bool,
+    ) {
         <span class="self">self</span>.bind_ballot_for_successful_voting = bind_ballot_for_successful_voting;
     }
 

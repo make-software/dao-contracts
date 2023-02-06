@@ -322,6 +322,11 @@
 <span id="322">322</span>
 <span id="323">323</span>
 <span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Bid-related structs.
 </span><span class="kw">use </span>casper_dao_utils::{
     casper_dao_macros::{CLTyped, FromBytes, ToBytes},
@@ -336,17 +341,23 @@
         job_offer::{AuctionState, JobOfferStatus},
         types::{BidId, JobOfferId},
     },
-    rules::{RulesBuilder, validation::{IsUserKyced, bid_escrow::{
-        CanBeOnboarded,
-            CanBidBeCancelled,
-            CanBidOnAuctionState,
-            CanBidOnOwnJob,
-            CanPickBid,
-            DoesProposedPaymentExceedBudget,
-            HasPermissionsToCancelBid,
-            IsGracePeriod,
-            IsStakeNonZero,
-    }}},
+    rules::{
+        validation::{
+            bid_escrow::{
+                CanBeOnboarded,
+                CanBidBeCancelled,
+                CanBidOnAuctionState,
+                CanBidOnOwnJob,
+                CanPickBid,
+                DoesProposedPaymentExceedBudget,
+                HasPermissionsToCancelBid,
+                IsGracePeriod,
+                IsStakeNonZero,
+            },
+            IsUserKyced,
+        },
+        RulesBuilder,
+    },
 };
 
 <span class="doccomment">/// Bid status representation
@@ -363,7 +374,6 @@
     <span class="doccomment">/// Cancel due eg. the `Job Poster` was slashed.
     </span>Canceled,
 }
-
 
 <span class="doccomment">/// Data required to create a Bid.
 </span><span class="kw">pub struct </span>SubmitBidRequest {
@@ -466,14 +476,14 @@
 
 <span class="kw">impl </span>Bid {
     <span class="doccomment">/// Conditionally creates a new instance of Bid.
-    /// 
+    ///
     /// Runs validation:
     /// * [`IsUserKyced`]
     /// * [`CanBidOnOwnJob`]
     /// * [`CanBeOnboarded`]
     /// * [`DoesProposedPaymentExceedBudget`]
     /// * [`CanBidOnAuctionState`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     </span><span class="attribute">#[allow(clippy::too_many_arguments)]
     </span><span class="kw">pub fn </span>new(request: SubmitBidRequest) -&gt; Bid {
@@ -512,14 +522,14 @@
 
     <span class="doccomment">/// Conditionally changes the status to [Reclaimed](BidStatus::Reclaimed), creates a new bid
     /// with a new proposed timeframe.
-    /// 
+    ///
     /// Runs validation:
     /// * [`IsUserKyced`]
     /// * [`CanBidOnOwnJob`]
     /// * [`CanBeOnboarded`]
     /// * [`IsStakeNonZero`]
     /// * [`IsGracePeriod`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     </span><span class="kw">pub fn </span>reclaim(<span class="kw-2">&amp;mut </span><span class="self">self</span>, request: <span class="kw-2">&amp;</span>ReclaimBidRequest) -&gt; Bid {
         RulesBuilder::new()
@@ -561,10 +571,10 @@
     }
 
     <span class="doccomment">/// Conditionally changes the status to [Picked](BidStatus::Picked).
-    /// 
+    ///
     /// Runs validation:
     /// * [`CanPickBid`]
-    /// 
+    ///
     /// Stops contract execution if the validation fails.
     </span><span class="kw">pub fn </span>picked(<span class="kw-2">&amp;mut </span><span class="self">self</span>, request: <span class="kw-2">&amp;</span>PickBidRequest) {
         RulesBuilder::new()
@@ -581,11 +591,11 @@
     }
 
     <span class="doccomment">/// Conditionally changes the status to [Canceled](BidStatus::Canceled).
-    /// 
+    ///
     /// Runs validation:
     /// * [`HasPermissionsToCancelBid`]
     /// * [`CanBidBeCancelled`]
-    /// 
+    ///
     /// Stops contract execution if any validation fails.
     </span><span class="kw">pub fn </span>cancel(<span class="kw-2">&amp;mut </span><span class="self">self</span>, request: CancelBidRequest) {
         RulesBuilder::new()

@@ -128,6 +128,7 @@
 <span id="128">128</span>
 <span id="129">129</span>
 <span id="130">130</span>
+<span id="131">131</span>
 </pre><pre class="rust"><code><span class="kw">use </span>casper_dao_contracts::{
     admin::{AdminContract, AdminVotingCreated},
     bid_escrow::BidEscrowContract,
@@ -141,7 +142,8 @@
     simple_voter::{SimpleVoterContract, SimpleVotingCreated},
     slashing_voter::{SlashingVoterContract, SlashingVotingCreated},
     va_nft::VaNftContract,
-    variable_repository::VariableRepositoryContract, voting::events::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
+    variable_repository::VariableRepositoryContract,
+    voting::events::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
 };
 <span class="kw">use </span>casper_dao_modules::events::{
     AddedToWhitelist,

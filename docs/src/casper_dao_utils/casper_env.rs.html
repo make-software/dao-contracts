@@ -158,6 +158,24 @@
 <span id="158">158</span>
 <span id="159">159</span>
 <span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Functions to interact with the host environment.
 </span><span class="kw">use </span>std::{collections::BTreeSet, convert::TryInto};
 
@@ -178,15 +196,26 @@
     URef,
 };
 
-<span class="kw">use crate</span>::{consts::CONTRACT_MAIN_PURSE, events::Events, Address, BlockTime};
+<span class="kw">use crate</span>::{
+    consts::CONTRACT_MAIN_PURSE,
+    events::Events,
+    Address,
+    BlockTime,
+    Error,
+    Error::KeyValueStorageError,
+};
 
 <span class="doccomment">/// Read value from the storage.
 </span><span class="kw">pub fn </span>get_key&lt;T: FromBytes + CLTyped&gt;(name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
     <span class="kw">match </span>runtime::get_key(name) {
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
         <span class="prelude-val">Some</span>(value) =&gt; {
-            <span class="kw">let </span>key = value.try_into().unwrap_or_revert();
-            <span class="kw">let </span>value = storage::read(key).unwrap_or_revert().unwrap_or_revert();
+            <span class="kw">let </span>key = value
+                .try_into()
+                .unwrap_or_revert_with(Error::KeyValueStorageError);
+            <span class="kw">let </span>value = storage::read(key)
+                .unwrap_or_revert_with(Error::KeyValueStorageError)
+                .unwrap_or_revert_with(KeyValueStorageError);
             <span class="prelude-val">Some</span>(value)
         }
     }
@@ -196,7 +225,9 @@
 </span><span class="kw">pub fn </span>set_key&lt;T: ToBytes + CLTyped&gt;(name: <span class="kw-2">&amp;</span>str, value: T) {
     <span class="kw">match </span>runtime::get_key(name) {
         <span class="prelude-val">Some</span>(key) =&gt; {
-            <span class="kw">let </span>key_ref = key.try_into().unwrap_or_revert();
+            <span class="kw">let </span>key_ref = key
+                .try_into()
+                .unwrap_or_revert_with(Error::KeyValueStorageError);
             storage::write(key_ref, value);
         }
         <span class="prelude-val">None </span>=&gt; {
@@ -229,7 +260,7 @@
     runtime::get_call_stack()
         .into_iter()
         .nth_back(n)
-        .unwrap_or_revert()
+        .unwrap_or_revert_with(Error::VMInternalError)
 }
 
 <span class="doccomment">/// Gets the immediate session caller of the current execution.
@@ -254,7 +285,9 @@
 
 <span class="doccomment">/// Convert any key to hash.
 </span><span class="kw">pub fn </span>to_dictionary_key&lt;T: ToBytes&gt;(key: <span class="kw-2">&amp;</span>T) -&gt; String {
-    <span class="kw">let </span>preimage = key.to_bytes().unwrap_or_revert();
+    <span class="kw">let </span>preimage = key
+        .to_bytes()
+        .unwrap_or_revert_with(Error::BytesConversionError);
     <span class="kw">let </span>bytes = runtime::blake2b(preimage);
     hex::encode(bytes)
 }
@@ -265,7 +298,9 @@
     entry_point: <span class="kw-2">&amp;</span>str,
     runtime_args: RuntimeArgs,
 ) -&gt; T {
-    <span class="kw">let </span>contract_package_hash = address.as_contract_package_hash().unwrap_or_revert();
+    <span class="kw">let </span>contract_package_hash = address
+        .as_contract_package_hash()
+        .unwrap_or_revert_with(Error::InvalidAddress);
     runtime::call_versioned_contract(<span class="kw-2">*</span>contract_package_hash, <span class="prelude-val">None</span>, entry_point, runtime_args)
 }
 
@@ -276,25 +311,26 @@
     initializer: <span class="kw">impl </span>FnOnce(ContractPackageHash),
 ) {
     <span class="comment">// Create a new contract package hash for the contract.
-    </span><span class="kw">let </span>(contract_package_hash, <span class="kw">_</span>) = storage::create_contract_package_at_hash();
+    </span><span class="kw">let </span>(contract_package_hash, owner_token) = storage::create_contract_package_at_hash();
     runtime::put_key(package_hash, contract_package_hash.into());
+    runtime::put_key(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{package_hash}_owner_token&quot;</span>), owner_token.into());
 
     <span class="kw">let </span>init_access: URef =
         storage::create_contract_user_group(contract_package_hash, <span class="string">&quot;init&quot;</span>, <span class="number">1</span>, Default::default())
-            .unwrap_or_revert()
+            .unwrap_or_revert_with(Error::VMInternalError)
             .pop()
-            .unwrap_or_revert();
+            .unwrap_or_revert_with(Error::VMInternalError);
 
     storage::add_contract_version(contract_package_hash, entry_points, NamedKeys::new());
 
-    <span class="comment">// Call contrustor method.
+    <span class="comment">// Call constructor method.
     </span>initializer(contract_package_hash);
 
     <span class="comment">// Revoke access to init.
     </span><span class="kw">let </span><span class="kw-2">mut </span>urefs = BTreeSet::new();
     urefs.insert(init_access);
     storage::remove_contract_user_group_urefs(contract_package_hash, <span class="string">&quot;init&quot;</span>, urefs)
-        .unwrap_or_revert();
+        .unwrap_or_revert_with(Error::VMInternalError);
 }
 
 <span class="doccomment">/// Returns the current [`BlockTime`].
@@ -315,7 +351,7 @@
             runtime::put_key(CONTRACT_MAIN_PURSE, Key::from(main_purse));
             main_purse
         }
-        <span class="prelude-val">Some</span>(value) =&gt; <span class="kw-2">*</span>value.as_uref().unwrap_or_revert(),
+        <span class="prelude-val">Some</span>(value) =&gt; <span class="kw-2">*</span>value.as_uref().unwrap_or_revert_with(Error::PurseError),
     }
 }
 </code></pre></div>

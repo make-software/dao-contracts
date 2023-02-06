@@ -22,7 +22,7 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::rules::validation::Validation;
 
-<span class="doccomment">/// Makes sure the job poster is the one who progresses the [`Job`](crate::bid_escrow::job::Job). 
+<span class="doccomment">/// Makes sure the job poster is the one who progresses the [`Job`](crate::bid_escrow::job::Job).
 /// May return [Error::OnlyJobPosterCanModifyJobOffer].
 </span><span class="attribute">#[derive(Rule)]
 </span><span class="kw">pub struct </span>CanProgressJobOffer {

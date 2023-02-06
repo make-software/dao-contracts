@@ -201,11 +201,6 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Submodules storing Job and Bid data.
 </span><span class="kw">use </span>casper_dao_modules::SequenceGenerator;
 <span class="kw">use </span>casper_dao_utils::{
@@ -401,17 +396,13 @@
 </span><span class="kw">mod </span>test {
     <span class="kw">use </span><span class="kw">crate</span>::bid_escrow::types::JobOfferId;
 
-
     <span class="attribute">#[test]
     </span><span class="kw">fn </span>asa() {
         <span class="kw">let </span>offers: Vec&lt;JobOfferId&gt; = <span class="macro">vec!</span>[<span class="number">112</span>, <span class="number">13</span>, <span class="number">124</span>];
-        <span class="kw">let </span>offers: Vec&lt;JobOfferId&gt; = offers
-            .iter()
-            .filter(|id| id == &amp;&amp;<span class="number">124</span>)
-            .cloned()
-            .collect();
+        <span class="kw">let </span>offers: Vec&lt;JobOfferId&gt; = offers.iter().filter(|id| id == &amp;&amp;<span class="number">124</span>).cloned().collect();
 
         <span class="macro">dbg!</span>(offers);
     }
-}</code></pre></div>
+}
+</code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="casper_dao_contracts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (b8b5caee0 2022-10-16)" ></div></body></html>

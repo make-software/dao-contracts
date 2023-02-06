@@ -179,6 +179,21 @@
 <span id="179">179</span>
 <span id="180">180</span>
 <span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Contains Variable Repository Contract definition and related abstractions.
 //!
 //!  Variable Repository Contract stores governance variables. Values can be altered
@@ -219,9 +234,11 @@
 
 <span class="kw">use </span>casper_dao_modules::{AccessControl, Record, Repository};
 <span class="kw">use </span>casper_dao_utils::{
+    casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
+    Error,
 };
 <span class="kw">use </span>casper_types::bytesrepr::Bytes;
 <span class="kw">use </span>delegate::delegate;
@@ -351,9 +368,22 @@
     <span class="kw">fn </span>all_variables(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BTreeMap&lt;String, Bytes&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>result: BTreeMap&lt;String, Bytes&gt; = BTreeMap::new();
 
-        <span class="kw">for </span>key <span class="kw">in </span><span class="number">0</span>..<span class="self">self</span>.repository.keys.length.get().unwrap() {
-            <span class="kw">let </span>repo_key = <span class="self">self</span>.repository.keys.get(key).unwrap();
-            <span class="kw">let </span>value = <span class="self">self</span>.repository.get(repo_key.clone()).unwrap();
+        <span class="kw">for </span>key <span class="kw">in </span><span class="number">0</span>..<span class="self">self
+            </span>.repository
+            .keys
+            .length
+            .get()
+            .unwrap_or_revert_with(Error::RepositoryError)
+        {
+            <span class="kw">let </span>repo_key = <span class="self">self
+                </span>.repository
+                .keys
+                .get(key)
+                .unwrap_or_revert_with(Error::RepositoryError);
+            <span class="kw">let </span>value = <span class="self">self
+                </span>.repository
+                .get(repo_key.clone())
+                .unwrap_or_revert_with(Error::RepositoryError);
             result.insert(repo_key, value);
         }
 

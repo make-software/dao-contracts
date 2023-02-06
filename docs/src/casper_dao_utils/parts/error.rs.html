@@ -139,6 +139,14 @@
 <span id="139">139</span>
 <span id="140">140</span>
 <span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
 </pre><pre class="rust"><code><span class="macro">macro_rules! </span>dao_errors {
     ( $(<span class="macro-nonterminal">$name</span>:ident $( (<span class="macro-nonterminal">$optional_arg</span>:ident) )<span class="question-mark">? </span>=&gt; <span class="macro-nonterminal">$value</span>:expr,)* ) =&gt; {
         <span class="attribute">#[doc = <span class="string">&quot;All possible errors that can be raised by the utils crate.&quot;</span>]
@@ -232,6 +240,7 @@
     VotingAlreadyFinished =&gt; <span class="number">3412</span>,
     VotingWithGivenTypeNotInProgress =&gt; <span class="number">3413</span>,
     VotingIdNotFound =&gt; <span class="number">3414</span>,
+    VotingAddressNotFound =&gt; <span class="number">3415</span>,
 
     <span class="comment">// Bid Escrow Errors.
     </span>CannotPostJobForSelf =&gt; <span class="number">4000</span>,
@@ -275,7 +284,14 @@
     BidStakeDoesntExists =&gt; <span class="number">4502</span>,
 
     InvalidAddress =&gt; <span class="number">5000</span>,
+    RepositoryError =&gt; <span class="number">5001</span>,
+    KeyValueStorageError =&gt; <span class="number">5002</span>,
+    DictionaryStorageError =&gt; <span class="number">5003</span>,
+    StorageError =&gt; <span class="number">5004</span>,
+    VMInternalError =&gt; <span class="number">5005</span>,
+    CLValueError =&gt; <span class="number">5006</span>,
     TransferError =&gt; <span class="number">6000</span>,
+
 
     ExpectedInformal =&gt; <span class="number">7000</span>,
     ExpectedFormalToBeOn =&gt; <span class="number">7001</span>,

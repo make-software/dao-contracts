@@ -22,7 +22,7 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::rules::validation::Validation;
 
-<span class="doccomment">/// Makes sure the bidder is the one who cancels the [`Bid`](crate::bid_escrow::bid::Bid). 
+<span class="doccomment">/// Makes sure the bidder is the one who cancels the [`Bid`](crate::bid_escrow::bid::Bid).
 /// May return [Error::CannotCancelNotOwnedBid].
 </span><span class="attribute">#[derive(Rule)]
 </span><span class="kw">pub struct </span>HasPermissionsToCancelBid {

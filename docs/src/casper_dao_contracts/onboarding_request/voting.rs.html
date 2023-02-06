@@ -256,6 +256,8 @@
 <span id="256">256</span>
 <span id="257">257</span>
 <span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
 </pre><pre class="rust"><code><span class="doccomment">//! TODO: docs
 </span><span class="kw">use </span>casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
@@ -275,13 +277,15 @@
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
-        redistribute_cspr_to_all_vas, redistribute_to_governance,
+        events::VotingCreatedInfo,
+        redistribute_cspr_to_all_vas,
+        redistribute_to_governance,
         refs::{ContractRefs, ContractRefsWithKycStorage},
         submodules::{KycInfo, OnboardingInfo},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
         Choice,
         VotingEngine,
-        VotingId, events::VotingCreatedInfo,
+        VotingId,
     },
 };
 
