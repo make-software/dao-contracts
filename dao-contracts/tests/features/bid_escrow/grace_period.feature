@@ -22,7 +22,7 @@ Feature: Grace period
     When InternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 REP stake
     And JobPoster picked the Bid of InternalWorker
     And 8 days passed
-    And ExternalWorker submits the JobProof with 1000 CSPR stake with onboarding
+    And ExternalWorker submits the JobProof of Job 0 with 1000 CSPR stake with onboarding
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 1900         | 0            | 0          |
@@ -38,7 +38,7 @@ Feature: Grace period
     And ExternalWorker posted the Bid for JobOffer 0 with proposed timeframe of 7 days and 500 CSPR price and 100 CSPR stake with onboarding
     And JobPoster picked the Bid of ExternalWorker
     And 8 days passed
-    And InternalWorker submits the JobProof with 100 REP stake
+    And InternalWorker submits the JobProof of Job 0 with 100 REP stake
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | BidEscrow        | 900          | 0            | 0          |
@@ -48,18 +48,20 @@ Feature: Grace period
       | ExternalWorker   | 900          | 0            | 0          |
       | VA1              | 30           | 1000         | 0          |
       | VA2              | 30           | 1000         | 0          |
-    When votes are
-      | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-      | VA1              | Yes  | 500   |
-      | VA2              | Yes  | 500   |
-    And Informal voting ends
-    And votes are
-      | account          | vote | stake |
-     #| InternalWorker   | Yes  | 100   | - automatically voted by the system
-      | VA1              | Yes  | 500   |
-      | VA2              | No   | 500   |
-    And Formal voting ends
+    When voters vote in BidEscrow informal voting with id 0
+      | account          | REP stake | choice |
+     #| InternalWorker   | 100       | Yes    | - automatically voted by the system
+      | VA1              | 500       | Yes    |
+      | VA2              | 500       | Yes    |
+    And 6 days passed
+    And informal voting with id 0 ends in BidEscrow contract
+    And voters vote in BidEscrow formal voting with id 0
+      | account          | REP stake | choice |
+     #| InternalWorker   | 100       | Yes    | - automatically voted by the system
+      | VA1              | 500       | Yes    |
+      | VA2              | 500       | No     |
+    And 6 days passed
+    And formal voting with id 0 ends in BidEscrow contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | MultisigWallet   | 60           | 0            | 0          |

@@ -180,7 +180,7 @@ mod contract {
             ImportantContractTest {
                 env: env.clone(),
                 package_hash,
-                data: casper_dao_utils::instance::Instanced::instance("contract"),
+                data: casper_dao_utils::Instanced::instance("contract"),
             }
         }
         pub fn get_package_hash(&self) -> casper_types::ContractPackageHash {
@@ -338,7 +338,7 @@ mod contract {
         }
     }
     pub struct ImportantContract {}
-    impl casper_dao_utils::instance::Instanced for ImportantContract {
+    impl casper_dao_utils::Instanced for ImportantContract {
         fn instance(namespace: &str) -> Self {
             Self {}
         }

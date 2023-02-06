@@ -31,20 +31,21 @@ fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStrea
                 .attrs
                 .iter()
                 .filter(|attr| attr.path.is_ident("scoped"))
-                .find_map(|attr| match attr.parse_meta().unwrap() {
+                .map(|attr| match attr.parse_meta().unwrap() {
                     syn::Meta::NameValue(name_value) => match name_value.lit {
                         syn::Lit::Str(str) => {
-                            Some(str.value().parse::<Scope>().unwrap_or(Scope::Invalid))
+                            str.value().parse::<Scope>().unwrap_or(Scope::Invalid)
                         }
-                        _ => Some(Scope::Invalid),
+                        _ => Scope::Invalid,
                     },
-                    _ => Some(Scope::Invalid),
+                    _ => Scope::Invalid,
                 })
+                .next()
                 .unwrap_or(Scope::None);
 
             match scope {
                 Scope::Contract => Ok(quote! {
-                    #ident: casper_dao_utils::instance::Instanced::instance({
+                    #ident: casper_dao_utils::Instanced::instance({
                         let idx = namespace.rfind("__");
                         let namespace = match idx {
                             Some(value) => &namespace[value+2..],
@@ -54,7 +55,7 @@ fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStrea
                     }),
                 }),
                 Scope::Parent => Ok(quote! {
-                    #ident: casper_dao_utils::instance::Instanced::instance({
+                    #ident: casper_dao_utils::Instanced::instance({
                         let idx = namespace.find("__");
                         let namespace = match idx {
                             Some(value) => &namespace[value+2..],
@@ -64,7 +65,7 @@ fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStrea
                     }),
                 }),
                 Scope::None => Ok(quote! {
-                    #ident: casper_dao_utils::instance::Instanced::instance(
+                    #ident: casper_dao_utils::Instanced::instance(
                         format!("{}__{}", stringify!(#ident), namespace).as_str()
                     ),
                 }),
@@ -77,7 +78,7 @@ fn parse_data(struct_ident: Ident, data_struct: DataStruct) -> Result<TokenStrea
         .try_collect::<TokenStream>()?;
 
     Ok(quote! {
-        impl casper_dao_utils::instance::Instanced for #struct_ident {
+        impl casper_dao_utils::Instanced for #struct_ident {
 
             fn instance(namespace: &str) -> Self {
                 Self {
@@ -143,16 +144,16 @@ mod tests {
             .unwrap()
             .to_string();
         let expected = quote! {
-            impl casper_dao_utils::instance::Instanced for A {
+            impl casper_dao_utils::Instanced for A {
                 fn instance(namespace: &str) -> Self {
                     Self {
-                        b: casper_dao_utils::instance::Instanced::instance(
+                        b: casper_dao_utils::Instanced::instance(
                             format!("{}__{}", stringify!(b), namespace).as_str()
                         ),
-                        c: casper_dao_utils::instance::Instanced::instance(
+                        c: casper_dao_utils::Instanced::instance(
                             format!("{}__{}", stringify!(c), namespace).as_str()
                         ),
-                        d: casper_dao_utils::instance::Instanced::instance({
+                        d: casper_dao_utils::Instanced::instance({
                             let idx = namespace.find("__");
                             let namespace = match idx {
                                 Some(value) => &namespace[value+2..],

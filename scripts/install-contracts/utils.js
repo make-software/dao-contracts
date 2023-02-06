@@ -51,7 +51,7 @@ function parseExecutionResult(deploy) {
 
   const executionResult = deploy.execution_results[0].result.Success;
   if (!executionResult) {
-    throw new Error('failed deploy');
+    throw new Error(`failed deploy: hash: '${deploy.deploy.hash}' error_message: '${deploy.execution_results[0].result.Failure.error_message}'`);
   }
 
   return executionResult;

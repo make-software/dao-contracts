@@ -1,89 +1,129 @@
+//! Contains Onboarding Request Contract definition and related abstractions.
+//!
+//! # Definitions
+//! * Job Offer - A description of a Job posted by JobPoster
+//! * Bid - on offer that can be accepted by the Job Poster
+//! * JobPoster - user of the system that posts a Job Offer; it has to be KYC’d
+//! * External Worker - a Worker who completed the KYC and is not a Voting Associate
+//! * Voting Associate (or VA) - users of the system with Reputation and permissions to vote
+//! * KYC - Know Your Customer, a process that validates that the user can be the user of the system
+//! * Bid Escrow Voting - Mints reputation
+//!
+//! # Onboarding Request
+//! One of the side effects of completing a `Job` by an `External Worker` is the possibility to become a `Voting Associate`.
+//! It is also possible to become one without completing a `Job` using [`Bid Escrow Contract`].
+//! To do this, an `External Worker` submits an `Onboarding Request` containing `Document Hash` of a document containing the reason
+//! why the `Onboarding` should be done and a `CSPR` stake.
+//!
+//! The rest of the process is analogous to the regular `Job` [submission process] of an `External Worker`, except that instead of
+//! redistribution of `Job Payment` between `VA`’s we redistribute the stake of the `External Worker`.
+//! If the process fails, the `CSPR` stake of the `External Worker` is returned.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! [`Bid Escrow Contract`]: crate::bid_escrow::BidEscrowContractInterface
+//! [`VotingEngine`]: crate::voting::VotingEngine
+//! [submission process]: crate::bid_escrow#submitting-a-job-proof
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
-    casper_contract::contract_api::system::get_purse_balance,
-    casper_dao_macros::{casper_contract_interface, Instance, Event},
-    casper_env::{self, caller},
+    casper_dao_macros::{casper_contract_interface, Event, Instance},
+    casper_env::caller,
+    cspr,
     Address,
-    DocumentHash, transfer, BlockTime,
+    BlockTime,
+    DocumentHash,
 };
 use casper_types::{URef, U512};
 use delegate::delegate;
 
-use crate::{
-    escrow::onboarding::Onboarding,
-    voting::{
-        voting_state_machine::{VotingStateMachine, VotingType},
-        Ballot,
-        Choice,
-        VotingEngine,
-        VotingId, VotingCreatedInfo,
-    },
+use crate::voting::{
+    events::VotingCreatedInfo,
+    refs::ContractRefsWithKycStorage,
+    voting_state_machine::{VotingStateMachine, VotingType},
+    Ballot,
+    Choice,
+    VotingEngine,
+    VotingId,
 };
+
+pub mod request;
+pub mod voting;
 
 #[casper_contract_interface]
 pub trait OnboardingRequestContractInterface {
-    /// Initializes the module with [Addresses](Address) of [Reputation Token](crate::ReputationContract), [Variable Repo](crate::VariableRepositoryContract)
-    /// KYC Token and VA Token
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// Emits [`VotingContractCreated`](crate::voting::voting_engine::events::VotingContractCreated)
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         kyc_token: Address,
         va_token: Address,
     );
-
-    /// Submits onboarding request. If the request is valid voting starts.
-    fn create_voting(&mut self, reason: DocumentHash, purse: URef);
-    /// Casts a vote over a job
+    /// Submits an onboarding request. If the request is valid voting starts.
+    ///
     /// # Events
-    /// Emits [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
-
-    /// # Errors
-    /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
+    /// * [`OnboardingVotingCreated`]
+    fn create_voting(&mut self, reason: DocumentHash, purse: URef);
+    /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// Finishes voting stage. Depending on stage, the voting can be converted to a formal one, end
     /// with a refund or convert the requestor to a VA.
-    /// # Events
-    /// Emits [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded), [`VotingCreated`](crate::voting::voting_engine::events::VotingCreated)
-    /// # Errors
-    /// Throws [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
-    fn finish_voting(&mut self, voting_id: VotingId);
-    /// see [VotingEngine](VotingEngine)
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine)
+    fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns [Voting](VotingStateMachine) for given id.
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-    /// see [VotingEngine](VotingEngine)
+    /// Returns the Voter's [`Ballot`].
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [VotingEngine](VotingEngine)
+    /// Gets the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-
-    /// Returns the CSPR balance of the contract
-    fn get_cspr_balance(&self) -> U512;
-
-    // Whitelisting set.
-    fn change_ownership(&mut self, owner: Address);
-    fn add_to_whitelist(&mut self, address: Address);
-    fn remove_from_whitelist(&mut self, address: Address);
-    fn get_owner(&self) -> Option<Address>;
-    fn is_whitelisted(&self, address: Address) -> bool;
-
-    // Slashing
+    /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    /// Gets the CSPR balance of the contract.
+    fn get_cspr_balance(&self) -> U512;
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    /// [`Read more`](AccessControl::change_ownership())
+    fn change_ownership(&mut self, owner: Address);
+    /// Adds a new address to the whitelist.
+    /// [`Read more`](AccessControl::add_to_whitelist())
+    fn add_to_whitelist(&mut self, address: Address);
+    /// Remove address from the whitelist.
+    /// [`Read more`](AccessControl::remove_from_whitelist())
+    fn remove_from_whitelist(&mut self, address: Address);
+    /// Checks whether the given address is added to the whitelist.
+    /// [`Read more`](AccessControl::is_whitelisted()).
+    fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
 }
 
+/// TODO: docs
 #[derive(Instance)]
 pub struct OnboardingRequestContract {
+    refs: ContractRefsWithKycStorage,
     voting: VotingEngine,
     access_control: AccessControl,
     onboarding: Onboarding,
@@ -92,8 +132,6 @@ pub struct OnboardingRequestContract {
 impl OnboardingRequestContractInterface for OnboardingRequestContract {
     delegate! {
         to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -114,31 +152,36 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
         }
 
         to self.onboarding {
-            fn finish_voting(&mut self, voting_id: VotingId);
+            fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
+        }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
         }
     }
 
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         kyc_token: Address,
         va_token: Address,
     ) {
-        self.voting.init(variable_repo, reputation_token, va_token);
-        self.onboarding.init(va_token, kyc_token);
+        self.refs
+            .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
     }
 
     fn create_voting(&mut self, reason: DocumentHash, purse: URef) {
-        let cspr_deposit = transfer::deposit_cspr(purse);
+        let cspr_deposit = cspr::deposit(purse);
         let voting_info = self.onboarding.submit_request(reason.clone(), cspr_deposit);
         OnboardingVotingCreated::new(reason, cspr_deposit, voting_info).emit();
     }
 
     fn get_cspr_balance(&self) -> U512 {
-        get_purse_balance(casper_env::contract_main_purse()).unwrap_or_default()
+        cspr::main_purse_balance()
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
@@ -149,6 +192,8 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
 
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
+
+use self::voting::Onboarding;
 
 #[cfg(feature = "test-support")]
 impl OnboardingRequestContractTest {
@@ -170,7 +215,7 @@ impl OnboardingRequestContractTest {
     }
 }
 
-
+/// Informs onboarding voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct OnboardingVotingCreated {
     reason: DocumentHash,
@@ -189,11 +234,7 @@ pub struct OnboardingVotingCreated {
 }
 
 impl OnboardingVotingCreated {
-    pub fn new(
-        reason: DocumentHash,
-        cspr_deposit: U512,
-        info: VotingCreatedInfo,
-    ) -> Self {
+    pub fn new(reason: DocumentHash, cspr_deposit: U512, info: VotingCreatedInfo) -> Self {
         Self {
             reason,
             cspr_deposit,

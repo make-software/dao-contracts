@@ -1,11 +1,13 @@
-use casper_dao_contracts::voting::BallotCast;
 use casper_dao_modules::events::{AddedToWhitelist, OwnerChanged, RemovedFromWhitelist};
 use casper_dao_utils::TestContract;
 
-use crate::{common::{
-    params::{events::Event, Contract},
-    DaoWorld,
-}, on_contract};
+use crate::{
+    common::{
+        params::{events::Event, Contract},
+        DaoWorld,
+    },
+    on_contract,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {

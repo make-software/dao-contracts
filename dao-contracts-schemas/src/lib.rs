@@ -1,22 +1,18 @@
 use casper_dao_contracts::{
-    repo_voter::RepoVotingCreated,
-    reputation_voter::ReputationVotingCreated,
-    simple_voter::SimpleVotingCreated,
-    slashing_voter::SlashingVotingCreated,
-    voting::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
-    AdminContract,
-    AdminVotingCreated,
-    BidEscrowContract,
-    KycNftContract,
-    KycVoterContract,
-    KycVotingCreated,
-    RepoVoterContract,
-    ReputationContract,
-    ReputationVoterContract,
-    SimpleVoterContract,
-    SlashingVoterContract,
-    VaNftContract,
-    VariableRepositoryContract, DaoIdsContract, OnboardingRequestContract, OnboardingVotingCreated,
+    admin::{AdminContract, AdminVotingCreated},
+    bid_escrow::BidEscrowContract,
+    ids::DaoIdsContract,
+    kyc_nft::KycNftContract,
+    kyc_voter::{KycVoterContract, KycVotingCreated},
+    onboarding_request::{OnboardingRequestContract, OnboardingVotingCreated},
+    repo_voter::{RepoVoterContract, RepoVotingCreated},
+    reputation::ReputationContract,
+    reputation_voter::{ReputationVoterContract, ReputationVotingCreated},
+    simple_voter::{SimpleVoterContract, SimpleVotingCreated},
+    slashing_voter::{SlashingVoterContract, SlashingVotingCreated},
+    va_nft::VaNftContract,
+    variable_repository::VariableRepositoryContract,
+    voting::events::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
 };
 use casper_dao_modules::events::{
     AddedToWhitelist,
@@ -50,7 +46,7 @@ pub fn all_contracts() -> Vec<ContractDef> {
     contracts
 }
 
-fn with_access_control_events(contracts: &mut Vec<ContractDef>) {
+fn with_access_control_events(contracts: &mut [ContractDef]) {
     for contract in contracts.iter_mut() {
         contract.add_event::<AddedToWhitelist>("init");
         contract.add_event::<OwnerChanged>("init");
@@ -60,7 +56,7 @@ fn with_access_control_events(contracts: &mut Vec<ContractDef>) {
     }
 }
 
-fn with_voting_events(contracts: &mut Vec<ContractDef>) {
+fn with_voting_events(contracts: &mut [ContractDef]) {
     for contract in contracts.iter_mut() {
         contract.add_event::<BallotCast>("vote");
         contract.add_event::<BallotCanceled>("slash_voter");

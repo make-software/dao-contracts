@@ -4,42 +4,30 @@ use casper_dao_utils::{
     casper_dao_macros::Instance,
     Address,
     Error,
-    Variable,
 };
 
-use crate::{VaNftContractCaller, VaNftContractInterface};
+use super::refs::{ContractRefs, ContractRefsWithKycStorage};
+use crate::va_nft::VaNftContractInterface;
 
 /// A utility module that provides information about the current status of the onboarding process.
 #[derive(Instance)]
 pub struct OnboardingInfo {
-    va_token: Variable<Address>,
+    #[scoped = "contract"]
+    refs: ContractRefsWithKycStorage,
 }
 
 impl OnboardingInfo {
-    /// Initializes `va_token` contract address.
-    pub fn init(&mut self, va_token: Address) {
-        self.va_token.set(va_token);
-    }
-
-    /// Returns the `address` of kyc token contract.
-    ///
-    /// If the variable is not initialized, reverts with [VariableValueNotSet](Error::VariableValueNotSet)
-    pub fn get_va_token_address(&self) -> Address {
-        self.va_token
-            .get()
-            .unwrap_or_revert_with(Error::VariableValueNotSet)
-    }
-
     /// Returns true if the `address` has a non-zero balance of va token, false otherwise.
     pub fn is_onboarded(&self, &address: &Address) -> bool {
-        !self.va_nft_contract().balance_of(address).is_zero()
+        !self.refs.va_token().balance_of(address).is_zero()
     }
 
     /// Returns the `token id` of the `address`.
     ///
-    /// If the `address` does not own any token, reverts with [`InvalidTokenOwner`](Error:InvalidTokenOwner) error.
+    /// If the `address` does not own any token, reverts with [`InvalidTokenOwner`](Error::InvalidTokenOwner) error.
     pub fn token_id_of(&self, address: &Address) -> TokenId {
-        self.va_nft_contract()
+        self.refs
+            .va_token()
             .token_id(*address)
             .unwrap_or_revert_with(Error::InvalidTokenOwner)
     }
@@ -48,10 +36,6 @@ impl OnboardingInfo {
     ///
     /// If the `token_id` does not have an owner, None value is return.
     pub fn owner_of(&self, token_id: TokenId) -> Option<Address> {
-        self.va_nft_contract().owner_of(token_id)
-    }
-
-    fn va_nft_contract(&self) -> VaNftContractCaller {
-        VaNftContractCaller::at(self.get_va_token_address())
+        self.refs.va_token().owner_of(token_id)
     }
 }

@@ -17,7 +17,7 @@ use casper_types::{
 };
 use lazy_static::lazy_static;
 
-use crate::{casper_env::to_dictionary_key, instance::Instanced, Error};
+use crate::{casper_env::to_dictionary_key, Error, Instanced};
 
 /// Data structure for storing key-value pairs.
 ///
@@ -57,7 +57,8 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
 
     /// Read `key` from the storage or return none.
     pub fn get_or_none(&self, key: &K) -> Option<V> {
-        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key)).unwrap_or_revert()
+        storage::dictionary_get(self.get_uref(), &to_dictionary_key(key))
+            .unwrap_or_revert_with(Error::DictionaryStorageError)
     }
 
     /// Set `value` under `key` to the storage. It overrides by default.
@@ -79,11 +80,13 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
                 let key: Key = match runtime::get_key(&self.name) {
                     Some(key) => key,
                     None => {
-                        storage::new_dictionary(&self.name).unwrap_or_revert();
-                        runtime::get_key(&self.name).unwrap_or_revert()
+                        storage::new_dictionary(&self.name)
+                            .unwrap_or_revert_with(Error::DictionaryStorageError);
+                        runtime::get_key(&self.name)
+                            .unwrap_or_revert_with(Error::KeyValueStorageError)
                     }
                 };
-                let seed: URef = *key.as_uref().unwrap_or_revert();
+                let seed: URef = *key.as_uref().unwrap_or_revert_with(Error::VMInternalError);
                 seeds.insert(self.name.clone(), seed);
                 seed
             }
@@ -103,12 +106,16 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> From<&str> for Mapp
     }
 }
 
+/// Data structure for storing index-value pairs.
+///
+/// Similar to [`Mapping`], but a key is always `u32`.
 pub struct IndexedMapping<V> {
     mapping: Mapping<u32, Option<V>>,
     index: Index,
 }
 
 impl<V: ToBytes + FromBytes + CLTyped + Hash> IndexedMapping<V> {
+    /// Creates new IndexedMapping instance.
     pub fn new(name: String) -> Self {
         IndexedMapping {
             mapping: Mapping::new(name.clone()),
@@ -116,15 +123,18 @@ impl<V: ToBytes + FromBytes + CLTyped + Hash> IndexedMapping<V> {
         }
     }
 
+    /// Set `value` under `index` to the storage. It overrides by default.
     pub fn set(&self, index: u32, value: V) {
         self.index.set(index, &value);
         self.mapping.set(&index, Some(value));
     }
 
+    /// Reads `index` from the storage or return None
     pub fn get(&self, index: u32) -> Option<V> {
         self.mapping.get(&index).unwrap_or(None)
     }
 
+    /// Replaces the 'value` with `None`. Returns a tuple (success, altered_index).
     pub fn remove(&self, value: V) -> (bool, u32) {
         if let Some(item_index) = self.index.get(&value) {
             if self.mapping.get(&item_index).is_some() {
@@ -136,18 +146,22 @@ impl<V: ToBytes + FromBytes + CLTyped + Hash> IndexedMapping<V> {
         (false, 0)
     }
 
+    /// Set `None` under `index` to the storage. It overrides by default.
     pub fn unset(&self, index: u32) {
         self.mapping.set(&index, None);
     }
 
+    /// Returns the index of the `value` or None if does not exists.
     pub fn index_of(&self, value: &V) -> Option<u32> {
         self.index.get(value)
     }
 
+    /// Checks if the `value` is stored in the collection.
     pub fn contains(&self, value: &V) -> bool {
         matches!(self.index_of(value), Some(_))
     }
 
+    /// Returns the named key path to the dictionary's URef.
     pub fn path(&self) -> &str {
         self.mapping.path()
     }
@@ -162,6 +176,10 @@ impl<T: FromBytes + ToBytes + CLTyped> Instanced for IndexedMapping<T> {
     }
 }
 
+/// Data structure for storing key-value pairs.
+///
+/// Similar to [`Mapping`], but a key is complex - is a (K, u32) tuple.
+/// The related values have the same first part of the key and a different index.
 pub struct VecMapping<K, V> {
     mapping: Mapping<(K, u32), V>,
     lengths: Mapping<K, u32>,
@@ -170,6 +188,7 @@ pub struct VecMapping<K, V> {
 impl<K: CLTyped + FromBytes + ToBytes + Hash + Clone, V: ToBytes + FromBytes + CLTyped>
     VecMapping<K, V>
 {
+    /// Creates new VecMapping instance.
     pub fn new(name: String) -> Self {
         VecMapping {
             mapping: Mapping::new(name.clone()),
@@ -177,6 +196,7 @@ impl<K: CLTyped + FromBytes + ToBytes + Hash + Clone, V: ToBytes + FromBytes + C
         }
     }
 
+    /// Replaces the `value` under (`key`, `at`) key.
     pub fn replace(&self, key: K, at: u32, value: V) -> Result<(), Error> {
         let length = self.lengths.get(&key).unwrap_or(0);
         if at >= length {
@@ -186,10 +206,12 @@ impl<K: CLTyped + FromBytes + ToBytes + Hash + Clone, V: ToBytes + FromBytes + C
         Ok(())
     }
 
+    /// Reads `key` at the given position from the storage or return None
     pub fn get(&self, key: K, at: u32) -> Option<V> {
         self.mapping.get(&(key, at))
     }
 
+    /// Aggregates all the values stored under (`key`, n).
     pub fn get_all(&self, key: K) -> Vec<V> {
         let length = self.lengths.get(&key).unwrap_or(0);
         let mut result = Vec::new();
@@ -202,20 +224,24 @@ impl<K: CLTyped + FromBytes + ToBytes + Hash + Clone, V: ToBytes + FromBytes + C
         result
     }
 
+    /// Reads `key` at the given position from the storage or return None
     pub fn get_or_none(&self, key: K, at: u32) -> Option<V> {
         self.mapping.get_or_none(&(key, at))
     }
 
+    /// Read `key` at the given position from the storage or revert if the key stores no value.
     pub fn get_or_revert(&self, key: K, at: u32) -> V {
         self.mapping.get_or_revert(&(key, at))
     }
 
+    /// Sets `value` under the next index of `key` to the storage. It overrides by default.
     pub fn add(&self, key: K, value: V) {
         let length = self.lengths.get(&key).unwrap_or(0);
         self.lengths.set(&key, length + 1);
         self.mapping.set(&(key, length), value);
     }
 
+    /// Number of items stored under `key`.
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self, key: K) -> u32 {
         self.lengths.get(&key).unwrap_or(0)

@@ -1,14 +1,18 @@
+//! Data structures describing contracts and events metadata.
 use casper_types::{CLType, CLTyped};
 use serde::Serialize;
 
+/// Smart contract metadata. Should be implemented by every contract.
 pub trait ContractDefinition {
     fn contract_def() -> ContractDef;
 }
 
+/// Event metadata. Should be implemented by every event.
 pub trait EventDefinition {
     fn event_def() -> EventDef;
 }
 
+/// Represents a contract definition.
 #[derive(Debug, Clone, Serialize)]
 pub struct ContractDef {
     pub name: &'static str,
@@ -28,9 +32,9 @@ impl ContractDef {
     }
 
     pub fn add_event<T: EventDefinition>(&mut self, method_name: &'static str) {
-        self.method_mut(method_name).map(|method| {
+        if let Some(method) = self.method_mut(method_name) {
             method.add_event(T::event_def());
-        });
+        }
     }
 
     pub fn with_event<T: EventDefinition>(mut self, method_name: &'static str) -> Self {
@@ -47,15 +51,13 @@ impl ContractDef {
     }
 
     fn method_mut(&mut self, method_name: &'static str) -> Option<&mut MethodDef> {
-        for method in &mut self.entry_points {
-            if method.name == method_name {
-                return Some(method);
-            }
-        }
-        None
+        self.entry_points
+            .iter_mut()
+            .find(|method| method.name == method_name)
     }
 }
 
+/// Represents contract entry point definition.
 #[derive(Debug, Clone, Serialize)]
 pub struct MethodDef {
     pub name: &'static str,
@@ -85,12 +87,14 @@ impl MethodDef {
     }
 }
 
+/// Represents an event definition.
 #[derive(Debug, Clone, Serialize)]
 pub struct EventDef {
     pub name: &'static str,
     pub fields: Vec<ElemDef>,
 }
 
+/// Represents a single event field.
 #[derive(Debug, Clone, Serialize)]
 pub struct ElemDef {
     pub name: &'static str,

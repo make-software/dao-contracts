@@ -3,6 +3,7 @@ use casper_types::bytesrepr::Bytes;
 
 use crate::TokenId;
 
+/// Verifies the recipient of an ERC-721 token.
 pub trait IERC721Receiver {
     fn on_erc_721_received(
         &self,
@@ -66,8 +67,9 @@ pub mod tests {
         );
     }
 
+    /// A mock contract that implements [`ERC721Receiver`](super::IERC721Receiver).
     #[derive(Instance)]
-    pub struct MockERC721Receiver {}
+    pub struct MockERC721Receiver;
 
     impl MockERC721ReceiverInterface for MockERC721Receiver {
         fn init(&self) {}
@@ -94,13 +96,15 @@ pub mod tests {
         fn init(&self);
     }
 
+    /// A mock contract that does not implement [`ERC721Receiver`](super::IERC721Receiver).
     #[derive(Instance)]
-    pub struct MockERC721NonReceiver {}
+    pub struct MockERC721NonReceiver;
 
     impl MockERC721NonReceiverInterface for MockERC721NonReceiver {
         fn init(&self) {}
     }
 
+    /// Informs a token has been received.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Received {
         pub operator: Address,

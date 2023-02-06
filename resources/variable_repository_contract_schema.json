@@ -115,6 +115,27 @@
       ]
     },
     {
+      "name": "is_whitelisted",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Bool",
+      "events": []
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "events": []
+    },
+    {
       "name": "update_at",
       "is_mutable": true,
       "args": [
@@ -225,27 +246,6 @@
       "is_mutable": false,
       "args": [],
       "return_ty": "U32",
-      "events": []
-    },
-    {
-      "name": "get_owner",
-      "is_mutable": false,
-      "args": [],
-      "return_ty": {
-        "Option": "Key"
-      },
-      "events": []
-    },
-    {
-      "name": "is_whitelisted",
-      "is_mutable": false,
-      "args": [
-        {
-          "name": "address",
-          "ty": "Key"
-        }
-      ],
-      "return_ty": "Bool",
       "events": []
     },
     {

@@ -1,3 +1,13 @@
+//! Contains Repo Voter Contract definition and related abstractions.
+//!
+//! # General
+//! A type of Governance Voting that updates values stored in the [`Variable Repository Contract`].
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
+//! [VotingEngine]: crate::voting::VotingEngine
 use casper_dao_modules::AccessControl;
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Event, Instance},
@@ -10,26 +20,43 @@ use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     voting::{
-        types::VotingId,
+        events::VotingCreatedInfo,
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        VotingCreatedInfo,
         VotingEngine,
+        VotingId,
     },
-    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
 pub trait RepoVoterContractInterface {
-    /// see [VotingEngine](VotingEngine::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
+    ///
+    /// # Events
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
     /// Creates new RepoVoter voting.
     ///
-    /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
+    /// # Arguments
+    /// * `variable_repo_to_edit` takes an [Address] of the[Variable Repo](crate::variable_repository::VariableRepositoryContract)
+    /// instance that will be updated
+    /// * `key`, `value` and `activation_time` are parameters that will be passed to `update_at`
+    /// method of the [Variable Repo](crate::variable_repository::VariableRepositoryContract)
     ///
-    /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
+    /// # Events
+    /// * [`RepoVotingCreated`]
     fn create_voting(
         &mut self,
         variable_repo_to_edit: Address,
@@ -38,17 +65,18 @@ pub trait RepoVoterContractInterface {
         activation_time: Option<u64>,
         stake: U512,
     );
-    /// see [VotingEngine](VotingEngine::vote())
+    /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [VotingEngine](VotingEngine::finish_voting())
+    /// Finishes voting. Depending on type of voting, different actions are performed.
+    /// [Read more](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_voting())
+    /// Returns [Voting](VotingStateMachine) for given id.
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-    /// see [VotingEngine](VotingEngine::get_ballot())
+    /// Returns the Voter's [`Ballot`].
     fn get_ballot(
         &self,
         voting_id: VotingId,
@@ -57,34 +85,43 @@ pub trait RepoVoterContractInterface {
     ) -> Option<Ballot>;
     /// see [VotingEngine](VotingEngine::get_voter())
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+    /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-
-    // Whitelisting set.
-    fn change_ownership(&mut self, owner: Address);
-    fn add_to_whitelist(&mut self, address: Address);
-    fn remove_from_whitelist(&mut self, address: Address);
-    fn get_owner(&self) -> Option<Address>;
-    fn is_whitelisted(&self, address: Address) -> bool;
-
+    /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    /// [`Read more`](AccessControl::change_ownership())
+    fn change_ownership(&mut self, owner: Address);
+    /// Adds a new address to the whitelist.
+    /// [`Read more`](AccessControl::add_to_whitelist())
+    fn add_to_whitelist(&mut self, address: Address);
+    /// Remove address from the whitelist.
+    /// [`Read more`](AccessControl::remove_from_whitelist())
+    fn remove_from_whitelist(&mut self, address: Address);
+    /// Checks whether the given address is added to the whitelist.
+    /// [`Read more`](AccessControl::is_whitelisted()).
+    fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
 }
 
 /// RepoVoterContract
 ///
-/// It is responsible for managing variables held in [Variable Repo](crate::VariableRepositoryContract).
+/// It is responsible for managing variables held in [Variable Repo](crate::variable_repository::VariableRepositoryContract).
 ///
 /// Each change to the variable is being voted on, and when the voting passes, a change is made at given time.
 #[derive(Instance)]
 pub struct RepoVoterContract {
-    voting: VotingEngine,
+    refs: ContractRefsStorage,
+    voting_engine: VotingEngine,
     access_control: AccessControl,
 }
 
 impl RepoVoterContractInterface for RepoVoterContract {
     delegate! {
-        to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
+        to self.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voting(
             &self,
@@ -107,10 +144,16 @@ impl RepoVoterContractInterface for RepoVoterContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.voting.init(variable_repo, reputation_token, va_token);
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        self.refs
+            .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller());
     }
 
@@ -122,39 +165,37 @@ impl RepoVoterContractInterface for RepoVoterContract {
         activation_time: Option<u64>,
         stake: U512,
     ) {
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .contract_call(ContractCall {
-            address: variable_repo_to_edit,
-            entry_point: "update_at".into(),
-            runtime_args: runtime_args! {
-                "key" => key.clone(),
-                "value" => value.clone(),
-                "activation_time" => activation_time,
-            },
-        })
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs)
+            .contract_call(ContractCall {
+                address: variable_repo_to_edit,
+                entry_point: "update_at".into(),
+                runtime_args: runtime_args! {
+                    "key" => key.clone(),
+                    "value" => value.clone(),
+                    "activation_time" => activation_time,
+                },
+            })
+            .build();
 
-        let info = self
-            .voting
+        let (info, _) = self
+            .voting_engine
             .create_voting(caller(), stake, voting_configuration);
 
         RepoVotingCreated::new(variable_repo_to_edit, key, value, activation_time, info).emit();
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting
+        self.voting_engine
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter, voting_id);
+        self.voting_engine.slash_voter(voter, voting_id);
     }
 }
 
+/// Informs repo voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct RepoVotingCreated {
     variable_repo_to_edit: Address,

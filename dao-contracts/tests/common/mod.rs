@@ -12,26 +12,28 @@ use std::{
 };
 
 use casper_dao_contracts::{
-    escrow::types::{BidId, JobOfferId},
+    admin::AdminContractTest,
+    bid_escrow::{
+        types::{BidId, JobOfferId},
+        BidEscrowContractTest,
+    },
+    ids::DaoIdsContractTest,
+    kyc_nft::KycNftContractTest,
+    kyc_voter::KycVoterContractTest,
+    onboarding_request::OnboardingRequestContractTest,
+    rate_provider::CSPRRateProviderContractTest,
     repo_voter,
-    AdminContractTest,
-    BidEscrowContractTest,
-    CSPRRateProviderContractTest,
-    DaoIdsContractTest,
-    KycNftContractTest,
-    KycVoterContractTest,
-    OnboardingRequestContractTest,
-    RepoVoterContractTest,
-    ReputationContractTest,
-    ReputationVoterContractTest,
-    SimpleVoterContractTest,
-    SlashingVoterContractTest,
-    VaNftContractTest,
-    VariableRepositoryContractTest,
+    repo_voter::RepoVoterContractTest,
+    reputation::ReputationContractTest,
+    reputation_voter::ReputationVoterContractTest,
+    simple_voter::SimpleVoterContractTest,
+    slashing_voter::SlashingVoterContractTest,
+    va_nft::VaNftContractTest,
+    variable_repository::VariableRepositoryContractTest,
 };
 use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
+    bytesrepr::{Bytes, FromBytes, ToBytes},
     U512,
 };
 
@@ -43,19 +45,19 @@ const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
 #[derive(cucumber::World)]
 pub struct DaoWorld {
     pub env: TestEnv,
+    pub admin: AdminContractTest,
     pub bid_escrow: BidEscrowContractTest,
-    pub reputation_token: ReputationContractTest,
-    pub va_token: VaNftContractTest,
     pub kyc_token: KycNftContractTest,
-    pub slashing_voter: SlashingVoterContractTest,
     pub kyc_voter: KycVoterContractTest,
-    pub variable_repository: VariableRepositoryContractTest,
+    pub onboarding: OnboardingRequestContractTest,
+    pub rate_provider: CSPRRateProviderContractTest,
     pub repo_voter: RepoVoterContractTest,
+    pub reputation_token: ReputationContractTest,
     pub reputation_voter: ReputationVoterContractTest,
     pub simple_voter: SimpleVoterContractTest,
-    pub admin: AdminContractTest,
-    pub rate_provider: CSPRRateProviderContractTest,
-    pub onboarding: OnboardingRequestContractTest,
+    pub slashing_voter: SlashingVoterContractTest,
+    pub va_token: VaNftContractTest,
+    pub variable_repository: VariableRepositoryContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -75,8 +77,14 @@ impl DaoWorld {
     }
 
     // gets variable value
-    pub fn _get_variable(&self, name: String) -> Bytes {
+    pub fn get_raw_variable(&self, name: String) -> Bytes {
         self.variable_repository.get(name).unwrap()
+    }
+
+    // gets variable value
+    pub fn get_variable<T: FromBytes>(&self, name: String) -> T {
+        let bytes = self.variable_repository.get(name).unwrap();
+        T::from_bytes(&bytes).unwrap().0
     }
 }
 
@@ -89,7 +97,7 @@ impl Debug for DaoWorld {
 impl Default for DaoWorld {
     fn default() -> Self {
         let env = TestEnv::new();
-        let variable_repository = VariableRepositoryContractTest::new(&env);
+        let mut variable_repository = VariableRepositoryContractTest::new(&env);
         let mut reputation_token = ReputationContractTest::new(&env);
 
         let mut va_token = VaNftContractTest::new(
@@ -188,6 +196,9 @@ impl Default for DaoWorld {
 
         // Setup Reputation.
         // Setup VariableRepository.
+        variable_repository
+            .add_to_whitelist(repo_voter.address())
+            .unwrap();
         // Setup VaToken.
         // Setup KycToken.
 
@@ -204,7 +215,7 @@ impl Default for DaoWorld {
         reputation_token
             .add_to_whitelist(repo_voter.address())
             .unwrap();
-        repo_voter.add_to_whitelist(repo_voter.address()).unwrap();
+        // repo_voter.add_to_whitelist(repo_voter.address()).unwrap();
 
         // Setup ReputationVoter.
         reputation_token

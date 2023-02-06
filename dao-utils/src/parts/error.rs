@@ -91,6 +91,7 @@ dao_errors!(
     VotingAlreadyFinished => 3412,
     VotingWithGivenTypeNotInProgress => 3413,
     VotingIdNotFound => 3414,
+    VotingAddressNotFound => 3415,
 
     // Bid Escrow Errors.
     CannotPostJobForSelf => 4000,
@@ -123,17 +124,25 @@ dao_errors!(
     CannotCancelNotOwnedBid => 4027,
     CannotSubmitJobProof => 4028,
     GracePeriodNotStarted => 4029,
-    OnlyJobPosterCanCancelJobOffer => 4030,
+    CannotCancelNotOwnedJobOffer => 4030,
     JobOfferCannotBeYetCanceled => 4031,
     JobCannotBeYetCanceled => 4032,
     FiatRateNotSet => 4033,
+    OnlyJobPosterCanModifyJobOffer => 4034,
     // Reputation Token Errors.
     CannotStakeTwice => 4500,
     VotingStakeDoesntExists => 4501,
     BidStakeDoesntExists => 4502,
 
     InvalidAddress => 5000,
+    RepositoryError => 5001,
+    KeyValueStorageError => 5002,
+    DictionaryStorageError => 5003,
+    StorageError => 5004,
+    VMInternalError => 5005,
+    CLValueError => 5006,
     TransferError => 6000,
+
 
     ExpectedInformal => 7000,
     ExpectedFormalToBeOn => 7001,

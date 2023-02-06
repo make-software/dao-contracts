@@ -68,14 +68,21 @@ lint: clippy
 clean:
 	cargo clean
 	
-docs:
-	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
+rebuild-docs:
+	rm -rf docs
+	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps
+	cp -r target/doc docs
+	echo "<meta http-equiv=\"refresh\" content=\"0; url=casper_dao_contracts\">" > docs/index.html
 
 update-schemas:
 	cargo run -p dao-contracts-schemas --bin update-schemas
 
 run-e2e-tests:
 	cd client && ./run-e2e-tests.sh
+
+test-admin: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_admin
 
 test-bid-escrow: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
@@ -100,3 +107,11 @@ test-ownership: build-dao-contracts
 test-va: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_va
+
+test-voting: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_voting
+
+test-rate-provider: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_rate_provider

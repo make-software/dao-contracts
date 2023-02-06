@@ -37,7 +37,7 @@ impl Owner {
                 casper_env::revert(Error::NotAnOwner) // User is not the owner.
             }
         } else {
-            casper_env::revert(Error::OwnerIsNotInitialized) // Owner is not inicialized.
+            casper_env::revert(Error::OwnerIsNotInitialized) // Owner is not initialized.
         }
     }
 

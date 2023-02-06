@@ -23,6 +23,10 @@ use self::events::ValueUpdated;
 /// The second value is an optional tuple consisting of the future value and its activation time.
 pub type Record = (Bytes, Option<(Bytes, u64)>);
 
+/// A module that stores the DAO configuration.
+///
+/// The modules stores key-value pairs and a set of keys.
+/// The repository is initialized with the default values.
 #[derive(Instance)]
 pub struct Repository {
     pub storage: Mapping<String, Record>,
@@ -98,7 +102,7 @@ impl Repository {
     }
 }
 
-pub struct RepositoryDefaults {
+struct RepositoryDefaults {
     pub items: Vec<(String, Bytes)>,
 }
 
@@ -106,7 +110,11 @@ impl RepositoryDefaults {
     #[cfg(not(feature = "test-support"))]
     pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
         use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
-        let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        let value: Bytes = Bytes::from(
+            value
+                .to_bytes()
+                .unwrap_or_revert_with(Error::BytesConversionError),
+        );
         self.items.push((String::from(key), value));
     }
 
@@ -118,11 +126,6 @@ impl RepositoryDefaults {
 
     pub fn items(self) -> Vec<(String, Bytes)> {
         self.items
-    }
-
-    #[cfg(feature = "test-support")]
-    pub fn len() -> u32 {
-        RepositoryDefaults::default().items.len() as u32
     }
 }
 
@@ -172,6 +175,7 @@ pub mod events {
     use casper_dao_utils::casper_dao_macros::Event;
     use casper_types::bytesrepr::Bytes;
 
+    /// Informs the repository value has been changed.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct ValueUpdated {
         pub key: String,

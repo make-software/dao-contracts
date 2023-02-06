@@ -48,9 +48,13 @@ async function main() {
       pk,
     );
 
-    const contract = parseWriteContract(deploy);
+    try {
+      const contract = parseWriteContract(deploy);
 
-    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+      return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+    } catch(err) {
+      throw new Error(`failed to parse write contract for contract name: ${cn}, err: ${err.message}`);
+    }
   }));
 
   let contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), {});
@@ -81,9 +85,13 @@ async function main() {
       pk,
     );
 
-    const contract = parseWriteContract(deploy);
+    try {
+      const contract = parseWriteContract(deploy);
 
-    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+      return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+    } catch (err) {
+      throw new Error(`failed to parse write contract for contract name: ${cn}, err: ${err.message}`);
+    }
   }));
 
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
@@ -114,7 +122,7 @@ async function main() {
       rpcAPI,
       path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
       {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        variable_repository: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
         reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
         va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
       },
@@ -123,9 +131,13 @@ async function main() {
       pk,
     );
 
-    const contract = parseWriteContract(deploy);
+    try {
+      const contract = parseWriteContract(deploy);
 
-    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+      return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+    } catch (err) {
+      throw new Error(`failed to parse write contract for contract name: ${cn}, err: ${err.message}`);
+    }
   }));
 
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
@@ -152,7 +164,7 @@ async function main() {
       rpcAPI,
       path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
       {
-        variable_repo: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
+        variable_repository: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
         reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
         kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
         va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
@@ -162,9 +174,13 @@ async function main() {
       pk,
     );
 
-    const contract = parseWriteContract(deploy);
+    try {
+      const contract = parseWriteContract(deploy);
 
-    return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+      return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+    } catch (err) {
+      throw new Error(`failed to parse write contract for contract name: ${cn}, err: ${err.message}`);
+    }
   }));
 
   contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
@@ -251,9 +267,13 @@ async function main() {
 
     const processedDeploy = await waitForDeploy(rpcAPI, c.deploy.hash);
 
-    const executionResult = parseExecutionResult(processedDeploy);
+    try {
+      const executionResult = parseExecutionResult(processedDeploy);
 
-    return { name: c.name, actualCost: executionResult.cost, deployHash: processedDeploy.deploy.hash };
+      return { name: c.name, actualCost: executionResult.cost, deployHash: processedDeploy.deploy.hash };
+    } catch (err) {
+      throw new Error(`failed to parse contract call for: ${c.name}, err: ${err.message}`);
+    }
   }));
 
   results.map((c) => {

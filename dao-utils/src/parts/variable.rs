@@ -8,8 +8,8 @@ use casper_types::{
 
 use crate::{
     casper_env::{get_key, set_key},
-    instance::Instanced,
     Error,
+    Instanced,
 };
 
 /// Data structure for storing a single value.

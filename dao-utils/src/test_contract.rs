@@ -4,6 +4,7 @@ use casper_types::{bytesrepr::FromBytes, ContractPackageHash};
 
 use crate::{Address, TestEnv};
 
+/// An interface of a contract to be tested against [`TestEnv`].
 pub trait TestContract {
     fn address(&self) -> Address;
     fn as_account(&mut self, account: Address) -> &mut Self;
