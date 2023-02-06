@@ -68,3 +68,41 @@ jobs:
 
       - name: E2E Test Report - Generic Contract Client
         run: cd client && NODE_ENV=ci npm run e2e:generic-client
+  run-install-script:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+    # Service containers to run with `runner-job`
+    env:
+      FAUCET_FOLDER: /tmp/net-1/faucet
+    services:
+      # Label used to access the service container
+      casper-nctl:
+        # Docker Hub image
+        image: makesoftware/casper-nctl:v144-220303
+        options: --name casper-nctl # -v ${{ github.workspace }}/assets:/home/casper/casper-node/utils/nctl/assets
+        env:
+          PREDEFINED_ACCOUNTS: 'true'
+          MINIMUM_ROUND_EXPONENT: '12'
+          MAXIMUM_ROUND_EXPONENT: '13'
+          DEPLOY_DELAY: '2sec'
+        ports:
+          # Opens RPC, REST and events ports on the host and service container
+          - 11101:11101
+          - 14101:14101
+          - 18101:18101
+        volumes:
+          - /tmp:/home/casper/casper-node/utils/nctl/assets
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+      - name: Setup contracts
+        run: make prepare && make build-all
+      - name: Fix keys permission
+        run: sudo chown runner $FAUCET_FOLDER/*
+      - name: Setup script
+        run: cd scripts/install-contracts && npm install && cp config.json.example config.json
+      - name: Test install contracts script
+        run: PRIVATE_KEY_PATH=$FAUCET_FOLDER/secret_key.pem node scripts/install-contracts/index.js

@@ -1,0 +1,146 @@
+{
+  "private_key_path": "/Users/username/path/to/secret_key.pem",
+  "node_rpc_uri": "http://localhost:11101/rpc",
+  "contracts": {
+    "VariableRepositoryContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/variable_repository_contract.wasm",
+      "payment_amount": "303743797310"
+    },
+    "ReputationContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/reputation_contract.wasm",
+      "payment_amount": "211940253430",
+      "whitelisting": {
+        "contracts": [
+          "AdminContract",
+          "KycVoterContract",
+          "RepoVoterContract",
+          "ReputationVoterContract",
+          "SlashingVoterContract",
+          "SimpleVoterContract",
+          "BidEscrowContract",
+          "OnboardingRequestContract"
+        ],
+        "payment_amount": "7535188200"
+      }
+    },
+    "VaNftContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/va_nft_contract.wasm",
+      "args": {
+        "name": "VaNFTCRDao",
+        "symbol": "VACRDAO",
+        "base_uri": "http://example.com"
+      },
+      "payment_amount": "144166306920",
+      "whitelisting": {
+        "contracts": [
+          "SlashingVoterContract",
+          "BidEscrowContract",
+          "OnboardingRequestContract"
+        ],
+        "payment_amount": "7717735790"
+      }
+    },
+    "KycNftContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/kyc_nft_contract.wasm",
+      "args": {
+        "name": "KYCNFTCRDao",
+        "symbol": "KYCCRDAO",
+        "base_uri": "http://example.com"
+      },
+      "payment_amount": "144158009330",
+      "whitelisting": {
+        "contracts": [
+          "KycVoterContract",
+          "BidEscrowContract",
+          "OnboardingRequestContract"
+        ],
+        "payment_amount": "7717735790"
+      }
+    },
+    "DaoIdsContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/dao_ids_contract.wasm",
+      "payment_amount": "74459408540",
+      "whitelisting": {
+        "contracts": [
+          "KycVoterContract",
+          "BidEscrowContract",
+          "OnboardingRequestContract",
+          "SlashingVoterContract",
+          "RepoVoterContract",
+          "ReputationVoterContract",
+          "SimpleVoterContract",
+          "AdminContract"
+        ],
+        "payment_amount": "5827495400"
+      }
+    },
+    "SlashingVoterContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/slashing_voter_contract.wasm",
+      "payment_amount": "280795891620",
+      "bid_escrow_list": {
+        "contracts": [
+          "BidEscrowContract"
+        ],
+        "payment_amount": "4542037770"
+      }
+    },
+    "SimpleVoterContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/simple_voter_contract.wasm",
+      "payment_amount": "251311056540"
+    },
+    "ReputationVoterContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/reputation_voter_contract.wasm",
+      "payment_amount": "254651050030"
+    },
+    "RepoVoterContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/repo_voter_contract.wasm",
+      "payment_amount": "251837185000",
+      "whitelisting": {
+        "contracts": [
+          "RepoVoterContract"
+        ],
+        "payment_amount": "7142016600"
+      }
+    },
+    "AdminContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/admin_contract.wasm",
+      "payment_amount": "248708239160",
+      "whitelisting": {
+        "contracts": [
+          "SlashingVoterContract"
+        ],
+        "payment_amount": "7141560050"
+      }
+    },
+    "OnboardingRequestContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/onboarding_request_contract.wasm",
+      "payment_amount": "289172956760",
+      "whitelisting": {
+        "contracts": [
+          "SlashingVoterContract"
+        ],
+        "payment_amount": "10289838750"
+      }
+    },
+    "KycVoterContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/kyc_voter_contract.wasm",
+      "payment_amount": "254248392330",
+      "whitelisting": {
+        "contracts": [
+          "SlashingVoterContract"
+        ],
+        "payment_amount": "7660231730"
+      }
+    },
+    "BidEscrowContract": {
+      "wasm_relative_path": "../../target/wasm32-unknown-unknown/release/bid_escrow_contract.wasm",
+      "payment_amount": "358222594290",
+      "whitelisting": {
+        "contracts": [
+          "SlashingVoterContract"
+        ],
+        "payment_amount": "10584895380"
+      }
+    }
+  }
+}
