@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"macro":[["erc_20","Generates a  ERC20 binary with all the required no_mangle functions."]]};

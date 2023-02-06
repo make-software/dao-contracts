@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["KycInfo","A utility module that provides information about the current status of the KYC process."],["OnboardingInfo","A utility module that provides information about the current status of the onboarding process."]]};

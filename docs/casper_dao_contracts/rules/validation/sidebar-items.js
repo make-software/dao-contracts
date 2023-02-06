@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":[["bid_escrow","Groups Bid Escrow-related validations."],["voting","Groups voting related validations."]],"struct":[["IsUserKyced","Validates if a user is kyc’d. May return [Error::NotKyced]."]],"trait":[["Validation","A generic validation."],["VotingValidation","A validation in the voting context."]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["Configuration","Represents the current system configuration."],["ConfigurationBuilder","Utility to crate a [Configuration] instance."]]};

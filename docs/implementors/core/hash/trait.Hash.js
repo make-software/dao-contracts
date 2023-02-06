@@ -1,4 +1,0 @@
-(function() {var implementors = {
-"casper_dao_contracts":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html\" title=\"trait core::hash::Hash\">Hash</a> for <a class=\"enum\" href=\"casper_dao_contracts/voting/voting_state_machine/enum.VotingType.html\" title=\"enum casper_dao_contracts::voting::voting_state_machine::VotingType\">VotingType</a>"]],
-"casper_dao_utils":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html\" title=\"trait core::hash::Hash\">Hash</a> for <a class=\"enum\" href=\"casper_dao_utils/enum.Address.html\" title=\"enum casper_dao_utils::Address\">Address</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

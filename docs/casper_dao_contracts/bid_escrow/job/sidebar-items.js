@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["JobStatus","Serializable Job status."],["WorkerType","Serializable Worker type."]],"struct":[["Job","Serializable representation of a `Job`."],["PickBidRequest","Data required to pick the Bid."],["ReclaimJobRequest","Data required to reclaim the Job."],["SubmitJobProofRequest","Data required to submit job proof."]]};
