@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["all_contracts",""],["print_all_contracts",""]]};

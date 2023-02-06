@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["BidStorage","Stores [Bid]-related variables and mappings."],["JobStorage","Stores [Job]-related variables and mappings."]]};

@@ -1,0 +1,34 @@
+name: ci-docs
+
+on:
+  push:
+    branches:
+      - master
+      - final
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v1
+      - run: make prepare
+      - run: make rebuild-docs
+      - run: git config --local user.email "action@github.com"
+      - run: git config --local user.name "GitHub Action"
+      - run: git add docs/
+      - run: git commit -m "Docs"
+      - run: git config --global --add safe.directory /github/workspace
+      - name: Push to gh-pages
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          force: true
+          directory: .
