@@ -141,41 +141,55 @@ fn variants(input: DeriveInput) -> Result<Vec<Ident2>, TokenStream> {
     Ok(variants)
 }
 
-pub fn derive_to_bytes_enum(input: DeriveInput) -> TokenStream {
-    let enum_ident = input.ident.clone();
-    let variants = match variants(input) {
-        Ok(variants) => variants,
-        Err(error_stream) => return error_stream,
-    };
+pub fn derive_cl_typed_enum(input: DeriveInput) -> TokenStream {
+  let ident = input.ident;
 
-    let mut append_bytes = TokenStream2::new();
-    append_bytes.append_all(variants.iter().enumerate().map(|(index, ident)| {
-        let index = (index + 1) as u32;
-        quote! {
-          #enum_ident::#ident => #index,
-        }
-    }));
-
-    let expanded = quote! {
-      impl casper_types::bytesrepr::ToBytes for #enum_ident {
-        fn serialized_length(&self) -> usize {
-          1
-        }
-
-        fn to_bytes(&self) -> std::result::Result<std::vec::Vec<u8>, casper_types::bytesrepr::Error> {
-          let mut vec = std::vec::Vec::with_capacity(self.serialized_length());
-          vec.append(
-            &mut match self {
-                #append_bytes
-              }
-              .to_bytes()?,
-          );
-          std::result::Result::Ok(vec)
-        }
+  let expanded = quote! {
+    impl casper_types::CLTyped for #ident {
+      fn cl_type() -> casper_types::CLType {
+        casper_types::CLType::U8
       }
-    };
+    }
+  };
 
-    TokenStream::from(expanded)
+  TokenStream::from(expanded)
+}
+
+pub fn derive_to_bytes_enum(input: DeriveInput) -> TokenStream {
+  let enum_ident = input.ident.clone();
+  let variants = match variants(input) {
+      Ok(variants) => variants,
+      Err(error_stream) => return error_stream,
+  };
+
+  let mut append_bytes = TokenStream2::new();
+  append_bytes.append_all(variants.iter().enumerate().map(|(index, ident)| {
+      let index = index as u8;
+      quote! {
+        #enum_ident::#ident => #index,
+      }
+  }));
+
+  let expanded = quote! {
+    impl casper_types::bytesrepr::ToBytes for #enum_ident {
+      fn serialized_length(&self) -> usize {
+        1
+      }
+
+      fn to_bytes(&self) -> std::result::Result<std::vec::Vec<u8>, casper_types::bytesrepr::Error> {
+        let mut vec = std::vec::Vec::with_capacity(self.serialized_length());
+        vec.append(
+          &mut match self {
+            #append_bytes
+          }
+          .to_bytes()?,
+        );
+        std::result::Result::Ok(vec)
+      }
+    }
+  };
+
+  TokenStream::from(expanded)
 }
 
 pub fn derive_from_bytes_enum(input: DeriveInput) -> TokenStream {
@@ -187,7 +201,7 @@ pub fn derive_from_bytes_enum(input: DeriveInput) -> TokenStream {
 
     let mut append_bytes = TokenStream2::new();
     append_bytes.append_all(variants.iter().enumerate().map(|(index, ident)| {
-        let index: u32 = index as u32 + 1;
+        let index = index as u8;
         quote! {
           #index => std::result::Result::Ok((#enum_ident::#ident, bytes)),
         }
@@ -196,7 +210,7 @@ pub fn derive_from_bytes_enum(input: DeriveInput) -> TokenStream {
     let expanded = quote! {
       impl casper_types::bytesrepr::FromBytes for #enum_ident {
         fn from_bytes(bytes: &[u8]) -> std::result::Result<(Self, &[u8]), casper_types::bytesrepr::Error> {
-          let (variant, bytes) = casper_types::bytesrepr::FromBytes::from_bytes(bytes)?;
+          let (variant, bytes): (u8, _) = casper_types::bytesrepr::FromBytes::from_bytes(bytes)?;
           match variant {
             #append_bytes
             _ => std::result::Result::Err(casper_types::bytesrepr::Error::Formatting),
