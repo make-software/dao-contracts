@@ -223,7 +223,7 @@ fn conduct_voting(
     // voters vote in favor
     (1..8)
         .into_iter()
-        .map(|n| Account::VA(n))
+        .map(Account::VA)
         .map(|voter| Ballot {
             voter,
             stake,
@@ -246,7 +246,7 @@ fn conduct_voting(
     let voting_type = VotingType::Formal;
     (1..8)
         .into_iter()
-        .map(|n| Account::VA(n))
+        .map(Account::VA)
         .map(|voter| Ballot {
             voter,
             stake,

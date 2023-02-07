@@ -457,7 +457,7 @@ impl JobEngine {
     }
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job, configuration: &Configuration) {
-        let to_redistribute = redistribute_to_governance(job.payment(), &configuration);
+        let to_redistribute = redistribute_to_governance(job.payment(), configuration);
         let redistribute_to_all_vas = self
             .bid_storage
             .get_job_offer_or_revert(job.job_offer_id())
@@ -473,7 +473,7 @@ impl JobEngine {
     }
 
     fn redistribute_cspr_external_worker(&mut self, job: &Job, configuration: &Configuration) {
-        let total_left = redistribute_to_governance(job.payment(), &configuration);
+        let total_left = redistribute_to_governance(job.payment(), configuration);
         let config = self.bid_storage.get_job_offer_configuration(job);
         let to_redistribute = config.apply_default_policing_rate_to(total_left);
         let to_worker = total_left - to_redistribute;
@@ -501,7 +501,7 @@ impl JobEngine {
         configuration: &Configuration,
     ) {
         let total_left =
-            redistribute_to_governance(job.external_worker_cspr_stake(), &configuration);
+            redistribute_to_governance(job.external_worker_cspr_stake(), configuration);
 
         // For VA's
         let all_balances = self.refs.reputation_token().all_balances();

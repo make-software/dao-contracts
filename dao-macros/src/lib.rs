@@ -36,8 +36,14 @@ pub fn casper_contract_interface(_attr: TokenStream, item: TokenStream) -> Token
 /// Derives [CLType](https://docs.rs/casper-types/1.5.0/casper_types/trait.CLTyped.html) boilerplate code on top of any struct.
 #[proc_macro_derive(CLTyped)]
 pub fn derive_cl_typed(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    serialization::derive_cl_typed(input)
+    let derived_input = parse_macro_input!(input as DeriveInput);
+    match derived_input.data {
+        syn::Data::Struct(_) => serialization::derive_cl_typed(derived_input),
+        syn::Data::Enum(_) => serialization::derive_cl_typed_enum(derived_input),
+        syn::Data::Union(_) => {
+            TokenStream::from(quote! { compile_error!("Union types are not supported."); })
+        }
+    }
 }
 
 // TODO: return compile error if enum is not flat
