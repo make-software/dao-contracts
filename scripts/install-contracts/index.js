@@ -122,9 +122,9 @@ async function main() {
       rpcAPI,
       path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
       {
-        variable_repository: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
+        variable_repository: stringToCLKey(contractsMap.VariableRepositoryContract.contractPackageHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractPackageHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractPackageHash),
       },
       config.contracts[cn].payment_amount,
       status.chainspec_name,
@@ -164,10 +164,10 @@ async function main() {
       rpcAPI,
       path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
       {
-        variable_repository: stringToCLKey(contractsMap.VariableRepositoryContract.contractHash),
-        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractHash),
-        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractHash),
-        va_token: stringToCLKey(contractsMap.VaNftContract.contractHash),
+        variable_repository: stringToCLKey(contractsMap.VariableRepositoryContract.contractPackageHash),
+        reputation_token: stringToCLKey(contractsMap.ReputationContract.contractPackageHash),
+        kyc_token: stringToCLKey(contractsMap.KycNftContract.contractPackageHash),
+        va_token: stringToCLKey(contractsMap.VaNftContract.contractPackageHash),
       },
       config.contracts[cn].payment_amount,
       status.chainspec_name,
@@ -218,7 +218,7 @@ async function main() {
       const deploy = contractClient.callEntrypoint(
         'add_to_whitelist',
         RuntimeArgs.fromMap({
-          address: stringToCLKey(contractToAdd.contractHash),
+          address: stringToCLKey(contractToAdd.contractPackageHash),
         }),
         pk.publicKey,
         status.chainspec_name,
@@ -245,7 +245,7 @@ async function main() {
         throw new Error('failed to find contract for bid escrow list');
       }
 
-      return stringToCLKey(contract.contractHash);
+      return stringToCLKey(contract.contractPackageHash);
     })
 
     const deploy = contractClient.callEntrypoint(
