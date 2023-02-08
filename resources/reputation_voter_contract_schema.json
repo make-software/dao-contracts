@@ -50,7 +50,7 @@
         },
         {
           "name": "action",
-          "ty": "Any"
+          "ty": "U8"
         },
         {
           "name": "amount",
@@ -76,7 +76,7 @@
             },
             {
               "name": "action",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "amount",
@@ -146,11 +146,11 @@
         },
         {
           "name": "voting_type",
-          "ty": "Any"
+          "ty": "U8"
         },
         {
           "name": "choice",
-          "ty": "Any"
+          "ty": "U8"
         },
         {
           "name": "stake",
@@ -172,11 +172,11 @@
             },
             {
               "name": "voting_type",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "choice",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "stake",
@@ -196,7 +196,7 @@
         },
         {
           "name": "voting_type",
-          "ty": "Any"
+          "ty": "U8"
         }
       ],
       "return_ty": "Unit",
@@ -210,11 +210,11 @@
             },
             {
               "name": "voting_type",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "voting_result",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "stake_in_favor",
@@ -338,7 +338,7 @@
         },
         {
           "name": "voting_type",
-          "ty": "Any"
+          "ty": "U8"
         },
         {
           "name": "address",
@@ -360,7 +360,7 @@
         },
         {
           "name": "voting_type",
-          "ty": "Any"
+          "ty": "U8"
         },
         {
           "name": "at",
@@ -382,7 +382,7 @@
         },
         {
           "name": "voting_type",
-          "ty": "Any"
+          "ty": "U8"
         }
       ],
       "return_ty": "Bool",
@@ -416,11 +416,11 @@
             },
             {
               "name": "voting_type",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "choice",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "stake",
@@ -437,7 +437,7 @@
             },
             {
               "name": "voting_type",
-              "ty": "Any"
+              "ty": "U8"
             },
             {
               "name": "unstakes",

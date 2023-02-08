@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - master
-      - develop
-      - final
+
     paths-ignore:
       - "**.md"
       - "docs/**"
+      - "docs-high-level/**"
+      - "dao-contracts-schemas/**"
 
   pull_request:
     branches:
@@ -19,6 +20,8 @@ on:
     paths-ignore:
       - "**.md"
       - "docs/**"
+      - "docs-high-level/**"
+      - "dao-contracts-schemas/**"
 
 jobs:
   build:
