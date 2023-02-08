@@ -69,6 +69,6 @@ make run-e2e-tests
 
 The above command starts Docker container with running Casper network in it
 (see [nctl](https://docs.casperlabs.io/dapp-dev-guide/building-dapps/setup-nctl/) for more info).
-Then it executes [e2e-reputation.ts](client/e2e/e2e-reputation.ts) script agains the docker.
+Then it executes [e2e-reputation.ts](client/e2e/e2e-reputation.ts) script against the docker.
 It shows how to deploy the `reputation.wasm` file, call `mint` and `whitelist` entrypoints,
 and check the result. Full DAO installation scripts are still under development.
