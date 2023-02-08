@@ -9,7 +9,7 @@ Add the contract to the `lib.rs` file in the same folder.
 pub mod flipper;
 ```
 
-Let's put some logic into the `flipper.rs` file and explain it's content.
+Let's put some logic into the `flipper.rs` file and explain its content.
 
 ```rust
 use casper_dao_utils::casper_dao_macros::{casper_contract_interface, Instance};
@@ -28,7 +28,7 @@ pub trait FlipperContractInterface { // This trait is used to generate the contr
 
 #[derive(Instance)]
 pub struct FlipperContract {
-    value: Variable<bool>, // To use contract's storage, we need to wrap variables it in the Variable struct.
+    value: Variable<bool>, // To use contract's storage, we need to wrap variables in the Variable struct.
 }
 
 impl FlipperContractInterface for FlipperContract {
@@ -118,7 +118,7 @@ impl ContractRefsStorage {
     ...
 ```
 
-`casper_contract_interface` macro generates a lot of code for us. Among others is the Caller struct that ease the process
+`casper_contract_interface` macro generates a lot of code for us. Among others is the Caller struct that eases the process
 of calling the contract. Each contract has a caller struct that we can use like this:
 
 ```rust
