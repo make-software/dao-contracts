@@ -5,18 +5,22 @@ on:
   push:
     branches:
       - master
-      - develop
+
     paths-ignore:
       - "**.md"
-      - "docs/**"      
+      - "docs/**"
+      - "docs-high-level/**"
+      - "dao-contracts-schemas/**"
 
   pull_request:
     branches:
       - master
-      - develop
+      
     paths-ignore:
       - "**.md"
       - "docs/**"
+      - "docs-high-level/**"
+      - "dao-contracts-schemas/**"
 
 env:
   NODE_ENV: ci
