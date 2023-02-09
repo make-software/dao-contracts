@@ -11,7 +11,7 @@ members = [
 ]
 
 [workspace.dependencies]
-casper-event-standard = { git = "https://github.com/make-software/casper-event-standard", branch = "release/0.1.1" }
+casper-event-standard = "0.1.1"
 
 [profile.release]
 codegen-units = 1

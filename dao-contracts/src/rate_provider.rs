@@ -1,7 +1,7 @@
 //! Contains CSPR Rate Provider Contract definition and related abstractions.
 //!
 //! TODO: short desc
-use casper_dao_modules::{owner, Owner};
+use casper_dao_modules::owner::{self, Owner};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,

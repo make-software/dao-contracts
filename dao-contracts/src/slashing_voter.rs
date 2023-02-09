@@ -31,7 +31,7 @@
 //!
 //! [`DefaultReputationSlash`]: crate::variable_repository
 //! [`VA Token`]: crate::va_nft
-use casper_dao_modules::{access_control, AccessControl};
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},

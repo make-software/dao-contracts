@@ -12,7 +12,7 @@
 //!
 //! [`Reputation Token Contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
-use casper_dao_modules::{access_control, AccessControl};
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit},

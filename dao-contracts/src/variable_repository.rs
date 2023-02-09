@@ -36,7 +36,10 @@
 //!  [Repo Voting]: crate::repo_voter::RepoVoterContractInterface   
 use std::collections::BTreeMap;
 
-use casper_dao_modules::{access_control, repository, AccessControl, Record, Repository};
+use casper_dao_modules::{
+    access_control::{self, AccessControl},
+    repository::{self, Record, Repository},
+};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},

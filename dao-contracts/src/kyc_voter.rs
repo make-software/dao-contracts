@@ -13,7 +13,7 @@
 //! An address that is already KYC'd cannot be the subject of voting.
 //!
 //! [`VotingEngine`]: crate::voting::VotingEngine
-use casper_dao_modules::{access_control, AccessControl};
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},

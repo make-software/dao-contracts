@@ -29,11 +29,11 @@ Workflow for new features or enhancements:
 * Then fork the repo
 * Do your changes on your fork
 * Make sure to add or update relevant test cases
-* Create a pull request, with a suitable title and description, referring to the related issue and the enchancement proposal
+* Create a pull request, with a suitable title and description, referring to the related issue and the enhancement proposal
 
 ### Sign your work
 
-We use the Developer Certificate of Origin (DCO) as a additional safeguard
+We use the Developer Certificate of Origin (DCO) as an additional safeguard
 for the MVPR DAO for Casper project. This is a well established and widely used
 mechanism to assure contributors have confirmed their right to license
 their contribution under the project's license.

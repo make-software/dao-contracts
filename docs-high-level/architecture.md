@@ -2,7 +2,7 @@
 
 The following document should allow the understanding high-level architecture of the DAO contracts.
 
-The project is still under the development and the architecture can change.
+The project is still under development and the architecture can change.
 
 ![](contracts.png)
 

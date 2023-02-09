@@ -187,7 +187,7 @@
 //! [`Governance Variable`]: crate::variable_repository#available-keys
 use std::borrow::Borrow;
 
-use casper_dao_modules::{access_control, AccessControl};
+use casper_dao_modules::access_control::{self, AccessControl};
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
 use casper_dao_utils::{

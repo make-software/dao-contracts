@@ -11,9 +11,9 @@
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //!
-//! [`access control`]: casper_dao_modules::AccessControl
+//! [`access control`]: casper_dao_modules::access_control::AccessControl
 //! [VotingEngine]: crate::voting::VotingEngine
-use casper_dao_modules::{access_control, AccessControl};
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
     casper_env::{caller, emit},

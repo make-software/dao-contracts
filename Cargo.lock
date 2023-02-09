@@ -262,8 +262,9 @@ dependencies = [
 
 [[package]]
 name = "casper-event-standard"
-version = "0.1.0"
-source = "git+https://github.com/make-software/casper-event-standard?branch=release/0.1.1#7925c503bd3e4d84eaa5b99dcb5e3df481fd6399"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "182f91678640179b86aa3d052dbd9fc4b7981d7dee210fe4620f9083abf7eba1"
 dependencies = [
  "casper-contract",
  "casper-event-standard-macro",
@@ -273,8 +274,9 @@ dependencies = [
 
 [[package]]
 name = "casper-event-standard-macro"
-version = "0.1.0"
-source = "git+https://github.com/make-software/casper-event-standard?branch=release/0.1.1#7925c503bd3e4d84eaa5b99dcb5e3df481fd6399"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22be7d6268027a1ff3afdbb5444452eb298a658d3e5b7a2e3741643265c9aaf5"
 dependencies = [
  "proc-macro2 1.0.51",
  "quote 1.0.23",

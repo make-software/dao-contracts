@@ -13,7 +13,7 @@
 //! [`Repository contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [`Document Hash`]: casper_dao_utils::DocumentHash
-use casper_dao_modules::{access_control, AccessControl};
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},

@@ -1,7 +1,7 @@
 use casper_dao_utils::{casper_dao_macros::Instance, Address};
 use casper_event_standard::Schemas;
 
-use crate::{owner, whitelist, Owner, Whitelist};
+use crate::{owner, owner::Owner, whitelist, whitelist::Whitelist};
 
 /// The Access control module.
 ///

@@ -1,5 +1,5 @@
 //! Submodules storing Job and Bid data.
-use casper_dao_modules::SequenceGenerator;
+use casper_dao_modules::sequence::SequenceGenerator;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,

@@ -18,7 +18,10 @@ use casper_dao_erc721::{
     TokenId,
     TokenUri,
 };
-use casper_dao_modules::{access_control, AccessControl, SequenceGenerator};
+use casper_dao_modules::{
+    access_control::{self, AccessControl},
+    sequence::SequenceGenerator,
+};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
