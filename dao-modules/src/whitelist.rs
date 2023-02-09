@@ -7,6 +7,7 @@ use casper_dao_utils::{
     Error,
     Mapping,
 };
+use casper_event_standard::Schemas;
 
 use self::events::{AddedToWhitelist, RemovedFromWhitelist};
 
@@ -44,7 +45,8 @@ impl Whitelist {
 pub mod events {
     //! Events definitions.
 
-    use casper_dao_utils::{casper_dao_macros::Event, Address};
+    use casper_dao_utils::Address;
+    use casper_event_standard::Event;
 
     /// Informs new address has been added to the whitelist.
     #[derive(Debug, PartialEq, Eq, Event)]
@@ -57,4 +59,9 @@ pub mod events {
     pub struct RemovedFromWhitelist {
         pub address: Address,
     }
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<AddedToWhitelist>();
+    schemas.add::<RemovedFromWhitelist>();
 }

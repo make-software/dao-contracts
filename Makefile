@@ -67,6 +67,9 @@ lint: clippy
 
 clean:
 	cargo clean
+	rm dao-contracts/wasm/*
+	rm dao-erc20/wasm/*
+	rm dao-erc721/wasm/*
 	
 rebuild-docs:
 	rm -rf docs

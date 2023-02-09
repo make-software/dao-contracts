@@ -4,6 +4,7 @@ use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     Address,
 };
+use casper_event_standard::Schemas;
 use casper_types::{bytesrepr::Bytes, U512};
 use delegate::delegate;
 
@@ -50,7 +51,6 @@ pub struct ERC721 {
 impl ERC721Interface for ERC721 {
     delegate! {
         to self.metadata {
-            fn init(&mut self, name: String, symbol: String, base_uri: String);
             fn name(&self) -> String;
             fn symbol(&self) -> String;
             fn base_uri(&self) -> TokenUri;
@@ -69,6 +69,11 @@ impl ERC721Interface for ERC721 {
         }
     }
 
+    fn init(&mut self, name: String, symbol: String, base_uri: String) {
+        init_events();
+        self.metadata.init(name, symbol, base_uri);
+    }
+
     fn token_uri(&self, token_id: TokenId) -> TokenUri {
         self.metadata.token_uri(&self.core, token_id)
     }
@@ -80,4 +85,8 @@ impl ERC721Interface for ERC721 {
     fn burn(&mut self, token_id: TokenId) {
         BurnableERC721::burn(self.core.borrow_mut(), token_id);
     }
+}
+
+fn init_events() {
+    casper_event_standard::init(Schemas::new());
 }

@@ -4,7 +4,6 @@ extern crate alloc;
 pub use casper_contract;
 
 pub mod casper_env;
-mod events;
 mod instance;
 mod parts;
 pub use casper_dao_macros;

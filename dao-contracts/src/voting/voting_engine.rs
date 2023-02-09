@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{get_block_time, revert},
+    casper_env::{emit, get_block_time, revert},
     Address,
     Error,
     Mapping,
@@ -225,7 +225,7 @@ impl VotingEngine {
         };
 
         // Emit VotingEnded event.
-        let voting_ended_event = VotingEnded::new(
+        emit(VotingEnded::new(
             &voting,
             summary.result(),
             stats,
@@ -233,8 +233,7 @@ impl VotingEngine {
             BTreeMap::new(),
             rep_burns,
             rep_mints,
-        );
-        voting_ended_event.emit();
+        ));
 
         self.set_voting(voting);
         summary
@@ -394,7 +393,7 @@ impl VotingEngine {
                 .stake_voting(voting_id, ballot.clone().into());
         }
 
-        BallotCast::new(&ballot).emit();
+        emit(BallotCast::new(&ballot));
 
         // Add a voter to the list
         self.voters.add((voting_id, voting.voting_type()), voter);
@@ -687,7 +686,7 @@ impl VotingEngine {
         self.set_voting(voting);
 
         // Emit event.
-        VotingCanceled::new(voting_id, voting_type, unstakes).emit();
+        emit(VotingCanceled::new(voting_id, voting_type, unstakes));
     }
 
     // Note: it doesn't remove a voter from self.votings to keep the quorum num right.
@@ -715,7 +714,7 @@ impl VotingEngine {
         self.set_voting(voting);
 
         // Emit event.
-        BallotCanceled::new(&ballot).emit();
+        emit(BallotCanceled::new(&ballot));
 
         // Update ballot.
         ballot.canceled = true;

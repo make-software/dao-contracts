@@ -36,7 +36,7 @@
 //!  [Repo Voting]: crate::repo_voter::RepoVoterContractInterface   
 use std::collections::BTreeMap;
 
-use casper_dao_modules::{AccessControl, Record, Repository};
+use casper_dao_modules::{access_control, repository, AccessControl, Record, Repository};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::{casper_contract_interface, Instance},
@@ -44,6 +44,7 @@ use casper_dao_utils::{
     Address,
     Error,
 };
+use casper_event_standard::Schemas;
 use casper_types::bytesrepr::Bytes;
 use delegate::delegate;
 
@@ -143,6 +144,7 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
     }
 
     fn init(&mut self) {
+        casper_event_standard::init(event_schemas());
         let deployer = caller();
         self.access_control.init(deployer);
         self.repository.init();
@@ -193,4 +195,11 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
 
         result
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    repository::add_event_schemas(&mut schemas);
+    schemas
 }

@@ -1,6 +1,7 @@
 use casper_dao_utils::{casper_dao_macros::Instance, Address};
+use casper_event_standard::Schemas;
 
-use crate::{Owner, Whitelist};
+use crate::{owner, whitelist, Owner, Whitelist};
 
 /// The Access control module.
 ///
@@ -81,4 +82,9 @@ impl AccessControl {
     pub fn get_owner(&self) -> Option<Address> {
         self.owner.get_owner()
     }
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    owner::add_event_schemas(schemas);
+    whitelist::add_event_schemas(schemas);
 }

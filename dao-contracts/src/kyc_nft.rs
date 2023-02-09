@@ -18,7 +18,7 @@ use casper_dao_erc721::{
     TokenId,
     TokenUri,
 };
-use casper_dao_modules::{AccessControl, SequenceGenerator};
+use casper_dao_modules::{access_control, AccessControl, SequenceGenerator};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::{self, caller},
@@ -26,6 +26,7 @@ use casper_dao_utils::{
     Error,
     Mapping,
 };
+use casper_event_standard::Schemas;
 use casper_types::U512;
 use delegate::delegate;
 
@@ -139,6 +140,7 @@ impl KycNftContractInterface for KycNftContract {
     }
 
     fn init(&mut self, name: String, symbol: String, base_uri: TokenUri) {
+        casper_event_standard::init(event_schemas());
         let deployer = caller();
         self.metadata.init(name, symbol, base_uri);
         self.access_control.init(deployer);
@@ -177,4 +179,11 @@ impl KycNftContract {
             casper_env::revert(Error::UserAlreadyOwnsToken)
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    casper_dao_erc721::events::add_event_schemas(&mut schemas);
+    schemas
 }

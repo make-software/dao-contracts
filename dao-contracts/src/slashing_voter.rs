@@ -31,11 +31,11 @@
 //!
 //! [`DefaultReputationSlash`]: crate::variable_repository
 //! [`VA Token`]: crate::va_nft
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::{access_control, AccessControl};
 use casper_dao_utils::{
     casper_contract::contract_api::runtime::revert,
-    casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
-    casper_env::caller,
+    casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
+    casper_env::{caller, emit},
     Address,
     BlockTime,
     ContractCall,
@@ -43,6 +43,7 @@ use casper_dao_utils::{
     Mapping,
     Variable,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
@@ -51,6 +52,7 @@ use crate::{
     reputation::ReputationContractInterface,
     va_nft::VaNftContractInterface,
     voting::{
+        self,
         events::VotingCreatedInfo,
         refs::{ContractRefs, ContractRefsStorage},
         voting_state_machine::{VotingResult, VotingStateMachine, VotingType},
@@ -180,6 +182,7 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
     }
 
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        casper_event_standard::init(event_schemas());
         self.refs
             .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller());
@@ -208,7 +211,11 @@ impl SlashingVoterContractInterface for SlashingVoterContract {
         };
         self.tasks.set(&info.voting_id, task);
 
-        SlashingVotingCreated::new(address_to_slash, slash_ratio, info).emit();
+        emit(SlashingVotingCreated::new(
+            address_to_slash,
+            slash_ratio,
+            info,
+        ));
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -339,4 +346,12 @@ impl SlashingVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<SlashingVotingCreated>();
+    schemas
 }

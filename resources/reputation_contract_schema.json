@@ -5,27 +5,7 @@
       "name": "init",
       "is_mutable": true,
       "args": [],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        },
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "mint",
@@ -40,8 +20,7 @@
           "ty": "U512"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "mint_passive",
@@ -56,8 +35,7 @@
           "ty": "U512"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "burn",
@@ -72,8 +50,7 @@
           "ty": "U512"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "burn_passive",
@@ -88,8 +65,7 @@
           "ty": "U512"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "change_ownership",
@@ -100,18 +76,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "add_to_whitelist",
@@ -122,18 +87,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "remove_from_whitelist",
@@ -144,18 +98,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "RemovedFromWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "get_owner",
@@ -163,15 +106,13 @@
       "args": [],
       "return_ty": {
         "Option": "Key"
-      },
-      "events": []
+      }
     },
     {
       "name": "total_supply",
       "is_mutable": false,
       "args": [],
-      "return_ty": "U512",
-      "events": []
+      "return_ty": "U512"
     },
     {
       "name": "balance_of",
@@ -182,8 +123,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "U512",
-      "events": []
+      "return_ty": "U512"
     },
     {
       "name": "passive_balance_of",
@@ -194,8 +134,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "U512",
-      "events": []
+      "return_ty": "U512"
     },
     {
       "name": "is_whitelisted",
@@ -206,8 +145,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Bool",
-      "events": []
+      "return_ty": "Bool"
     },
     {
       "name": "stake_voting",
@@ -222,8 +160,7 @@
           "ty": "Any"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "unstake_voting",
@@ -238,8 +175,7 @@
           "ty": "Any"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "bulk_unstake_voting",
@@ -256,8 +192,7 @@
           }
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "stake_bid",
@@ -268,8 +203,7 @@
           "ty": "Any"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "unstake_bid",
@@ -280,8 +214,7 @@
           "ty": "Any"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "bulk_unstake_bid",
@@ -294,8 +227,7 @@
           }
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "get_stake",
@@ -306,15 +238,13 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "U512",
-      "events": []
+      "return_ty": "U512"
     },
     {
       "name": "all_balances",
       "is_mutable": false,
       "args": [],
-      "return_ty": "Any",
-      "events": []
+      "return_ty": "Any"
     },
     {
       "name": "partial_balances",
@@ -327,8 +257,7 @@
           }
         }
       ],
-      "return_ty": "Any",
-      "events": []
+      "return_ty": "Any"
     },
     {
       "name": "bulk_mint_burn",
@@ -353,8 +282,7 @@
           }
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "burn_all",
@@ -365,8 +293,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": []
+      "return_ty": "Unit"
     },
     {
       "name": "stakes_info",
@@ -377,8 +304,62 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Any",
-      "events": []
+      "return_ty": "Any"
+    }
+  ],
+  "events": [
+    {
+      "name": "AddedToWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "OwnerChanged",
+      "fields": [
+        {
+          "name": "new_owner",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RemovedFromWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
     }
   ]
 }

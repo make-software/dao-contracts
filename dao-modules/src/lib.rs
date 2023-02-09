@@ -1,8 +1,8 @@
-mod access_control;
-mod owner;
-mod repository;
-mod sequence;
-mod whitelist;
+pub mod access_control;
+pub mod owner;
+pub mod repository;
+pub mod sequence;
+pub mod whitelist;
 
 pub use access_control::AccessControl;
 pub use owner::Owner;

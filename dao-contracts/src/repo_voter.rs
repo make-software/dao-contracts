@@ -8,20 +8,22 @@
 //!
 //! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [VotingEngine]: crate::voting::VotingEngine
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::{access_control, AccessControl};
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::caller,
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{caller, emit},
     Address,
     BlockTime,
     ContractCall,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{bytesrepr::Bytes, runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        self,
         events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
@@ -152,6 +154,7 @@ impl RepoVoterContractInterface for RepoVoterContract {
     }
 
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        casper_event_standard::init(event_schemas());
         self.refs
             .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller());
@@ -181,7 +184,13 @@ impl RepoVoterContractInterface for RepoVoterContract {
             .voting_engine
             .create_voting(caller(), stake, voting_configuration);
 
-        RepoVotingCreated::new(variable_repo_to_edit, key, value, activation_time, info).emit();
+        emit(RepoVotingCreated::new(
+            variable_repo_to_edit,
+            key,
+            value,
+            activation_time,
+            info,
+        ));
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -242,4 +251,12 @@ impl RepoVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<RepoVotingCreated>();
+    schemas
 }

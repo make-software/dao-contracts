@@ -13,7 +13,8 @@ casper-engine-test-support = { version = "2.2.0", features = ["test-support"], o
 casper-execution-engine = { version = "2.0.1", optional = true }
 hex = "0.4.3"
 blake2 = { version = "0.9.0", default-features = false }
-serde = { version = "1.0", features = ["derive"] }
+casper-event-standard = { workspace = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
 
 [[bin]]
 name = "getter_proxy"
@@ -30,3 +31,4 @@ test-support = [
     "casper-contract/test-support"
 ]
 wasm = [ "casper-contract/default", "casper-contract/std" ]
+serde = [ "dep:serde", "casper-event-standard/serde" ]

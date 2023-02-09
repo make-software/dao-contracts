@@ -13,11 +13,11 @@
 //! An address that is already KYC'd cannot be the subject of voting.
 //!
 //! [`VotingEngine`]: crate::voting::VotingEngine
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::{access_control, AccessControl};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::{self, caller},
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{self, caller, emit},
     consts,
     Address,
     BlockTime,
@@ -25,12 +25,14 @@ use casper_dao_utils::{
     DocumentHash,
     Error,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        self,
         events::VotingCreatedInfo,
         refs::ContractRefsWithKycStorage,
         submodules::KycInfo,
@@ -171,6 +173,7 @@ impl KycVoterContractInterface for KycVoterContract {
         va_token: Address,
         kyc_token: Address,
     ) {
+        casper_event_standard::init(event_schemas());
         self.refs
             .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
@@ -203,7 +206,7 @@ impl KycVoterContractInterface for KycVoterContract {
 
         self.kyc.set_voting(subject_address, info.voting_id);
 
-        KycVotingCreated::new(subject_address, document_hash, info).emit();
+        emit(KycVotingCreated::new(subject_address, document_hash, info));
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -288,4 +291,12 @@ impl KycVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<KycVotingCreated>();
+    schemas
 }

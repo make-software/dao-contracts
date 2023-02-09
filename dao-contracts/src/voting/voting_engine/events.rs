@@ -2,10 +2,11 @@
 use std::collections::BTreeMap;
 
 use casper_dao_utils::{
-    casper_dao_macros::{CLTyped, Event, FromBytes, ToBytes},
+    casper_dao_macros::{CLTyped, FromBytes, ToBytes},
     Address,
     BlockTime,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{
     bytesrepr::{FromBytes, ToBytes, U32_SERIALIZED_LENGTH},
     CLTyped,
@@ -234,4 +235,11 @@ impl VotingCanceled {
             unstakes,
         }
     }
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<BallotCast>();
+    schemas.add::<VotingEnded>();
+    schemas.add::<BallotCanceled>();
+    schemas.add::<VotingCanceled>();
 }

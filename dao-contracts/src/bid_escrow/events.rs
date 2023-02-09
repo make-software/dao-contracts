@@ -1,5 +1,6 @@
 //! BidEscrow-related events.
-use casper_dao_utils::{casper_dao_macros::Event, Address, BlockTime, DocumentHash};
+use casper_dao_utils::{Address, BlockTime, DocumentHash};
+use casper_event_standard::Event;
 use casper_types::U512;
 
 use super::types::BidId;

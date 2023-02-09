@@ -47,10 +47,11 @@ impl ERC721ReceiverCaller {
 
 pub mod tests {
     use casper_dao_utils::{
-        casper_dao_macros::{casper_contract_interface, Event, Instance},
+        casper_dao_macros::{casper_contract_interface, Instance},
         casper_env::emit,
         Address,
     };
+    use casper_event_standard::{Event, Schemas};
     use casper_types::bytesrepr::Bytes;
 
     use crate::TokenId;
@@ -72,7 +73,9 @@ pub mod tests {
     pub struct MockERC721Receiver;
 
     impl MockERC721ReceiverInterface for MockERC721Receiver {
-        fn init(&self) {}
+        fn init(&self) {
+            casper_event_standard::init(Schemas::new().with::<Received>());
+        }
 
         #[allow(unused_variables)]
         fn on_erc_721_received(
