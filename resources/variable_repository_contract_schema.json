@@ -5,48 +5,7 @@
       "name": "init",
       "is_mutable": true,
       "args": [],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "ValueUpdated",
-          "fields": [
-            {
-              "name": "key",
-              "ty": "String"
-            },
-            {
-              "name": "value",
-              "ty": {
-                "List": "U8"
-              }
-            },
-            {
-              "name": "activation_time",
-              "ty": {
-                "Option": "U64"
-              }
-            }
-          ]
-        },
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        },
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "change_ownership",
@@ -57,18 +16,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "add_to_whitelist",
@@ -79,18 +27,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "remove_from_whitelist",
@@ -101,18 +38,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "RemovedFromWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "is_whitelisted",
@@ -123,8 +49,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Bool",
-      "events": []
+      "return_ty": "Bool"
     },
     {
       "name": "get_owner",
@@ -132,8 +57,7 @@
       "args": [],
       "return_ty": {
         "Option": "Key"
-      },
-      "events": []
+      }
     },
     {
       "name": "update_at",
@@ -156,30 +80,7 @@
           }
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "ValueUpdated",
-          "fields": [
-            {
-              "name": "key",
-              "ty": "String"
-            },
-            {
-              "name": "value",
-              "ty": {
-                "List": "U8"
-              }
-            },
-            {
-              "name": "activation_time",
-              "ty": {
-                "Option": "U64"
-              }
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "get",
@@ -194,8 +95,7 @@
         "Option": {
           "List": "U8"
         }
-      },
-      "events": []
+      }
     },
     {
       "name": "get_full_value",
@@ -224,8 +124,7 @@
             }
           ]
         }
-      },
-      "events": []
+      }
     },
     {
       "name": "get_key_at",
@@ -238,15 +137,13 @@
       ],
       "return_ty": {
         "Option": "String"
-      },
-      "events": []
+      }
     },
     {
       "name": "keys_count",
       "is_mutable": false,
       "args": [],
-      "return_ty": "U32",
-      "events": []
+      "return_ty": "U32"
     },
     {
       "name": "all_variables",
@@ -259,8 +156,57 @@
             "List": "U8"
           }
         }
-      },
-      "events": []
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "AddedToWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "OwnerChanged",
+      "fields": [
+        {
+          "name": "new_owner",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RemovedFromWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "ValueUpdated",
+      "fields": [
+        {
+          "name": "key",
+          "ty": "String"
+        },
+        {
+          "name": "value",
+          "ty": {
+            "List": "U8"
+          }
+        },
+        {
+          "name": "activation_time",
+          "ty": {
+            "Option": "U64"
+          }
+        }
+      ]
     }
   ]
 }

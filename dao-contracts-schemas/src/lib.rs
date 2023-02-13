@@ -1,35 +1,30 @@
 use casper_dao_contracts::{
-    admin::{AdminContract, AdminVotingCreated},
+    admin::AdminContract,
     bid_escrow::BidEscrowContract,
     ids::DaoIdsContract,
     kyc_nft::KycNftContract,
-    kyc_voter::{KycVoterContract, KycVotingCreated},
-    onboarding_request::{OnboardingRequestContract, OnboardingVotingCreated},
-    repo_voter::{RepoVoterContract, RepoVotingCreated},
+    kyc_voter::KycVoterContract,
+    onboarding_request::OnboardingRequestContract,
+    rate_provider::CSPRRateProviderContract,
+    repo_voter::RepoVoterContract,
     reputation::ReputationContract,
-    reputation_voter::{ReputationVoterContract, ReputationVotingCreated},
-    simple_voter::{SimpleVoterContract, SimpleVotingCreated},
-    slashing_voter::{SlashingVoterContract, SlashingVotingCreated},
+    reputation_voter::ReputationVoterContract,
+    simple_voter::SimpleVoterContract,
+    slashing_voter::SlashingVoterContract,
     va_nft::VaNftContract,
     variable_repository::VariableRepositoryContract,
-    voting::events::{BallotCanceled, BallotCast, VotingCanceled, VotingEnded},
-};
-use casper_dao_modules::events::{
-    AddedToWhitelist,
-    OwnerChanged,
-    RemovedFromWhitelist,
-    ValueUpdated,
 };
 use casper_dao_utils::definitions::{ContractDef, ContractDefinition};
 
 pub fn all_contracts() -> Vec<ContractDef> {
-    let mut contracts = vec![
+    vec![
         // Core contracts.
-        ReputationContract::contract_def(),
+        reputation(),
         variable_repository(),
         kyc_token(),
         va_token(),
-        DaoIdsContract::contract_def(),
+        ids(),
+        rate_provider(),
         // Voters.
         admin(),
         kyc_voter(),
@@ -39,93 +34,75 @@ pub fn all_contracts() -> Vec<ContractDef> {
         simple_voter(),
         onboarding_request_voter(),
         // Bid Escrow.
-        BidEscrowContract::contract_def(),
-    ];
-    with_access_control_events(&mut contracts);
-    with_voting_events(&mut contracts);
-    contracts
+        bid_escrow(),
+    ]
 }
 
-fn with_access_control_events(contracts: &mut [ContractDef]) {
-    for contract in contracts.iter_mut() {
-        contract.add_event::<AddedToWhitelist>("init");
-        contract.add_event::<OwnerChanged>("init");
-        contract.add_event::<AddedToWhitelist>("add_to_whitelist");
-        contract.add_event::<RemovedFromWhitelist>("remove_from_whitelist");
-        contract.add_event::<OwnerChanged>("change_ownership");
-    }
-}
+// Core Contracts.
 
-fn with_voting_events(contracts: &mut [ContractDef]) {
-    for contract in contracts.iter_mut() {
-        contract.add_event::<BallotCast>("vote");
-        contract.add_event::<BallotCanceled>("slash_voter");
-        contract.add_event::<VotingCanceled>("slash_voter");
-        contract.add_event::<VotingEnded>("finish_voting");
-    }
+fn reputation() -> ContractDef {
+    ReputationContract::contract_def()
+        .with_events(casper_dao_contracts::reputation::event_schemas())
 }
-
-// Core Contracts
 
 fn variable_repository() -> ContractDef {
     VariableRepositoryContract::contract_def()
-        .with_event::<ValueUpdated>("init")
-        .with_event::<ValueUpdated>("update_at")
+        .with_events(casper_dao_contracts::variable_repository::event_schemas())
 }
 
 fn kyc_token() -> ContractDef {
-    KycNftContract::contract_def()
-        .with_event::<casper_dao_erc721::events::Transfer>("mint")
-        .with_event::<casper_dao_erc721::events::Transfer>("burn")
+    KycNftContract::contract_def().with_events(casper_dao_contracts::kyc_nft::event_schemas())
 }
 
 fn va_token() -> ContractDef {
-    VaNftContract::contract_def()
-        .with_event::<casper_dao_erc721::events::Transfer>("mint")
-        .with_event::<casper_dao_erc721::events::Transfer>("burn")
+    VaNftContract::contract_def().with_events(casper_dao_contracts::va_nft::event_schemas())
 }
 
-// Voters
+fn ids() -> ContractDef {
+    DaoIdsContract::contract_def().with_events(casper_dao_contracts::ids::event_schemas())
+}
+
+fn rate_provider() -> ContractDef {
+    CSPRRateProviderContract::contract_def()
+        .with_events(casper_dao_contracts::rate_provider::event_schemas())
+}
+
+// Voters.
 
 fn admin() -> ContractDef {
-    AdminContract::contract_def().with_event::<AdminVotingCreated>("create_voting")
+    AdminContract::contract_def().with_events(casper_dao_contracts::admin::event_schemas())
 }
 
 fn kyc_voter() -> ContractDef {
-    KycVoterContract::contract_def().with_event::<KycVotingCreated>("create_voting")
+    KycVoterContract::contract_def().with_events(casper_dao_contracts::kyc_voter::event_schemas())
 }
 
 fn repo_voter() -> ContractDef {
-    RepoVoterContract::contract_def().with_event::<RepoVotingCreated>("create_voting")
+    RepoVoterContract::contract_def().with_events(casper_dao_contracts::repo_voter::event_schemas())
 }
 
 fn reputation_voter() -> ContractDef {
-    ReputationVoterContract::contract_def().with_event::<ReputationVotingCreated>("create_voting")
+    ReputationVoterContract::contract_def()
+        .with_events(casper_dao_contracts::reputation_voter::event_schemas())
 }
 
 fn slashing_voter() -> ContractDef {
-    SlashingVoterContract::contract_def().with_event::<SlashingVotingCreated>("create_voting")
+    SlashingVoterContract::contract_def()
+        .with_events(casper_dao_contracts::slashing_voter::event_schemas())
 }
 
 fn simple_voter() -> ContractDef {
-    SimpleVoterContract::contract_def().with_event::<SimpleVotingCreated>("create_voting")
+    SimpleVoterContract::contract_def()
+        .with_events(casper_dao_contracts::simple_voter::event_schemas())
 }
 
 fn onboarding_request_voter() -> ContractDef {
-    OnboardingRequestContract::contract_def().with_event::<OnboardingVotingCreated>("create_voting")
+    OnboardingRequestContract::contract_def()
+        .with_events(casper_dao_contracts::onboarding_request::event_schemas())
 }
 
-pub fn print_all_contracts() {
-    let contracts = all_contracts();
+// Bid Escrow.
 
-    for contract in contracts {
-        let methods = contract.mutable_methods();
-        println!("\n{} ({})", contract.name, methods.len());
-        for method in methods {
-            println!("    - {} ({})", method.name, method.events.len());
-            for event in method.events {
-                println!("        - {}", event.name);
-            }
-        }
-    }
+fn bid_escrow() -> ContractDef {
+    BidEscrowContract::contract_def().with_events(casper_dao_contracts::bid_escrow::event_schemas())
 }

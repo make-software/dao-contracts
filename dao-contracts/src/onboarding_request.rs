@@ -25,15 +25,16 @@
 //! [`Bid Escrow Contract`]: crate::bid_escrow::BidEscrowContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [submission process]: crate::bid_escrow#submitting-a-job-proof
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::caller,
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{caller, emit},
     cspr,
     Address,
     BlockTime,
     DocumentHash,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{URef, U512};
 use delegate::delegate;
 
@@ -169,6 +170,7 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
         kyc_token: Address,
         va_token: Address,
     ) {
+        casper_event_standard::init(event_schemas());
         self.refs
             .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
@@ -177,7 +179,11 @@ impl OnboardingRequestContractInterface for OnboardingRequestContract {
     fn create_voting(&mut self, reason: DocumentHash, purse: URef) {
         let cspr_deposit = cspr::deposit(purse);
         let voting_info = self.onboarding.submit_request(reason.clone(), cspr_deposit);
-        OnboardingVotingCreated::new(reason, cspr_deposit, voting_info).emit();
+        emit(OnboardingVotingCreated::new(
+            reason,
+            cspr_deposit,
+            voting_info,
+        ));
     }
 
     fn get_cspr_balance(&self) -> U512 {
@@ -252,4 +258,12 @@ impl OnboardingVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    crate::voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<OnboardingVotingCreated>();
+    schemas
 }

@@ -103,7 +103,10 @@ impl TestEnv {
         name: &str,
         key: K,
     ) -> V {
-        self.state.lock().unwrap().get_dict_value(hash, name, key)
+        self.state
+            .lock()
+            .unwrap()
+            .get_dict_value(hash, name, &to_dictionary_key(&key))
     }
 
     /// Get account by index.
@@ -121,10 +124,12 @@ impl TestEnv {
         self.state.lock().unwrap().block_time += seconds.as_secs();
     }
 
+    /// Read block time.
     pub fn get_block_time(&self) -> u64 {
         self.state.lock().unwrap().block_time
     }
 
+    /// Get the CSPR ballance of an address.
     pub fn get_address_cspr_balance(&self, address: Address) -> U512 {
         match address.is_contract() {
             true => self
@@ -138,6 +143,32 @@ impl TestEnv {
                 .unwrap()
                 .get_account_cspr_balance(&address),
         }
+    }
+
+    /// Read events count of a contract.
+    pub fn events_count(&self, hash: ContractPackageHash) -> u32 {
+        self.get_value(hash, casper_event_standard::EVENTS_LENGTH)
+    }
+
+    /// Read event at given index.
+    pub fn event<T: FromBytes>(&self, hash: ContractPackageHash, index: i32) -> T {
+        let length = self.events_count(hash);
+
+        let real_index = if index.is_negative() {
+            length - index.wrapping_abs() as u32
+        } else {
+            index as u32
+        };
+
+        let raw_event: Bytes = self.state.lock().unwrap().get_dict_value(
+            hash,
+            casper_event_standard::EVENTS_DICT,
+            &real_index.to_string(),
+        );
+
+        let (event, bytes) = T::from_bytes(&raw_event).unwrap();
+        assert!(bytes.is_empty());
+        event
     }
 }
 
@@ -318,11 +349,11 @@ impl TestEnvState {
             .unwrap()
     }
 
-    pub fn get_dict_value<K: ToBytes + CLTyped, V: FromBytes + CLTyped + Default>(
+    fn get_dict_value<V: FromBytes + CLTyped + Default>(
         &self,
         hash: ContractPackageHash,
         name: &str,
-        key: K,
+        key: &str,
     ) -> V {
         let contract_hash = self
             .context
@@ -341,11 +372,10 @@ impl TestEnvState {
             .as_uref()
             .unwrap();
 
-        match self.context.query_dictionary_item(
-            None,
-            dictionary_seed_uref,
-            &to_dictionary_key(&key),
-        ) {
+        match self
+            .context
+            .query_dictionary_item(None, dictionary_seed_uref, key)
+        {
             Ok(val) => {
                 let value: V = val.as_cl_value().unwrap().clone().into_t::<V>().unwrap();
                 value

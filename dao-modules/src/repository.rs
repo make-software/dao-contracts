@@ -8,6 +8,7 @@ use casper_dao_utils::{
     OrderedCollection,
     Set,
 };
+use casper_event_standard::Schemas;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
     ContractPackageHash,
@@ -172,7 +173,7 @@ impl Default for RepositoryDefaults {
 }
 
 pub mod events {
-    use casper_dao_utils::casper_dao_macros::Event;
+    use casper_event_standard::Event;
     use casper_types::bytesrepr::Bytes;
 
     /// Informs the repository value has been changed.
@@ -182,4 +183,8 @@ pub mod events {
         pub value: Bytes,
         pub activation_time: Option<u64>,
     }
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<ValueUpdated>();
 }

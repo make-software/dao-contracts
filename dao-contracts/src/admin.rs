@@ -11,22 +11,24 @@
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //!
-//! [`access control`]: casper_dao_modules::AccessControl
+//! [`access control`]: casper_dao_modules::access_control::AccessControl
 //! [VotingEngine]: crate::voting::VotingEngine
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
-    casper_dao_macros::{casper_contract_interface, CLTyped, Event, FromBytes, Instance, ToBytes},
-    casper_env::caller,
+    casper_dao_macros::{casper_contract_interface, CLTyped, FromBytes, Instance, ToBytes},
+    casper_env::{caller, emit},
     Address,
     BlockTime,
     ContractCall,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        self,
         events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
@@ -155,6 +157,7 @@ impl AdminContractInterface for AdminContract {
     }
 
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        casper_event_standard::init(event_schemas());
         self.refs
             .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller());
@@ -181,7 +184,12 @@ impl AdminContractInterface for AdminContract {
             .voting_engine
             .create_voting(caller(), stake, voting_configuration);
 
-        AdminVotingCreated::new(contract_to_update, action, address, info).emit();
+        emit(AdminVotingCreated::new(
+            contract_to_update,
+            action,
+            address,
+            info,
+        ));
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
@@ -288,4 +296,12 @@ fn test_action() {
         deserialized_action.get_entry_point(),
         "change_ownership".to_string()
     );
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<AdminVotingCreated>();
+    schemas
 }

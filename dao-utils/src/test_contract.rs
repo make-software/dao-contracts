@@ -13,7 +13,7 @@ pub trait TestContract {
     fn assert_event_at<T: FromBytes + PartialEq + Debug>(&self, index: i32, event: T);
     fn assert_last_event<T: FromBytes + PartialEq + Debug>(&self, event: T);
     fn event<T: FromBytes>(&self, index: i32) -> T;
-    fn events_count(&self) -> i32;
+    fn events_count(&self) -> u32;
     fn get_package_hash(&self) -> ContractPackageHash;
     fn get_env(&self) -> &TestEnv;
 }

@@ -15,13 +15,13 @@ fn assert_event(world: &mut DaoWorld, step: &Step, contract: Contract) {
 
     let total_events = on_contract!(world, contract, events_count());
 
-    let expected_events_count = table.len() as i32;
+    let expected_events_count = table.len() as u32;
     // In a scenario are given last n events, so we need to skip first #events-n events.
     let skipped_events = total_events - expected_events_count;
 
     for (idx, row) in table.enumerate() {
         let event: Event = row.into();
-        let event_idx = idx as i32 + skipped_events;
-        world.assert_event(&contract, event_idx, event);
+        let event_idx = idx as u32 + skipped_events;
+        world.assert_event(&contract, event_idx as i32, event);
     }
 }

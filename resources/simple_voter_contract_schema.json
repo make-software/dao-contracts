@@ -18,27 +18,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        },
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "create_voting",
@@ -53,64 +33,7 @@
           "ty": "U512"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "SimpleVotingCreated",
-          "fields": [
-            {
-              "name": "document_hash",
-              "ty": "String"
-            },
-            {
-              "name": "creator",
-              "ty": "Key"
-            },
-            {
-              "name": "stake",
-              "ty": {
-                "Option": "U512"
-              }
-            },
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "config_informal_quorum",
-              "ty": "U32"
-            },
-            {
-              "name": "config_informal_voting_time",
-              "ty": "U64"
-            },
-            {
-              "name": "config_formal_quorum",
-              "ty": "U32"
-            },
-            {
-              "name": "config_formal_voting_time",
-              "ty": "U64"
-            },
-            {
-              "name": "config_total_onboarded",
-              "ty": "U512"
-            },
-            {
-              "name": "config_double_time_between_votings",
-              "ty": "Bool"
-            },
-            {
-              "name": "config_voting_clearness_delta",
-              "ty": "U512"
-            },
-            {
-              "name": "config_time_between_informal_and_formal_voting",
-              "ty": "U64"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "vote",
@@ -133,34 +56,7 @@
           "ty": "U512"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "BallotCast",
-          "fields": [
-            {
-              "name": "voter",
-              "ty": "Key"
-            },
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "voting_type",
-              "ty": "U8"
-            },
-            {
-              "name": "choice",
-              "ty": "U8"
-            },
-            {
-              "name": "stake",
-              "ty": "U512"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "finish_voting",
@@ -175,120 +71,19 @@
           "ty": "U8"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "VotingEnded",
-          "fields": [
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "voting_type",
-              "ty": "U8"
-            },
-            {
-              "name": "voting_result",
-              "ty": "U8"
-            },
-            {
-              "name": "stake_in_favor",
-              "ty": "U512"
-            },
-            {
-              "name": "stake_against",
-              "ty": "U512"
-            },
-            {
-              "name": "unbound_stake_in_favor",
-              "ty": "U512"
-            },
-            {
-              "name": "unbound_stake_against",
-              "ty": "U512"
-            },
-            {
-              "name": "votes_in_favor",
-              "ty": "U32"
-            },
-            {
-              "name": "votes_against",
-              "ty": "U32"
-            },
-            {
-              "name": "unstakes",
-              "ty": {
-                "Map": {
-                  "key": {
-                    "Tuple2": [
-                      "Key",
-                      "U32"
-                    ]
-                  },
-                  "value": "U512"
-                }
-              }
-            },
-            {
-              "name": "stakes",
-              "ty": {
-                "Map": {
-                  "key": {
-                    "Tuple2": [
-                      "Key",
-                      "U32"
-                    ]
-                  },
-                  "value": "U512"
-                }
-              }
-            },
-            {
-              "name": "burns",
-              "ty": {
-                "Map": {
-                  "key": {
-                    "Tuple2": [
-                      "Key",
-                      "U32"
-                    ]
-                  },
-                  "value": "U512"
-                }
-              }
-            },
-            {
-              "name": "mints",
-              "ty": {
-                "Map": {
-                  "key": {
-                    "Tuple2": [
-                      "Key",
-                      "U32"
-                    ]
-                  },
-                  "value": "U512"
-                }
-              }
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "variable_repository_address",
       "is_mutable": false,
       "args": [],
-      "return_ty": "Key",
-      "events": []
+      "return_ty": "Key"
     },
     {
       "name": "reputation_token_address",
       "is_mutable": false,
       "args": [],
-      "return_ty": "Key",
-      "events": []
+      "return_ty": "Key"
     },
     {
       "name": "get_voting",
@@ -301,8 +96,7 @@
       ],
       "return_ty": {
         "Option": "Any"
-      },
-      "events": []
+      }
     },
     {
       "name": "get_ballot",
@@ -323,8 +117,7 @@
       ],
       "return_ty": {
         "Option": "Any"
-      },
-      "events": []
+      }
     },
     {
       "name": "get_voter",
@@ -345,8 +138,7 @@
       ],
       "return_ty": {
         "Option": "Key"
-      },
-      "events": []
+      }
     },
     {
       "name": "get_document_hash",
@@ -359,8 +151,7 @@
       ],
       "return_ty": {
         "Option": "String"
-      },
-      "events": []
+      }
     },
     {
       "name": "voting_exists",
@@ -375,8 +166,7 @@
           "ty": "U8"
         }
       ],
-      "return_ty": "Bool",
-      "events": []
+      "return_ty": "Bool"
     },
     {
       "name": "slash_voter",
@@ -391,56 +181,7 @@
           "ty": "U32"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "BallotCanceled",
-          "fields": [
-            {
-              "name": "voter",
-              "ty": "Key"
-            },
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "voting_type",
-              "ty": "U8"
-            },
-            {
-              "name": "choice",
-              "ty": "U8"
-            },
-            {
-              "name": "stake",
-              "ty": "U512"
-            }
-          ]
-        },
-        {
-          "name": "VotingCanceled",
-          "fields": [
-            {
-              "name": "voting_id",
-              "ty": "U32"
-            },
-            {
-              "name": "voting_type",
-              "ty": "U8"
-            },
-            {
-              "name": "unstakes",
-              "ty": {
-                "Map": {
-                  "key": "Key",
-                  "value": "U512"
-                }
-              }
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "change_ownership",
@@ -451,18 +192,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "add_to_whitelist",
@@ -473,18 +203,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "remove_from_whitelist",
@@ -495,18 +214,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "RemovedFromWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "is_whitelisted",
@@ -517,8 +225,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Bool",
-      "events": []
+      "return_ty": "Bool"
     },
     {
       "name": "get_owner",
@@ -526,8 +233,260 @@
       "args": [],
       "return_ty": {
         "Option": "Key"
-      },
-      "events": []
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "AddedToWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "BallotCanceled",
+      "fields": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "choice",
+          "ty": "U8"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "BallotCast",
+      "fields": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "choice",
+          "ty": "U8"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "OwnerChanged",
+      "fields": [
+        {
+          "name": "new_owner",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RemovedFromWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "SimpleVotingCreated",
+      "fields": [
+        {
+          "name": "document_hash",
+          "ty": "String"
+        },
+        {
+          "name": "creator",
+          "ty": "Key"
+        },
+        {
+          "name": "stake",
+          "ty": {
+            "Option": "U512"
+          }
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "config_informal_quorum",
+          "ty": "U32"
+        },
+        {
+          "name": "config_informal_voting_time",
+          "ty": "U64"
+        },
+        {
+          "name": "config_formal_quorum",
+          "ty": "U32"
+        },
+        {
+          "name": "config_formal_voting_time",
+          "ty": "U64"
+        },
+        {
+          "name": "config_total_onboarded",
+          "ty": "U512"
+        },
+        {
+          "name": "config_double_time_between_votings",
+          "ty": "Bool"
+        },
+        {
+          "name": "config_voting_clearness_delta",
+          "ty": "U512"
+        },
+        {
+          "name": "config_time_between_informal_and_formal_voting",
+          "ty": "U64"
+        }
+      ]
+    },
+    {
+      "name": "VotingCanceled",
+      "fields": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "unstakes",
+          "ty": {
+            "Map": {
+              "key": "Key",
+              "value": "U512"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "VotingEnded",
+      "fields": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "voting_result",
+          "ty": "U8"
+        },
+        {
+          "name": "stake_in_favor",
+          "ty": "U512"
+        },
+        {
+          "name": "stake_against",
+          "ty": "U512"
+        },
+        {
+          "name": "unbound_stake_in_favor",
+          "ty": "U512"
+        },
+        {
+          "name": "unbound_stake_against",
+          "ty": "U512"
+        },
+        {
+          "name": "votes_in_favor",
+          "ty": "U32"
+        },
+        {
+          "name": "votes_against",
+          "ty": "U32"
+        },
+        {
+          "name": "unstakes",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "stakes",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "burns",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "mints",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        }
+      ]
     }
   ]
 }

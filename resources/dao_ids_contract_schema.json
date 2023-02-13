@@ -5,34 +5,13 @@
       "name": "init",
       "is_mutable": true,
       "args": [],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        },
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "next_voting_id",
       "is_mutable": true,
       "args": [],
-      "return_ty": "U32",
-      "events": []
+      "return_ty": "U32"
     },
     {
       "name": "change_ownership",
@@ -43,18 +22,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "OwnerChanged",
-          "fields": [
-            {
-              "name": "new_owner",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "add_to_whitelist",
@@ -65,18 +33,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "AddedToWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "remove_from_whitelist",
@@ -87,18 +44,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit",
-      "events": [
-        {
-          "name": "RemovedFromWhitelist",
-          "fields": [
-            {
-              "name": "address",
-              "ty": "Key"
-            }
-          ]
-        }
-      ]
+      "return_ty": "Unit"
     },
     {
       "name": "is_whitelisted",
@@ -109,8 +55,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Bool",
-      "events": []
+      "return_ty": "Bool"
     },
     {
       "name": "get_owner",
@@ -118,8 +63,36 @@
       "args": [],
       "return_ty": {
         "Option": "Key"
-      },
-      "events": []
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "AddedToWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "OwnerChanged",
+      "fields": [
+        {
+          "name": "new_owner",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RemovedFromWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
     }
   ]
 }

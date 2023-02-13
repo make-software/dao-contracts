@@ -13,23 +13,25 @@
 //! [`Repository contract`]: crate::variable_repository::VariableRepositoryContractInterface
 //! [`VotingEngine`]: crate::voting::VotingEngine
 //! [`Document Hash`]: casper_dao_utils::DocumentHash
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::caller,
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{caller, emit},
     Address,
     BlockTime,
     DocumentHash,
     Error,
     Mapping,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::U512;
 use delegate::delegate;
 
 use crate::{
     config::ConfigurationBuilder,
     voting::{
+        self,
         events::VotingCreatedInfo,
         refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
@@ -155,6 +157,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 
     fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        casper_event_standard::init(event_schemas());
         self.refs
             .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller())
@@ -170,7 +173,7 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
         self.simple_votings
             .set(&info.voting_id, document_hash.clone());
 
-        SimpleVotingCreated::new(document_hash, info).emit();
+        emit(SimpleVotingCreated::new(document_hash, info));
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
@@ -242,4 +245,12 @@ impl SimpleVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<SimpleVotingCreated>();
+    schemas
 }

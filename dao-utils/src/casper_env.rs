@@ -18,14 +18,7 @@ use casper_types::{
     URef,
 };
 
-use crate::{
-    consts::CONTRACT_MAIN_PURSE,
-    events::Events,
-    Address,
-    BlockTime,
-    Error,
-    Error::KeyValueStorageError,
-};
+use crate::{consts::CONTRACT_MAIN_PURSE, Address, BlockTime, Error, Error::KeyValueStorageError};
 
 /// Read value from the storage.
 pub fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
@@ -101,8 +94,9 @@ pub fn self_address() -> Address {
 }
 
 /// Record event to the contract's storage.
-pub fn emit<T: ToBytes>(event: T) {
-    Events::default().emit(event);
+pub fn emit<T: ToBytes>(_event: T) {
+    #[cfg(target_arch = "wasm32")]
+    casper_event_standard::emit(_event);
 }
 
 /// Convert any key to hash.

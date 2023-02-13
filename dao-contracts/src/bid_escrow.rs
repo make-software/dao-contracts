@@ -187,7 +187,7 @@
 //! [`Governance Variable`]: crate::variable_repository#available-keys
 use std::borrow::Borrow;
 
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::access_control::{self, AccessControl};
 #[cfg(feature = "test-support")]
 use casper_dao_utils::TestContract;
 use casper_dao_utils::{
@@ -200,6 +200,7 @@ use casper_dao_utils::{
     DocumentHash,
     Error,
 };
+use casper_event_standard::Schemas;
 use casper_types::{URef, U512};
 use delegate::delegate;
 
@@ -212,6 +213,7 @@ use crate::{
     },
     reputation::ReputationContractInterface,
     voting::{
+        self,
         refs::{ContractRefs, ContractRefsWithKycStorage},
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
@@ -479,6 +481,8 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn cancel_job(&mut self, job_id: JobId);
             fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
             fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
+            fn jobs_count(&self) -> u32;
+            fn get_job(&self, job_id: JobId) -> Option<Job>;
         }
 
         to self.access_control {
@@ -487,11 +491,6 @@ impl BidEscrowContractInterface for BidEscrowContract {
             fn remove_from_whitelist(&mut self, address: Address);
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
-        }
-
-        to self.job_engine {
-            fn jobs_count(&self) -> u32;
-            fn get_job(&self, job_id: JobId) -> Option<Job>;
         }
 
         to self.refs {
@@ -507,6 +506,7 @@ impl BidEscrowContractInterface for BidEscrowContract {
         kyc_token: Address,
         va_token: Address,
     ) {
+        init_events();
         self.refs
             .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
@@ -650,4 +650,16 @@ impl BidEscrowContractTest {
             },
         )
     }
+}
+
+fn init_events() {
+    casper_event_standard::init(Schemas::new());
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    // TODO: Add all events.
+    schemas
 }

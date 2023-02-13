@@ -1,4 +1,4 @@
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::access_control::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,

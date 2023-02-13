@@ -1,13 +1,14 @@
 //! Contains CSPR Rate Provider Contract definition and related abstractions.
 //!
 //! TODO: short desc
-use casper_dao_modules::Owner;
+use casper_dao_modules::owner::{self, Owner};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
     Variable,
 };
+use casper_event_standard::Schemas;
 use casper_types::U512;
 
 #[casper_contract_interface]
@@ -43,6 +44,7 @@ pub struct CSPRRateProviderContract {
 
 impl CSPRRateProviderContractInterface for CSPRRateProviderContract {
     fn init(&mut self, rate: U512) {
+        casper_event_standard::init(event_schemas());
         let deployer = caller();
         self.owner.init(deployer);
         self.set_rate(rate);
@@ -54,11 +56,16 @@ impl CSPRRateProviderContractInterface for CSPRRateProviderContract {
 
     fn set_rate(&mut self, rate: U512) {
         self.owner.ensure_owner();
-
         self.rate.set(rate);
     }
 
     fn get_owner(&self) -> Option<Address> {
         self.owner.get_owner()
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    owner::add_event_schemas(&mut schemas);
+    schemas
 }

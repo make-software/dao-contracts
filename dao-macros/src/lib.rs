@@ -7,17 +7,9 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 mod contract;
-mod event;
 mod instance;
 mod rule;
 mod serialization;
-
-/// Derive events on top of any struct.
-#[proc_macro_derive(Event)]
-pub fn derive_events(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    event::expand_derive_events(input).into()
-}
 
 /// Derives [Instanced](../casper_dao_utils/trait.Instanced.html) boilerplate code on top of any struct.
 #[proc_macro_derive(Instance, attributes(scoped))]

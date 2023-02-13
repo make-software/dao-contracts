@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
 
-use casper_dao_modules::AccessControl;
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_dao_macros::{casper_contract_interface, Instance},
     casper_env::caller,
     Address,
 };
+use casper_event_standard::Schemas;
 use casper_types::U512;
 use delegate::delegate;
 
@@ -201,13 +202,15 @@ impl ReputationContractInterface for ReputationContract {
     }
 
     fn init(&mut self) {
+        casper_event_standard::init(event_schemas());
         let deployer = caller();
         self.access_control.init(deployer);
     }
 }
 
 pub mod events {
-    use casper_dao_utils::{casper_dao_macros::Event, Address};
+    use casper_dao_utils::Address;
+    use casper_event_standard::Event;
     use casper_types::U512;
 
     /// Informs tokens have been burnt.
@@ -223,4 +226,12 @@ pub mod events {
         pub address: Address,
         pub amount: U512,
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    schemas.add::<events::Burn>();
+    schemas.add::<events::Mint>();
+    schemas
 }

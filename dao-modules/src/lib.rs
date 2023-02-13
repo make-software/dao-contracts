@@ -1,14 +1,8 @@
-mod access_control;
-mod owner;
-mod repository;
-mod sequence;
-mod whitelist;
-
-pub use access_control::AccessControl;
-pub use owner::Owner;
-pub use repository::{Record, Repository};
-pub use sequence::SequenceGenerator;
-pub use whitelist::Whitelist;
+pub mod access_control;
+pub mod owner;
+pub mod repository;
+pub mod sequence;
+pub mod whitelist;
 
 /// Events emitted by the modules.
 pub mod events {
