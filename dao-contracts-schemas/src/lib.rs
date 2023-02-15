@@ -14,7 +14,14 @@ use casper_dao_contracts::{
     va_nft::VaNftContract,
     variable_repository::VariableRepositoryContract,
 };
-use casper_dao_utils::definitions::{ContractDef, ContractDefinition};
+use casper_dao_utils::{
+    definitions::{ContractDef, ContractDefinition, ElemDef},
+    Address,
+    BlockTime,
+    DocumentHash,
+};
+use casper_types::{CLTyped, U512};
+use serde::Serialize;
 
 pub fn all_contracts() -> Vec<ContractDef> {
     vec![
@@ -105,4 +112,89 @@ fn onboarding_request_voter() -> ContractDef {
 
 fn bid_escrow() -> ContractDef {
     BidEscrowContract::contract_def().with_events(casper_dao_contracts::bid_escrow::event_schemas())
+}
+
+#[derive(Serialize)]
+pub struct ProxyWasmDef {
+    pub file: String,
+    pub contract: String,
+    pub method: String,
+    pub args: Vec<ElemDef>,
+}
+
+impl ProxyWasmDef {
+    pub fn new<T: ContractDefinition>(method: &str, file: &str) -> Self {
+        ProxyWasmDef {
+            file: String::from(file),
+            contract: T::contract_def().name,
+            method: String::from(method),
+            args: Vec::new(),
+        }
+    }
+
+    pub fn with_arg<T: CLTyped>(mut self, name: &str) -> Self {
+        let arg = ElemDef::new::<T>(String::from(name));
+        self.args.push(arg);
+        self
+    }
+}
+
+pub fn all_proxy_wasms() -> Vec<ProxyWasmDef> {
+    vec![
+        pick_bid(),
+        post_job_offer(),
+        submit_bid(),
+        submit_job_proof_during_grace_period(),
+        submit_onboarding_request(),
+    ]
+}
+
+fn pick_bid() -> ProxyWasmDef {
+    ProxyWasmDef::new::<BidEscrowContract>("pick_bid", "pick_bid.wasm")
+        .with_arg::<Address>("bid_escrow_address")
+        .with_arg::<u32>("job_offer_id")
+        .with_arg::<u32>("bid_id")
+        .with_arg::<U512>("cspr_amount")
+}
+
+fn post_job_offer() -> ProxyWasmDef {
+    ProxyWasmDef::new::<BidEscrowContract>("post_job_offer", "post_job_offer.wasm")
+        .with_arg::<Address>("bid_escrow_address")
+        .with_arg::<U512>("cspr_amount")
+        .with_arg::<BlockTime>("expected_timeframe")
+        .with_arg::<U512>("budget")
+}
+
+fn submit_bid() -> ProxyWasmDef {
+    ProxyWasmDef::new::<BidEscrowContract>("submit_bid", "submit_bid.wasm")
+        .with_arg::<Address>("bid_escrow_address")
+        .with_arg::<u32>("job_offer_id")
+        .with_arg::<BlockTime>("time")
+        .with_arg::<U512>("payment")
+        .with_arg::<U512>("reputation_stake")
+        .with_arg::<bool>("onboard")
+        .with_arg::<U512>("cspr_amount")
+}
+
+fn submit_job_proof_during_grace_period() -> ProxyWasmDef {
+    ProxyWasmDef::new::<BidEscrowContract>(
+        "submit_job_proof_during_grace_period",
+        "submit_job_proof_during_grace_period.wasm",
+    )
+    .with_arg::<Address>("bid_escrow_address")
+    .with_arg::<u32>("job_id")
+    .with_arg::<DocumentHash>("proof")
+    .with_arg::<U512>("reputation_stake")
+    .with_arg::<bool>("onboard")
+    .with_arg::<U512>("cspr_amount")
+}
+
+fn submit_onboarding_request() -> ProxyWasmDef {
+    ProxyWasmDef::new::<OnboardingRequestContract>(
+        "create_voting",
+        "submit_onboarding_request.wasm",
+    )
+    .with_arg::<Address>("onboarding_address")
+    .with_arg::<U512>("cspr_amount")
+    .with_arg::<DocumentHash>("reason")
 }

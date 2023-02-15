@@ -1,0 +1,35 @@
+{
+  "file": "submit_bid.wasm",
+  "contract": "BidEscrowContract",
+  "method": "submit_bid",
+  "args": [
+    {
+      "name": "bid_escrow_address",
+      "ty": "Key"
+    },
+    {
+      "name": "job_offer_id",
+      "ty": "U32"
+    },
+    {
+      "name": "time",
+      "ty": "U64"
+    },
+    {
+      "name": "payment",
+      "ty": "U512"
+    },
+    {
+      "name": "reputation_stake",
+      "ty": "U512"
+    },
+    {
+      "name": "onboard",
+      "ty": "Bool"
+    },
+    {
+      "name": "cspr_amount",
+      "ty": "U512"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "file": "submit_onboarding_request.wasm",
+  "contract": "OnboardingRequestContract",
+  "method": "create_voting",
+  "args": [
+    {
+      "name": "onboarding_address",
+      "ty": "Key"
+    },
+    {
+      "name": "cspr_amount",
+      "ty": "U512"
+    },
+    {
+      "name": "reason",
+      "ty": "String"
+    }
+  ]
+}
