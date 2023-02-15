@@ -675,6 +675,7 @@ dependencies = [
  "casper-dao-utils",
  "casper-types",
  "convert_case 0.6.0",
+ "serde",
  "serde_json",
 ]
 
