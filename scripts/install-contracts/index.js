@@ -6,6 +6,8 @@ const {
   CasperClient,
   CLValueBuilder,
   RuntimeArgs,
+  CLU64Type,
+  decodeBase16,
 } = require('casper-js-sdk');
 const path = require('path');
 const {
@@ -15,6 +17,7 @@ const {
   parseWriteContract,
   stringToCLKey,
 } = require('./utils');
+const { None } = require('ts-results');
 
 const rawConfig = fs.readFileSync(path.resolve(__dirname, './config.json'), 'utf-8');
 
@@ -149,9 +152,45 @@ async function main() {
 
   console.log(`
     Info: Installing contracts:
-      11) OnboardingRequestContract
-      12) KycVoterContract
-      13) BidEscrowContract
+     11) CSPRRateProviderContract
+  `)
+
+  contractDeploymentResults = await Promise.all([
+    'CSPRRateProviderContract',
+  ].map(async (cn) => {
+    let deploy = await installContract(
+      contractClient,
+      rpcAPI,
+      path.resolve(__dirname, config.contracts[cn].wasm_relative_path),
+      {
+        rate: CLValueBuilder.u512(config.contracts[cn].args.rate),
+      },
+      config.contracts[cn].payment_amount,
+      status.chainspec_name,
+      pk,
+    );
+
+    try {
+      const contract = parseWriteContract(deploy);
+
+      return { name: cn, ...contract, deployHash: deploy.deploy.hash };
+    } catch (err) {
+      throw new Error(`failed to parse write contract for contract name: ${cn}, err: ${err.message}`);
+    }
+  }));
+
+  contractsMap = contractDeploymentResults.reduce((acc, el) => ({ ...acc, [el.name]: el }), contractsMap);
+
+  contractDeploymentResults.forEach((c) => {
+    logContractOutput(c);
+    totalCost += parseInt(c.actualCost);
+  });
+
+  console.log(`
+    Info: Installing contracts:
+      12) OnboardingRequestContract
+      13) KycVoterContract
+      14) BidEscrowContract
   `);
 
   contractDeploymentResults = await Promise.all([
@@ -261,6 +300,55 @@ async function main() {
 
     contractCalls.push({ name: `SlashingVoterContract->update_bid_escrow_list(${config.contracts.SlashingVoterContract.bid_escrow_list.contracts.join(',')})`, deploy });
   }
+
+  // Post install setup
+
+  contractClient.setContractHash(
+    `hash-${contractsMap.VariableRepositoryContract.contractHash}`,
+    `hash-${contractsMap.VariableRepositoryContract.contractPackageHash}`,
+  );
+
+  const conversionRateAddressBytes = decodeBase16(contractsMap.CSPRRateProviderContract.contractPackageHash).reduce((acc, el) => {
+    acc.push(CLValueBuilder.u8(el));
+
+    return acc;
+  }, []);
+
+  const conversionRateUpdateDeploy = contractClient.callEntrypoint(
+    'update_at',
+    RuntimeArgs.fromMap({
+      key: CLValueBuilder.string('FiatConversionRateAddress'),
+      value: CLValueBuilder.list(conversionRateAddressBytes),
+      activation_time: CLValueBuilder.option(None, new CLU64Type()),
+    }),
+    pk.publicKey,
+    status.chainspec_name,
+    '2703423570',
+    [pk]
+  );
+
+  contractCalls.push({ name: 'VariableRepositoryContract->update_at(CSPRRateProviderContract)', deploy: conversionRateUpdateDeploy });
+
+  const daoIdsAddressBytes = decodeBase16(contractsMap.DaoIdsContract.contractPackageHash).reduce((acc, el) => {
+    acc.push(CLValueBuilder.u8(el));
+
+    return acc;
+  }, []);
+
+  const daoIdsUpdateDeploy = contractClient.callEntrypoint(
+    'update_at',
+    RuntimeArgs.fromMap({
+      key: CLValueBuilder.string('VotingIdsAddress'),
+      value: CLValueBuilder.list(daoIdsAddressBytes),
+      activation_time: CLValueBuilder.option(None, new CLU64Type()),
+    }),
+    pk.publicKey,
+    status.chainspec_name,
+    '2675884340',
+    [pk]
+  );
+
+  contractCalls.push({ name: 'VariableRepositoryContract->update_at(DaoIdsContract)', deploy: daoIdsUpdateDeploy });
 
   const results = await Promise.all(contractCalls.map(async (c) => {
     await rpcAPI.deploy(c.deploy);

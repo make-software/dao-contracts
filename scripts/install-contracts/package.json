@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "casper-js-sdk": "^2.10.1"
+    "casper-js-sdk": "^2.10.1",
+    "ts-results": "^3.3.0"
   }
 }
