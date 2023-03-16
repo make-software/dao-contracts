@@ -11,7 +11,6 @@ use casper_dao_utils::{
 use casper_event_standard::Schemas;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    ContractPackageHash,
     U512,
 };
 
@@ -35,8 +34,12 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn init(&mut self) {
-        for (key, value) in RepositoryDefaults::default().items() {
+    pub fn init(&mut self, fiat_conversion: Address, bid_escrow_wallet: Address, voting_ids: Address) {
+        let mut config = RepositoryDefaults::default();
+        config.push(consts::FIAT_CONVERSION_RATE_ADDRESS, fiat_conversion);
+        config.push(consts::BID_ESCROW_WALLET_ADDRESS, bid_escrow_wallet);
+        config.push(consts::VOTING_IDS_ADDRESS,voting_ids);
+        for (key, value) in config.items() {
             self.set(key, value);
         }
     }
@@ -138,10 +141,6 @@ impl Default for RepositoryDefaults {
         items.push(consts::PUBLIC_AUCTION_TIME, 864000u64);
         items.push(consts::DEFAULT_POLICING_RATE, U512::from(300));
         items.push(consts::REPUTATION_CONVERSION_RATE, U512::from(100));
-        items.push(
-            consts::FIAT_CONVERSION_RATE_ADDRESS,
-            Address::from(ContractPackageHash::from([0u8; 32])),
-        );
         items.push(consts::FORUM_KYC_REQUIRED, true);
         items.push(consts::BID_ESCROW_INFORMAL_QUORUM_RATIO, U512::from(500));
         items.push(consts::BID_ESCROW_FORMAL_QUORUM_RATIO, U512::from(500));
@@ -156,18 +155,10 @@ impl Default for RepositoryDefaults {
         items.push(consts::VA_BID_ACCEPTANCE_TIMEOUT, 172800u64);
         items.push(consts::VA_CAN_BID_ON_PUBLIC_AUCTION, false);
         items.push(consts::DISTRIBUTE_PAYMENT_TO_NON_VOTERS, true);
-        items.push(
-            consts::BID_ESCROW_WALLET_ADDRESS,
-            Address::from(ContractPackageHash::from([0u8; 32])),
-        );
         items.push(consts::DEFAULT_REPUTATION_SLASH, U512::from(100));
         items.push(consts::VOTING_CLEARNESS_DELTA, U512::from(8));
         items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);
         items.push(consts::BID_ESCROW_PAYMENT_RATIO, U512::from(100));
-        items.push(
-            consts::VOTING_IDS_ADDRESS,
-            Address::from(ContractPackageHash::from([0u8; 32])),
-        );
         items
     }
 }

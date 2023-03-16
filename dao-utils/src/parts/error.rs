@@ -46,6 +46,8 @@ dao_errors!(
     ActivationTimeInPast => 1006,
     ArithmeticOverflow => 1007,
     BytesConversionError => 1008,
+    MappingItemNotAvailable => 1009,
+    TypeMismatch => 1010,
     InvalidContext => 1099,
     Unknown => 1100,
     NoSuchMethod(String) => 1101,

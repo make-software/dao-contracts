@@ -52,7 +52,7 @@ impl<K: ToBytes + CLTyped, V: ToBytes + FromBytes + CLTyped> Mapping<K, V> {
     /// Read `key` from the storage or revert if the key stores no value.
     pub fn get_or_revert(&self, key: &K) -> V {
         self.get_or_none(key)
-            .unwrap_or_revert_with(Error::ValueNotAvailable)
+            .unwrap_or_revert_with(Error::MappingItemNotAvailable)
     }
 
     /// Read `key` from the storage or return none.

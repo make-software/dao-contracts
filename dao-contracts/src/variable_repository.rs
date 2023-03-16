@@ -70,7 +70,7 @@ pub trait VariableRepositoryContractInterface {
     /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     /// * multiple [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) events,
     /// one per value of the default repository configuration.
-    fn init(&mut self);
+    fn init(&mut self, fiat_conversion: Address, bid_escrow_wallet: Address, voting_ids: Address);
     /// Changes the ownership of the contract. Transfers ownership to the `owner`.
     /// Only the current owner is permitted to call this method.
     /// [`Read more`](AccessControl::change_ownership())
@@ -103,8 +103,6 @@ pub trait VariableRepositoryContractInterface {
     /// is not a whitelisted user.
     /// * [`ActivationTimeInPast`](casper_dao_utils::Error::ActivationTimeInPast) if
     /// the activation time has passed already.
-    /// * [`ValueNotAvailable`](casper_dao_utils::Error::ValueNotAvailable) on
-    /// the future value update if the current value has not been set.
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>);
     /// Returns the value stored under the given key.
     ///
@@ -146,11 +144,11 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         }
     }
 
-    fn init(&mut self) {
+    fn init(&mut self, fiat_conversion: Address, bid_escrow_wallet: Address, voting_ids: Address) {
         casper_event_standard::init(event_schemas());
         let deployer = caller();
         self.access_control.init(deployer);
-        self.repository.init();
+        self.repository.init(fiat_conversion, bid_escrow_wallet, voting_ids);
     }
 
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {

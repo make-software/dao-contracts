@@ -170,10 +170,10 @@ impl ConfigurationBuilder {
         };
 
         let (result, bytes) = <T>::from_bytes(bytes).unwrap_or_else(|_| {
-            revert(Error::ValueNotAvailable);
+            revert(Error::TypeMismatch);
         });
         if !bytes.is_empty() {
-            revert(Error::ValueNotAvailable)
+            revert(Error::TypeMismatch)
         }
 
         result

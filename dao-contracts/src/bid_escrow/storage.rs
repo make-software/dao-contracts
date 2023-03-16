@@ -168,7 +168,7 @@ impl JobStorage {
         self.get_job_or_revert(job_id)
     }
 
-    /// Gets the [Job] with a given id or reverts with [ValueNotAvailable](casper_dao_utils::Error::ValueNotAvailable).
+    /// Gets the [Job] with a given id or reverts with [MappingItemNotAvailable](casper_dao_utils::Error::MappingItemNotAvailable).
     pub fn get_job_or_revert(&self, job_id: JobId) -> Job {
         self.jobs.get_or_revert(&job_id)
     }
