@@ -213,6 +213,8 @@ pub mod events {
     use casper_event_standard::Event;
     use casper_types::U512;
 
+    use crate::bid_escrow::types::BidId;
+
     /// Informs tokens have been burnt.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Burn {
@@ -226,6 +228,22 @@ pub mod events {
         pub address: Address,
         pub amount: U512,
     }
+
+    /// Informs tokens have been staked.
+    #[derive(Debug, PartialEq, Eq, Event)]
+    pub struct Stake {
+        pub worker: Address,
+        pub amount: U512,
+        pub bid_id: BidId,
+    }
+
+    /// Informs tokens have been unstaked.
+    #[derive(Debug, PartialEq, Eq, Event)]
+    pub struct Unstake {
+        pub worker: Address,
+        pub amount: U512,
+        pub bid_id: BidId,
+    }
 }
 
 pub fn event_schemas() -> Schemas {
@@ -233,5 +251,14 @@ pub fn event_schemas() -> Schemas {
     access_control::add_event_schemas(&mut schemas);
     schemas.add::<events::Burn>();
     schemas.add::<events::Mint>();
+    schemas.add::<events::Stake>();
+    schemas.add::<events::Unstake>();
     schemas
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<events::Burn>();
+    schemas.add::<events::Mint>();
+    schemas.add::<events::Stake>();
+    schemas.add::<events::Unstake>();
 }

@@ -211,6 +211,7 @@ use crate::{
         job_offer::{JobOffer, JobOfferStatus},
         types::{BidId, JobId, JobOfferId},
     },
+    reputation,
     reputation::ReputationContractInterface,
     voting::{
         self,
@@ -233,7 +234,10 @@ pub mod storage;
 pub mod types;
 
 pub use bid_engine::BidEngine;
+use casper_dao_utils::casper_env::{emit, self_address};
 pub use job_engine::JobEngine;
+
+use crate::bid_escrow::events::{add_event_schemas, CSPRTransfer, TransferReason};
 
 #[casper_contract_interface]
 pub trait BidEscrowContractInterface {
@@ -260,26 +264,34 @@ pub trait BidEscrowContractInterface {
 
     /// Job Poster post a new Job Offer.
     ///
-    /// # Parameters:
-    /// * expected_timeframe - Expected timeframe for completing a Job
-    /// * budget - Maximum budget for a Job
-    /// Alongside Job Offer, Job Poster also sends DOS Fee in CSPR
+    /// # Errors
+    /// * [`Error::NotKyced`] - if the caller is not KYCed
+    /// * [`Error::DosFeeTooLow`] - if the caller has not sent enough DOS Fee
     ///
     /// # Events
     /// * [`JobOfferCreated`](crate::bid_escrow::events::JobOfferCreated)
     fn post_job_offer(&mut self, expected_timeframe: BlockTime, budget: U512, purse: URef);
     /// Worker submits a [Bid] for a [Job].
     ///
-    /// # Parameters:
-    /// * time - proposed timeframe for completing a Job
-    /// * payment - proposed payment for a Job
-    /// * reputation_stake - reputation stake for a Job if Worker is an Internal Worker
-    /// * onboard - if Worker is an External Worker, then Worker can request to be onboarded after
-    /// completing a Job
-    /// * purse: purse containing stake from External Worker
-    ///
     /// # Events
     /// * [`BidSubmitted`](crate::bid_escrow::events::BidSubmitted)
+    /// * [`Stake`](crate::reputation::Stake)
+    ///
+    /// # Errors
+    /// * [`Error::NotKyced`] - if the caller is not KYCed
+    /// * [`Error::CannotBidOnOwnJob`] - if the caller is the Job Poster
+    /// * [`Error::VaOnboardedAlready`] - if the caller has already been onboarded, but is trying to
+    /// onboard again
+    /// * [`Error::PaymentExceedsMaxBudget`] - if the proposed payment exceeds the maximum budget
+    /// * [`Error::AuctionNotRunning`] - if the auction is not running
+    /// * [`Error::OnlyOnboardedWorkerCanBid`] - if the Worker is not onboarded and the
+    /// auction is internal
+    /// * [`Error::OnboardedWorkerCannotBid`] - if the Worker is onboarded, auction is public
+    /// and the configuration forbids bidding by onboarded Workers on such auctions
+    /// * [`Error::InsufficientBalance`] - if the Worker has not enough balance to pay for the
+    /// bid
+    /// * [`Error::ZeroStake`] - if the Worker tries to stake 0 reputation
+    /// * [`Error::NotWhitelisted`] - if the contract is not whitelisted for Reputation Staking
     fn submit_bid(
         &mut self,
         job_offer_id: JobOfferId,
@@ -293,33 +305,41 @@ pub trait BidEscrowContractInterface {
     ///
     /// Bid can be cancelled only after VABidAcceptanceTimeout time has passed after submitting a Bid.
     ///
-    /// # Parameters:
-    /// * bid_id - Bid Id
+    /// # Events
+    /// * [`BidCancelled`](crate::bid_escrow::events::BidCancelled)
+    /// * [`Unstake`](crate::reputation::Unstake)
+    ///
+    /// # Errors:
+    /// * [`CannotCancelNotOwnedBid`](Error::CannotCancelNotOwnedBid) when trying to cancel a Bid
+    /// that is not owned by the Worker
+    /// * [`CannotCancelBidOnCompletedJobOffer`](Error::CannotCancelBidOnCompletedJobOffer) when
+    /// trying to cancel a Bid on a Job Offer that is already completed
+    /// * [`CannotCancelBidBeforeAcceptanceTimeout`](Error::CannotCancelBidBeforeAcceptanceTimeout)
+    /// when trying to cancel a Bid before VABidAcceptanceTimeout time has passed
     fn cancel_bid(&mut self, bid_id: BidId);
+
     /// Job poster picks a bid. This creates a new Job object and saves it in a storage.
-    /// If worker is not onboarded, the job is accepted automatically.
-    /// Otherwise, worker needs to accept job.
     ///
     /// # Events
     /// * [`JobCreated`](crate::bid_escrow::events::JobCreated)
-    /// * [`JobAccepted`](crate::bid_escrow::events::JobAccepted)
+    /// * [`Unstake`](crate::reputation::Unstake) - in case there were other bids on the same Job Offer
     ///
     /// # Errors
-    /// * [`CannotPostJobForSelf`](Error::CannotPostJobForSelf) when trying to create job for
-    /// self.
-    /// * [`JobPosterNotKycd`](Error::JobPosterNotKycd) or [`Error::WorkerNotKycd`](Error::WorkerNotKycd)
-    /// When either Job Poster or Worker has not completed the KYC process
+    /// * [`OnlyJobPosterCanPickABid`](Error::OnlyJobPosterCanPickABid) - if the caller is not the Job Poster
+    /// * [`PurseBalanceMismatch`](Error::PurseBalanceMismatch) - if the purse balance does not match the bid amount
     fn pick_bid(&mut self, job_offer_id: u32, bid_id: u32, purse: URef);
     /// Submits a job proof. This is called by a `Worker` or any KYC'd user during Grace Period.
     /// This starts a new voting over the result.
     ///
     /// # Events
     /// * [`JobSubmitted`](crate::bid_escrow::events::JobSubmitted)
+    /// * [`Unstake`](crate::reputation::Unstake) - Stake is used in the voting
+    /// * [`BallotCast`](crate::voting::events::BallotCast) - first vote is cast by the Worker
     ///
     /// # Errors
     /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted.
-    /// Throws [`NotAuthorizedToSubmitResult`](Error::NotAuthorizedToSubmitResult) if one of the constraints for
-    /// job submission is not met.
+    /// Throws [`OnlyWorkerCanSubmitProof`](Error::OnlyWorkerCanSubmitProof) if the caller is not the Worker
+    /// and the grace period is not ongoing.
     fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash);
     /// Updates the old [`Bid`] and [`Job`], the job is assigned to a new `Worker`. The rest goes the same
     /// as regular proof submission. See [submit_job_proof()][Self::submit_job_proof].
@@ -336,12 +356,28 @@ pub trait BidEscrowContractInterface {
     ///
     /// # Events
     /// * [`BallotCast`](crate::voting::events::BallotCast)
+    ///
     /// # Errors
     /// * [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
     /// * [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     /// Finishes voting. Depending on type of voting, different actions are performed.
     /// [Read more](VotingEngine::finish_voting())
+    ///
+    /// # Events
+    /// * [`VotingEnded`](crate::voting::events::VotingEnded)
+    /// * [`BallotCast`](crate::voting::events::BallotCast) - when formal voting starts
+    /// * [`Unstake`](crate::reputation::Unstake)
+    /// * [`Stake`](crate::reputation::Stake)
+    /// * [`Mint`](crate::reputation::Mint)
+    ///
+    /// # Errors
+    /// * [`BidNotFound`](Error::BidNotFound) if the bid was not found
+    /// * [`VotingDoesNotExist`](Error::VotingDoesNotExist) if the voting does not exist
+    /// * [`VotingWithGivenTypeNotInProgress`](Error::VotingWithGivenTypeNotInProgress) if the voting
+    /// is not in progress
+    /// * [`FinishingCompletedVotingNotAllowed`](Error::FinishingCompletedVotingNotAllowed) if the
+    /// voting is already completed
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
     /// Returns a job with given [JobId].
     fn get_job(&self, job_id: JobId) -> Option<Job>;
@@ -652,6 +688,16 @@ impl BidEscrowContractTest {
     }
 }
 
+pub fn withdraw(to: Address, amount: U512, reason: TransferReason) {
+    cspr::withdraw(to, amount);
+    emit(CSPRTransfer {
+        from: self_address(),
+        to,
+        amount,
+        reason: reason.to_string(),
+    })
+}
+
 fn init_events() {
     casper_event_standard::init(Schemas::new());
 }
@@ -660,6 +706,8 @@ pub fn event_schemas() -> Schemas {
     let mut schemas = Schemas::new();
     access_control::add_event_schemas(&mut schemas);
     voting::events::add_event_schemas(&mut schemas);
-    // TODO: Add all events.
+    casper_dao_modules::repository::add_event_schemas(&mut schemas);
+    reputation::add_event_schemas(&mut schemas);
+    add_event_schemas(&mut schemas);
     schemas
 }

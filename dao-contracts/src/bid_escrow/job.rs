@@ -90,6 +90,7 @@ pub struct ReclaimJobRequest {
 /// Data required to submit job proof.
 pub struct SubmitJobProofRequest {
     pub proof: DocumentHash,
+    pub caller: Address,
 }
 
 /// Serializable representation of a `Job`.
@@ -227,6 +228,10 @@ impl Job {
     pub fn submit_proof(&mut self, request: SubmitJobProofRequest) {
         if self.job_proof().is_some() {
             revert(Error::JobAlreadySubmitted);
+        }
+
+        if self.worker() != request.caller {
+            revert(Error::OnlyWorkerCanSubmitProof);
         }
 
         self.job_proof = Some(request.proof);

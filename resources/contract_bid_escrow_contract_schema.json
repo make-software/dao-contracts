@@ -521,6 +521,297 @@
       ]
     },
     {
+      "name": "BidCancelled",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "caller",
+          "ty": "Key"
+        },
+        {
+          "name": "job_offer_id",
+          "ty": "U32"
+        }
+      ]
+    },
+    {
+      "name": "BidEscrowVotingCreated",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_offer_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "creator",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "config_informal_quorum",
+          "ty": "U32"
+        },
+        {
+          "name": "config_informal_voting_time",
+          "ty": "U64"
+        },
+        {
+          "name": "config_formal_quorum",
+          "ty": "U32"
+        },
+        {
+          "name": "config_formal_voting_time",
+          "ty": "U64"
+        },
+        {
+          "name": "config_total_onboarded",
+          "ty": "U512"
+        },
+        {
+          "name": "config_double_time_between_votings",
+          "ty": "Bool"
+        },
+        {
+          "name": "config_voting_clearness_delta",
+          "ty": "U512"
+        },
+        {
+          "name": "config_time_between_informal_and_formal_voting",
+          "ty": "U64"
+        }
+      ]
+    },
+    {
+      "name": "BidSubmitted",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_offer_id",
+          "ty": "U32"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "onboard",
+          "ty": "Bool"
+        },
+        {
+          "name": "proposed_timeframe",
+          "ty": "U64"
+        },
+        {
+          "name": "proposed_payment",
+          "ty": "U512"
+        },
+        {
+          "name": "reputation_stake",
+          "ty": {
+            "Option": "U512"
+          }
+        },
+        {
+          "name": "cspr_stake",
+          "ty": {
+            "Option": "U512"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "CSPRTransfer",
+      "fields": [
+        {
+          "name": "from",
+          "ty": "Key"
+        },
+        {
+          "name": "to",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "reason",
+          "ty": "String"
+        }
+      ]
+    },
+    {
+      "name": "JobCancelled",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "caller",
+          "ty": "Key"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "cspr_amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "JobCreated",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "finish_time",
+          "ty": "U64"
+        },
+        {
+          "name": "payment",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "JobDone",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "caller",
+          "ty": "Key"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "cspr_amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "JobRejected",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "caller",
+          "ty": "Key"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "cspr_amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "JobSubmitted",
+      "fields": [
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "result",
+          "ty": "String"
+        }
+      ]
+    },
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
       "name": "OwnerChanged",
       "fields": [
         {
@@ -535,6 +826,61 @@
         {
           "name": "address",
           "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "Stake",
+      "fields": [
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        }
+      ]
+    },
+    {
+      "name": "Unstake",
+      "fields": [
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        }
+      ]
+    },
+    {
+      "name": "ValueUpdated",
+      "fields": [
+        {
+          "name": "key",
+          "ty": "String"
+        },
+        {
+          "name": "value",
+          "ty": {
+            "List": "U8"
+          }
+        },
+        {
+          "name": "activation_time",
+          "ty": {
+            "Option": "U64"
+          }
         }
       ]
     },

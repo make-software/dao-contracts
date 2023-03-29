@@ -4,7 +4,20 @@
     {
       "name": "init",
       "is_mutable": true,
-      "args": [],
+      "args": [
+        {
+          "name": "fiat_conversion",
+          "ty": "Key"
+        },
+        {
+          "name": "bid_escrow_wallet",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_ids",
+          "ty": "Key"
+        }
+      ],
       "return_ty": "Unit"
     },
     {

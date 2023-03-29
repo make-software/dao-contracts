@@ -195,3 +195,13 @@ fn assert_job_offer_status(world: &mut DaoWorld, job_poster: Account, job_offer_
         false => assert!(offer_id.is_none()),
     };
 }
+
+#[then(expr = "{account} cannot submit the JobProof of Job {int}")]
+fn cannot_submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
+    let worker = w.get_address(&worker);
+    assert!(w
+        .bid_escrow
+        .as_account(worker)
+        .submit_job_proof(job_id, DocumentHash::from("Job Proof"))
+        .is_err());
+}

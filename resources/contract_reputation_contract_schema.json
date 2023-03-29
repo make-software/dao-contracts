@@ -360,6 +360,40 @@
           "ty": "Key"
         }
       ]
+    },
+    {
+      "name": "Stake",
+      "fields": [
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        }
+      ]
+    },
+    {
+      "name": "Unstake",
+      "fields": [
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        }
+      ]
     }
   ]
 }

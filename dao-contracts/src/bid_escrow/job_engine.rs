@@ -3,7 +3,7 @@ use std::borrow::Borrow;
 use casper_dao_utils::{
     casper_contract::{contract_api::runtime::revert, unwrap_or_revert::UnwrapOrRevert},
     casper_dao_macros::Instance,
-    casper_env::{caller, get_block_time},
+    casper_env::{caller, emit, get_block_time},
     cspr,
     DocumentHash,
     Error,
@@ -14,9 +14,18 @@ use delegate::delegate;
 use crate::{
     bid_escrow::{
         bid::{Bid, ReclaimBidRequest},
+        events::{
+            BidEscrowVotingCreated,
+            JobCancelled,
+            JobDone,
+            JobRejected,
+            JobSubmitted,
+            TransferReason,
+        },
         job::{Job, ReclaimJobRequest, SubmitJobProofRequest, WorkerType},
         storage::{BidStorage, JobStorage},
         types::JobId,
+        withdraw,
     },
     config::Configuration,
     reputation::ReputationContractInterface,
@@ -72,8 +81,12 @@ impl JobEngine {
         let bid = self.bid_storage.get_bid_or_revert(job.bid_id());
         let worker = caller();
 
-        job.submit_proof(SubmitJobProofRequest { proof });
-        // TODO: Emit event.
+        job.submit_proof(SubmitJobProofRequest {
+            proof,
+            caller: worker,
+        });
+
+        emit(JobSubmitted::new(&job));
 
         self.unstake_reputation_for_use_in_voting(
             &bid,
@@ -90,7 +103,14 @@ impl JobEngine {
 
         let (voting_info, mut voting) =
             self.voting_engine
-                .create_voting(worker, U512::zero(), voting_configuration);
+                .create_voting(worker, U512::zero(), voting_configuration.clone());
+
+        emit(BidEscrowVotingCreated::new(
+            &job,
+            worker,
+            voting_info.voting_id,
+            &voting_configuration,
+        ));
 
         job.set_voting_id(voting_info.voting_id);
 
@@ -235,6 +255,7 @@ impl JobEngine {
         }
 
         job.cancel(caller).unwrap_or_else(|e| revert(e));
+        emit(JobCancelled::new(&job, caller));
         self.job_storage.store_job(job);
     }
 
@@ -288,42 +309,57 @@ impl JobEngine {
             },
             VotingType::Formal => {
                 match voting_summary.result() {
-                    VotingResult::InFavor => match job.worker_type() {
-                        WorkerType::Internal => {
-                            self.mint_and_redistribute_reputation_for_internal_worker(&job);
-                            self.redistribute_cspr_internal_worker(&job, job_offer.configuration());
-                            self.return_job_poster_dos_fee(&job);
-                        }
-                        WorkerType::ExternalToVA => {
-                            // Make user VA.
-                            self.refs.va_token().mint(job.worker());
+                    VotingResult::InFavor => {
+                        match job.worker_type() {
+                            WorkerType::Internal => {
+                                self.mint_and_redistribute_reputation_for_internal_worker(&job);
+                                self.redistribute_cspr_internal_worker(
+                                    &job,
+                                    job_offer.configuration(),
+                                );
+                                self.return_job_poster_dos_fee(&job);
+                            }
+                            WorkerType::ExternalToVA => {
+                                // Make user VA.
+                                self.refs.va_token().mint(job.worker());
 
-                            self.return_external_worker_cspr_stake(&job);
-                            self.burn_external_worker_reputation(&job);
-                            self.mint_and_redistribute_reputation_for_internal_worker(&job);
-                            self.redistribute_cspr_internal_worker(&job, job_offer.configuration());
-                            self.return_job_poster_dos_fee(&job);
+                                self.return_external_worker_cspr_stake(&job);
+                                self.burn_external_worker_reputation(&job);
+                                self.mint_and_redistribute_reputation_for_internal_worker(&job);
+                                self.redistribute_cspr_internal_worker(
+                                    &job,
+                                    job_offer.configuration(),
+                                );
+                                self.return_job_poster_dos_fee(&job);
+                            }
+                            WorkerType::External => {
+                                self.mint_and_redistribute_reputation_for_external_worker(&job);
+                                self.redistribute_cspr_external_worker(
+                                    &job,
+                                    job_offer.configuration(),
+                                );
+                                self.return_job_poster_dos_fee(&job);
+                                self.return_external_worker_cspr_stake(&job);
+                            }
+                        };
+                        emit(JobDone::new(&job, caller()));
+                    }
+                    VotingResult::Against => {
+                        match job.worker_type() {
+                            WorkerType::Internal => {
+                                self.return_job_poster_payment_and_dos_fee(&job);
+                                self.slash_worker(&job);
+                            }
+                            WorkerType::ExternalToVA | WorkerType::External => {
+                                self.return_job_poster_payment_and_dos_fee(&job);
+                                self.redistribute_cspr_external_worker_failed(
+                                    &job,
+                                    job_offer.configuration(),
+                                );
+                            }
                         }
-                        WorkerType::External => {
-                            self.mint_and_redistribute_reputation_for_external_worker(&job);
-                            self.redistribute_cspr_external_worker(&job, job_offer.configuration());
-                            self.return_job_poster_dos_fee(&job);
-                            self.return_external_worker_cspr_stake(&job);
-                        }
-                    },
-                    VotingResult::Against => match job.worker_type() {
-                        WorkerType::Internal => {
-                            self.return_job_poster_payment_and_dos_fee(&job);
-                            self.slash_worker(&job);
-                        }
-                        WorkerType::ExternalToVA | WorkerType::External => {
-                            self.return_job_poster_payment_and_dos_fee(&job);
-                            self.redistribute_cspr_external_worker_failed(
-                                &job,
-                                job_offer.configuration(),
-                            );
-                        }
-                    },
+                        emit(JobRejected::new(&job, caller()));
+                    }
                     VotingResult::QuorumNotReached => {
                         self.return_job_poster_payment_and_dos_fee(&job);
                         self.return_external_worker_cspr_stake(&job);
@@ -384,11 +420,19 @@ impl JobEngine {
 
     fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
         let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
-        cspr::withdraw(job.poster(), job.payment() + job_offer.dos_fee);
+        withdraw(
+            job.poster(),
+            job.payment() + job_offer.dos_fee,
+            TransferReason::JobPaymentAndDOSFeeReturn,
+        );
     }
 
     fn return_external_worker_cspr_stake(&mut self, job: &Job) {
-        cspr::withdraw(job.worker(), job.external_worker_cspr_stake());
+        withdraw(
+            job.worker(),
+            job.external_worker_cspr_stake(),
+            TransferReason::BidStakeReturn,
+        );
     }
 
     fn mint_and_redistribute_reputation_for_internal_worker(&mut self, job: &Job) {
@@ -479,7 +523,7 @@ impl JobEngine {
         let to_worker = total_left - to_redistribute;
 
         // For External Worker
-        cspr::withdraw(job.worker(), to_worker);
+        withdraw(job.worker(), to_worker, TransferReason::Redistribution);
 
         let redistribute_to_all_vas = self
             .bid_storage
@@ -509,13 +553,17 @@ impl JobEngine {
 
         for (address, balance) in all_balances.balances() {
             let amount = total_left * balance / total_supply;
-            cspr::withdraw(*address, amount);
+            withdraw(*address, amount, TransferReason::Redistribution);
         }
     }
 
     fn return_job_poster_dos_fee(&mut self, job: &Job) {
         let job_offer = self.bid_storage.get_job_offer_or_revert(job.job_offer_id());
-        cspr::withdraw(job.poster(), job_offer.dos_fee);
+        withdraw(
+            job.poster(),
+            job_offer.dos_fee,
+            TransferReason::DOSFeeReturn,
+        );
     }
 
     fn redistribute_cspr_to_voters(&mut self, job: &Job, to_redistribute: U512) {
@@ -528,7 +576,7 @@ impl JobEngine {
         let partial_supply = balances.total_supply();
         for (address, balance) in balances.balances() {
             let amount = to_redistribute * balance / partial_supply;
-            cspr::withdraw(*address, amount);
+            withdraw(*address, amount, TransferReason::Redistribution);
         }
     }
 }
