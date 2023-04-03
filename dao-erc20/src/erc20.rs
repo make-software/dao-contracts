@@ -6,6 +6,7 @@ use casper_dao_utils::{
     Mapping,
     Variable,
 };
+use casper_event_standard::Schemas;
 use casper_types::{bytesrepr::ToBytes, U512};
 
 use self::events::{Approval, Transfer};
@@ -36,6 +37,7 @@ pub struct ERC20 {
 
 impl ERC20Interface for ERC20 {
     fn init(&mut self, name: String, symbol: String, decimals: u8, initial_supply: U512) {
+        init_events();
         let sender = casper_env::caller();
         self.name.set(name);
         self.symbol.set(symbol);
@@ -159,10 +161,13 @@ fn emit<T: ToBytes>(_event: T) {
     casper_env::emit(_event);
 }
 
+/// Event definitions the module emits.
 pub mod events {
-    use casper_dao_utils::{casper_dao_macros::Event, Address};
+    use casper_dao_utils::Address;
+    use casper_event_standard::Event;
     use casper_types::U512;
 
+    /// Informs the tokens has been transferred.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Transfer {
         pub from: Option<Address>,
@@ -170,10 +175,15 @@ pub mod events {
         pub value: U512,
     }
 
+    /// Informs a spender has been approved,
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Approval {
         pub owner: Address,
         pub spender: Address,
         pub value: U512,
     }
+}
+
+fn init_events() {
+    casper_event_standard::init(Schemas::new());
 }

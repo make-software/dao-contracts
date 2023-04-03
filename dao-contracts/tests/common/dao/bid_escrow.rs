@@ -1,4 +1,4 @@
-use casper_dao_contracts::escrow::{
+use casper_dao_contracts::bid_escrow::{
     bid::Bid,
     types::{BidId, JobOfferId},
 };

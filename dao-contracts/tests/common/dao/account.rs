@@ -1,9 +1,12 @@
 use casper_dao_utils::{Address, TestContract};
 
-use crate::{common::{
-    params::{Account, Contract},
-    DaoWorld,
-}, on_contract};
+use crate::{
+    common::{
+        params::{Account, Contract},
+        DaoWorld,
+    },
+    on_contract,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {

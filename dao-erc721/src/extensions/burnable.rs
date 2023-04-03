@@ -5,7 +5,8 @@ use casper_dao_utils::{
 
 use crate::{core::ERC721Token, events::Transfer, TokenId};
 
-pub struct BurnableERC721 {}
+/// Adds burn functionality to [`ERC721Token`].
+pub struct BurnableERC721;
 
 impl BurnableERC721 {
     pub fn burn(erc721: &mut ERC721Token, token_id: TokenId) {

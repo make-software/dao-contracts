@@ -1,9 +1,12 @@
 use casper_dao_utils::{Address, TestContract};
 
-use crate::{common::{
-    params::{Account, Contract},
-    DaoWorld,
-}, on_contract};
+use crate::{
+    common::{
+        params::{Account, Contract},
+        DaoWorld,
+    },
+    on_contract,
+};
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -19,18 +22,6 @@ impl DaoWorld {
         self.whitelist(contract, caller, user)
     }
 
-    pub fn whitelist_contract(
-        &mut self,
-        contract: &Contract,
-        caller: &Account,
-        contract_to_whitelist: &Contract,
-    ) -> Result<(), casper_dao_utils::Error> {
-        let address = self.get_contract_address(contract_to_whitelist);
-        let caller = self.get_address(caller);
-
-        self.whitelist(contract, caller, address)
-    }
-
     pub fn remove_from_whitelist(
         &mut self,
         contract: &Contract,
@@ -44,7 +35,11 @@ impl DaoWorld {
     }
 
     pub fn get_owner(&mut self, contract: &Contract) -> Option<Address> {
-        on_contract!(self, contract, get_owner())
+        if let Contract::CSPRRateProvider = contract {
+            self.rate_provider.get_owner()
+        } else {
+            on_contract!(self, contract, get_owner())
+        }
     }
 
     pub fn change_ownership(

@@ -52,6 +52,10 @@ build-all: build-dao-contracts build-erc20 build-erc721
 
 test: build-all test-dao-macros test-dao-contracts test-erc20 test-erc721
 
+install-all: build-all
+	cd ./scripts/install-contracts && npm install
+	node ./scripts/install-contracts/index.js
+
 clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
 
@@ -63,15 +67,28 @@ lint: clippy
 
 clean:
 	cargo clean
+	rm dao-contracts/wasm/*
+	rm dao-erc20/wasm/*
+	rm dao-erc721/wasm/*
 	
-docs:
-	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps --open
+rebuild-docs:
+	rm -rf docs
+	cargo doc --features test-support --workspace --exclude sample-contract --lib --no-deps
+	cp -r target/doc docs
+	echo "<meta http-equiv=\"refresh\" content=\"0; url=casper_dao_contracts\">" > docs/index.html
 
 update-schemas:
 	cargo run -p dao-contracts-schemas --bin update-schemas
 
+event-parser:
+	cargo run -p dao-contracts-schemas --bin event-parser
+
 run-e2e-tests:
 	cd client && ./run-e2e-tests.sh
+
+test-admin: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_admin
 
 test-bid-escrow: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
@@ -96,3 +113,11 @@ test-ownership: build-dao-contracts
 test-va: build-dao-contracts
 	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
 	cargo test -p casper-dao-contracts --test test_va
+
+test-voting: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_voting
+
+test-rate-provider: build-dao-contracts
+	cp $(OUTPUT_DIR)/*.wasm dao-contracts/wasm
+	cargo test -p casper-dao-contracts --test test_rate_provider

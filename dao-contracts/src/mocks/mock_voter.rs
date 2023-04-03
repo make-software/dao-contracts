@@ -9,14 +9,15 @@ use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     voting::{
-        types::VotingId,
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
         VotingEngine,
+        VotingId,
     },
-    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
@@ -25,7 +26,7 @@ pub trait MockVoterContractInterface {
     fn create_voting(&mut self, value: String, stake: U512);
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    fn variable_repo_address(&self) -> Address;
+    fn variable_repository_address(&self) -> Address;
     fn reputation_token_address(&self) -> Address;
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     fn get_ballot(
@@ -42,6 +43,7 @@ pub trait MockVoterContractInterface {
 #[doc(hidden)]
 #[derive(Instance)]
 pub struct MockVoterContract {
+    refs: ContractRefsStorage,
     voting: VotingEngine,
     variable: Variable<String>,
 }
@@ -49,29 +51,29 @@ pub struct MockVoterContract {
 impl MockVoterContractInterface for MockVoterContract {
     delegate! {
         to self.voting {
-            fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
             fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
             fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
             fn get_ballot(&self, voting_id: VotingId, voting_type: VotingType, address: Address) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
         }
+
+        to self.refs {
+            fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
     fn create_voting(&mut self, value: String, stake: U512) {
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .contract_call(ContractCall {
-            address: self_address(),
-            entry_point: "set_variable".into(),
-            runtime_args: runtime_args! {
-                "variable" => value,
-            },
-        })
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs)
+            .contract_call(ContractCall {
+                address: self_address(),
+                entry_point: "set_variable".into(),
+                runtime_args: runtime_args! {
+                    "variable" => value,
+                },
+            })
+            .build();
 
         self.voting
             .create_voting(caller(), stake, voting_configuration);

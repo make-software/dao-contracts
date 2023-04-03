@@ -1,0 +1,511 @@
+{
+  "name": "RepoVoterContract",
+  "entry_points": [
+    {
+      "name": "init",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "variable_repository",
+          "ty": "Key"
+        },
+        {
+          "name": "reputation_token",
+          "ty": "Key"
+        },
+        {
+          "name": "va_token",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "create_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "variable_repo_to_edit",
+          "ty": "Key"
+        },
+        {
+          "name": "key",
+          "ty": "String"
+        },
+        {
+          "name": "value",
+          "ty": {
+            "List": "U8"
+          }
+        },
+        {
+          "name": "activation_time",
+          "ty": {
+            "Option": "U64"
+          }
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "vote",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "choice",
+          "ty": "U8"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "finish_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "variable_repository_address",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "Key"
+    },
+    {
+      "name": "reputation_token_address",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "Key"
+    },
+    {
+      "name": "get_voting",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": {
+        "Option": "Any"
+      }
+    },
+    {
+      "name": "get_ballot",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": {
+        "Option": "Any"
+      }
+    },
+    {
+      "name": "get_voter",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "at",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      }
+    },
+    {
+      "name": "voting_exists",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        }
+      ],
+      "return_ty": "Bool"
+    },
+    {
+      "name": "slash_voter",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "change_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "add_to_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "remove_from_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "is_whitelisted",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Bool"
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "AddedToWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "BallotCanceled",
+      "fields": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "choice",
+          "ty": "U8"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "BallotCast",
+      "fields": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "choice",
+          "ty": "U8"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "OwnerChanged",
+      "fields": [
+        {
+          "name": "new_owner",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RemovedFromWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RepoVotingCreated",
+      "fields": [
+        {
+          "name": "variable_repo_to_edit",
+          "ty": "Key"
+        },
+        {
+          "name": "key",
+          "ty": "String"
+        },
+        {
+          "name": "value",
+          "ty": {
+            "List": "U8"
+          }
+        },
+        {
+          "name": "activation_time",
+          "ty": {
+            "Option": "U64"
+          }
+        },
+        {
+          "name": "creator",
+          "ty": "Key"
+        },
+        {
+          "name": "stake",
+          "ty": {
+            "Option": "U512"
+          }
+        },
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "config_informal_quorum",
+          "ty": "U32"
+        },
+        {
+          "name": "config_informal_voting_time",
+          "ty": "U64"
+        },
+        {
+          "name": "config_formal_quorum",
+          "ty": "U32"
+        },
+        {
+          "name": "config_formal_voting_time",
+          "ty": "U64"
+        },
+        {
+          "name": "config_total_onboarded",
+          "ty": "U512"
+        },
+        {
+          "name": "config_double_time_between_votings",
+          "ty": "Bool"
+        },
+        {
+          "name": "config_voting_clearness_delta",
+          "ty": "U512"
+        },
+        {
+          "name": "config_time_between_informal_and_formal_voting",
+          "ty": "U64"
+        }
+      ]
+    },
+    {
+      "name": "VotingCanceled",
+      "fields": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "unstakes",
+          "ty": {
+            "Map": {
+              "key": "Key",
+              "value": "U512"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "VotingEnded",
+      "fields": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U8"
+        },
+        {
+          "name": "voting_result",
+          "ty": "U8"
+        },
+        {
+          "name": "stake_in_favor",
+          "ty": "U512"
+        },
+        {
+          "name": "stake_against",
+          "ty": "U512"
+        },
+        {
+          "name": "unbound_stake_in_favor",
+          "ty": "U512"
+        },
+        {
+          "name": "unbound_stake_against",
+          "ty": "U512"
+        },
+        {
+          "name": "votes_in_favor",
+          "ty": "U32"
+        },
+        {
+          "name": "votes_against",
+          "ty": "U32"
+        },
+        {
+          "name": "unstakes",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "stakes",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "burns",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "mints",
+          "ty": {
+            "Map": {
+              "key": {
+                "Tuple2": [
+                  "Key",
+                  "U32"
+                ]
+              },
+              "value": "U512"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

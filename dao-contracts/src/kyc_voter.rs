@@ -1,8 +1,23 @@
-use casper_dao_modules::AccessControl;
+//! Contains KYC Voter Contract definition and related abstractions.
+//!
+//! # Definitions
+//! KYC - Know Your Customer, is a process that validates that the user can be the user of the system.
+//!
+//! # KYC process
+//! A type of Governance Voting which the VAs validate a user KYC submission.
+//! If VAs vote in favor, the address is considered verified and the KYC Token contract
+//! is called in order to mint a token which formally ends the KYC process.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`]. There can be only one active voting for a given subject address.
+//! An address that is already KYC'd cannot be the subject of voting.
+//!
+//! [`VotingEngine`]: crate::voting::VotingEngine
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::{self, caller},
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{self, caller, emit},
     consts,
     Address,
     BlockTime,
@@ -10,102 +25,121 @@ use casper_dao_utils::{
     DocumentHash,
     Error,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::{runtime_args, RuntimeArgs, U512};
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     voting::{
-        kyc_info::KycInfo,
-        types::VotingId,
+        self,
+        events::VotingCreatedInfo,
+        refs::ContractRefsWithKycStorage,
+        submodules::KycInfo,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        VotingCreatedInfo,
         VotingEngine,
+        VotingId,
     },
-    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
 pub trait KycVoterContractInterface {
-    /// Contract constructor
+    /// Constructor function.
     ///
-    /// Initializes modules.
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
     ///
-    /// See [VotingEngine](VotingEngine::init()), [KycInfo](KycInfo::init())
+    /// # Events
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         va_token: Address,
         kyc_token: Address,
     );
-    /// Creates new kyc voting. Once the voting passes a kyc token is minted to the `subject_address`.
+    /// Creates a new KYC Voting. Once the voting passes a KYC Token is minted to the `subject_address`.
     ///
     /// # Prerequisites
     ///
     /// * no voting on the given `subject_address` is in progress,
     /// * `subject_address` does not own a kyc token.
     ///
-    /// # Note
+    /// # Arguments
+    /// * `subject_address` - [address](Address) of a user to be verified,
+    /// * `document_hash` - a hash of a document that verifies the user. The hash is used as an id of a freshly minted kyc token,
+    /// * `subject_address` - an [Address] to be on/offboarded.
     ///
-    /// `subject_address` - [address](Address) of a user to be verified.
-    /// `document_hash` - a hash of a document that verify the user. The hash is used as an id of a freshly minted  kyc token.
-    /// `subject_address` - an [Address](Address) to be on/offboarded.
+    /// # Events
+    /// * [`KycVotingCreated`]
     fn create_voting(&mut self, subject_address: Address, document_hash: DocumentHash, stake: U512);
-    /// see [VotingEngine](VotingEngine::vote())
+    /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [VotingEngine](VotingEngine::finish_voting())
+    /// Finishes voting. Depending on type of voting, different actions are performed.
+    /// [Read more](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_voting())
+    /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-    /// see [VotingEngine](VotingEngine::get_ballot())
+    /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    /// Returns [Voting](VotingStateMachine) for given id.
+    fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
+    /// Returns the Voter's [`Ballot`].
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [VotingEngine](VotingEngine::get_voter())
+    /// Returns the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    /// see [KycInfo](KycInfo::get_kyc_token_address())
-    fn get_kyc_token_address(&self) -> Address;
-
-    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
-
-    // Whitelisting set.
+    /// Returns the address of [KYC Token](crate::kyc_nft::KycNftContract) contract.
+    fn kyc_token_address(&self) -> Address;
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
+    /// Adds a new address to the whitelist.
+    /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
+    /// Remove address from the whitelist.
+    /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
-    fn get_owner(&self) -> Option<Address>;
+    /// Checks whether the given address is added to the whitelist.
+    /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
 }
 
 /// KycVoterContract
 ///
-/// It is responsible for managing kyc tokens (see [DaoOwnedNftContract](crate::DaoOwnedNftContract).
+/// It is responsible for managing kyc tokens (see [KYC Token Contract](crate::kyc_nft).
 ///
 /// When the voting passes, a kyc token is minted.
 #[derive(Instance)]
 pub struct KycVoterContract {
+    refs: ContractRefsWithKycStorage,
     kyc: KycInfo,
     access_control: AccessControl,
-    voting: VotingEngine,
+    voting_engine: VotingEngine,
 }
 
 impl KycVoterContractInterface for KycVoterContract {
     delegate! {
-        to self.kyc {
-            fn get_kyc_token_address(&self) -> Address;
-        }
-
-        to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
+        to self.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_ballot(
                 &self,
@@ -114,6 +148,7 @@ impl KycVoterContractInterface for KycVoterContract {
                 address: Address,
             ) -> Option<Ballot>;
             fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
+            fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
         }
 
         to self.access_control {
@@ -123,17 +158,24 @@ impl KycVoterContractInterface for KycVoterContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+            fn kyc_token_address(&self) -> Address;
+        }
     }
 
     fn init(
         &mut self,
-        variable_repo: Address,
+        variable_repository: Address,
         reputation_token: Address,
         va_token: Address,
         kyc_token: Address,
     ) {
-        self.kyc.init(kyc_token);
-        self.voting.init(variable_repo, reputation_token, va_token);
+        casper_event_standard::init(event_schemas());
+        self.refs
+            .init(variable_repository, reputation_token, va_token, kyc_token);
         self.access_control.init(caller());
     }
 
@@ -148,74 +190,53 @@ impl KycVoterContractInterface for KycVoterContract {
 
         let creator = caller();
 
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .contract_call(ContractCall {
-            address: self.get_kyc_token_address(),
-            entry_point: consts::EP_MINT.to_string(),
-            runtime_args: runtime_args! {
-                consts::ARG_TO => subject_address,
-            },
-        })
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs)
+            .contract_call(ContractCall {
+                address: self.kyc_token_address(),
+                entry_point: consts::EP_MINT.to_string(),
+                runtime_args: runtime_args! {
+                    consts::ARG_TO => subject_address,
+                },
+            })
+            .build();
 
-        let info = self
-            .voting
+        let (info, _) = self
+            .voting_engine
             .create_voting(creator, stake, voting_configuration);
 
-        KycVotingCreated::new(subject_address, document_hash, info).emit();
+        self.kyc.set_voting(subject_address, info.voting_id);
 
-        self.kyc.set_voting(&subject_address);
+        emit(KycVotingCreated::new(subject_address, document_hash, info));
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting
+        self.voting_engine
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
-    // TODO: Store action in Mapping instead of extracting it from args of the call.
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let summary = self.voting.finish_voting(voting_id, voting_type);
+        let summary = self.voting_engine.finish_voting(voting_id, voting_type);
         // The voting is ended when:
         // 1. Informal voting has been rejected.
         // 2. Formal voting has been finish (regardless of the final result).
         if summary.is_voting_process_finished() {
             let voting = self
-                .voting
+                .voting_engine
                 .get_voting(voting_id)
                 .unwrap_or_revert_with(Error::VotingDoesNotExist);
-            let address = self.extract_address_from_args(&voting);
+            let address = self.kyc.get_voting_subject(voting.voting_id());
             self.kyc.clear_voting(&address);
         }
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter, voting_id);
+        self.voting_engine.slash_voter(voter, voting_id);
     }
 }
 
 // non-contract implementation
 impl KycVoterContract {
-    fn extract_address_from_args(&self, voting: &VotingStateMachine) -> Address {
-        let runtime_args = voting
-            .contract_calls()
-            .first()
-            .unwrap_or_revert()
-            .runtime_args();
-        let arg = runtime_args
-            .named_args()
-            .find(|arg| arg.name() == consts::ARG_TO)
-            .unwrap_or_revert_with(Error::UnexpectedOnboardingError);
-
-        arg.cl_value()
-            .clone()
-            .into_t()
-            .unwrap_or_revert_with(Error::UnexpectedOnboardingError)
-    }
-
     fn assert_not_kyced(&self, address: &Address) {
         if self.kyc.is_kycd(address) {
             casper_env::revert(Error::UserKycedAlready);
@@ -229,6 +250,7 @@ impl KycVoterContract {
     }
 }
 
+/// Informs kyc voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct KycVotingCreated {
     subject_address: Address,
@@ -269,4 +291,12 @@ impl KycVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<KycVotingCreated>();
+    schemas
 }

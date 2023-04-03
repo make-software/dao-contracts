@@ -29,7 +29,8 @@ Feature: User who wants to become a VA without submitting a job
       | user    | REP stake  | choice | 
      #| Bob     | 100        | yes    | - automatically voted by the system - 1000CSPR converted to 100 Reputation
       | VA1     | 500        | yes    |
-    When Informal onboarding voting ends
+    When 6 days passed
+    And informal voting with id 0 ends in Onboarding contract
     Then balances are
       | account          | CSPR balance | REP balance  | REP stake  |
       | Onboarding       | 0            | 0            | 0          |
@@ -45,12 +46,14 @@ Feature: User who wants to become a VA without submitting a job
         | VA1     | 500        | yes    |
         | VA2     | 500        | yes    |
         | VA3     | 500        | yes    |
-      When Informal onboarding voting ends
-      When voters vote in Onboarding formal voting with id 0
+      When 6 days passed
+      And informal voting with id 0 ends in Onboarding contract
+      And voters vote in Onboarding formal voting with id 0
         | user    | REP stake  | choice | 
        #| Bob     | 100        | yes    | - automatically voted by the system - 1000CSPR converted to 100 Reputation
         | VA1     | 500        | yes    |
-      And Formal onboarding voting ends
+      And 6 days passed
+      And formal voting with id 0 ends in Onboarding contract
       Then balances are
         | account          | CSPR balance | REP balance  | REP stake  |
         | Onboarding       | 0            | 0            | 0          |

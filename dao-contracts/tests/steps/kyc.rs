@@ -47,6 +47,11 @@ fn assert_kyced(world: &mut DaoWorld, account: Account) {
     assert!(world.is_account_kyced(&account));
 }
 
+#[then(expr = "{account} is not kyced")]
+fn assert_not_kyced(world: &mut DaoWorld, account: Account) {
+    assert!(!world.is_account_kyced(&account));
+}
+
 impl DaoWorld {
     fn balance_of(&self, account: &Account) -> u32 {
         self.kyc_token

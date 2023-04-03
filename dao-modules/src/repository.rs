@@ -8,9 +8,9 @@ use casper_dao_utils::{
     OrderedCollection,
     Set,
 };
+use casper_event_standard::Schemas;
 use casper_types::{
     bytesrepr::{Bytes, ToBytes},
-    ContractPackageHash,
     U512,
 };
 
@@ -23,6 +23,10 @@ use self::events::ValueUpdated;
 /// The second value is an optional tuple consisting of the future value and its activation time.
 pub type Record = (Bytes, Option<(Bytes, u64)>);
 
+/// A module that stores the DAO configuration.
+///
+/// The modules stores key-value pairs and a set of keys.
+/// The repository is initialized with the default values.
 #[derive(Instance)]
 pub struct Repository {
     pub storage: Mapping<String, Record>,
@@ -30,8 +34,17 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn init(&mut self) {
-        for (key, value) in RepositoryDefaults::default().items() {
+    pub fn init(
+        &mut self,
+        fiat_conversion: Address,
+        bid_escrow_wallet: Address,
+        voting_ids: Address,
+    ) {
+        let mut config = RepositoryDefaults::default();
+        config.push(consts::FIAT_CONVERSION_RATE_ADDRESS, fiat_conversion);
+        config.push(consts::BID_ESCROW_WALLET_ADDRESS, bid_escrow_wallet);
+        config.push(consts::VOTING_IDS_ADDRESS, voting_ids);
+        for (key, value) in config.items() {
             self.set(key, value);
         }
     }
@@ -98,7 +111,7 @@ impl Repository {
     }
 }
 
-pub struct RepositoryDefaults {
+struct RepositoryDefaults {
     pub items: Vec<(String, Bytes)>,
 }
 
@@ -106,7 +119,11 @@ impl RepositoryDefaults {
     #[cfg(not(feature = "test-support"))]
     pub fn push<T: ToBytes>(&mut self, key: &str, value: T) {
         use casper_dao_utils::casper_contract::unwrap_or_revert::UnwrapOrRevert;
-        let value: Bytes = Bytes::from(value.to_bytes().unwrap_or_revert());
+        let value: Bytes = Bytes::from(
+            value
+                .to_bytes()
+                .unwrap_or_revert_with(Error::BytesConversionError),
+        );
         self.items.push((String::from(key), value));
     }
 
@@ -119,11 +136,6 @@ impl RepositoryDefaults {
     pub fn items(self) -> Vec<(String, Bytes)> {
         self.items
     }
-
-    #[cfg(feature = "test-support")]
-    pub fn len() -> u32 {
-        RepositoryDefaults::default().items.len() as u32
-    }
 }
 
 impl Default for RepositoryDefaults {
@@ -134,10 +146,6 @@ impl Default for RepositoryDefaults {
         items.push(consts::PUBLIC_AUCTION_TIME, 864000u64);
         items.push(consts::DEFAULT_POLICING_RATE, U512::from(300));
         items.push(consts::REPUTATION_CONVERSION_RATE, U512::from(100));
-        items.push(
-            consts::FIAT_CONVERSION_RATE_ADDRESS,
-            Address::from(ContractPackageHash::from([0u8; 32])),
-        );
         items.push(consts::FORUM_KYC_REQUIRED, true);
         items.push(consts::BID_ESCROW_INFORMAL_QUORUM_RATIO, U512::from(500));
         items.push(consts::BID_ESCROW_FORMAL_QUORUM_RATIO, U512::from(500));
@@ -152,30 +160,27 @@ impl Default for RepositoryDefaults {
         items.push(consts::VA_BID_ACCEPTANCE_TIMEOUT, 172800u64);
         items.push(consts::VA_CAN_BID_ON_PUBLIC_AUCTION, false);
         items.push(consts::DISTRIBUTE_PAYMENT_TO_NON_VOTERS, true);
-        items.push(
-            consts::BID_ESCROW_WALLET_ADDRESS,
-            Address::from(ContractPackageHash::from([0u8; 32])),
-        );
         items.push(consts::DEFAULT_REPUTATION_SLASH, U512::from(100));
         items.push(consts::VOTING_CLEARNESS_DELTA, U512::from(8));
         items.push(consts::VOTING_START_AFTER_JOB_WORKER_SUBMISSION, 259200u64);
         items.push(consts::BID_ESCROW_PAYMENT_RATIO, U512::from(100));
-        items.push(
-            consts::VOTING_IDS_ADDRESS,
-            Address::from(ContractPackageHash::from([0u8; 32])),
-        );
         items
     }
 }
 
 pub mod events {
-    use casper_dao_utils::casper_dao_macros::Event;
+    use casper_event_standard::Event;
     use casper_types::bytesrepr::Bytes;
 
+    /// Informs the repository value has been changed.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct ValueUpdated {
         pub key: String,
         pub value: Bytes,
         pub activation_time: Option<u64>,
     }
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<ValueUpdated>();
 }

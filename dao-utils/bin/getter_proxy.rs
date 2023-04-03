@@ -11,6 +11,7 @@ use casper_contract::{
     ext_ffi,
     unwrap_or_revert::UnwrapOrRevert,
 };
+use casper_dao_utils::Error;
 use casper_types::{
     api_error,
     bytesrepr::{Bytes, FromBytes, ToBytes},
@@ -26,7 +27,8 @@ fn call() {
         runtime::get_named_arg("contract_package_hash");
     let entry_point: String = runtime::get_named_arg("entry_point");
     let args_bytes: Bytes = runtime::get_named_arg("args");
-    let (args, _) = RuntimeArgs::from_bytes(&args_bytes).unwrap_or_revert();
+    let (args, _) = RuntimeArgs::from_bytes(&args_bytes)
+        .unwrap_or_revert_with(Error::BytesDeserializationError);
     let has_return: bool = runtime::get_named_arg("has_return");
     if has_return {
         let result: Vec<u8> =
@@ -65,7 +67,7 @@ fn call_versioned_contract(
                 bytes_written.as_mut_ptr(),
             )
         };
-        api_error::result_from(ret).unwrap_or_revert();
+        api_error::result_from(ret).unwrap_or_revert_with(Error::VMInternalError);
         unsafe { bytes_written.assume_init() }
     };
     deserialize_contract_result(bytes_written)
@@ -82,7 +84,7 @@ fn deserialize_contract_result(bytes_written: usize) -> Vec<u8> {
         let mut dest: Vec<u8> = unsafe {
             Vec::from_raw_parts(bytes_non_null_ptr.as_ptr(), bytes_written, bytes_written)
         };
-        read_host_buffer_into(&mut dest).unwrap_or_revert();
+        read_host_buffer_into(&mut dest).unwrap_or_revert_with(Error::VMInternalError);
         dest
     }
 }
@@ -100,7 +102,9 @@ fn read_host_buffer_into(dest: &mut [u8]) -> Result<usize, ApiError> {
 }
 
 fn to_ptr<T: ToBytes>(t: T) -> (*const u8, usize, Vec<u8>) {
-    let bytes = t.into_bytes().unwrap_or_revert();
+    let bytes = t
+        .into_bytes()
+        .unwrap_or_revert_with(Error::BytesConversionError);
     let ptr = bytes.as_ptr();
     let size = bytes.len();
     (ptr, size, bytes)

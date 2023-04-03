@@ -1,20 +1,11 @@
-use std::time::Duration;
-
-use casper_dao_contracts::escrow::{job::JobStatus, job_offer::JobOfferStatus};
+use casper_dao_contracts::bid_escrow::{job::JobStatus, job_offer::JobOfferStatus, types::JobId};
 use casper_dao_utils::{BlockTime, DocumentHash, TestContract};
 use casper_types::U512;
-use cucumber::{gherkin::Step, then, when};
+use cucumber::{then, when};
 
 use crate::common::{
     helpers::{self, parse_bool},
-    params::{
-        voting::{Choice, VotingType},
-        Account,
-        Balance,
-        Contract,
-        Result,
-        TimeUnit,
-    },
+    params::{Account, Balance, TimeUnit},
     DaoWorld,
 };
 
@@ -96,90 +87,57 @@ fn bid_picked(w: &mut DaoWorld, job_poster: Account, worker: Account) {
     w.pick_bid(job_poster, worker);
 }
 
-#[when(expr = "{account} submits the JobProof")]
-fn submit_job_proof(w: &mut DaoWorld, worker: Account) {
-    // TODO: Use bid_ids from the storage.
+#[when(expr = "{account} submits the JobProof of Job {int}")]
+fn submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
-        .submit_job_proof(0, DocumentHash::from(b"Job Proof".to_vec()))
+        .submit_job_proof(job_id, DocumentHash::from("Job Proof"))
         .unwrap();
 }
 
-#[when(expr = "{account} submits the JobProof with {balance} CSPR stake {word} onboarding")]
+#[when(
+    expr = "{account} submits the JobProof of Job {int} with {balance} CSPR stake {word} onboarding"
+)]
 fn submit_job_proof_during_grace_period_external(
     w: &mut DaoWorld,
     worker: Account,
+    job_id: JobId,
     cspr_stake: Balance,
     onboarding: String,
 ) {
     let onboarding = parse_bool(onboarding);
-    // TODO: Use bid_ids from the storage.
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
         .submit_job_proof_during_grace_period_with_cspr_amount(
-            0,
-            DocumentHash::from(b"Job Proof".to_vec()),
+            job_id,
+            DocumentHash::from("Job Proof"),
             U512::zero(),
             onboarding,
-            cspr_stake.0,
+            *cspr_stake,
         )
         .unwrap();
 }
 
-#[when(expr = "{account} submits the JobProof with {balance} REP stake")]
+#[when(expr = "{account} submits the JobProof of Job {int} with {balance} REP stake")]
 fn submit_job_proof_during_grace_period_internal(
     w: &mut DaoWorld,
     worker: Account,
+    job_id: JobId,
     rep_stake: Balance,
 ) {
     let worker = w.get_address(&worker);
     w.bid_escrow
         .as_account(worker)
         .submit_job_proof_during_grace_period(
-            0,
-            DocumentHash::from(b"Job Proof".to_vec()),
-            rep_stake.0,
+            job_id,
+            DocumentHash::from("Job Proof"),
+            *rep_stake,
             false,
             None,
         )
         .unwrap();
-}
-
-#[when(expr = "Formal/Informal voting ends")]
-fn voting_ends(w: &mut DaoWorld) {
-    w.env.advance_block_time_by(Duration::from_secs(432005u64));
-    w.bid_escrow.finish_voting(0).unwrap();
-}
-
-// TODO: refactor
-#[when(expr = "Formal/Informal onboarding voting ends")]
-fn onboarding_voting_ends(w: &mut DaoWorld) {
-    w.env.advance_block_time_by(Duration::from_secs(432005u64));
-    w.onboarding.finish_voting(0).unwrap();
-
-    // let  v = w.onboarding.get_voting(0).unwrap();
-    // dbg!(v.get_quorum());
-    // dbg!(v.voting_configuration());
-}
-
-#[when(expr = "votes are")]
-fn votes_are(w: &mut DaoWorld, step: &Step) {
-    let table = step.table.as_ref().unwrap().rows.iter().skip(1);
-    let voting_id = 0;
-    let voting_type = w.bid_escrow.get_voting(voting_id).unwrap().voting_type();
-    for row in table {
-        let voter = helpers::parse(row.get(0), "Couldn't parse account");
-        let choice = helpers::parse::<Choice>(row.get(1), "Couldn't parse choice");
-        let stake = helpers::parse::<Balance>(row.get(2), "Couldn't parse balance");
-
-        let voter = w.get_address(&voter);
-        w.bid_escrow
-            .as_account(voter)
-            .vote(voting_id, voting_type, choice.into(), *stake)
-            .unwrap();
-    }
 }
 
 #[when(expr = "{account} cancels the Bid for {account}")]
@@ -229,119 +187,21 @@ fn submit_onboarding_request(world: &mut DaoWorld, account: Account, cspr_stake:
         .submit_onboarding_request_with_cspr_amount(DocumentHash::default(), *cspr_stake);
 }
 
-#[then(expr = "Formal voting does not start")]
-fn formal_does_not_start(w: &mut DaoWorld) {
-    let voting = w.bid_escrow.get_voting(0).unwrap();
-    assert_eq!(voting.voting_type(), VotingType::Informal.into());
-}
-
-//TODO: refactor
-#[then(expr = "ballot for voting {int} for {account} has {balance} unbounded tokens")]
-fn ballot_is_unbounded(w: &mut DaoWorld, voting_id: u32, account: Account, amount: Balance) {
-    assert_ballot_is_unbounded(w, voting_id, account, amount, Contract::BidEscrow);
-}
-
-//TODO: refactor
-#[then(expr = "ballot for onboarding voting {int} for {account} has {balance} unbounded tokens")]
-fn onboarding_ballot_is_unbounded(
-    w: &mut DaoWorld,
-    voting_id: u32,
-    account: Account,
-    amount: Balance,
-) {
-    assert_ballot_is_unbounded(w, voting_id, account, amount, Contract::Onboarding);
-}
-
-//TODO: refactor
-fn assert_ballot_is_unbounded(
-    w: &mut DaoWorld,
-    voting_id: u32,
-    account: Account,
-    amount: Balance,
-    contract: Contract,
-) {
-    let voting_type = match contract {
-        Contract::BidEscrow => w.bid_escrow.get_voting(voting_id).unwrap().voting_type(),
-        Contract::Onboarding => w.onboarding.get_voting(voting_id).unwrap().voting_type(),
-        _ => panic!("invalid contract"),
-    };
-    let account = w.get_address(&account);
-    let ballot = match contract {
-        Contract::BidEscrow => w.bid_escrow.get_ballot(voting_id, voting_type, account),
-        Contract::Onboarding => w.onboarding.get_ballot(voting_id, voting_type, account),
-        _ => panic!("invalid contract"),
-    };
-    let ballot = ballot.unwrap_or_else(|| panic!("Ballot doesn't exists"));
-    assert_eq!(
-        ballot.choice,
-        Choice::InFavor.into(),
-        "Ballot choice not in favour"
-    );
-    assert!(ballot.unbounded, "Ballot is not unbounded");
-    assert_eq!(
-        ballot.stake, *amount,
-        "Ballot has stake {:?}, but should be {:?}",
-        ballot.stake, amount
-    );
-}
-
-//TODO: refactor
-#[then(expr = "total unbounded stake for voting {int} is {balance} tokens")]
-fn total_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
-    assert_unbounded_stake(w, voting_id, amount, Contract::BidEscrow);
-}
-//TODO: refactor
-#[then(expr = "total onboarding unbounded stake for voting {int} is {balance} tokens")]
-fn total_onboarding_unbounded_stake_is(w: &mut DaoWorld, voting_id: u32, amount: Balance) {
-    assert_unbounded_stake(w, voting_id, amount, Contract::Onboarding);
-}
-//TODO: refactor
-fn assert_unbounded_stake(w: &mut DaoWorld, voting_id: u32, amount: Balance, contract: Contract) {
-    let total_unbounded_stake = match contract {
-        Contract::BidEscrow => w
-            .bid_escrow
-            .get_voting(voting_id)
-            .unwrap()
-            .total_unbounded_stake(),
-        Contract::Onboarding => w
-            .onboarding
-            .get_voting(voting_id)
-            .unwrap()
-            .total_unbounded_stake(),
-        _ => panic!("invalid contract"),
-    };
-    assert_eq!(
-        total_unbounded_stake, *amount,
-        "Total unbounded stake is {:?}, but should be {:?}",
-        total_unbounded_stake, amount
-    );
-}
-
-#[then(expr = "{account} {choice} vote of {balance} REP {result}")]
-fn cannot_vote(
-    w: &mut DaoWorld,
-    voter: Account,
-    choice: Choice,
-    stake: Balance,
-    expected_result: Result,
-) {
-    let voter = w.get_address(&voter);
-    let voting_type = w.bid_escrow.get_voting(0).unwrap().voting_type();
-    let vote_result = w
-        .bid_escrow
-        .as_account(voter)
-        .vote(0, voting_type, choice.into(), *stake);
-
-    assert_eq!(*expected_result, vote_result.is_ok());
-}
-
 #[then(expr = "the JobOffer by {account} {word} posted")]
 fn assert_job_offer_status(world: &mut DaoWorld, job_poster: Account, job_offer_status: String) {
-    match job_offer_status.as_str() {
-        "is" => assert!(world.get_job_offer_id(&job_poster).is_some()),
-        "isn't" => assert!(world.get_job_offer_id(&job_poster).is_none()),
-        _ => {
-            panic!("Unknown job offer option");
-        }
+    let offer_id = world.get_job_offer_id(&job_poster);
+    match parse_bool(job_offer_status) {
+        true => assert!(offer_id.is_some()),
+        false => assert!(offer_id.is_none()),
     };
+}
+
+#[then(expr = "{account} cannot submit the JobProof of Job {int}")]
+fn cannot_submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
+    let worker = w.get_address(&worker);
+    assert!(w
+        .bid_escrow
+        .as_account(worker)
+        .submit_job_proof(job_id, DocumentHash::from("Job Proof"))
+        .is_err());
 }

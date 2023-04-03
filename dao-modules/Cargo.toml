@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 casper-types = "1.5.0"
 casper-dao-utils = { path = "../dao-utils", default-features = false }
+num-traits = "0.2.15"
+casper-event-standard = { workspace = true }
 
 [features]
 default = [ "test-support" ]

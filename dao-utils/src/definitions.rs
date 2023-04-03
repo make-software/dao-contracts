@@ -1,25 +1,29 @@
+//! Data structures describing contracts and events metadata.
+use casper_event_standard::Schemas;
 use casper_types::{CLType, CLTyped};
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
+/// Smart contract metadata. Should be implemented by every contract.
 pub trait ContractDefinition {
     fn contract_def() -> ContractDef;
 }
 
-pub trait EventDefinition {
-    fn event_def() -> EventDef;
-}
-
-#[derive(Debug, Clone, Serialize)]
+/// Represents a contract definition.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ContractDef {
-    pub name: &'static str,
+    pub name: String,
     pub entry_points: Vec<MethodDef>,
+    pub events: Vec<EventDef>,
 }
 
 impl ContractDef {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
             entry_points: Vec::new(),
+            events: Vec::new(),
         }
     }
 
@@ -27,95 +31,87 @@ impl ContractDef {
         self.entry_points.push(method);
     }
 
-    pub fn add_event<T: EventDefinition>(&mut self, method_name: &'static str) {
-        self.method_mut(method_name).map(|method| {
-            method.add_event(T::event_def());
-        });
-    }
-
-    pub fn with_event<T: EventDefinition>(mut self, method_name: &'static str) -> Self {
-        self.add_event::<T>(method_name);
-        self
-    }
-
-    pub fn mutable_methods(&self) -> Vec<MethodDef> {
-        self.entry_points
-            .clone()
-            .into_iter()
-            .filter(|m| m.is_mutable)
-            .collect()
-    }
-
-    fn method_mut(&mut self, method_name: &'static str) -> Option<&mut MethodDef> {
-        for method in &mut self.entry_points {
-            if method.name == method_name {
-                return Some(method);
+    pub fn add_events(&mut self, schemas: Schemas) {
+        for (name, schema) in schemas.0 {
+            let mut event_def = EventDef::new(name);
+            for (name, ty) in schema.to_vec() {
+                event_def.add(ElemDef::new_with_ty(name, ty.downcast()));
             }
+            self.events.push(event_def);
         }
-        None
+    }
+
+    pub fn with_events(mut self, schemas: Schemas) -> Self {
+        self.add_events(schemas);
+        self
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+/// Represents contract entry point definition.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MethodDef {
-    pub name: &'static str,
+    pub name: String,
     pub is_mutable: bool,
     pub args: Vec<ElemDef>,
     pub return_ty: CLType,
-    pub events: Vec<EventDef>,
 }
 
 impl MethodDef {
-    pub fn new<T: CLTyped>(name: &'static str, is_mutable: bool) -> Self {
+    pub fn new<T: CLTyped>(name: String, is_mutable: bool) -> Self {
         MethodDef {
             name,
             is_mutable,
             args: Vec::new(),
             return_ty: T::cl_type(),
-            events: Vec::new(),
         }
     }
 
     pub fn add_arg(&mut self, arg: ElemDef) {
         self.args.push(arg);
     }
-
-    pub fn add_event(&mut self, event: EventDef) {
-        self.events.push(event);
-    }
 }
 
-#[derive(Debug, Clone, Serialize)]
+/// Represents an event definition.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EventDef {
-    pub name: &'static str,
+    pub name: String,
     pub fields: Vec<ElemDef>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct ElemDef {
-    pub name: &'static str,
-    pub ty: CLType,
-}
-
-impl ElemDef {
-    pub fn new<T: CLTyped>(name: &'static str) -> Self {
-        ElemDef {
-            name,
-            ty: T::cl_type(),
-        }
-    }
-}
-
 impl EventDef {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
             fields: Vec::new(),
         }
     }
 
-    pub fn with_field(mut self, elem: ElemDef) -> Self {
+    pub fn add(&mut self, elem: ElemDef) {
         self.fields.push(elem);
+    }
+
+    pub fn with_field(mut self, elem: ElemDef) -> Self {
+        self.add(elem);
         self
+    }
+}
+
+/// Represents a single event field.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ElemDef {
+    pub name: String,
+    pub ty: CLType,
+}
+
+impl ElemDef {
+    pub fn new<T: CLTyped>(name: String) -> Self {
+        Self::new_with_ty(name, T::cl_type())
+    }
+
+    pub fn new_with_ty(name: String, ty: CLType) -> Self {
+        ElemDef { name, ty }
     }
 }

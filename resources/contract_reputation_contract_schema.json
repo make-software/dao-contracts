@@ -1,0 +1,399 @@
+{
+  "name": "ReputationContract",
+  "entry_points": [
+    {
+      "name": "init",
+      "is_mutable": true,
+      "args": [],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "mint",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "recipient",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "mint_passive",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "recipient",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn_passive",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "change_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "add_to_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "remove_from_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      }
+    },
+    {
+      "name": "total_supply",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "U512"
+    },
+    {
+      "name": "balance_of",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U512"
+    },
+    {
+      "name": "passive_balance_of",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U512"
+    },
+    {
+      "name": "is_whitelisted",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Bool"
+    },
+    {
+      "name": "stake_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "ballot",
+          "ty": "Any"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "unstake_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "ballot",
+          "ty": "Any"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "bulk_unstake_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "ballots",
+          "ty": {
+            "List": "Any"
+          }
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "stake_bid",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "bid",
+          "ty": "Any"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "unstake_bid",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "bid",
+          "ty": "Any"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "bulk_unstake_bid",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "bids",
+          "ty": {
+            "List": "Any"
+          }
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "get_stake",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U512"
+    },
+    {
+      "name": "all_balances",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "Any"
+    },
+    {
+      "name": "partial_balances",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "addresses",
+          "ty": {
+            "List": "Key"
+          }
+        }
+      ],
+      "return_ty": "Any"
+    },
+    {
+      "name": "bulk_mint_burn",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "mints",
+          "ty": {
+            "Map": {
+              "key": "Key",
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "burns",
+          "ty": {
+            "Map": {
+              "key": "Key",
+              "value": "U512"
+            }
+          }
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn_all",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "stakes_info",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Any"
+    }
+  ],
+  "events": [
+    {
+      "name": "AddedToWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "OwnerChanged",
+      "fields": [
+        {
+          "name": "new_owner",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "RemovedFromWhitelist",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ]
+    },
+    {
+      "name": "Stake",
+      "fields": [
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        }
+      ]
+    },
+    {
+      "name": "Unstake",
+      "fields": [
+        {
+          "name": "worker",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "bid_id",
+          "ty": "U32"
+        }
+      ]
+    }
+  ]
+}

@@ -12,26 +12,28 @@ use std::{
 };
 
 use casper_dao_contracts::{
-    escrow::types::{BidId, JobOfferId},
+    admin::AdminContractTest,
+    bid_escrow::{
+        types::{BidId, JobOfferId},
+        BidEscrowContractTest,
+    },
+    ids::DaoIdsContractTest,
+    kyc_nft::KycNftContractTest,
+    kyc_voter::KycVoterContractTest,
+    onboarding_request::OnboardingRequestContractTest,
+    rate_provider::CSPRRateProviderContractTest,
     repo_voter,
-    AdminContractTest,
-    BidEscrowContractTest,
-    CSPRRateProviderContractTest,
-    DaoIdsContractTest,
-    KycNftContractTest,
-    KycVoterContractTest,
-    OnboardingRequestContractTest,
-    RepoVoterContractTest,
-    ReputationContractTest,
-    ReputationVoterContractTest,
-    SimpleVoterContractTest,
-    SlashingVoterContractTest,
-    VaNftContractTest,
-    VariableRepositoryContractTest,
+    repo_voter::RepoVoterContractTest,
+    reputation::ReputationContractTest,
+    reputation_voter::ReputationVoterContractTest,
+    simple_voter::SimpleVoterContractTest,
+    slashing_voter::SlashingVoterContractTest,
+    va_nft::VaNftContractTest,
+    variable_repository::VariableRepositoryContractTest,
 };
 use casper_dao_utils::{consts, Address, TestContract, TestEnv};
 use casper_types::{
-    bytesrepr::{Bytes, ToBytes},
+    bytesrepr::{Bytes, FromBytes, ToBytes},
     U512,
 };
 
@@ -43,19 +45,19 @@ const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
 #[derive(cucumber::World)]
 pub struct DaoWorld {
     pub env: TestEnv,
+    pub admin: AdminContractTest,
     pub bid_escrow: BidEscrowContractTest,
-    pub reputation_token: ReputationContractTest,
-    pub va_token: VaNftContractTest,
     pub kyc_token: KycNftContractTest,
-    pub slashing_voter: SlashingVoterContractTest,
     pub kyc_voter: KycVoterContractTest,
-    pub variable_repository: VariableRepositoryContractTest,
+    pub onboarding: OnboardingRequestContractTest,
+    pub rate_provider: CSPRRateProviderContractTest,
     pub repo_voter: RepoVoterContractTest,
+    pub reputation_token: ReputationContractTest,
     pub reputation_voter: ReputationVoterContractTest,
     pub simple_voter: SimpleVoterContractTest,
-    pub admin: AdminContractTest,
-    pub rate_provider: CSPRRateProviderContractTest,
-    pub onboarding: OnboardingRequestContractTest,
+    pub slashing_voter: SlashingVoterContractTest,
+    pub va_token: VaNftContractTest,
+    pub variable_repository: VariableRepositoryContractTest,
     balances: HashMap<Address, U512>,
     starting_balances: HashMap<Address, U512>,
     bids: HashMap<(u32, Address), BidId>,
@@ -75,8 +77,14 @@ impl DaoWorld {
     }
 
     // gets variable value
-    pub fn _get_variable(&self, name: String) -> Bytes {
+    pub fn get_raw_variable(&self, name: String) -> Bytes {
         self.variable_repository.get(name).unwrap()
+    }
+
+    // gets variable value
+    pub fn get_variable<T: FromBytes>(&self, name: String) -> T {
+        let bytes = self.variable_repository.get(name).unwrap();
+        T::from_bytes(&bytes).unwrap().0
     }
 }
 
@@ -89,7 +97,18 @@ impl Debug for DaoWorld {
 impl Default for DaoWorld {
     fn default() -> Self {
         let env = TestEnv::new();
-        let variable_repository = VariableRepositoryContractTest::new(&env);
+
+        // See dao/account.rs to understand 8 number.
+        let bid_escrow_wallet = env.get_account(8);
+        let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
+        let mut voting_ids = DaoIdsContractTest::new(&env);
+
+        let mut variable_repository = VariableRepositoryContractTest::new(
+            &env,
+            rate_provider.address(),
+            bid_escrow_wallet,
+            voting_ids.address(),
+        );
         let mut reputation_token = ReputationContractTest::new(&env);
 
         let mut va_token = VaNftContractTest::new(
@@ -157,8 +176,6 @@ impl Default for DaoWorld {
             va_token.address(),
         );
 
-        let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
-
         let mut onboarding = OnboardingRequestContractTest::new(
             &env,
             variable_repository.address(),
@@ -172,7 +189,6 @@ impl Default for DaoWorld {
             .unwrap();
 
         // Setup DaoIds.
-        let mut voting_ids = DaoIdsContractTest::new(&env);
         voting_ids.add_to_whitelist(kyc_voter.address()).unwrap();
         voting_ids.add_to_whitelist(bid_escrow.address()).unwrap();
         voting_ids.add_to_whitelist(onboarding.address()).unwrap();
@@ -188,6 +204,9 @@ impl Default for DaoWorld {
 
         // Setup Reputation.
         // Setup VariableRepository.
+        variable_repository
+            .add_to_whitelist(repo_voter.address())
+            .unwrap();
         // Setup VaToken.
         // Setup KycToken.
 
@@ -204,7 +223,7 @@ impl Default for DaoWorld {
         reputation_token
             .add_to_whitelist(repo_voter.address())
             .unwrap();
-        repo_voter.add_to_whitelist(repo_voter.address()).unwrap();
+        // repo_voter.add_to_whitelist(repo_voter.address()).unwrap();
 
         // Setup ReputationVoter.
         reputation_token
@@ -248,7 +267,7 @@ impl Default for DaoWorld {
         va_token.add_to_whitelist(onboarding.address()).unwrap();
 
         // Build the DaoWorld!
-        let mut dao = Self {
+        Self {
             env,
             bid_escrow,
             reputation_token,
@@ -267,39 +286,34 @@ impl Default for DaoWorld {
             starting_balances: Default::default(),
             bids: Default::default(),
             offers: Default::default(),
-        };
+        }
 
         // Post install updates.
-        // Set multisig account.
-        let multisig_address = Bytes::from(
-            dao.get_address(&Account::MultisigWallet)
-                .to_bytes()
-                .unwrap(),
-        );
-        let key = String::from(casper_dao_utils::consts::BID_ESCROW_WALLET_ADDRESS);
-        dao.variable_repository
-            .update_at(key, multisig_address, None)
-            .unwrap();
+        // // Set multisig account.
 
-        // Update rate provider.
-        dao.variable_repository
-            .update_at(
-                consts::FIAT_CONVERSION_RATE_ADDRESS.to_string(),
-                Bytes::from(dao.rate_provider.address().to_bytes().unwrap()),
-                None,
-            )
-            .unwrap();
+        // let key = String::from(casper_dao_utils::consts::BID_ESCROW_WALLET_ADDRESS);
+        // dao.variable_repository
+        //     .update_at(key, multisig_address, None)
+        //     .unwrap();
 
-        // Update voting ids.
-        dao.variable_repository
-            .update_at(
-                consts::VOTING_IDS_ADDRESS.to_string(),
-                Bytes::from(voting_ids.address().to_bytes().unwrap()),
-                None,
-            )
-            .unwrap();
+        // // Update rate provider.
+        // dao.variable_repository
+        //     .update_at(
+        //         consts::FIAT_CONVERSION_RATE_ADDRESS.to_string(),
+        //         Bytes::from(dao.rate_provider.address().to_bytes().unwrap()),
+        //         None,
+        //     )
+        //     .unwrap();
+
+        // // Update voting ids.
+        // dao.variable_repository
+        //     .update_at(
+        //         consts::VOTING_IDS_ADDRESS.to_string(),
+        //         Bytes::from(voting_ids.address().to_bytes().unwrap()),
+        //         None,
+        //     )
+        //     .unwrap();
 
         // Return dao.
-        dao
     }
 }

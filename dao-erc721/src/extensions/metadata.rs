@@ -2,6 +2,7 @@ use casper_dao_utils::{casper_dao_macros::Instance, casper_env, Error, Variable}
 
 use crate::{core::ERC721Token, TokenId, TokenUri};
 
+/// A module that stores [`ERC721Token`] metadata.
 #[derive(Instance)]
 pub struct MetadataERC721 {
     name: Variable<String>,

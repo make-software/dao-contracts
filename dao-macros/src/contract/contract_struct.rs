@@ -123,7 +123,7 @@ fn generate_contract_definiton(input: &CasperContractItem) -> TokenStream {
 
     let mut stream = TokenStream::new();
     stream.append_all(quote!{
-        let mut contract_def = casper_dao_utils::definitions::ContractDef::new(stringify!(#contract_ident));
+        let mut contract_def = casper_dao_utils::definitions::ContractDef::new(stringify!(#contract_ident).to_string());
     });
 
     stream.append_all(input.trait_methods.iter().map(build_method_definiton));
@@ -164,14 +164,14 @@ fn build_method_definiton(method: &TraitItemMethod) -> TokenStream {
     let method_idents = utils::collect_arg_idents(method);
 
     let mut stream = quote! {
-        let mut method_def = casper_dao_utils::definitions::MethodDef::new::<#return_ty>(stringify!(#ident), #is_mutable);
+        let mut method_def = casper_dao_utils::definitions::MethodDef::new::<#return_ty>(stringify!(#ident).to_string(), #is_mutable);
     };
 
     for i in 0..method_idents.len() {
         let method_ident = method_idents.get(i).unwrap();
         let type_path = type_paths.get(i).unwrap();
         stream.extend(quote! {
-            method_def.add_arg(casper_dao_utils::definitions::ElemDef::new::<#type_path>(stringify!(#method_ident)));
+            method_def.add_arg(casper_dao_utils::definitions::ElemDef::new::<#type_path>(stringify!(#method_ident).to_string()));
         });
     }
 

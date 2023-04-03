@@ -9,6 +9,7 @@ use casper_dao_utils::{
     Error,
     Variable,
 };
+use casper_event_standard::Schemas;
 
 use self::events::OwnerChanged;
 
@@ -37,7 +38,7 @@ impl Owner {
                 casper_env::revert(Error::NotAnOwner) // User is not the owner.
             }
         } else {
-            casper_env::revert(Error::OwnerIsNotInitialized) // Owner is not inicialized.
+            casper_env::revert(Error::OwnerIsNotInitialized) // Owner is not initialized.
         }
     }
 
@@ -48,11 +49,16 @@ impl Owner {
 
 pub mod events {
     //! Events definitions.
-    use casper_dao_utils::{casper_dao_macros::Event, Address};
+    use casper_dao_utils::Address;
+    use casper_event_standard::Event;
 
     /// Informs the owner change.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct OwnerChanged {
         pub new_owner: Address,
     }
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<OwnerChanged>();
 }

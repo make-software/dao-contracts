@@ -3,6 +3,7 @@ use casper_types::bytesrepr::Bytes;
 
 use crate::TokenId;
 
+/// Verifies the recipient of an ERC-721 token.
 pub trait IERC721Receiver {
     fn on_erc_721_received(
         &self,
@@ -46,10 +47,11 @@ impl ERC721ReceiverCaller {
 
 pub mod tests {
     use casper_dao_utils::{
-        casper_dao_macros::{casper_contract_interface, Event, Instance},
+        casper_dao_macros::{casper_contract_interface, Instance},
         casper_env::emit,
         Address,
     };
+    use casper_event_standard::{Event, Schemas};
     use casper_types::bytesrepr::Bytes;
 
     use crate::TokenId;
@@ -66,11 +68,14 @@ pub mod tests {
         );
     }
 
+    /// A mock contract that implements [`ERC721Receiver`](super::IERC721Receiver).
     #[derive(Instance)]
-    pub struct MockERC721Receiver {}
+    pub struct MockERC721Receiver;
 
     impl MockERC721ReceiverInterface for MockERC721Receiver {
-        fn init(&self) {}
+        fn init(&self) {
+            casper_event_standard::init(Schemas::new().with::<Received>());
+        }
 
         #[allow(unused_variables)]
         fn on_erc_721_received(
@@ -94,13 +99,15 @@ pub mod tests {
         fn init(&self);
     }
 
+    /// A mock contract that does not implement [`ERC721Receiver`](super::IERC721Receiver).
     #[derive(Instance)]
-    pub struct MockERC721NonReceiver {}
+    pub struct MockERC721NonReceiver;
 
     impl MockERC721NonReceiverInterface for MockERC721NonReceiver {
         fn init(&self) {}
     }
 
+    /// Informs a token has been received.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Received {
         pub operator: Address,

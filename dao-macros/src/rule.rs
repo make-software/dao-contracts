@@ -31,12 +31,11 @@ fn fn_args(data: &DataStruct) -> TokenStream {
         syn::Fields::Named(fields) => fields
             .named
             .iter()
-            .map(|f| {
+            .flat_map(|f| {
                 let ident = f.ident.as_ref().unwrap();
                 let ty = &f.ty;
                 quote!(#ident: #ty,)
             })
-            .flatten()
             .collect(),
         _ => quote! { compile_error!("Fields must be named."); },
     }

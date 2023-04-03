@@ -1,15 +1,21 @@
+use casper_dao_contracts::admin::Action;
 use casper_dao_utils::{DocumentHash, Error, TestContract};
 use casper_types::{bytesrepr::Bytes, U512};
 
-use crate::{common::{
-    params::{
-        voting::{Ballot, Voting, VotingType},
-        Account,
-        Balance,
-        Contract,
+use crate::{
+    common::{
+        params::{
+            voting::{Ballot, Voting, VotingType},
+            Account,
+            Balance,
+            Contract,
+        },
+        DaoWorld,
     },
-    DaoWorld,
-}, on_voting_contract};
+    on_voting_contract,
+};
+
+mod builder;
 
 #[allow(dead_code)]
 impl DaoWorld {
@@ -17,28 +23,44 @@ impl DaoWorld {
         let creator = self.get_address(&creator);
         let stake = voting.get_stake();
 
-        match voting.contract {
-            Contract::KycVoter => {
-                let subject_address = voting.get_parsed_arg::<Account>(0);
-                let subject_address = self.get_address(&subject_address);
-                self.kyc_voter.as_account(creator).create_voting(
-                    subject_address,
-                    DocumentHash::default(),
+        match builder::build(self, voting) {
+            builder::VotingSetup::Admin(contract_to_update, action, subject) => self
+                .admin
+                .as_account(creator)
+                .create_voting(contract_to_update, action, subject, *stake),
+            builder::VotingSetup::Kyc(subject, document_hash) => self
+                .kyc_voter
+                .as_account(creator)
+                .create_voting(subject, document_hash, *stake),
+            builder::VotingSetup::Slasher(address_to_slash, slash_ratio) => self
+                .slashing_voter
+                .as_account(creator)
+                .create_voting(address_to_slash, slash_ratio, *stake),
+            builder::VotingSetup::Repository(
+                variable_repository_address,
+                key,
+                value,
+                activation_time,
+            ) => self.repo_voter.as_account(creator).create_voting(
+                variable_repository_address,
+                key,
+                value,
+                activation_time,
+                *stake,
+            ),
+            builder::VotingSetup::Simple(document_hash) => self
+                .simple_voter
+                .as_account(creator)
+                .create_voting(document_hash, *stake),
+            builder::VotingSetup::Reputation(recipient_address, action, amount, document_hash) => {
+                self.reputation_voter.as_account(creator).create_voting(
+                    recipient_address,
+                    action,
+                    *amount,
+                    document_hash,
                     *stake,
                 )
             }
-            Contract::SlashingVoter => {
-                let address_to_slash = voting.get_parsed_arg::<Account>(0);
-                let address_to_slash = self.get_address(&address_to_slash);
-                let slash_ratio = voting.get_parsed_arg::<f32>(1);
-
-                self.slashing_voter.as_account(creator).create_voting(
-                    address_to_slash,
-                    (slash_ratio * 1000.0) as u32,
-                    stake.0,
-                )
-            }
-            contract => panic!("{:?} is not a voting contract", contract),
         }
     }
 
@@ -51,17 +73,17 @@ impl DaoWorld {
     pub fn create_test_voting(&mut self, contract: Contract, creator: Account, stake: Balance) {
         let alice = self.get_address(&Account::Alice);
         let creator = self.get_address(&creator);
-        let document_hash = Bytes::from(vec![1u8]);
+        let document_hash = DocumentHash::from("123");
         match contract {
             Contract::KycVoter => {
                 self.kyc_voter
                     .as_account(creator)
-                    .create_voting(alice, Bytes::new(), *stake)
+                    .create_voting(alice, document_hash, *stake)
             }
             Contract::RepoVoter => self.repo_voter.as_account(creator).create_voting(
                 self.variable_repository.address(),
                 String::from("key"),
-                document_hash,
+                Bytes::from(vec![1u8]),
                 None,
                 *stake,
             ),
@@ -74,7 +96,7 @@ impl DaoWorld {
             ),
             Contract::Admin => self.admin.as_account(creator).create_voting(
                 alice,
-                casper_dao_contracts::action::Action::AddToWhitelist,
+                Action::AddToWhitelist,
                 alice,
                 *stake,
             ),
@@ -104,7 +126,12 @@ impl DaoWorld {
         let stake = ballot.stake.0;
         let voting_type = ballot.voting_type.into();
 
-        on_voting_contract!(self, voter, contract, vote(voting_id, voting_type, choice, stake))
+        on_voting_contract!(
+            self,
+            voter,
+            contract,
+            vote(voting_id, voting_type, choice, stake)
+        )
     }
 
     pub fn finish_voting(
@@ -115,41 +142,8 @@ impl DaoWorld {
     ) {
         let voting_type = voting_type.map(|vt| vt.into()).unwrap();
 
-        match contract {
-            Contract::KycVoter => self
-                .kyc_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish KycVoter voting"),
-            Contract::BidEscrow => self
-                .bid_escrow
-                .finish_voting(voting_id)
-                .expect("Couldn't finish BidEscrow voting"),
-            Contract::SlashingVoter => self
-                .slashing_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish SlashingVoting voting"),
-            Contract::RepoVoter => self
-                .repo_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish RepoVoter voting"),
-            Contract::Admin => self
-                .admin
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish Admin voting"),
-            Contract::SimpleVoter => self
-                .simple_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish SimpleVoter voting"),
-            Contract::ReputationVoter => self
-                .reputation_voter
-                .finish_voting(voting_id, voting_type)
-                .expect("Couldn't finish ReputationVoter voting"),
-            Contract::Onboarding => self
-                .onboarding
-                .finish_voting(voting_id)
-                .expect("Couldn't finish Onboarding voting"),
-            invalid => panic!("{:?} is not a voting contract", invalid),
-        };
+        let result = on_voting_contract!(self, contract, finish_voting(voting_id, voting_type));
+        result.expect(&format!("Couldn't finish {:?} voting", contract));
     }
 
     pub fn voting_exists(

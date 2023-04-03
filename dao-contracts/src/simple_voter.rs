@@ -1,68 +1,115 @@
-use casper_dao_modules::AccessControl;
+//! Contains Simple Voter Contract definition and related abstractions.
+//!
+//! # General
+//! Simple voting is a formal, on-chain confirmation of a resolution that has
+//! been made off-chain. The off-chain agreement has a form of a [`Document Hash`]
+//! that is the voting subject.
+//!
+//! None action is performed after the voting process is completed.
+//!
+//! # Voting
+//! The Voting process is managed by [`VotingEngine`].
+//!
+//! [`Repository contract`]: crate::variable_repository::VariableRepositoryContractInterface
+//! [`VotingEngine`]: crate::voting::VotingEngine
+//! [`Document Hash`]: casper_dao_utils::DocumentHash
+use casper_dao_modules::access_control::{self, AccessControl};
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
-    casper_dao_macros::{casper_contract_interface, Event, Instance},
-    casper_env::caller,
+    casper_dao_macros::{casper_contract_interface, Instance},
+    casper_env::{caller, emit},
     Address,
     BlockTime,
     DocumentHash,
     Error,
     Mapping,
 };
+use casper_event_standard::{Event, Schemas};
 use casper_types::U512;
 use delegate::delegate;
 
 use crate::{
+    config::ConfigurationBuilder,
     voting::{
-        types::VotingId,
+        self,
+        events::VotingCreatedInfo,
+        refs::ContractRefsStorage,
         voting_state_machine::{VotingStateMachine, VotingType},
         Ballot,
         Choice,
-        VotingCreatedInfo,
         VotingEngine,
+        VotingId,
     },
-    ConfigurationBuilder,
 };
 
 #[casper_contract_interface]
 pub trait SimpleVoterContractInterface {
-    /// see [VotingEngine](VotingEngine::init())
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address);
+    /// Constructor function.
+    ///
+    /// # Note
+    /// Initializes contract elements:
+    /// * Sets up [`ContractRefsStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract).
+    /// * Sets [`caller`] as the owner of the contract.
+    /// * Adds [`caller`] to the whitelist.
+    ///
+    /// # Events
+    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged)
+    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist)
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address);
     /// Creates new SimpleVoter voting.
     ///
-    /// `variable_repo_to_edit` takes an [Address](Address) of a [Variable Repo](crate::VariableRepositoryContract) instance that will be updated
+    /// # Arguments
+    /// * `variable_repo_to_edit` takes an [Address] of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
+    /// instance that will be updated
+    /// * `key`, `value` and `activation_time` are parameters that will be passed to `update_at`
+    /// method of a [Variable Repo](crate::variable_repository::VariableRepositoryContract)
     ///
-    /// `key`, `value` and `activation_time` are parameters that will be passed to `update_at` method of a [Variable Repo](crate::VariableRepositoryContract)
+    /// # Events
+    /// [`SimpleVotingCreated`]
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512);
-    /// see [VotingEngine](VotingEngine::vote())
+    /// Casts a vote. [Read more](VotingEngine::vote())
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512);
-    /// see [VotingEngine](VotingEngine::finish_voting())
+    /// Finishes voting. Depending on type of voting, different actions are performed.
+    /// [Read more](VotingEngine::finish_voting())
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType);
-    /// see [VotingEngine](VotingEngine::get_variable_repo_address())
-    fn variable_repo_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_reputation_token_address())
+    /// Returns the address of [Variable Repository](crate::variable_repository::VariableRepositoryContract) contract.
+    fn variable_repository_address(&self) -> Address;
+    /// Returns the address of [Reputation Token](crate::reputation::ReputationContract) contract.
     fn reputation_token_address(&self) -> Address;
-    /// see [VotingEngine](VotingEngine::get_voting())
+    /// Returns [Voting](VotingStateMachine) for given id.
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
-    /// see [VotingEngine](VotingEngine::get_ballot())
+    /// Returns the Voter's [`Ballot`].
     fn get_ballot(
         &self,
         voting_id: VotingId,
         voting_type: VotingType,
         address: Address,
     ) -> Option<Ballot>;
-    /// see [VotingEngine](VotingEngine::get_voter())
+    /// Returns the address of nth voter who voted on Voting with `voting_id`.
     fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
-    /// Returns document hash being voted on for given voting id.
+    /// Returns document hash being voted on for a given voting id.
     fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash>;
-    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    /// Checks if voting of a given type and id exists.
     fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
-
+    /// Erases the voter from Voting with a given id. [Read more](VotingEngine::slash_voter).
+    fn slash_voter(&mut self, voter: Address, voting_id: VotingId);
+    /// Changes the ownership of the contract. Transfers ownership to the `owner`.
+    /// Only the current owner is permitted to call this method.
+    /// [`Read more`](AccessControl::change_ownership())
     fn change_ownership(&mut self, owner: Address);
+    /// Adds a new address to the whitelist.
+    /// [`Read more`](AccessControl::add_to_whitelist())
     fn add_to_whitelist(&mut self, address: Address);
+    /// Remove address from the whitelist.
+    /// [`Read more`](AccessControl::remove_from_whitelist())
     fn remove_from_whitelist(&mut self, address: Address);
-    fn get_owner(&self) -> Option<Address>;
+    /// Checks whether the given address is added to the whitelist.
+    /// [`Read more`](AccessControl::is_whitelisted()).
     fn is_whitelisted(&self, address: Address) -> bool;
+    /// Returns the address of the current owner.
+    /// [`Read more`](AccessControl::get_owner()).
+    fn get_owner(&self) -> Option<Address>;
 }
 
 /// SimpleVoterContract
@@ -72,16 +119,15 @@ pub trait SimpleVoterContractInterface {
 /// The topic of the voting is handled by `document_hash` which is a hash of a document being voted on.
 #[derive(Instance)]
 pub struct SimpleVoterContract {
-    voting: VotingEngine,
+    refs: ContractRefsStorage,
+    voting_engine: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
     access_control: AccessControl,
 }
 
 impl SimpleVoterContractInterface for SimpleVoterContract {
     delegate! {
-        to self.voting {
-            fn variable_repo_address(&self) -> Address;
-            fn reputation_token_address(&self) -> Address;
+        to self.voting_engine {
             fn voting_exists(&self, voting_id: VotingId, voting_type: VotingType) -> bool;
             fn get_voting(
                 &self,
@@ -103,32 +149,35 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
             fn is_whitelisted(&self, address: Address) -> bool;
             fn get_owner(&self) -> Option<Address>;
         }
+
+        to self.refs {
+            fn variable_repository_address(&self) -> Address;
+            fn reputation_token_address(&self) -> Address;
+        }
     }
 
-    fn init(&mut self, variable_repo: Address, reputation_token: Address, va_token: Address) {
-        self.voting.init(variable_repo, reputation_token, va_token);
+    fn init(&mut self, variable_repository: Address, reputation_token: Address, va_token: Address) {
+        casper_event_standard::init(event_schemas());
+        self.refs
+            .init(variable_repository, reputation_token, va_token);
         self.access_control.init(caller())
     }
 
     fn create_voting(&mut self, document_hash: DocumentHash, stake: U512) {
-        let voting_configuration = ConfigurationBuilder::new(
-            self.voting.variable_repo_address(),
-            self.voting.va_token_address(),
-        )
-        .build();
+        let voting_configuration = ConfigurationBuilder::new(&self.refs).build();
 
-        let info = self
-            .voting
+        let (info, _) = self
+            .voting_engine
             .create_voting(caller(), stake, voting_configuration);
 
         self.simple_votings
             .set(&info.voting_id, document_hash.clone());
 
-        SimpleVotingCreated::new(document_hash, info).emit();
+        emit(SimpleVotingCreated::new(document_hash, info));
     }
 
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) {
-        let voting_summary = self.voting.finish_voting(voting_id, voting_type);
+        let voting_summary = self.voting_engine.finish_voting(voting_id, voting_type);
 
         if let VotingType::Informal = voting_summary.voting_type() {
             match voting_summary.voting_type() {
@@ -151,16 +200,17 @@ impl SimpleVoterContractInterface for SimpleVoterContract {
     }
 
     fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: U512) {
-        self.voting
+        self.voting_engine
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
     fn slash_voter(&mut self, voter: Address, voting_id: VotingId) {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter, voting_id);
+        self.voting_engine.slash_voter(voter, voting_id);
     }
 }
 
+/// Informs simple voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct SimpleVotingCreated {
     document_hash: DocumentHash,
@@ -195,4 +245,12 @@ impl SimpleVotingCreated {
                 .config_time_between_informal_and_formal_voting,
         }
     }
+}
+
+pub fn event_schemas() -> Schemas {
+    let mut schemas = Schemas::new();
+    access_control::add_event_schemas(&mut schemas);
+    voting::events::add_event_schemas(&mut schemas);
+    schemas.add::<SimpleVotingCreated>();
+    schemas
 }
