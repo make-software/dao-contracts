@@ -107,10 +107,10 @@ impl ConfigurationBuilder {
                         &variables,
                     ),
                     voting_clearness_delta: Self::get_variable(VOTING_CLEARNESS_DELTA, &variables),
-                    voting_start_after_job_worker_submission: Self::get_variable(
+                    voting_start_after_job_worker_submission: sec_to_milli(Self::get_variable(
                         VOTING_START_AFTER_JOB_WORKER_SUBMISSION,
                         &variables,
-                    ),
+                    )),
                     informal_quorum_ratio: Self::get_variable(INFORMAL_QUORUM_RATIO, &variables),
                     formal_quorum_ratio: Self::get_variable(FORMAL_QUORUM_RATIO, &variables),
                     bid_escrow_payment_ratio: Self::get_variable(
