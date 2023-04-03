@@ -34,11 +34,16 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn init(&mut self, fiat_conversion: Address, bid_escrow_wallet: Address, voting_ids: Address) {
+    pub fn init(
+        &mut self,
+        fiat_conversion: Address,
+        bid_escrow_wallet: Address,
+        voting_ids: Address,
+    ) {
         let mut config = RepositoryDefaults::default();
         config.push(consts::FIAT_CONVERSION_RATE_ADDRESS, fiat_conversion);
         config.push(consts::BID_ESCROW_WALLET_ADDRESS, bid_escrow_wallet);
-        config.push(consts::VOTING_IDS_ADDRESS,voting_ids);
+        config.push(consts::VOTING_IDS_ADDRESS, voting_ids);
         for (key, value) in config.items() {
             self.set(key, value);
         }

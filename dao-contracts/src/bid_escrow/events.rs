@@ -1,10 +1,18 @@
 //! BidEscrow-related events.
 use casper_dao_utils::{Address, BlockTime, DocumentHash};
-use casper_event_standard::Event;
+use casper_event_standard::{Event, Schemas};
 use casper_types::U512;
 
 use super::types::BidId;
-use crate::bid_escrow::{job::Job, job_offer::JobOffer, types::JobOfferId};
+use crate::{
+    bid_escrow::{
+        job::Job,
+        job_offer::JobOffer,
+        types::{JobId, JobOfferId},
+    },
+    config::Configuration,
+    voting::VotingId,
+};
 
 /// Informs a new [Job Offer](crate::bid_escrow::job_offer::JobOffer) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
@@ -70,6 +78,25 @@ impl BidSubmitted {
     }
 }
 
+/// Informs that a [Bid](crate::bid_escrow::bid::Bid) has been cancelled.
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct BidCancelled {
+    bid_id: BidId,
+    caller: Address,
+    job_offer_id: JobOfferId,
+}
+
+impl BidCancelled {
+    /// Creates a new event.
+    pub fn new(bid_id: BidId, caller: Address, job_offer_id: JobOfferId) -> Self {
+        BidCancelled {
+            bid_id,
+            caller,
+            job_offer_id,
+        }
+    }
+}
+
 /// Informs a new [Job](crate::bid_escrow::job::Job) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
@@ -89,25 +116,6 @@ impl JobCreated {
             worker: job.worker(),
             finish_time: job.finish_time(),
             payment: job.payment(),
-        }
-    }
-}
-
-/// Informs a new [Job](crate::bid_escrow::job::Job) has been accepted by the `Job Poster`.
-#[derive(Debug, PartialEq, Eq, Event)]
-pub struct JobAccepted {
-    bid_id: BidId,
-    job_poster: Address,
-    worker: Address,
-}
-
-impl JobAccepted {
-    /// Creates a new event.
-    pub fn new(job: &Job) -> JobAccepted {
-        JobAccepted {
-            bid_id: job.bid_id(),
-            job_poster: job.poster(),
-            worker: job.worker(),
         }
     }
 }
@@ -145,19 +153,17 @@ pub struct JobCancelled {
     caller: Address,
     job_poster: Address,
     worker: Address,
-    reason: DocumentHash,
     cspr_amount: U512,
 }
 
 impl JobCancelled {
     /// Creates a new event.
-    pub fn new(job: &Job, caller: Address, reason: DocumentHash) -> JobCancelled {
+    pub fn new(job: &Job, caller: Address) -> JobCancelled {
         JobCancelled {
             bid_id: job.bid_id(),
             caller,
             job_poster: job.poster(),
             worker: job.worker(),
-            reason,
             cspr_amount: Default::default(),
         }
     }
@@ -207,4 +213,97 @@ impl JobRejected {
             cspr_amount: job.payment(),
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct BidEscrowVotingCreated {
+    bid_id: BidId,
+    job_id: JobId,
+    job_offer_id: JobOfferId,
+    job_poster: Address,
+    worker: Address,
+    creator: Address,
+    voting_id: VotingId,
+    config_informal_quorum: u32,
+    config_informal_voting_time: u64,
+    config_formal_quorum: u32,
+    config_formal_voting_time: u64,
+    config_total_onboarded: U512,
+    config_double_time_between_votings: bool,
+    config_voting_clearness_delta: U512,
+    config_time_between_informal_and_formal_voting: BlockTime,
+}
+
+impl BidEscrowVotingCreated {
+    pub fn new(
+        job: &Job,
+        creator: Address,
+        voting_id: VotingId,
+        configuration: &Configuration,
+    ) -> BidEscrowVotingCreated {
+        BidEscrowVotingCreated {
+            bid_id: job.bid_id(),
+            job_id: job.job_id(),
+            job_offer_id: job.job_offer_id(),
+            job_poster: job.poster(),
+            worker: job.worker(),
+            creator,
+            voting_id,
+            config_informal_quorum: configuration.informal_voting_quorum(),
+            config_informal_voting_time: configuration.informal_voting_time(),
+            config_formal_quorum: configuration.formal_voting_quorum(),
+            config_formal_voting_time: configuration.formal_voting_time(),
+            config_total_onboarded: configuration.total_onboarded(),
+            config_double_time_between_votings: configuration.should_double_time_between_votings(),
+            config_voting_clearness_delta: configuration.voting_clearness_delta(),
+            config_time_between_informal_and_formal_voting: configuration
+                .time_between_informal_and_formal_voting(),
+        }
+    }
+}
+
+pub enum TransferReason {
+    JobPayment,
+    JobPaymentReturn,
+    JobPayout,
+    BidStake,
+    BidStakeReturn,
+    DOSFeeReturn,
+    JobPaymentAndDOSFeeReturn,
+    Redistribution,
+}
+
+impl ToString for TransferReason {
+    fn to_string(&self) -> String {
+        match self {
+            TransferReason::JobPayment => "JobPayment".to_string(),
+            TransferReason::JobPaymentReturn => "JobPaymentReturn".to_string(),
+            TransferReason::JobPayout => "JobPayout".to_string(),
+            TransferReason::BidStake => "BidStake".to_string(),
+            TransferReason::BidStakeReturn => "BidStakeReturn".to_string(),
+            TransferReason::DOSFeeReturn => "DOSFeeReturn".to_string(),
+            TransferReason::JobPaymentAndDOSFeeReturn => "JobPaymentAndDOSFeeReturn".to_string(),
+            TransferReason::Redistribution => "Redistribution".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct CSPRTransfer {
+    pub from: Address,
+    pub to: Address,
+    pub amount: U512,
+    pub reason: String,
+}
+
+pub fn add_event_schemas(schemas: &mut Schemas) {
+    schemas.add::<BidSubmitted>();
+    schemas.add::<BidCancelled>();
+    schemas.add::<JobCreated>();
+    schemas.add::<JobSubmitted>();
+    schemas.add::<JobCancelled>();
+    schemas.add::<JobDone>();
+    schemas.add::<JobRejected>();
+    schemas.add::<BidEscrowVotingCreated>();
+    schemas.add::<CSPRTransfer>();
 }

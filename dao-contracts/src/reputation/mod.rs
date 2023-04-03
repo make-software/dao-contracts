@@ -9,6 +9,7 @@ mod token;
 #[cfg(feature = "test-support")]
 pub use token::ReputationContractTest;
 pub use token::{
+    add_event_schemas,
     event_schemas,
     events::*,
     ReputationContract,

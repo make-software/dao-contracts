@@ -2,7 +2,7 @@ use std::{borrow::Borrow, rc::Rc};
 
 use casper_dao_utils::{
     casper_dao_macros::Instance,
-    casper_env::{caller, get_block_time},
+    casper_env::{caller, emit, get_block_time},
     cspr,
     Address,
     BlockTime,
@@ -13,10 +13,12 @@ use delegate::delegate;
 use crate::{
     bid_escrow::{
         bid::{Bid, BidStatus, CancelBidRequest, ShortenedBid, SubmitBidRequest},
+        events::{BidCancelled, BidSubmitted, JobCreated, JobOfferCreated, TransferReason},
         job::{Job, PickBidRequest},
         job_offer::{CancelJobOfferRequest, JobOffer, PostJobOfferRequest},
         storage::{BidStorage, JobStorage},
         types::{BidId, JobOfferId},
+        withdraw,
     },
     config::{Configuration, ConfigurationBuilder},
     reputation::ReputationContractInterface,
@@ -83,9 +85,9 @@ impl BidEngine {
         };
 
         let job_offer = JobOffer::new(request);
+
+        emit(JobOfferCreated::new(&job_offer));
         self.bid_storage.store_job_offer(job_offer);
-        // TODO: Emit event
-        // JobOfferCreated::new(&job_offer).emit();
     }
 
     pub fn submit_bid(
@@ -127,8 +129,23 @@ impl BidEngine {
 
         self.bid_storage.store_bid(bid);
         self.bid_storage.store_bid_id(job_offer_id, bid_id);
-        // TODO: Implement Event
-        // BidCreated::new(&bid).emit();
+
+        let reputation_stake = if reputation_stake == U512::zero() {
+            None
+        } else {
+            Some(reputation_stake)
+        };
+
+        emit(BidSubmitted::new(
+            bid_id,
+            job_offer_id,
+            worker,
+            onboard,
+            time,
+            payment,
+            reputation_stake,
+            cspr_stake,
+        ));
     }
 
     pub fn cancel_bid(&mut self, bid_id: BidId) {
@@ -147,7 +164,8 @@ impl BidEngine {
 
         self.unstake_cspr_or_reputation_for_bid(&bid);
 
-        // TODO: Implement Event
+        emit(BidCancelled::new(bid_id, caller, bid.job_offer_id));
+
         self.bid_storage.store_bid(bid);
     }
 
@@ -204,12 +222,13 @@ impl BidEngine {
 
         job_offer.in_progress(&pick_bid_request);
 
+        emit(JobCreated::new(&job));
+
         self.job_storage.store_job(job);
         self.bid_storage.store_bid(bid);
         self.bid_storage
             .store_active_job_offer_id(&job_offer.job_poster, job_offer_id);
         self.bid_storage.store_job_offer(job_offer);
-        // TODO: Emit event.
     }
 }
 
@@ -242,7 +261,7 @@ impl BidEngine {
                     .unstake_bid(bid.borrow().into());
             }
             Some(cspr_stake) => {
-                cspr::withdraw(bid.worker, cspr_stake);
+                withdraw(bid.worker, cspr_stake, TransferReason::BidStakeReturn);
             }
         }
     }
@@ -253,7 +272,7 @@ impl BidEngine {
         for i in 0..bids_amount {
             let mut bid = self.bid_storage.get_nth_bid(job_offer_id, i);
             if let Some(cspr) = bid.cspr_stake {
-                cspr::withdraw(bid.worker, cspr);
+                withdraw(bid.worker, cspr, TransferReason::BidStakeReturn);
             }
             bids.push(bid.borrow().into());
             bid.cancel_without_validation();
@@ -264,7 +283,11 @@ impl BidEngine {
 
     pub fn return_job_offer_poster_dos_fee(&mut self, job_offer_id: JobOfferId) {
         let job_offer = self.bid_storage.get_job_offer_or_revert(job_offer_id);
-        cspr::withdraw(job_offer.job_poster, job_offer.dos_fee);
+        withdraw(
+            job_offer.job_poster,
+            job_offer.dos_fee,
+            TransferReason::DOSFeeReturn,
+        );
     }
 
     fn unstake_not_picked(&mut self, job_offer_id: JobOfferId, bid_id: BidId) {
@@ -275,7 +298,7 @@ impl BidEngine {
 
             if bid.bid_id != bid_id && bid.status == BidStatus::Created {
                 if let Some(cspr) = bid.cspr_stake {
-                    cspr::withdraw(bid.worker, cspr);
+                    withdraw(bid.worker, cspr, TransferReason::BidStakeReturn);
                 }
                 bids.push(bid.borrow().into());
                 bid.reject_without_validation();

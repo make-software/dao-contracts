@@ -121,7 +121,7 @@ impl TestEnv {
 
     /// Increases the current value of block_time
     pub fn advance_block_time_by(&self, seconds: Duration) {
-        self.state.lock().unwrap().block_time += seconds.as_secs();
+        self.state.lock().unwrap().block_time += seconds.as_millis() as u64;
     }
 
     /// Read block time.

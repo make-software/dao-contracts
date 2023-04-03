@@ -435,7 +435,7 @@ impl VotingStateMachine {
         self.created_at() + self.configuration.voting_delay()
     }
 
-    fn created_at(&self) -> u64 {
+    pub fn created_at(&self) -> u64 {
         self.created_at
     }
 

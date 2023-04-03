@@ -148,7 +148,8 @@ impl VariableRepositoryContractInterface for VariableRepositoryContract {
         casper_event_standard::init(event_schemas());
         let deployer = caller();
         self.access_control.init(deployer);
-        self.repository.init(fiat_conversion, bid_escrow_wallet, voting_ids);
+        self.repository
+            .init(fiat_conversion, bid_escrow_wallet, voting_ids);
     }
 
     fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {

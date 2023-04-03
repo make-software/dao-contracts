@@ -2,7 +2,7 @@ use casper_dao_modules::access_control::AccessControl;
 use casper_dao_utils::{
     casper_contract::unwrap_or_revert::UnwrapOrRevert,
     casper_dao_macros::Instance,
-    casper_env::{self, revert},
+    casper_env::{self, emit, revert},
     Address,
     Error,
     Mapping,
@@ -16,6 +16,7 @@ use casper_types::{
 use super::balances::BalanceStorage;
 use crate::{
     bid_escrow::{bid::ShortenedBid, types::BidId},
+    reputation::{Stake, Unstake},
     voting::{ShortenedBallot, VotingId},
 };
 
@@ -103,8 +104,9 @@ impl StakesStorage {
     ///
     /// * `bid` - a short version of the bid that has been offered.
     ///
-    /// # Errors
+    /// # Events
     ///
+    /// # Errors
     /// [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn stake_bid(&mut self, bid: ShortenedBid) {
         self.access_control.ensure_whitelisted();
@@ -120,7 +122,12 @@ impl StakesStorage {
         let voter_contract = casper_env::caller();
         self.inc_total_stake(worker, reputation_stake);
         self.bids.push_record(&worker, (voter_contract, bid_id));
-        // TODO: Emit Stake event.
+
+        emit(Stake {
+            worker: bid.worker,
+            amount: bid.reputation_stake,
+            bid_id: bid.bid_id,
+        })
     }
 
     /// Decreases the bidder's stake and total stake.
@@ -140,6 +147,12 @@ impl StakesStorage {
         self.dec_total_stake(bid.worker, bid.reputation_stake);
         self.bids
             .remove_record(&bid.worker, (voter_contract, bid.bid_id));
+
+        emit(Unstake {
+            worker: bid.worker,
+            amount: bid.reputation_stake,
+            bid_id: bid.bid_id,
+        })
     }
 
     // Decreases all the bidders stake and total stake.

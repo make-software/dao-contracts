@@ -107,7 +107,7 @@ impl Default for DaoWorld {
             &env,
             rate_provider.address(),
             bid_escrow_wallet,
-            voting_ids.address()
+            voting_ids.address(),
         );
         let mut reputation_token = ReputationContractTest::new(&env);
 
@@ -290,7 +290,7 @@ impl Default for DaoWorld {
 
         // Post install updates.
         // // Set multisig account.
-      
+
         // let key = String::from(casper_dao_utils::consts::BID_ESCROW_WALLET_ADDRESS);
         // dao.variable_repository
         //     .update_at(key, multisig_address, None)
