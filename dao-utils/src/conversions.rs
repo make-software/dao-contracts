@@ -30,6 +30,10 @@ impl<T: ToBytes + FromBytes> BytesConversion for T {
     }
 }
 
+pub fn sec_to_milli(sec: u64) -> u64 {
+    sec * 1000u64
+}
+
 #[cfg(test)]
 mod test {
     use std::fmt::Debug;
