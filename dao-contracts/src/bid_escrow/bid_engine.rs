@@ -210,7 +210,7 @@ impl BidEngine {
             is_worker_va: self.onboarding.is_onboarded(&bid.worker),
             onboard: bid.onboard,
             block_time: get_block_time(),
-            timeframe: sec_to_milli(bid.proposed_timeframe),
+            timeframe: bid.proposed_timeframe,
             payment: bid.proposed_payment,
             transferred_cspr: cspr::deposit(purse),
             stake: bid.reputation_stake,
