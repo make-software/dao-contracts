@@ -80,6 +80,9 @@ rebuild-docs:
 update-schemas:
 	cargo run -p dao-contracts-schemas --bin update-schemas
 
+event-parser:
+	cargo run -p dao-contracts-schemas --bin event-parser
+
 run-e2e-tests:
 	cd client && ./run-e2e-tests.sh
 

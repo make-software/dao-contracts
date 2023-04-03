@@ -12,7 +12,13 @@ casper-dao-erc721 = { path = "../dao-erc721", default-features = false }
 serde = "1.0"
 serde_json = "1.0"
 convert_case = "0.6"
+hex = "0.4"
+blake2 = "0.9"
 
 [[bin]]
 name = "update-schemas"
 path = "bin/update_schemas.rs"
+
+[[bin]]
+name = "event-parser"
+path = "bin/event_parser.rs"

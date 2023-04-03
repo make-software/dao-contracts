@@ -669,12 +669,14 @@ dependencies = [
 name = "dao-contracts-schemas"
 version = "0.1.0"
 dependencies = [
+ "blake2",
  "casper-dao-contracts",
  "casper-dao-erc721",
  "casper-dao-modules",
  "casper-dao-utils",
  "casper-types",
  "convert_case 0.6.0",
+ "hex",
  "serde",
  "serde_json",
 ]
