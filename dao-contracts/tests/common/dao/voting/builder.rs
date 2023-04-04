@@ -4,6 +4,7 @@ use casper_dao_contracts::{
 };
 use casper_dao_utils::{Address, BlockTime, DocumentHash};
 use casper_types::bytesrepr::{Bytes, ToBytes};
+use casper_dao_utils::conversions::sec_to_milli;
 
 use crate::{
     common::{
@@ -66,7 +67,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
                 let values = s.split(" ").collect::<Vec<_>>();
                 let value = values.get(0).and_then(|s| s.parse().ok()).unwrap();
                 let unit = values.get(1).and_then(|s| s.parse().ok()).unwrap();
-                to_seconds(value, unit)
+                sec_to_milli(to_seconds(value, unit))
             });
 
             VotingSetup::Repository(variable_repository_address, key, value, activation_time)
