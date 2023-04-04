@@ -699,7 +699,7 @@ pub fn withdraw(to: Address, amount: U512, reason: TransferReason) {
 }
 
 fn init_events() {
-    casper_event_standard::init(Schemas::new());
+    casper_event_standard::init(event_schemas());
 }
 
 pub fn event_schemas() -> Schemas {
