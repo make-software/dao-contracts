@@ -300,6 +300,7 @@ pub fn add_event_schemas(schemas: &mut Schemas) {
     schemas.add::<BidSubmitted>();
     schemas.add::<BidCancelled>();
     schemas.add::<JobCreated>();
+    schemas.add::<JobOfferCreated>();
     schemas.add::<JobSubmitted>();
     schemas.add::<JobCancelled>();
     schemas.add::<JobDone>();

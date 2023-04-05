@@ -753,6 +753,27 @@
       ]
     },
     {
+      "name": "JobOfferCreated",
+      "fields": [
+        {
+          "name": "job_offer_id",
+          "ty": "U32"
+        },
+        {
+          "name": "job_poster",
+          "ty": "Key"
+        },
+        {
+          "name": "max_budget",
+          "ty": "U512"
+        },
+        {
+          "name": "expected_timeframe",
+          "ty": "U64"
+        }
+      ]
+    },
+    {
       "name": "JobRejected",
       "fields": [
         {
