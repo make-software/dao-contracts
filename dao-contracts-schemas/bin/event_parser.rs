@@ -1,15 +1,11 @@
-use blake2::{
-    digest::{Update, VariableOutput},
-    Digest,
-    VarBlake2b,
-};
+//! Development playground!
+
+// use blake2::{
+//     digest::{Update, VariableOutput},
+//     VarBlake2b,
+// };
 use casper_dao_contracts::voting::voting_state_machine::VotingStateMachine;
-// Development playground!
-use casper_dao_contracts::{
-    reputation_voter::ReputationVotingCreated,
-    simple_voter::SimpleVotingCreated,
-};
-use casper_types::bytesrepr::{Bytes, FromBytes, ToBytes};
+use casper_types::bytesrepr::FromBytes;
 
 pub fn main() {
     // let hex_str = "9a0000001d0000006576656e745f52657075746174696f6e566f74696e674372656174656400ab69caaa1f0e920c5e3fe0e2a268f3187c99d6b1fcb51ba47ee7e11a640316ca000105040000007465737400ec8ac739798ed1ea18a9cde6f6c3ebb93fb4667a8b0befd98e4f1ba61c85e5790101010500000001000000809706000000000001000000809706000000000001020001088051010000000000";
@@ -23,7 +19,6 @@ pub fn main() {
     println!("Voting created: {:#?}", voting.created_at());
 
     let state = voting.state_in_time(voting.created_at());
-    // let mut new_state = None;
     println!("{:#?}", state);
 }
 
@@ -33,20 +28,20 @@ fn from_bytes<T: FromBytes>(bytes: &str) -> T {
     T::from_bytes(&bytes).unwrap().0
 }
 
-fn to_dictionary_item_key<T: ToBytes>(key: &T) -> String {
-    let preimage = key.to_bytes().unwrap();
-    println!("Preimage: {:?}", &preimage);
-    let hash = blake2b(preimage);
-    hex::encode(hash)
-}
+// fn to_dictionary_item_key<T: ToBytes>(key: &T) -> String {
+//     let preimage = key.to_bytes().unwrap();
+//     println!("Preimage: {:?}", &preimage);
+//     let hash = blake2b(preimage);
+//     hex::encode(hash)
+// }
 
-fn blake2b<T: AsRef<[u8]>>(data: T) -> [u8; 32] {
-    let mut result = [0; 32];
-    let mut hasher = VarBlake2b::new(32).expect("should create hasher");
+// fn blake2b<T: AsRef<[u8]>>(data: T) -> [u8; 32] {
+//     let mut result = [0; 32];
+//     let mut hasher = VarBlake2b::new(32).expect("should create hasher");
 
-    hasher.update(data);
-    hasher.finalize_variable(|slice| {
-        result.copy_from_slice(slice);
-    });
-    result
-}
+//     hasher.update(data);
+//     hasher.finalize_variable(|slice| {
+//         result.copy_from_slice(slice);
+//     });
+//     result
+// }

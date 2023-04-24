@@ -11,8 +11,8 @@ doctest = false
 test = false
 
 [dependencies]
-casper-contract = "1.4.3"
-casper-types = "1.5.0"
+casper-contract = "1.4.4"
+casper-types = { workspace = true }
 casper-dao-utils = { path = "../../dao-utils" }
 
 [features]

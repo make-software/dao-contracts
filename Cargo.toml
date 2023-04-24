@@ -12,6 +12,7 @@ members = [
 
 [workspace.dependencies]
 casper-event-standard = "0.1.1"
+casper-types = "1.6.0"
 
 [profile.release]
 codegen-units = 1
