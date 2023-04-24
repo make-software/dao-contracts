@@ -20,6 +20,8 @@ build-dao-contracts:
 	@wasm-strip $(OUTPUT_DIR)/dao_owned_nft_contract.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_20.wasm 2>/dev/null | true
 	@wasm-strip $(OUTPUT_DIR)/erc_721.wasm 2>/dev/null | true
+	@wasm-strip $(OUTPUT_DIR)/bid_escrow_contract.wasm 2>/dev/null | true
+	
 
 build-erc20:
 	$(CARGO_BUILD) -p casper-dao-erc20

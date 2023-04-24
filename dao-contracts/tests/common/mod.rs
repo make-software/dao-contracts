@@ -102,7 +102,6 @@ impl Default for DaoWorld {
         let bid_escrow_wallet = env.get_account(8);
         let rate_provider = CSPRRateProviderContractTest::new(&env, DEFAULT_CSPR_USD_RATE.into());
         let mut voting_ids = DaoIdsContractTest::new(&env);
-
         let mut variable_repository = VariableRepositoryContractTest::new(
             &env,
             rate_provider.address(),
