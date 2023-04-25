@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use casper_dao_utils::{
     casper_env::{call_contract, revert},
     consts,
-    conversions::sec_to_milli,
     Address,
     ContractCall,
     Error,
@@ -36,14 +35,14 @@ impl ConfigurationBuilder {
             configuration: Configuration::new(
                 DaoConfiguration {
                     post_job_dos_fee: Self::get_variable(POST_JOB_DOS_FEE, &variables),
-                    internal_auction_time: sec_to_milli(Self::get_variable(
+                    internal_auction_time: Self::get_variable(
                         INTERNAL_AUCTION_TIME,
                         &variables,
-                    )),
-                    public_auction_time: sec_to_milli(Self::get_variable(
+                    ),
+                    public_auction_time: Self::get_variable(
                         PUBLIC_AUCTION_TIME,
                         &variables,
-                    )),
+                    ),
                     default_policing_rate: Self::get_variable(DEFAULT_POLICING_RATE, &variables),
                     reputation_conversion_rate: Self::get_variable(
                         REPUTATION_CONVERSION_RATE,
@@ -62,34 +61,34 @@ impl ConfigurationBuilder {
                         BID_ESCROW_FORMAL_QUORUM_RATIO,
                         &variables,
                     ),
-                    bid_escrow_informal_voting_time: sec_to_milli(Self::get_variable(
+                    bid_escrow_informal_voting_time: Self::get_variable(
                         BID_ESCROW_INFORMAL_VOTING_TIME,
                         &variables,
-                    )),
-                    bid_escrow_formal_voting_time: sec_to_milli(Self::get_variable(
+                    ),
+                    bid_escrow_formal_voting_time: Self::get_variable(
                         BID_ESCROW_FORMAL_VOTING_TIME,
                         &variables,
-                    )),
-                    informal_voting_time: sec_to_milli(Self::get_variable(
+                    ),
+                    informal_voting_time: Self::get_variable(
                         INFORMAL_VOTING_TIME,
                         &variables,
-                    )),
-                    formal_voting_time: sec_to_milli(Self::get_variable(
+                    ),
+                    formal_voting_time: Self::get_variable(
                         FORMAL_VOTING_TIME,
                         &variables,
-                    )),
+                    ),
                     informal_stake_reputation: Self::get_variable(
                         INFORMAL_STAKE_REPUTATION,
                         &variables,
                     ),
-                    time_between_informal_and_formal_voting: sec_to_milli(Self::get_variable(
+                    time_between_informal_and_formal_voting: Self::get_variable(
                         TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING,
                         &variables,
-                    )),
-                    va_bid_acceptance_timeout: sec_to_milli(Self::get_variable(
+                    ),
+                    va_bid_acceptance_timeout: Self::get_variable(
                         VA_BID_ACCEPTANCE_TIMEOUT,
                         &variables,
-                    )),
+                    ),
                     va_can_bid_on_public_auction: Self::get_variable(
                         VA_CAN_BID_ON_PUBLIC_AUCTION,
                         &variables,
@@ -107,10 +106,10 @@ impl ConfigurationBuilder {
                         &variables,
                     ),
                     voting_clearness_delta: Self::get_variable(VOTING_CLEARNESS_DELTA, &variables),
-                    voting_start_after_job_worker_submission: sec_to_milli(Self::get_variable(
+                    voting_start_after_job_worker_submission: Self::get_variable(
                         VOTING_START_AFTER_JOB_WORKER_SUBMISSION,
                         &variables,
-                    )),
+                    ),
                     informal_quorum_ratio: Self::get_variable(INFORMAL_QUORUM_RATIO, &variables),
                     formal_quorum_ratio: Self::get_variable(FORMAL_QUORUM_RATIO, &variables),
                     bid_escrow_payment_ratio: Self::get_variable(

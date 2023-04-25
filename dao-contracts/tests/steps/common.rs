@@ -2,14 +2,14 @@ use casper_dao_utils::BlockTime;
 use cucumber::{gherkin::Step, given, when};
 
 use crate::common::{
-    helpers::{to_seconds, value_to_bytes},
+    helpers::{to_milliseconds, value_to_bytes},
     params::TimeUnit,
     DaoWorld,
 };
 
 #[when(expr = "{int} {time_unit} passed")]
 fn advance_time(w: &mut DaoWorld, amount: BlockTime, unit: TimeUnit) {
-    w.advance_time(to_seconds(amount, unit));
+    w.advance_time(to_milliseconds(amount, unit));
 }
 
 #[given(expr = "following configuration")]

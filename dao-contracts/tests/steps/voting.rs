@@ -3,7 +3,7 @@ use cucumber::{gherkin::Step, given, then, when};
 
 use crate::{
     common::{
-        helpers::{self, to_seconds},
+        helpers::{self, to_milliseconds},
         params::{
             voting::{Ballot, BallotBuilder, Choice, Voting, VotingType},
             Account,
@@ -236,11 +236,11 @@ fn conduct_voting(
         });
 
     // 5 days passed
-    world.advance_time(to_seconds(5, TimeUnit::Days));
+    world.advance_time(to_milliseconds(5, TimeUnit::Days));
     // informal voting ends
     world.finish_voting(&contract, voting_id, Some(voting_type));
     // 2 days passed
-    world.advance_time(to_seconds(2, TimeUnit::Days));
+    world.advance_time(to_milliseconds(2, TimeUnit::Days));
 
     // voters vote in favor
     let voting_type = VotingType::Formal;
@@ -259,7 +259,7 @@ fn conduct_voting(
         });
 
     // 5 days passed
-    world.advance_time(to_seconds(5, TimeUnit::Days));
+    world.advance_time(to_milliseconds(5, TimeUnit::Days));
     // formal voting ends
     world.finish_voting(&contract, voting_id, Some(voting_type));
 }

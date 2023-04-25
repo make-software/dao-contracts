@@ -56,13 +56,14 @@ pub fn is_balance_close_enough<A: Into<Balance>, B: Into<Balance>>(a: A, b: B) -
     diff < U512::from(10_000_000)
 }
 
-pub fn to_seconds(value: BlockTime, unit: TimeUnit) -> BlockTime {
-    match unit {
+pub fn to_milliseconds(value: BlockTime, unit: TimeUnit) -> BlockTime {
+    let seconds = match unit {
         TimeUnit::Seconds => value,
         TimeUnit::Minutes => value * 60,
         TimeUnit::Hours => value * 60 * 60,
         TimeUnit::Days => value * 60 * 60 * 24,
-    }
+    };
+    seconds * 1000u64
 }
 
 pub fn parse<T>(item: Option<&String>, err_msg: &str) -> T

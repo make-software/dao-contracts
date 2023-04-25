@@ -20,7 +20,7 @@ fn post_job_offer(
     maximum_budget: Balance,
     dos_fee: Balance,
 ) {
-    let timeframe = helpers::to_seconds(timeframe, time_unit);
+    let timeframe = helpers::to_milliseconds(timeframe, time_unit);
     let _ = w.post_offer(job_poster, timeframe, maximum_budget, dos_fee);
 }
 
@@ -52,7 +52,7 @@ fn submit_bid_internal(
     budget: Balance,
     stake: Balance,
 ) {
-    let timeframe = helpers::to_seconds(timeframe, time_unit);
+    let timeframe = helpers::to_milliseconds(timeframe, time_unit);
     w.post_bid(job_offer_id, worker, timeframe, budget, stake, false, None);
 }
 
@@ -70,7 +70,7 @@ fn submit_bid_external(
     onboarding: String,
 ) {
     let onboarding = parse_bool(onboarding);
-    let timeframe = helpers::to_seconds(timeframe, time_unit);
+    let timeframe = helpers::to_milliseconds(timeframe, time_unit);
     w.post_bid(
         job_offer_id,
         worker,
