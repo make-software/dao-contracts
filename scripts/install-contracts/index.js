@@ -323,7 +323,7 @@ async function main() {
     }),
     pk.publicKey,
     status.chainspec_name,
-    '2703423570',
+    '2874384570',
     [pk]
   );
 
@@ -344,7 +344,7 @@ async function main() {
     }),
     pk.publicKey,
     status.chainspec_name,
-    '2675884340',
+    '2845728860',
     [pk]
   );
 
