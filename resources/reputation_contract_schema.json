@@ -1,0 +1,371 @@
+{
+  "name": "ReputationContract",
+  "entrypoints": [
+    {
+      "name": "init",
+      "is_mutable": true,
+      "args": [],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "mint_passive",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "recipient",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn_passive",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "passive_balance_of",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U512"
+    },
+    {
+      "name": "change_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "add_to_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "remove_from_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "is_whitelisted",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Bool"
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      }
+    },
+    {
+      "name": "mint",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "recipient",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "total_supply",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "U512"
+    },
+    {
+      "name": "balance_of",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U512"
+    },
+    {
+      "name": "bulk_mint_burn",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "mints",
+          "ty": {
+            "Map": {
+              "key": "Key",
+              "value": "U512"
+            }
+          }
+        },
+        {
+          "name": "burns",
+          "ty": {
+            "Map": {
+              "key": "Key",
+              "value": "U512"
+            }
+          }
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn_all",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "stake",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "unstake",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voter",
+          "ty": "Key"
+        },
+        {
+          "name": "stake",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "bulk_unstake",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "stakes",
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "Key",
+                "U512"
+              ]
+            }
+          }
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "get_stake",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U512"
+    },
+    {
+      "name": "all_balances",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "Any"
+    },
+    {
+      "name": "partial_balances",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "addresses",
+          "ty": {
+            "List": "Key"
+          }
+        }
+      ],
+      "return_ty": "Any"
+    }
+  ],
+  "events": [
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Mint",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "fields": [
+        {
+          "name": "address",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        }
+      ]
+    }
+  ]
+}

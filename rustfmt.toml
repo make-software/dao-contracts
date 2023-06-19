@@ -1,9 +1,0 @@
-# Enable unstable features.
-unstable_features = true
-
-# Import releated features.
-imports_granularity = "Crate"
-reorder_imports = true
-group_imports = "StdExternalCrate"
-imports_layout = "HorizontalVertical"
-reorder_impl_items = true

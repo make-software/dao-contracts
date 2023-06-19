@@ -1,0 +1,53 @@
+[package]
+name = "dao"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+odra = { workspace = true }
+odra-modules = { workspace = true }
+macros = { path = "../macros" }
+
+[dev-dependencies]
+cucumber = { version = "0.19.1", features = ["libtest"] }
+futures = "0.3.5"
+derive_more = "0.99.11"
+cucumber-runner = { path = "../cucumber-runner" }
+
+[features]
+default = ["mock-vm"]
+mock-vm = ["odra/mock-vm", "odra-modules/mock-vm", "macros/mock-vm"]
+casper = ["odra/casper", "odra-modules/casper", "macros/casper"]
+casper-livenet = ["odra/casper-livenet", "odra-modules/casper-livenet", "macros/casper-livenet"]
+
+[[test]]
+name = "test_ownership"
+harness = false
+
+[[test]]
+name = "test_kyc"
+harness = false
+
+[[test]]
+name = "test_va"
+harness = false
+
+[[test]]
+name = "test_rate_provider"
+harness = false
+
+[[test]]
+name = "test_variables"
+harness = false
+
+[[test]]
+name = "test_voting"
+harness = false
+
+[[test]]
+name = "test_bid_escrow"
+harness = false
+
+[[test]]
+name = "test_slashing"
+harness = false

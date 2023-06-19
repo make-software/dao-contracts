@@ -1,8 +1,8 @@
 # BDD Testing with Gherkin
 DAO Contracts use the cucumber crate to run tests written in [gherkin](https://cucumber.io/docs/gherkin/) language.
 
-Feature files are located in `dao-contracts/tests/features` directory.
-Test executables are located in `dao-contracts/tests` directory and need to be registered in the
+Feature files are located in `dao/tests/features` directory.
+Test executables are located in `dao/tests` directory and need to be registered in the
 Cargo.toml file like this:
 
 ```toml
@@ -16,14 +16,13 @@ required-features = ["test-support"]
 To run the tests, for example for the `test_bid_escrow` executable, run the following command:
 
 ```bash
-cargo test -p casper-dao-contracts --test test_bid_escrow
+cargo odra test --test test_bid_escrow
 ```
 
-Keep in mind that tests require wasm files to be compiled. You can look at, or use the ready
-recipe in the Makefile:
+To run the tests on the casper VM, execute:
 
 ```bash
-make test-bid-escrow
+cargo odra test -b --test test_bid_escrow
 ```
 
 ## Writing tests
@@ -34,10 +33,14 @@ mod common;
 mod steps;
 
 use common::DaoWorld;
+use cucumber::writer::Libtest;
 use cucumber::World as _;
 
 fn main() {
-    let runner = DaoWorld::cucumber().run_and_exit("tests/features/bid_escrow/"); // path to feature files
+    let runner = DaoWorld::cucumber()
+        .with_writer(Libtest::or_basic())
+        .with_runner(cucumber_runner::SyncRunner::default())
+        .run_and_exit("tests/features/bid_escrow/internal_worker.feature");
     futures::executor::block_on(runner);
 }
 ```

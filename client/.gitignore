@@ -1,7 +1,0 @@
-.DS_Store
-node_modules/
-dist/
-.npmrc
-.env
-package-lock.json
-.casper-node

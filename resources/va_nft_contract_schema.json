@@ -1,0 +1,248 @@
+{
+  "name": "VaNftContract",
+  "entrypoints": [
+    {
+      "name": "init",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "name",
+          "ty": "String"
+        },
+        {
+          "name": "symbol",
+          "ty": "String"
+        },
+        {
+          "name": "base_uri",
+          "ty": "String"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "change_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "add_to_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "remove_from_whitelist",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "is_whitelisted",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Bool"
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      }
+    },
+    {
+      "name": "name",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "String"
+    },
+    {
+      "name": "symbol",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "String"
+    },
+    {
+      "name": "owner_of",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U256"
+        }
+      ],
+      "return_ty": "Key"
+    },
+    {
+      "name": "token_id",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": {
+        "Option": "U256"
+      }
+    },
+    {
+      "name": "balance_of",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "U256"
+    },
+    {
+      "name": "total_supply",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "U512"
+    },
+    {
+      "name": "token_uri",
+      "is_mutable": false,
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U256"
+        }
+      ],
+      "return_ty": "String"
+    },
+    {
+      "name": "base_uri",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "String"
+    },
+    {
+      "name": "mint",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "to",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "burn",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    }
+  ],
+  "events": [
+    {
+      "name": "Transfer",
+      "fields": [
+        {
+          "name": "from",
+          "ty": {
+            "Option": "Key"
+          }
+        },
+        {
+          "name": "to",
+          "ty": {
+            "Option": "Key"
+          }
+        },
+        {
+          "name": "token_id",
+          "ty": "U256"
+        }
+      ]
+    },
+    {
+      "name": "Approval",
+      "fields": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        },
+        {
+          "name": "approved",
+          "ty": {
+            "Option": "Key"
+          }
+        },
+        {
+          "name": "token_id",
+          "ty": "U256"
+        }
+      ]
+    },
+    {
+      "name": "ApprovalForAll",
+      "fields": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        },
+        {
+          "name": "operator",
+          "ty": "Key"
+        },
+        {
+          "name": "approved",
+          "ty": "Bool"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "fields": [
+        {
+          "name": "from",
+          "ty": {
+            "Option": "Key"
+          }
+        },
+        {
+          "name": "to",
+          "ty": {
+            "Option": "Key"
+          }
+        },
+        {
+          "name": "token_id",
+          "ty": "U256"
+        }
+      ]
+    }
+  ]
+}
