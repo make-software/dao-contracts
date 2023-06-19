@@ -21,7 +21,6 @@ on:
       - "**.md"
       - "docs/**"
       - "docs-high-level/**"
-      - "dao-contracts-schemas/**"
 
 jobs:
   build:
@@ -33,5 +32,7 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
-      - run: make prepare
-      - run: make test
+      - uses: extractions/setup-just@v1
+      - run: just prepare
+      - run: just check-lint
+      - run: just test

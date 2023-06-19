@@ -1,17 +1,16 @@
 [workspace]
 members = [
-    "dao-utils",
-    "dao-macros/sample-contract",
-    "dao-macros",
-    "dao-modules",
-    "dao-contracts",
-    "dao-erc20",
-    "dao-erc721",
-    "dao-contracts-schemas"
+    "dao",
+    "macros",
+]
+
+exclude = [
+    "cucumber-runner"
 ]
 
 [workspace.dependencies]
-casper-event-standard = "0.1.1"
+odra = { git = "https://github.com/odradev/odra.git", branch = "release/0.4.0", default-features = false }
+odra-modules = { git = "https://github.com/odradev/odra.git", branch = "release/0.4.0", default-features = false }
 
 [profile.release]
 codegen-units = 1

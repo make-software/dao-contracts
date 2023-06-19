@@ -1,0 +1,55 @@
+[[contracts]]
+name = "variable_repository_contract"
+fqn = "dao::core_contracts::VariableRepositoryContract"
+
+[[contracts]]
+name = "admin_contract"
+fqn = "dao::voting_contracts::AdminContract"
+
+[[contracts]]
+name = "reputation_contract"
+fqn = "dao::core_contracts::ReputationContract"
+
+[[contracts]]
+name = "va_nft_contract"
+fqn = "dao::core_contracts::VaNftContract"
+
+[[contracts]]
+name = "kyc_nft_contract"
+fqn = "dao::core_contracts::KycNftContract"
+
+[[contracts]]
+name = "cspr_rate_provider_contract"
+fqn = "dao::utils_contracts::CSPRRateProviderContract"
+
+[[contracts]]
+name = "dao_ids_contract"
+fqn = "dao::utils_contracts::DaoIdsContract"
+
+[[contracts]]
+name = "reputation_voter_contract"
+fqn = "dao::voting_contracts::ReputationVoterContract"
+
+[[contracts]]
+name = "kyc_voter_contract"
+fqn = "dao::voting_contracts::KycVoterContract"
+
+[[contracts]]
+name = "repo_voter_contract"
+fqn = "dao::voting_contracts::RepoVoterContract"
+
+[[contracts]]
+name = "simple_voter_contract"
+fqn = "dao::voting_contracts::SimpleVoterContract"
+
+[[contracts]]
+name = "slashing_voter_contract"
+fqn = "dao::voting_contracts::SlashingVoterContract"
+
+[[contracts]]
+name = "bid_escrow_contract"
+fqn = "dao::bid_escrow::contract::BidEscrowContract"
+
+[[contracts]]
+name = "onboarding_request_contract"
+fqn = "dao::voting_contracts::OnboardingRequestContract"

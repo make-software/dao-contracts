@@ -1,0 +1,16 @@
+[package]
+name = "cucumber-runner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cucumber = { version = "0.19.1", features = ["libtest", "macros"] }
+futures = { version = "0.3.5", features = ["thread-pool"] }
+derive_more = "0.99.11"
+regex = "1.8.3"
+clap = "4.3.0"
+gherkin = "0.13.0"
+
+[[test]]
+name = "test_counter"
+harness = false

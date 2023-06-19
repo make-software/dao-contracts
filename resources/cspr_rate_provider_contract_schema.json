@@ -1,0 +1,42 @@
+{
+  "name": "CSPRRateProviderContract",
+  "entrypoints": [
+    {
+      "name": "init",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "rate",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "get_rate",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": "U512"
+    },
+    {
+      "name": "set_rate",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "rate",
+          "ty": "U512"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "get_owner",
+      "is_mutable": false,
+      "args": [],
+      "return_ty": {
+        "Option": "Key"
+      }
+    }
+  ],
+  "events": []
+}

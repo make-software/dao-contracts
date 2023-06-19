@@ -17,11 +17,12 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
-      - run: make prepare
-      - run: make rebuild-docs
+      - uses: extractions/setup-just@v1
+      - run: just prepare
+      - run: just rebuild-docs
       - run: git config --local user.email "action@github.com"
       - run: git config --local user.name "GitHub Action"
-      - run: git add docs/
+      - run: git add -f docs/
       - run: git commit -m "Docs"
       - run: git config --global --add safe.directory /github/workspace
       - name: Push to gh-pages
