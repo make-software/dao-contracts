@@ -1,0 +1,21 @@
+[package]
+name = "dao-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+odra = { git = "https://github.com/odradev/odra.git", branch = "release/0.4.0", default-features = false }
+dao = { path = "../dao", default-features = false }
+toml = "0.7"
+serde = "1.0"
+serde_derive = "1.0"
+chrono = "0.4.26"
+clap = { version = "4.3.4", features = ["derive"] }
+
+[features]
+default = ["casper-livenet"]
+casper-livenet = ["odra/casper-livenet", "dao/casper-livenet"]
+
+[[bin]]
+name = "dao-client"
+path = "bin/dao_client.rs"

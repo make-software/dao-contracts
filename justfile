@@ -15,12 +15,15 @@ test:
 
 clippy:
 	cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
+	cd dao-client && cargo clippy --all-targets -- -D warnings -A clippy::bool-assert-comparison
 
 check-lint: clippy
 	cargo fmt -- --check
+	cd dao-client && cargo fmt -- --check
 
 lint: clippy
 	cargo fmt
+	cd dao-client && cargo fmt
 
 clean:
     cargo odra clean
@@ -57,3 +60,4 @@ test-voting: build-dao-contracts
 
 test-rate-provider: build-dao-contracts
 	cargo odra test -b casper -- --test test_rate_provider
+
