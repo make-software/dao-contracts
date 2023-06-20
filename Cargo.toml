@@ -5,7 +5,8 @@ members = [
 ]
 
 exclude = [
-    "cucumber-runner"
+    "cucumber-runner",
+    "dao-client"
 ]
 
 [workspace.dependencies]
