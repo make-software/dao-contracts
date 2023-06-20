@@ -1,3 +1,5 @@
+use std::{cmp::Ordering, str::FromStr};
+
 use dao::{
     bid_escrow::contract::BidEscrowContractDeployer,
     core_contracts::{
@@ -14,7 +16,8 @@ use dao::{
 use odra::{client_env, types::Address};
 
 use crate::{
-    cspr, DaoSnapshot, DeployedContractsToml, DEFAULT_CSPR_USD_RATE, DEPLOYED_CONTRACTS_FILE,
+    cspr, error::Error, log, DaoSnapshot, DeployedContractsToml, DEFAULT_CSPR_USD_RATE,
+    DEPLOYED_CONTRACTS_FILE,
 };
 
 /// Deploy all DAO contracts.
@@ -210,8 +213,71 @@ pub fn setup_slashing_voter() {
 
 /// Print addresses of deployed contracts.
 pub fn print_addresses() {
-    println!("Addresses from {} file:\n", DEPLOYED_CONTRACTS_FILE);
+    log::info(format!(
+        "Addresses from {} file:\n",
+        DEPLOYED_CONTRACTS_FILE
+    ));
     for contract in DeployedContractsToml::load().unwrap().contracts {
-        println!("{:30}: {}", contract.name, contract.package_hash);
+        log::info(format!("{:30}: {}", contract.name, contract.package_hash));
+    }
+}
+
+/// Setup the VA with reputation, kyc and va tokens.
+pub fn setup_va(account_hash: &str, reputation_amount: u64) {
+    let va = Address::from_str(account_hash)
+        .unwrap_or_else(|_| Error::InvalidAccount(account_hash.to_string()).print_and_die());
+
+    let reputation_amount = odra::types::Balance::from(reputation_amount);
+    let mut dao = DaoSnapshot::load();
+
+    log::info(format!(
+        "Setting up VA {} with {} reputation.",
+        va.to_string(),
+        reputation_amount
+    ));
+
+    // Check if the account has KYC token.
+    if dao.kyc_token.balance_of(&va).is_zero() {
+        log::info("VA doesn't have a KYC Token. Minting 1 KYC Token.");
+        client_env::set_gas(cspr(10));
+        dao.kyc_token.mint(va);
+    } else {
+        log::info("VA already has a KYC Token.");
+    }
+
+    // Check if the account has VA token.
+    if dao.va_token.balance_of(&va).is_zero() {
+        log::info("VA doesn't have a VA Token. Minting 1 VA Token.");
+        client_env::set_gas(cspr(10));
+        dao.va_token.mint(va);
+    } else {
+        log::info("VA already has a VA Token.");
+    }
+
+    // Set the reputation.
+    let current_reputation = dao.reputation_token.balance_of(va);
+    match current_reputation.cmp(&reputation_amount) {
+        Ordering::Less => {
+            let reputation_to_mint = reputation_amount - current_reputation;
+            log::info(format!(
+                "VA has less reputation than needed. Minting {} reputation.",
+                reputation_to_mint
+            ));
+            client_env::set_gas(cspr(10));
+            dao.reputation_token.mint(va, reputation_to_mint);
+        }
+        Ordering::Equal => {
+            log::info("VA already has the correct amount of reputation.");
+        }
+        Ordering::Greater => {
+            let reputation_to_burn = current_reputation - reputation_amount;
+            log::info(format!(
+                "VA has more reputation than needed. Burning {} reputation.",
+                reputation_to_burn
+            ));
+            client_env::set_gas(cspr(10));
+            dao.reputation_token
+                .burn(va, current_reputation - reputation_amount);
+        }
     }
 }

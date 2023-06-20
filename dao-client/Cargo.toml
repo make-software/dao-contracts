@@ -11,6 +11,8 @@ serde = "1.0"
 serde_derive = "1.0"
 chrono = "0.4.26"
 clap = { version = "4.3.4", features = ["derive"] }
+prettycli = "0.1.1"
+thiserror = "1.0.40"
 
 [features]
 default = ["casper-livenet"]
