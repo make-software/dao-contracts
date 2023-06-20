@@ -1,4 +1,4 @@
-//! Bid-related structs.
+//! Bid struct and structs that the Bid uses.
 use crate::bid_escrow::job::{JobStatus, PickBidRequest};
 use crate::bid_escrow::job_offer::{AuctionState, JobOfferStatus};
 use crate::bid_escrow::types::{BidId, JobOfferId};
@@ -72,7 +72,7 @@ pub struct CancelBidRequest {
     pub va_bid_acceptance_timeout: BlockTime,
 }
 
-/// Data required to reclaim a bid during [Grace Period](crate::bid_escrow#grace-period).
+/// Data required to reclaim a bid during [Grace Period](crate::bid_escrow::contract#grace-period).
 pub struct ReclaimBidRequest {
     /// New bid id.
     pub new_bid_id: BidId,
@@ -117,7 +117,7 @@ pub struct Bid {
     pub proposed_payment: Balance,
     /// Bid reputation stake.
     pub reputation_stake: Balance,
-    /// Bid CSPR stake - for an [External Worker](crate::bid_escrow#definitions).
+    /// Bid CSPR stake - for an [External Worker](crate::bid_escrow::contract#definitions).
     pub cspr_stake: Option<Balance>,
     /// Should be onborded when the Job is done.
     pub onboard: bool,
@@ -273,37 +273,5 @@ impl Bid {
     /// Gets the bid id.
     pub fn bid_id(&self) -> BidId {
         self.bid_id
-    }
-}
-
-///  Serializable shortened representation of a `Bid`.
-///
-/// Derives from the [`Bid`] struct.
-/// Contains only the essential fields from the original [`Bid`] required in cross-contract communication.
-#[derive(OdraType)]
-pub struct ShortenedBid {
-    pub bid_id: BidId,
-    pub reputation_stake: Balance,
-    pub worker: Address,
-}
-
-impl ShortenedBid {
-    /// Creates a new instance of ShortenedBid.
-    pub fn new(bid_id: BidId, reputation_stake: Balance, worker: Address) -> Self {
-        Self {
-            bid_id,
-            reputation_stake,
-            worker,
-        }
-    }
-}
-
-impl From<&Bid> for ShortenedBid {
-    fn from(value: &Bid) -> Self {
-        Self {
-            bid_id: value.bid_id,
-            reputation_stake: value.reputation_stake,
-            worker: value.worker,
-        }
     }
 }

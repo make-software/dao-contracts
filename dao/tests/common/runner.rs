@@ -111,7 +111,6 @@ impl CustomRunner {
     fn execute_feature(
         feature: gherkin::Feature,
     ) -> impl Stream<Item = event::Cucumber<DaoWorld>> {
-        // dbg!(feature.rules.clone());
         let feature = Arc::new(feature);
         stream::once(future::ready(event::Feature::Started))
             .chain(

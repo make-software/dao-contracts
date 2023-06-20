@@ -1,3 +1,4 @@
+//! Voting Engine.
 use crate::configuration::Configuration;
 use crate::modules::refs::ContractRefs;
 use crate::rules::validation::voting::CanCreateVoting;
@@ -31,10 +32,10 @@ pub mod voting_state_machine;
 /// When formal voting passes, an action can be performed - a contract can be called with voted arguments.
 ///
 /// Governance voting uses:
-/// 1. [Reputation Token](crate::reputation::ReputationContract) to handle reputation staking.
-/// 2. [Variable Repo](crate::variable_repository::VariableRepositoryContract) for reading voting configuration.
+/// 1. [Reputation Token](crate::core_contracts::ReputationContract) to handle reputation staking.
+/// 2. [Variable Repo](crate::core_contracts::VariableRepositoryContract) for reading voting configuration.
 ///
-/// For example implementation see [AdminContract](crate::admin::AdminContract).
+/// For example implementation see [AdminContract](crate::voting_contracts::AdminContract).
 #[odra::module(events = [VotingCreatedInfo, BallotCast, VotingEnded, VotingCanceled, BallotCanceled])]
 pub struct VotingEngine {
     refs: ContractRefs,
@@ -61,9 +62,9 @@ impl VotingEngine {
     /// * [`Error::NotOnboarded`] if the configuration requires the creator to be a VA but is not.
     ///
     /// [Voting]: VotingStateMachine
-    /// [Variable Repo]: crate::variable_repository::VariableRepositoryContract
-    /// [`Error::NotOnboarded`]: casper_dao_utils::Error::NotOnboarded
-    /// [Dao Ids Contract]: crate::ids::DaoIdsContractInterface
+    /// [Variable Repo]: crate::core_contracts::VariableRepositoryContract
+    /// [`Error::NotOnboarded`]: Error::NotOnboarded
+    /// [Dao Ids Contract]: crate::utils_contracts::DaoIdsContract
     /// [`cast`]: Self::cast_ballot()
     pub fn create_voting(
         &mut self,
@@ -376,7 +377,7 @@ impl VotingEngine {
     /// # Events
     /// * [`BallotCast`] event.
     ///
-    /// [Reputation Token Contract]: crate::reputation::ReputationContractInterface
+    /// [Reputation Token Contract]: crate::core_contracts::ReputationContract
     pub fn cast_ballot(
         &mut self,
         voter: Address,
@@ -493,7 +494,7 @@ impl VotingEngine {
 
     /// Iterates over all the ballots and unstakes reputation. Returns a map of address to it's stake.
     ///
-    /// Calls [Reputation Token Contract](crate::reputation::ReputationContractInterface) to perform unstake operation.
+    /// Calls [Reputation Token Contract](crate::core_contracts::ReputationContract) to perform unstake operation.
     pub fn unstake_all_reputation(
         &mut self,
         voting_id: VotingId,
@@ -583,7 +584,7 @@ impl VotingEngine {
 
         for i in 0..self.voters_count(voting_id, voting_type) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.unbound {
+            if ballot.unbound || ballot.canceled {
                 continue;
             }
             if ballot.choice.is_against() {
@@ -614,7 +615,7 @@ impl VotingEngine {
         let mut stakes: Vec<(Address, Balance)> = Vec::new();
         for i in 0..self.voters_count(voting_id, voting_type) {
             let ballot = self.get_ballot_at(voting_id, voting_type, i);
-            if ballot.unbound {
+            if ballot.unbound || ballot.canceled {
                 continue;
             }
             if ballot.choice.is_in_favor() {

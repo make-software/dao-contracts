@@ -60,10 +60,6 @@ Feature: Slashing voter can fully slash VA.
       | VA2              | 0            | 2000         | 1100       |
       | VA3              | 0            | 2000         | 0          |
 
-    # TODO: VA1 is worker in active job
-    # TODO: VA1 is job poster in active job
-    # TODO: VA1 votes in job acceptance voting.
-
     # VA1 gets slashed via SlashingVoter.
     When VA2 starts voting with the following config
         | voting_contract       | stake | arg1  | arg2 |

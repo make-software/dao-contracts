@@ -91,7 +91,7 @@ fn submit_bid_external(
             worker,
             timeframe,
             *budget,
-            Balance::zero(), // TODO: Should be zero?
+            Balance::zero(), // WON'T DO: Should be zero? - the interface is frozen
             onboarding,
             Some(*stake),
         )

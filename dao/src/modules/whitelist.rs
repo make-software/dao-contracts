@@ -1,3 +1,4 @@
+//! Whitelist module.
 use crate::modules::whitelist::events::{AddedToWhitelist, RemovedFromWhitelist};
 use crate::utils::Error;
 use odra::contract_env::{caller, revert};
@@ -44,13 +45,13 @@ pub mod events {
     use odra::types::Address;
     use odra::Event;
 
-    /// Informs new address has been added to the whitelist.
+    /// Event emitted when new address has been added to the whitelist.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct AddedToWhitelist {
         pub address: Address,
     }
 
-    /// Informs new address has been removed from the whitelist.
+    /// Event emitted when new address has been removed from the whitelist.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct RemovedFromWhitelist {
         pub address: Address,

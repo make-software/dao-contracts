@@ -1,4 +1,4 @@
-use cucumber::{gherkin::Step, then};
+use cucumber::{gherkin::Step, then, when};
 
 use crate::common::params::ReputationBalance;
 use crate::common::{
@@ -6,6 +6,11 @@ use crate::common::{
     params::{Account, CsprBalance},
     DaoWorld,
 };
+
+#[when(expr = "{account} burns all reputation of {account}")]
+fn burn_all_reputation(world: &mut DaoWorld, burner: Account, holder: Account) {
+    world.burn_all_reputation(&burner, &holder);
+}
 
 #[then(expr = "total reputation is {reputation}")]
 fn total_reputation(world: &mut DaoWorld, total_reputation_expected: ReputationBalance) {

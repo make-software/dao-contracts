@@ -1,3 +1,4 @@
+//! Reusable smart contracts for building DAOs on top of Casper.
 pub mod bid_escrow;
 pub mod configuration;
 pub mod core_contracts;

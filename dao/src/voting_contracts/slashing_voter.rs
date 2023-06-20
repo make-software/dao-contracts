@@ -205,7 +205,7 @@ pub struct SlashTask {
     pub reputation_at_voting_creation: Balance,
 }
 
-/// Informs slashing voting has been created.
+/// Event emitted when slashing voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct SlashingVotingCreated {
     address_to_slash: Address,

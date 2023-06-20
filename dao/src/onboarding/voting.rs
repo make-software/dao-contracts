@@ -2,8 +2,6 @@
 
 use crate::bid_escrow::events::TransferReason;
 use crate::configuration::{Configuration, ConfigurationBuilder};
-use crate::modules::kyc_info::KycInfo;
-use crate::modules::onboarding_info::OnboardingInfo;
 use crate::modules::refs::ContractRefs;
 use crate::onboarding::request::{OnboardingRequest, Request};
 use crate::utils::types::DocumentHash;
@@ -22,6 +20,7 @@ use odra::contract_env::{caller, revert};
 use odra::types::{Address, Balance};
 use odra::{Mapping, UnwrapOrRevert};
 
+/// Onboarding voting module.
 #[odra::module]
 pub struct Onboarding {
     requests: Mapping<VotingId, Request>,
@@ -29,8 +28,6 @@ pub struct Onboarding {
     ids: Mapping<Address, VotingId>,
     refs: ContractRefs,
     voting: VotingEngine,
-    kyc_info: KycInfo,
-    onboarding_info: OnboardingInfo,
 }
 
 impl Onboarding {
@@ -57,9 +54,9 @@ impl Onboarding {
             reason,
             rep_stake,
             cspr_deposit,
-            is_va: self.onboarding_info.is_onboarded(&requestor),
+            is_va: !self.refs.va_token().balance_of(&requestor).is_zero(),
             exists_ongoing_voting,
-            is_kyced: self.kyc_info.is_kycd(&requestor),
+            is_kyced: !self.refs.kyc_token().balance_of(&requestor).is_zero(),
         };
 
         // Create voting and cast creator's ballot

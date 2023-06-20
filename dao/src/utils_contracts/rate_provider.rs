@@ -34,7 +34,7 @@ impl CSPRRateProviderContract {
     /// Updates the current CSPR:Fiat rate.
     ///
     /// # Errors
-    /// * [`NotAnOwner`](utils::errors::Error::NotAnOwner) if the caller is not the contract owner.
+    /// * [`NotAnOwner`](crate::utils::Error::NotAnOwner) if the caller is not the contract owner.
     pub fn set_rate(&mut self, rate: Balance) {
         self.owner.ensure_owner();
         self.rate.set(rate);

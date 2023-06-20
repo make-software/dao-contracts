@@ -1,3 +1,4 @@
+//! Module with utility functions for the DAO contract.
 pub mod consts;
 mod contract_call;
 mod errors;

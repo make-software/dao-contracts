@@ -33,7 +33,7 @@
 //! | BidEscrowPaymentRatio              | 0.1           | 100          | float   | How much CSPR is sent to GovernanceWallet after the Job is finished                                                                                                                                                             |
 //! | BidEscrowWalletAddress             |               |              | address | An address of a multisig wallet of the DAO.
 //!
-//!  [Repo Voting]: crate::repo_voter::RepoVoterContractInterface
+//!  [Repo Voting]: crate::voting_contracts::RepoVoterContract
 
 use crate::modules::{AccessControl, Record, Repository};
 use crate::utils::Error;
@@ -42,6 +42,7 @@ use odra::types::{Address, Bytes};
 use odra::UnwrapOrRevert;
 use std::collections::BTreeMap;
 
+/// Variable Repository Contract.
 #[odra::module]
 pub struct VariableRepositoryContract {
     pub access_control: AccessControl,
@@ -75,14 +76,14 @@ impl VariableRepositoryContract {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets the default configuration of the [`Repository`](casper_dao_modules::Repository)
+    /// * Sets the default configuration of the [`Repository`](crate::modules::repository::Repository)
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
-    /// * multiple [`ValueUpdated`](casper_dao_modules::events::ValueUpdated) events,
+    /// * [`OwnerChanged`](crate::modules::owner::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist),
+    /// * multiple [`ValueUpdated`](crate::modules::repository::events::ValueUpdated) events,
     /// one per value of the default repository configuration.
     #[odra(init)]
     pub fn init(
@@ -106,12 +107,12 @@ impl VariableRepositoryContract {
     /// returns the previously set value.
     ///
     /// # Events
-    /// * [`ValueUpdated`](casper_dao_modules::events::ValueUpdated).
+    /// * [`ValueUpdated`](crate::modules::repository::events::ValueUpdated).
     ///
     /// # Errors
-    /// * [`NotWhitelisted`](casper_dao_utils::Error::NotWhitelisted) if the caller
+    /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if the caller
     /// is not a whitelisted user.
-    /// * [`ActivationTimeInPast`](casper_dao_utils::Error::ActivationTimeInPast) if
+    /// * [`ActivationTimeInPast`](crate::utils::Error::ActivationTimeInPast) if
     /// the activation time has passed already.
     pub fn update_at(&mut self, key: String, value: Bytes, activation_time: Option<u64>) {
         self.access_control.ensure_whitelisted();
@@ -126,7 +127,7 @@ impl VariableRepositoryContract {
     }
 
     /// Returns the full (current and future) value stored under the given key.
-    /// See [`Record`](casper_dao_modules::Record).
+    /// See [`Record`](Record).
     ///
     /// If the key does not exist, the `None` value is returned.
     pub fn get_full_value(&self, key: String) -> Option<Record> {
@@ -143,7 +144,7 @@ impl VariableRepositoryContract {
         self.repository.keys.get(index)
     }
 
-    /// Returns the number of existing keys in the [`Repository`](casper_dao_modules::Repository).
+    /// Returns the number of existing keys in the [`Repository`](crate::modules::repository::Repository).
     pub fn keys_count(&self) -> u32 {
         self.repository.keys.len()
     }

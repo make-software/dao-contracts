@@ -1,3 +1,4 @@
+//! Ballot struct and its related types.
 use crate::voting::types::VotingId;
 use crate::voting::voting_engine::voting_state_machine::VotingType;
 use odra::types::{Address, Balance};

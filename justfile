@@ -32,7 +32,7 @@ rebuild-docs:
 	rm -rf docs
 	cargo doc --workspace --lib --no-deps
 	cp -r target/doc docs
-	echo "<meta http-equiv=\"refresh\" content=\"0; url=casper_dao_contracts\">" > docs/index.html
+	echo "<meta http-equiv=\"refresh\" content=\"0; url=dao\">" > docs/index.html
 
 test-admin:
 	cargo odra test -b casper -s -- --test test_admin

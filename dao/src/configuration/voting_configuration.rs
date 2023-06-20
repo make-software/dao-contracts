@@ -2,6 +2,7 @@ use crate::utils::ContractCall;
 use odra::types::Address;
 use odra::OdraType;
 
+/// A serializable data structure that represents voting configuration.
 #[derive(OdraType)]
 pub struct VotingConfiguration {
     pub is_bid_escrow: bool,

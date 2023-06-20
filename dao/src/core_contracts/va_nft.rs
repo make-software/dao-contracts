@@ -16,6 +16,7 @@ use odra::types::{Address, Balance, U256};
 
 use crate::core_contracts::dao_nft::{DaoNft, TokenId, TokenUri};
 
+/// NFT contract holding information about members of the DAO.
 #[odra::module]
 pub struct VaNftContract {
     token: DaoNft,
@@ -35,19 +36,19 @@ impl VaNftContract {
         to self.token {
             /// Changes the ownership of the contract. Transfers ownership to the `owner`.
             /// Only the current owner is permitted to call this method.
-            /// [`Read more`](AccessControl::change_ownership())
+            /// [`Read more`](crate::modules::access_control::AccessControl::change_ownership())
             pub fn change_ownership(&mut self, owner: Address);
             /// Adds a new address to the whitelist.
-            /// [`Read more`](AccessControl::add_to_whitelist())
+            /// [`Read more`](crate::modules::access_control::AccessControl::add_to_whitelist())
             pub fn add_to_whitelist(&mut self, address: Address);
             /// Remove address from the whitelist.
-            /// [`Read more`](AccessControl::remove_from_whitelist())
+            /// [`Read more`](crate::modules::access_control::AccessControl::remove_from_whitelist())
             pub fn remove_from_whitelist(&mut self, address: Address);
             /// Checks whether the given address is added to the whitelist.
-            /// [`Read more`](AccessControl::is_whitelisted()).
+            /// [`Read more`](crate::modules::access_control::AccessControl::is_whitelisted()).
             pub fn is_whitelisted(&self, address: Address) -> bool;
             /// Returns the address of the current owner.
-            /// [`Read more`](AccessControl::get_owner()).
+            /// [`Read more`](crate::modules::access_control::AccessControl::get_owner()).
             pub fn get_owner(&self) -> Option<Address>;
             /// Returns a descriptive name for a collection of tokens in this contract.
             pub fn name(&self) -> String;
@@ -79,21 +80,21 @@ impl VaNftContract {
             /// Each user is entitled to own only one token.
             ///
             /// # Errors
-            /// * [`UserAlreadyOwnsToken`](utils::errors::Error::UserAlreadyOwnsToken) if the `to` address
+            /// * [`UserAlreadyOwnsToken`](crate::utils::Error::UserAlreadyOwnsToken) if the `to` address
             /// already owns a token.
             ///
             /// # Events
-            /// * [`Transfer`](casper_dao_erc721::events::Transfer) when minted successfully.
+            /// * [`Transfer`](odra_modules::erc721::events::Transfer) when minted successfully.
             pub fn mint(&mut self, to: Address);
             /// Burns a token with a given id. Decrements the balance of the token owner
             /// and decrements the total supply.
             ///
             /// # Errors
-            /// * [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if caller
+            /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if caller
             /// is not whitelisted.
             ///
             /// # Events
-            /// * [`Transfer`](casper_dao_erc721::events::Transfer) when burnt successfully.
+            /// * [`Transfer`](odra_modules::erc721::events::Transfer) when burnt successfully.
             pub fn burn(&mut self, owner: Address);
         }
     }

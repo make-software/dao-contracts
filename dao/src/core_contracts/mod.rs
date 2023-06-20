@@ -1,3 +1,4 @@
+//! Module containing core contracts of the DAO.
 mod dao_nft;
 mod kyc_ntf;
 mod reputation;

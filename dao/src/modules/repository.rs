@@ -1,3 +1,4 @@
+//! Repository module.
 use crate::modules::repository::events::ValueUpdated;
 use crate::utils::consts;
 use crate::utils::Error::{ActivationTimeInPast, KeyValueStorageError};
@@ -175,7 +176,7 @@ pub mod events {
     use odra::types::Bytes;
     use odra::Event;
 
-    /// Informs the repository value has been changed.
+    /// Event emitted when the repository value has been changed.
     #[derive(Event, PartialEq, Eq, Debug)]
     pub struct ValueUpdated {
         pub key: String,

@@ -1,3 +1,4 @@
+//! Voting module.
 pub mod ballot;
 pub mod cspr_redistribution;
 pub mod ids;

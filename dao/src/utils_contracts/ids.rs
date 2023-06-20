@@ -9,7 +9,7 @@ use odra::{contract_env, types::Address, Sequence};
 /// Dao Ids contract manages voting ids in the system.
 /// Only a whitelisted account is eligible to generate ids.
 ///
-/// For details see [DaoIdsContractInterface](DaoIdsContractInterface).
+/// For details see [DaoIdsContract]).
 #[odra::module]
 pub struct DaoIdsContract {
     access_control: AccessControl,
@@ -57,7 +57,7 @@ impl DaoIdsContract {
     /// Returns the next voting id in the system.
     ///
     /// # Errors
-    /// Throws [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if the caller is not whitelisted.
+    /// Throws [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if the caller is not whitelisted.
     pub fn next_voting_id(&mut self) -> u32 {
         self.access_control.ensure_whitelisted();
         self.voting_id_seq.next_value()

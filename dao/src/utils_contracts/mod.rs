@@ -1,3 +1,4 @@
+//! Module with utilities contracts used by DAO.
 mod ids;
 mod rate_provider;
 
