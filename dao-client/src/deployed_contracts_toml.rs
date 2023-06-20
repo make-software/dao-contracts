@@ -4,7 +4,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use odra::types::Address;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::DEPLOYED_CONTRACTS_FILE;
+use crate::{error::Error, DEPLOYED_CONTRACTS_FILE};
 
 /// This struct represents a contract in the `deployed_contracts.toml` file.
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -43,7 +43,7 @@ impl DeployedContractsToml {
             .iter()
             .find(|c| c.name == name)
             .map(|c| Address::from_str(&c.package_hash).unwrap())
-            .unwrap_or_else(|| panic!("Contract {} not found", name))
+            .unwrap_or_else(|| Error::ContractAddressNotFound(name.to_string()).print_and_die())
     }
 
     /// Update the file.

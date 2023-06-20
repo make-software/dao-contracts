@@ -15,14 +15,22 @@ enum Commands {
     Whitelist,
     SetupSlashingVoter,
     PrintAddresses,
+    SetupVA {
+        account_hash: String,
+        reputation_amount: u64,
+    },
 }
 
 pub fn parse() {
-    let cli = Cli::parse();
-    match cli.command {
-        Commands::DeployAll => actions::deploy_all(),
-        Commands::Whitelist => actions::whitelist(),
-        Commands::SetupSlashingVoter => actions::setup_slashing_voter(),
-        Commands::PrintAddresses => actions::print_addresses(),
+    use Commands::*;
+    match Cli::parse().command {
+        DeployAll => actions::deploy_all(),
+        Whitelist => actions::whitelist(),
+        SetupSlashingVoter => actions::setup_slashing_voter(),
+        PrintAddresses => actions::print_addresses(),
+        SetupVA {
+            account_hash,
+            reputation_amount,
+        } => actions::setup_va(&account_hash, reputation_amount),
     }
 }
