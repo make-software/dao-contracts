@@ -5,7 +5,7 @@
 //! Once voting is created, until the end, voting relies on the system's state at the moment of voting creation.
 //! It mitigates unexpected behavior during voting if the internal DAO state changes.
 //!
-//! [`Governance Variables`]: crate::variable_repository
+//! [`Governance Variables`]: crate::core_contracts::VariableRepositoryContract
 mod builder;
 mod dao_configuration;
 mod voting_configuration;
@@ -95,24 +95,24 @@ impl Configuration {
 
     /// Indicates if the time between informal and formal voting should be doubled.
     ///
-    /// See [Variable Repository](crate::variable_repository) TimeBetweenInformalAndFormalVoting
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) TimeBetweenInformalAndFormalVoting
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn should_double_time_between_votings(&self) -> bool {
         self.voting_configuration.double_time_between_votings
     }
 
     /// Gets the address of the contract holding the current fiat conversion rate.
     ///
-    /// See [Variable Repository](crate::variable_repository) FiatConversionRateAddress
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) FiatConversionRateAddress
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn fiat_conversion_rate_address(&self) -> Address {
         self.dao_configuration.fiat_conversion_rate_address
     }
 
     /// Gets formal voting quorum.
     ///
-    /// See [Variable Repository](crate::variable_repository) BidEscrowFormalQuorumRatio/FormalQuorumRatio
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) BidEscrowFormalQuorumRatio/FormalQuorumRatio
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn formal_voting_quorum(&self) -> u32 {
         let ratio = match self.voting_configuration.is_bid_escrow {
             true => self.dao_configuration.bid_escrow_formal_quorum_ratio,
@@ -125,8 +125,8 @@ impl Configuration {
 
     /// Gets informal voting quorum.
     ///
-    /// See [Variable Repository](crate::variable_repository) BidEscrowInformalQuorumRatio/InformalQuorumRatio
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) BidEscrowInformalQuorumRatio/InformalQuorumRatio
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn informal_voting_quorum(&self) -> u32 {
         let ratio = match self.voting_configuration.is_bid_escrow {
             true => self.dao_configuration.bid_escrow_informal_quorum_ratio,
@@ -139,8 +139,8 @@ impl Configuration {
 
     /// Gets informal voting time.
     ///
-    /// See [Variable Repository](crate::variable_repository) BidEscrowInformalVotingTime/InformalVotingTime
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) BidEscrowInformalVotingTime/InformalVotingTime
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn informal_voting_time(&self) -> BlockTime {
         match self.voting_configuration.is_bid_escrow {
             true => self.dao_configuration.bid_escrow_informal_voting_time,
@@ -150,8 +150,8 @@ impl Configuration {
 
     /// Gets formal voting time.
     ///
-    /// See [Variable Repository](crate::variable_repository) BidEscrowInformalVotingTime/InformalVotingTime
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) BidEscrowInformalVotingTime/InformalVotingTime
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn formal_voting_time(&self) -> BlockTime {
         match self.voting_configuration.is_bid_escrow {
             true => self.dao_configuration.bid_escrow_formal_voting_time,
@@ -161,16 +161,16 @@ impl Configuration {
 
     /// Gets formal voting time.
     ///
-    /// See [Variable Repository](crate::variable_repository) InformalStakeReputation
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) InformalStakeReputation
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn informal_stake_reputation(&self) -> bool {
         self.dao_configuration.informal_stake_reputation
     }
 
     /// Gets the time between informal and formal voting.
     ///
-    /// See [Variable Repository](crate::variable_repository) TimeBetweenInformalAndFormalVoting
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) TimeBetweenInformalAndFormalVoting
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn time_between_informal_and_formal_voting(&self) -> BlockTime {
         if self.voting_configuration.double_time_between_votings {
             self.dao_configuration
@@ -184,24 +184,24 @@ impl Configuration {
 
     /// Gets the address of a multisig wallet of the DAO.
     ///
-    /// See [Variable Repository](crate::variable_repository) BidEscrowWalletAddress
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) BidEscrowWalletAddress
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn bid_escrow_wallet_address(&self) -> Address {
         self.dao_configuration.bid_escrow_wallet_address
     }
 
     /// Gets the default reputation slash ratio.
     ///
-    /// See [Variable Repository](crate::variable_repository) DefaultReputationSlash
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) DefaultReputationSlash
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn default_reputation_slash(&self) -> Balance {
         self.dao_configuration.default_reputation_slash
     }
 
     /// Gets the voting clearness delta.
     ///
-    /// See [Variable Repository](crate::variable_repository) VotingClearnessDelta
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) VotingClearnessDelta
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn voting_clearness_delta(&self) -> Balance {
         self.dao_configuration.voting_clearness_delta
     }
@@ -210,8 +210,8 @@ impl Configuration {
     ///
     /// Non-BidEscrow voting always starts instantly.
     ///
-    /// See [Variable Repository](crate::variable_repository) VotingClearnessDelta
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) VotingClearnessDelta
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn voting_delay(&self) -> BlockTime {
         if self.voting_configuration.is_bid_escrow {
             self.dao_configuration
@@ -223,8 +223,8 @@ impl Configuration {
 
     /// Indicates if the attached DOS Fee is too low.
     ///
-    /// See [Variable Repository](crate::variable_repository) PostJobDOSFee
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) PostJobDOSFee
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn is_post_job_dos_fee_too_low(&self, fiat_value: Balance) -> bool {
         to_per_mils(self.dao_configuration.post_job_dos_fee) > fiat_value
     }
@@ -241,24 +241,24 @@ impl Configuration {
 
     /// Gets the bid acceptance timeout.
     ///
-    /// See [Variable Repository](crate::variable_repository) VABidAcceptanceTimeout
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) VABidAcceptanceTimeout
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn va_bid_acceptance_timeout(&self) -> BlockTime {
         self.dao_configuration.va_bid_acceptance_timeout
     }
 
     /// Indicates if a VA can bid on a public auction.
     ///
-    /// See [Variable Repository](crate::variable_repository) VACanBidOnPublicAuction
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) VACanBidOnPublicAuction
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn va_can_bid_on_public_auction(&self) -> bool {
         self.dao_configuration.va_can_bid_on_public_auction
     }
 
     /// Indicates if the payment for the job should be distributed between all VA’s or only to those who voted
     ///
-    /// See [Variable Repository](crate::variable_repository) DistributePaymentToNonVoters.
-    /// ([available keys](crate::variable_repository#available-keys)).
+    /// See [Variable Repository](crate::core_contracts::VariableRepositoryContract) DistributePaymentToNonVoters.
+    /// ([available keys](crate::core_contracts::VariableRepositoryContract#available-keys)).
     pub fn distribute_payment_to_non_voters(&self) -> bool {
         self.dao_configuration.distribute_payment_to_non_voters
     }

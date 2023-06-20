@@ -166,7 +166,7 @@ impl Default for DaoWorld {
         .cloned()
         .collect();
 
-        // TODO: Maybe in variable repo?
+        // WON'T DO: Maybe in variable repo?
         slashing_voter.update_slashable_contracts(slashable_contracts);
 
         Self {

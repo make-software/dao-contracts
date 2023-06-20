@@ -9,10 +9,11 @@
 //!
 //! Each [`Address`] can own only one KYC token.
 //!
-//! [`KYC Voting`]: crate::kyc_voter::KycVoterContractInterface
+//! [`KYC Voting`]: crate::voting_contracts::KycVoterContract
 use crate::core_contracts::dao_nft::{DaoNft, TokenId, TokenUri};
 use odra::types::{Address, Balance, U256};
 
+/// NFT contract that tells the system if user is KYC'd.
 /// Kyc Owned Nft contract acts like an erc-721 token and derives most of erc-721 standard.
 ///
 /// Kyc Owned Nft token is mintable and burnable but the caller needs to have permissions to perform those actions.
@@ -71,7 +72,7 @@ impl KycNftContract {
             /// Each user is entitled to own only one token.
             ///
             /// # Errors
-            /// * [`UserAlreadyOwnsToken`](utils::errors::Error::UserAlreadyOwnsToken) if the `to` address
+            /// * [`UserAlreadyOwnsToken`](crate::utils::Error::UserAlreadyOwnsToken) if the `to` address
             /// already owns a token.
             ///
             /// # Events
@@ -81,7 +82,7 @@ impl KycNftContract {
             /// and decrements the total supply.
             ///
             /// # Errors
-            /// * [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if the caller
+            /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if the caller
             /// is not whitelisted.
             ///
             /// # Events

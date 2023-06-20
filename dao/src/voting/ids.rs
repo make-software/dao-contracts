@@ -1,3 +1,4 @@
+//! Voting ids helper function.
 use crate::voting::types::VotingId;
 use odra::call_contract;
 use odra::types::{Address, CallArgs};

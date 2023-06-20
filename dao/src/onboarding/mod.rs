@@ -1,3 +1,4 @@
+//! Onboarding module.
 mod request;
 mod voting;
 

@@ -103,5 +103,5 @@ pub const DEFAULT_REPUTATION_SLASH: &str = "DefaultReputationSlash";
 /// An address of a contract that generates a next voting id.
 pub const VOTING_IDS_ADDRESS: &str = "VotingIdsAddress";
 
-// Contract keys.
+/// Contract keys.
 pub const CONTRACT_MAIN_PURSE: &str = "__contract_main_purse";

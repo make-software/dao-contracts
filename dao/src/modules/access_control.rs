@@ -1,3 +1,4 @@
+//! AccessControl module.
 use crate::modules::{Owner, Whitelist};
 use odra::types::Address;
 
@@ -26,12 +27,12 @@ impl AccessControl {
     /// is permited to call this method.
     ///
     /// # Errors
-    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
+    /// Throws [`NotAnOwner`](crate::utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
     /// # Events
-    /// Emits [`OwnerChanged`](crate::events::OwnerChanged),
-    /// [`AddedToWhitelist`](crate::events::AddedToWhitelist) events.
+    /// Emits [`OwnerChanged`](crate::modules::owner::events::OwnerChanged),
+    /// [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist) events.
     pub fn change_ownership(&mut self, owner: Address) {
         self.owner.ensure_owner();
         self.owner.change_ownership(owner);
@@ -41,11 +42,11 @@ impl AccessControl {
     /// Adds a new address to the whitelist.
     ///
     /// # Errors
-    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if the caller
+    /// Throws [`NotAnOwner`](crate::utils::Error::NotAnOwner) if the caller
     /// is not the current owner.
     ///
     /// # Events
-    /// Emits [`AddedToWhitelist`](crate::events::AddedToWhitelist) event.
+    /// Emits [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist) event.
     pub fn add_to_whitelist(&mut self, address: Address) {
         self.owner.ensure_owner();
         self.whitelist.add_to_whitelist(address);
@@ -54,11 +55,11 @@ impl AccessControl {
     /// Removes the `address` from the whitelist.
     ///
     /// # Errors
-    /// Throws [`NotAnOwner`](casper_dao_utils::Error::NotAnOwner) if caller
+    /// Throws [`NotAnOwner`](crate::utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
     /// # Events
-    /// It emits [`RemovedFromWhitelist`](crate::events::RemovedFromWhitelist)
+    /// It emits [`RemovedFromWhitelist`](crate::modules::whitelist::events::RemovedFromWhitelist)
     pub fn remove_from_whitelist(&mut self, address: Address) {
         self.owner.ensure_owner();
         self.whitelist.remove_from_whitelist(address);

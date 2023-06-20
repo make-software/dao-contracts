@@ -1,3 +1,4 @@
+//! Voting State Machine.
 use crate::configuration::Configuration;
 use crate::rules::validation::voting::{AfterFormalVoting, VoteInTime, VotingNotCompleted};
 use crate::rules::RulesBuilder;

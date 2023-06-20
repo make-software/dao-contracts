@@ -22,11 +22,9 @@
 //! # Voting
 //! The Voting process is managed by [`VotingEngine`].
 //!
-//! [`Bid Escrow Contract`]: crate::bid_escrow::BidEscrowContractInterface
-//! [`VotingEngine`]: crate::voting::VotingEngine
+//! [`Bid Escrow Contract`]: crate::bid_escrow::contract::BidEscrowContract
+//! [`VotingEngine`]: VotingEngine
 //! [submission process]: crate::bid_escrow#submitting-a-job-proof
-use crate::modules::kyc_info::KycInfoComposer;
-use crate::modules::onboarding_info::OnboardingInfoComposer;
 use crate::modules::refs::ContractRefs;
 use crate::modules::AccessControl;
 use crate::onboarding::{Onboarding, OnboardingComposer};
@@ -43,6 +41,7 @@ use odra::types::event::OdraEvent;
 use odra::types::{Address, Balance, BlockTime};
 use odra::{Composer, Event, Instance};
 
+/// Onboarding Request Contract.
 #[odra::module(skip_instance, events = [OnboardingVotingCreated])]
 pub struct OnboardingRequestContract {
     refs: ContractRefs,
@@ -57,17 +56,9 @@ impl Instance for OnboardingRequestContract {
         let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
             .with_refs(&refs)
             .compose();
-        let kyc_info = KycInfoComposer::new(namespace, "kyc_info")
-            .with_refs(&refs)
-            .compose();
-        let onboarding_info = OnboardingInfoComposer::new(namespace, "onboarding_info")
-            .with_refs(&refs)
-            .compose();
         let onboarding = OnboardingComposer::new(namespace, "onboarding")
             .with_refs(&refs)
             .with_voting(&voting_engine)
-            .with_kyc_info(&kyc_info)
-            .with_onboarding_info(&onboarding_info)
             .compose();
         Self {
             refs,
@@ -136,14 +127,14 @@ impl OnboardingRequestContract {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
+    /// * Sets up the contract by writing addresses of [`Variable Repository`](crate::core_contracts::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::core_contracts::ReputationContract), [`VA Token`](crate::core_contracts::VaNftContract), [`KYC Token`](crate::core_contracts::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
-    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    /// * [`OwnerChanged`](crate::modules::owner::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist),
     #[odra(init)]
     pub fn init(
         &mut self,
@@ -182,7 +173,7 @@ impl OnboardingRequestContract {
     }
 }
 
-/// Informs onboarding voting has been created.
+/// Event emitted when onboarding voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct OnboardingVotingCreated {
     reason: DocumentHash,

@@ -1,3 +1,4 @@
+//! KYC info module.
 use odra::{types::Address, Mapping, UnwrapOrRevert};
 
 use crate::{utils::Error, voting::types::VotingId};

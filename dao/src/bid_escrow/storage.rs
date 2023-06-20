@@ -50,7 +50,7 @@ impl BidStorage {
         self.job_offers.get(job_offer_id)
     }
 
-    /// Gets the [JobOffer] with a given id or reverts with [JobOfferNotFound](casper_dao_utils::Error::JobOfferNotFound).
+    /// Gets the [JobOffer] with a given id or reverts with [JobOfferNotFound](crate::utils::Error::JobOfferNotFound).
     pub fn get_job_offer_or_revert(&self, job_offer_id: &JobOfferId) -> JobOffer {
         self.get_job_offer(job_offer_id)
             .unwrap_or_revert_with(Error::JobOfferNotFound)
@@ -156,7 +156,7 @@ impl JobStorage {
         self.jobs.get(&job_id)
     }
 
-    /// Gets the [Job] matching to a given id or reverts with [VotingIdNotFound](casper_dao_utils::Error::VotingIdNotFound).
+    /// Gets the [Job] matching to a given id or reverts with [VotingIdNotFound](crate::utils::Error::VotingIdNotFound).
     pub fn get_job_by_voting_id(&self, voting_id: VotingId) -> Job {
         let job_id = self
             .jobs_for_voting
@@ -166,7 +166,7 @@ impl JobStorage {
         self.get_job_or_revert(job_id)
     }
 
-    /// Gets the [Job] with a given id or reverts with [MappingItemNotAvailable](casper_dao_utils::Error::MappingItemNotAvailable).
+    /// Gets the [Job] with a given id or reverts with [MappingItemNotAvailable](crate::utils::Error::MappingItemNotAvailable).
     pub fn get_job_or_revert(&self, job_id: JobId) -> Job {
         self.jobs
             .get(&job_id)

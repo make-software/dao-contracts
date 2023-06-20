@@ -294,7 +294,7 @@ impl Job {
         self.external_worker_cspr_stake
     }
 
-    /// Links job with [Voting](crate::voting::voting_state_machine::VotingStateMachine).
+    /// Links job with [Voting](crate::voting::voting_engine::voting_state_machine::VotingStateMachine).
     pub fn set_voting_id(&mut self, voting_id: VotingId) {
         self.voting_id = Some(voting_id);
     }

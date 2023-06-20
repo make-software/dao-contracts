@@ -79,7 +79,7 @@ impl ReputationContract {
             /// increments the total supply. Only whitelisted addresses are permitted to call this method.
             ///
             /// # Errors
-            /// * [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if caller
+            /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if caller
             /// is not whitelisted.
             ///
             /// # Events
@@ -90,7 +90,7 @@ impl ReputationContract {
             /// method.
             ///
             /// # Errors
-            /// * [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if caller
+            /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if caller
             /// is not whitelisted.
             ///
             /// # Events
@@ -129,12 +129,12 @@ impl ReputationContract {
     /// It initializes contract elements:
     /// * Events dictionary.
     /// * Named keys of [`AccessControl`].
-    /// * Set [`caller`] as the owner of the contract.
-    /// * Add [`caller`] to the whitelist.
+    /// * Set `caller` as the owner of the contract.
+    /// * Add `caller` to the whitelist.
     ///
     /// # Events
-    /// * [`OwnerChanged`](modules::events::OwnerChanged),
-    /// * [`AddedToWhitelist`](modules::events::AddedToWhitelist).
+    /// * [`OwnerChanged`](crate::modules::owner::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist).
     #[odra(init)]
     pub fn init(&mut self) {
         let deployer = contract_env::caller();
@@ -144,7 +144,7 @@ impl ReputationContract {
     /// Increases the balance of the passive reputation of the given address.
     ///
     /// # Errors
-    /// * [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if caller
+    /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
     pub fn mint_passive(&mut self, recipient: Address, amount: Balance) {
         self.passive_reputation_storage.mint(recipient, amount);
@@ -153,9 +153,9 @@ impl ReputationContract {
     /// Decreases the balance of the passive reputation of the given address.
     ///
     /// # Errors
-    /// * [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if caller
+    /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if caller
     /// is not whitelisted.
-    /// * [`InsufficientBalance`](utils::errors::Error::InsufficientBalance) if the passed
+    /// * [`InsufficientBalance`](crate::utils::Error::InsufficientBalance) if the passed
     /// amount exceeds the balance of the passive reputation of the given address.
     pub fn burn_passive(&mut self, owner: Address, amount: Balance) {
         self.passive_reputation_storage.burn(owner, amount);
@@ -174,21 +174,21 @@ pub mod events {
         Event,
     };
 
-    /// Informs tokens have been burnt.
+    /// Event emitted when tokens have been burnt.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Burn {
         pub address: Address,
         pub amount: Balance,
     }
 
-    /// Informs tokens have been minted.
+    /// Event emitted when tokens have been minted.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Mint {
         pub address: Address,
         pub amount: Balance,
     }
 
-    /// Informs tokens have been staked.
+    /// Event emitted when tokens have been staked.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Stake {
         pub worker: Address,
@@ -196,7 +196,7 @@ pub mod events {
         pub bid_id: BidId,
     }
 
-    /// Informs tokens have been unstaked.
+    /// Event emitted when tokens have been unstaked.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct Unstake {
         pub worker: Address,

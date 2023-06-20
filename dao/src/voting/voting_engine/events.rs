@@ -58,21 +58,21 @@ pub struct VotingCreatedInfo {
     pub stake: Option<Balance>,
     /// A unique voting id.
     pub voting_id: VotingId,
-    /// Configuration value - [informal voting quorum](crate::config::Configuration::informal_voting_quorum()).
+    /// Configuration value - [informal voting quorum](Configuration::informal_voting_quorum()).
     pub config_informal_quorum: u32,
-    /// Configuration value - [informal voting time](crate::config::Configuration::informal_voting_time()).
+    /// Configuration value - [informal voting time](Configuration::informal_voting_time()).
     pub config_informal_voting_time: u64,
-    /// Configuration value - [formal voting quorum](crate::config::Configuration::formal_voting_quorum()).
+    /// Configuration value - [formal voting quorum](Configuration::formal_voting_quorum()).
     pub config_formal_quorum: u32,
-    /// Configuration value - [formal voting time](crate::config::Configuration::formal_voting_time()).
+    /// Configuration value - [formal voting time](Configuration::formal_voting_time()).
     pub config_formal_voting_time: u64,
-    /// Configuration value - [total number of onboarded users](crate::config::Configuration::total_onboarded()).
+    /// Configuration value - [total number of onboarded users](Configuration::total_onboarded()).
     pub config_total_onboarded: Balance,
-    /// Configuration value - [is the time between votes doubled](crate::config::Configuration::should_double_time_between_votings()).
+    /// Configuration value - [is the time between votes doubled](Configuration::should_double_time_between_votings()).
     pub config_double_time_between_votings: bool,
-    /// Configuration value - [voting clearness delta](crate::config::Configuration::voting_clearness_delta()).
+    /// Configuration value - [voting clearness delta](Configuration::voting_clearness_delta()).
     pub config_voting_clearness_delta: Balance,
-    /// Configuration value - [the time between informal/formal voting](crate::config::Configuration::time_between_informal_and_formal_voting()).
+    /// Configuration value - [the time between informal/formal voting](Configuration::time_between_informal_and_formal_voting()).
     pub config_time_between_informal_and_formal_voting: BlockTime,
 }
 

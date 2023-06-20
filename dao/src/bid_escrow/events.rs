@@ -9,7 +9,7 @@ use crate::voting::types::VotingId;
 use odra::types::{Address, Balance, BlockTime};
 use odra::Event;
 
-/// Informs a new [Job Offer](JobOffer) has been created.
+/// Event emitted when a new [Job Offer](JobOffer) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobOfferCreated {
     /// The offer id.
@@ -34,7 +34,7 @@ impl JobOfferCreated {
     }
 }
 
-/// Informs a new [Bid](crate::bid_escrow::bid::Bid) has been placed.
+/// Event emitted when a new [Bid](crate::bid_escrow::bid::Bid) has been placed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BidSubmitted {
     bid_id: BidId,
@@ -73,7 +73,7 @@ impl BidSubmitted {
     }
 }
 
-/// Informs that a [Bid](crate::bid_escrow::bid::Bid) has been cancelled.
+/// Event emitted when that a [Bid](crate::bid_escrow::bid::Bid) has been cancelled.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BidCancelled {
     bid_id: BidId,
@@ -92,7 +92,7 @@ impl BidCancelled {
     }
 }
 
-/// Informs a new [Job](Job) has been created.
+/// Event emitted when a new [Job](Job) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
     bid_id: BidId,
@@ -115,7 +115,7 @@ impl JobCreated {
     }
 }
 
-/// Informs the [Job](Job) proof has been submitted by the `Worker`.
+/// Event emitted when the [Job](Job) proof has been submitted by the `Worker`.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobSubmitted {
     bid_id: BidId,
@@ -141,7 +141,7 @@ impl JobSubmitted {
     }
 }
 
-/// Informs the [Job](Job) has been canceled.
+/// Event emitted when the [Job](Job) has been canceled.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCancelled {
     bid_id: BidId,
@@ -159,12 +159,12 @@ impl JobCancelled {
             caller,
             job_poster: job.poster(),
             worker: job.worker(),
-            cspr_amount: Default::default(),
+            cspr_amount: job.payment(),
         }
     }
 }
 
-/// Informs `Voting` on the [Job](Job) passed.
+/// Event emitted when `Voting` on the [Job](Job) passed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobDone {
     bid_id: BidId,
@@ -187,7 +187,7 @@ impl JobDone {
     }
 }
 
-/// Informs `Voting` on the [Job](Job) failed.
+/// Event emitted when `Voting` on the [Job](Job) failed.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobRejected {
     bid_id: BidId,
@@ -210,6 +210,7 @@ impl JobRejected {
     }
 }
 
+/// Event emitted when a new [VotingStateMachine](crate::voting::voting_engine::voting_state_machine::VotingStateMachine) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BidEscrowVotingCreated {
     bid_id: BidId,
@@ -257,6 +258,7 @@ impl BidEscrowVotingCreated {
     }
 }
 
+/// Enum covering all reasons for a transfer in BidEscrow - used in the [CSPRTransfer] event.
 pub enum TransferReason {
     JobPayment,
     JobPaymentReturn,
@@ -285,6 +287,7 @@ impl ToString for TransferReason {
     }
 }
 
+/// Event emitted when that a transfer has been made.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct CSPRTransfer {
     pub from: Address,
@@ -293,6 +296,7 @@ pub struct CSPRTransfer {
     pub reason: String,
 }
 
+/// Events out the result of the slash in the BidEscrow contract.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct BidEscrowSlashResults {
     pub slashed_job_offers: Vec<JobOfferId>,

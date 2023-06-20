@@ -1,6 +1,7 @@
 use odra::types::{Address, Balance, BlockTime};
 use odra::OdraType;
 
+/// A serializable data structure that represents DAO configuration.
 #[derive(OdraType)]
 pub struct DaoConfiguration {
     pub post_job_dos_fee: Balance,

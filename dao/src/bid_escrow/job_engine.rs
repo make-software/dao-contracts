@@ -1,3 +1,4 @@
+//! Job Engine module.
 use crate::bid_escrow::bid::{Bid, ReclaimBidRequest};
 use crate::bid_escrow::events::{
     BidEscrowVotingCreated, JobCancelled, JobDone, JobRejected, JobSubmitted, TransferReason,
@@ -228,7 +229,7 @@ impl JobEngine {
         self.raw_cancel_job(job, &bid, caller);
     }
 
-    /// Records vote in [Voting](crate::voting::voting_state_machine::VotingStateMachine).
+    /// Records vote in [Voting](crate::voting::voting_engine::voting_state_machine::VotingStateMachine).
     ///
     /// # Error
     /// * [`Error::CannotVoteOnOwnJob`].
@@ -251,7 +252,7 @@ impl JobEngine {
 
     /// Ends the current voting phase and redistributes funds.
     ///
-    /// Interacts with [`Reputation Token Contract`](crate::reputation::ReputationContractInterface) to
+    /// Interacts with [`Reputation Token Contract`](crate::core_contracts::ReputationContract) to
     /// redistribute reputation.
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
         let job = self.job_storage.get_job_by_voting_id(voting_id);
@@ -351,12 +352,11 @@ impl JobEngine {
         let mut slashed_jobs = vec![];
         for job_id in self.job_storage.get_active_jobs() {
             let job = self.job_storage.get_job_or_revert(job_id);
-            if job.worker() != voter {
-                continue;
+            if job.worker() == voter {
+                let bid = self.bid_storage.get_bid_or_revert(&job.bid_id());
+                self.raw_cancel_job(job, &bid, caller());
+                slashed_jobs.push(job_id);
             }
-            let bid = self.bid_storage.get_bid_or_revert(&job.bid_id());
-            self.raw_cancel_job(job, &bid, caller());
-            slashed_jobs.push(job_id);
         }
         (slashed_jobs, canceled_votings, affected_votings)
     }
@@ -504,11 +504,7 @@ impl JobEngine {
 
     fn redistribute_cspr_internal_worker(&mut self, job: &Job, configuration: &Configuration) {
         let to_redistribute = redistribute_to_governance(job.payment(), configuration);
-        let redistribute_to_all_vas = self
-            .bid_storage
-            .get_job_offer_or_revert(&job.job_offer_id())
-            .configuration
-            .distribute_payment_to_non_voters();
+        let redistribute_to_all_vas = configuration.distribute_payment_to_non_voters();
 
         // For VA's
         if redistribute_to_all_vas {
@@ -527,11 +523,7 @@ impl JobEngine {
         // For External Worker
         withdraw(&job.worker(), to_worker, TransferReason::Redistribution);
 
-        let redistribute_to_all_vas = self
-            .bid_storage
-            .get_job_offer_or_revert(&job.job_offer_id())
-            .configuration
-            .distribute_payment_to_non_voters();
+        let redistribute_to_all_vas = configuration.distribute_payment_to_non_voters();
 
         // For VA's
         if redistribute_to_all_vas {

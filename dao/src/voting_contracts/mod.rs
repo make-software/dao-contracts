@@ -1,3 +1,4 @@
+//! Module containg voting contracts.
 mod admin;
 mod kyc_voter;
 mod onboarding_request;
@@ -10,6 +11,7 @@ pub use admin::{Action as AdminAction, AdminContract, AdminContractDeployer, Adm
 pub use kyc_voter::{KycVoterContract, KycVoterContractDeployer, KycVoterContractRef};
 pub use onboarding_request::{
     OnboardingRequestContract, OnboardingRequestContractDeployer, OnboardingRequestContractRef,
+    OnboardingVotingCreated,
 };
 pub use repo_voter::{RepoVoterContract, RepoVoterContractDeployer, RepoVoterContractRef};
 pub use reputation_voter::{

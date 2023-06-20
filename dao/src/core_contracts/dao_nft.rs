@@ -17,6 +17,7 @@ pub type TokenId = U256;
 /// A distinct Uniform Resource Identifier (URI) for a token.
 pub type TokenUri = String;
 
+/// NFT module used by DAO.
 #[odra::module(events = [Transfer])]
 pub struct DaoNft {
     core: Erc721Base,
@@ -142,7 +143,7 @@ impl DaoNft {
     /// and decrements the total supply.
     ///
     /// # Errors
-    /// * [`NotWhitelisted`](dao_utils::errors::Error::NotWhitelisted) if the caller
+    /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if the caller
     /// is not whitelisted.
     ///
     /// # Events

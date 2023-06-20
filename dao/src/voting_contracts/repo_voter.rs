@@ -142,7 +142,7 @@ impl RepoVoterContract {
     }
 }
 
-/// Informs repo voting has been created.
+/// Event emitted when repo voting has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct RepoVotingCreated {
     variable_repo_to_edit: Address,

@@ -40,7 +40,7 @@ impl BalanceStorage {
     ///
     /// # Errors
     ///
-    /// [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if called by a not whitelisted account.
+    /// [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn mint(&mut self, recipient: Address, amount: Balance) {
         self.access_control.ensure_whitelisted();
         self.inc_balance(&recipient, amount);
@@ -65,7 +65,7 @@ impl BalanceStorage {
     ///
     /// # Errors
     ///
-    /// [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if called by a not whitelisted account.
+    /// [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn burn(&mut self, owner: Address, amount: Balance) {
         self.access_control.ensure_whitelisted();
         self.dec_balance(&owner, amount);
@@ -88,7 +88,7 @@ impl BalanceStorage {
     ///
     /// # Errors
     ///
-    /// [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if called by a not whitelisted account.
+    /// [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn bulk_mint_burn(
         &mut self,
         mints: BTreeMap<Address, Balance>,
@@ -118,7 +118,7 @@ impl BalanceStorage {
     ///
     /// # Errors
     ///
-    /// [`NotWhitelisted`](utils::errors::Error::NotWhitelisted) if called by a not whitelisted account.
+    /// [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn burn_all(&mut self, owner: Address) {
         self.access_control.ensure_whitelisted();
 

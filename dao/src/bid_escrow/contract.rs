@@ -105,10 +105,10 @@
 //! ### Internal Worker
 //! Firstly the Governance Payment is calculated using a formula:
 //!
-//! `governance payment = payment pool * BidEscrowPaymentRatio` [Read more](crate::variable_repository#available-keys).
+//! `governance payment = payment pool * BidEscrowPaymentRatio` [Read more](crate::core_contracts::VariableRepositoryContract#available-keys).
 //!
 //! The `Governance Payment` is then transferred to a multisig wallet, which address is held in the [`Variable Repository Contract`]
-//! called [`BidEscrowWalletAddress`](crate::variable_repository#available-keys).
+//! called [`BidEscrowWalletAddress`](crate::core_contracts::VariableRepositoryContract#available-keys).
 //! The rest of the payment is redistributed between all of the `VAs'`.
 //!
 //! `remaining amount = payment pool - governance payment`
@@ -120,7 +120,7 @@
 //!
 //! Firstly to get the amount that VA’s receive we use a formula:
 //!
-//! `VA payment amount = remaining amount * DefaultPolicingRate` [Read more](crate::variable_repository#available-keys)
+//! `VA payment amount = remaining amount * DefaultPolicingRate` [Read more](crate::core_contracts::VariableRepositoryContract#available-keys)
 //!
 //! Then, the rest is transferred to the `External Worker`:
 //!
@@ -180,11 +180,11 @@
 //! The `CSPR` paid by the `Job Poster` is returned along with the `DOS Fee`.
 //! This is a special implementation of [positional parameters].
 //!
-//! [`Variable Repository Contract`]: crate::variable_repository::VariableRepositoryContractInterface
-//! [`VotingEngine`]: crate::voting::VotingEngine
-//! [`Slashing Voter`]: crate::slashing_voter
-//! [`Reputation`]: crate::reputation::ReputationContractInterface
-//! [`Governance Variable`]: crate::variable_repository#available-keys
+//! [`Variable Repository Contract`]: crate::core_contracts::VariableRepositoryContract
+//! [`VotingEngine`]: VotingEngine
+//! [`Slashing Voter`]: crate::voting_contracts::SlashingVoterContract
+//! [`Reputation`]: crate::core_contracts::ReputationContract
+//! [`Governance Variable`]: crate::core_contracts::VariableRepositoryContract#available-keys
 
 use crate::bid_escrow::bid::Bid;
 use crate::bid_escrow::bid_engine::{BidEngine, BidEngineComposer};
@@ -207,9 +207,9 @@ use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
 use odra::{Composer, Instance};
 
 /// A contract that manages the full `Bid Escrow` process.
-/// Uses [`VotingEngine`](crate::voting::VotingEngine) to conduct the voting process.
+/// Uses [`VotingEngine`](crate::voting::voting_engine::VotingEngine) to conduct the voting process.
 ///
-/// For details see [BidEscrowContractInterface](BidEscrowContractInterface).
+/// For details see [BidEscrowContract](BidEscrowContract).
 #[odra::module(skip_instance)]
 pub struct BidEscrowContract {
     refs: ContractRefs,
@@ -275,8 +275,8 @@ impl BidEscrowContract {
             /// Job Poster post a new Job Offer.
             ///
             /// # Errors
-            /// * [`Error::NotKyced`] - if the caller is not KYCed
-            /// * [`Error::DosFeeTooLow`] - if the caller has not sent enough DOS Fee
+            /// * [`NotKyced`](crate::utils::Error::NotKyced) - if the caller is not KYCed
+            /// * [`DosFeeTooLow`](crate::utils::Error::DosFeeTooLow) - if the caller has not sent enough DOS Fee
             ///
             /// # Events
             /// * [`JobOfferCreated`](crate::bid_escrow::events::JobOfferCreated)
@@ -287,11 +287,11 @@ impl BidEscrowContract {
             ///
             /// # Events
             /// * [`JobCreated`](crate::bid_escrow::events::JobCreated)
-            /// * [`Unstake`](crate::reputation::Unstake) - in case there were other bids on the same Job Offer
+            /// * [`Unstake`](crate::core_contracts::Unstake) - in case there were other bids on the same Job Offer
             ///
             /// # Errors
-            /// * [`OnlyJobPosterCanPickABid`](Error::OnlyJobPosterCanPickABid) - if the caller is not the Job Poster
-            /// * [`PurseBalanceMismatch`](Error::PurseBalanceMismatch) - if the purse balance does not match the bid amount
+            /// * [`OnlyJobPosterCanPickABid`](crate::utils::Error::OnlyJobPosterCanPickABid) - if the caller is not the Job Poster
+            /// * [`PurseBalanceMismatch`](crate::utils::Error::PurseBalanceMismatch) - if the purse balance does not match the bid amount
             #[odra(payable)]
             pub fn pick_bid(&mut self, job_offer_id: JobOfferId, bid_id: BidId, cspr_amount: Balance);
 
@@ -299,23 +299,23 @@ impl BidEscrowContract {
             ///
             /// # Events
             /// * [`BidSubmitted`](crate::bid_escrow::events::BidSubmitted)
-            /// * [`Stake`](crate::reputation::Stake)
+            /// * [`Stake`](crate::core_contracts::Stake)
             ///
             /// # Errors
-            /// * [`Error::NotKyced`] - if the caller is not KYCed
-            /// * [`Error::CannotBidOnOwnJob`] - if the caller is the Job Poster
-            /// * [`Error::VaOnboardedAlready`] - if the caller has already been onboarded, but is trying to
+            /// * [`NotKyced`](crate::utils::Error::NotKyced) - if the caller is not KYCed
+            /// * [`CannotBidOnOwnJob`](crate::utils::Error::CannotBidOnOwnJob) - if the caller is the Job Poster
+            /// * [`VaOnboardedAlready`](crate::utils::Error::VaOnboardedAlready) - if the caller has already been onboarded, but is trying to
             /// onboard again
-            /// * [`Error::PaymentExceedsMaxBudget`] - if the proposed payment exceeds the maximum budget
-            /// * [`Error::AuctionNotRunning`] - if the auction is not running
-            /// * [`Error::OnlyOnboardedWorkerCanBid`] - if the Worker is not onboarded and the
+            /// * [`PaymentExceedsMaxBudget`](crate::utils::Error::PaymentExceedsMaxBudget) - if the proposed payment exceeds the maximum budget
+            /// * [`AuctionNotRunning`](crate::utils::Error::AuctionNotRunning) - if the auction is not running
+            /// * [`OnlyOnboardedWorkerCanBid`](crate::utils::Error::OnlyOnboardedWorkerCanBid) - if the Worker is not onboarded and the
             /// auction is internal
-            /// * [`Error::OnboardedWorkerCannotBid`] - if the Worker is onboarded, auction is public
+            /// * [`OnboardedWorkerCannotBid`](crate::utils::Error::OnboardedWorkerCannotBid) - if the Worker is onboarded, auction is public
             /// and the configuration forbids bidding by onboarded Workers on such auctions
-            /// * [`Error::InsufficientBalance`] - if the Worker has not enough balance to pay for the
+            /// * [`InsufficientBalance`](crate::utils::Error::InsufficientBalance) - if the Worker has not enough balance to pay for the
             /// bid
-            /// * [`Error::ZeroStake`] - if the Worker tries to stake 0 reputation
-            /// * [`Error::NotWhitelisted`] - if the contract is not whitelisted for Reputation Staking
+            /// * [`ZeroStake`](crate::utils::Error::ZeroStake) - if the Worker tries to stake 0 reputation
+            /// * [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) - if the contract is not whitelisted for Reputation Staking
             #[odra(payable)]
             pub fn submit_bid(
                 &mut self,
@@ -333,14 +333,14 @@ impl BidEscrowContract {
             ///
             /// # Events
             /// * [`BidCancelled`](crate::bid_escrow::events::BidCancelled)
-            /// * [`Unstake`](crate::reputation::Unstake)
+            /// * [`Unstake`](crate::core_contracts::Unstake)
             ///
             /// # Errors:
-            /// * [`CannotCancelNotOwnedBid`](Error::CannotCancelNotOwnedBid) when trying to cancel a Bid
+            /// * [`CannotCancelNotOwnedBid`](crate::utils::Error::CannotCancelNotOwnedBid) when trying to cancel a Bid
             /// that is not owned by the Worker
-            /// * [`CannotCancelBidOnCompletedJobOffer`](Error::CannotCancelBidOnCompletedJobOffer) when
+            /// * [`CannotCancelBidOnCompletedJobOffer`](crate::utils::Error::CannotCancelBidOnCompletedJobOffer) when
             /// trying to cancel a Bid on a Job Offer that is already completed
-            /// * [`CannotCancelBidBeforeAcceptanceTimeout`](Error::CannotCancelBidBeforeAcceptanceTimeout)
+            /// * [`CannotCancelBidBeforeAcceptanceTimeout`](crate::utils::Error::CannotCancelBidBeforeAcceptanceTimeout)
             /// when trying to cancel a Bid before VABidAcceptanceTimeout time has passed
             pub fn cancel_bid(&mut self, bid_id: BidId);
 
@@ -367,12 +367,12 @@ impl BidEscrowContract {
             ///
             /// # Events
             /// * [`JobSubmitted`](crate::bid_escrow::events::JobSubmitted)
-            /// * [`Unstake`](crate::reputation::Unstake) - Stake is used in the voting
-            /// * [`BallotCast`](crate::voting::events::BallotCast) - first vote is cast by the Worker
+            /// * [`Unstake`](crate::core_contracts::Unstake) - Stake is used in the voting
+            /// * [`BallotCast`](crate::voting::voting_engine::events::BallotCast) - first vote is cast by the Worker
             ///
             /// # Errors
-            /// Throws [`JobAlreadySubmitted`](Error::JobAlreadySubmitted) if job was already submitted.
-            /// Throws [`OnlyWorkerCanSubmitProof`](Error::OnlyWorkerCanSubmitProof) if the caller is not the Worker
+            /// Throws [`JobAlreadySubmitted`](crate::utils::Error::JobAlreadySubmitted) if job was already submitted.
+            /// Throws [`OnlyWorkerCanSubmitProof`](crate::utils::Error::OnlyWorkerCanSubmitProof) if the caller is not the Worker
             /// and the grace period is not ongoing.
             pub fn submit_job_proof(&mut self, job_id: JobId, proof: DocumentHash);
 
@@ -393,29 +393,29 @@ impl BidEscrowContract {
             /// Casts a vote over a job.
             ///
             /// # Events
-            /// * [`BallotCast`](crate::voting::events::BallotCast)
+            /// * [`BallotCast`](crate::voting::voting_engine::events::BallotCast)
             ///
             /// # Errors
-            /// * [`CannotVoteOnOwnJob`](Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
-            /// * [`VotingNotStarted`](Error::VotingNotStarted) if the voting was not yet started for this job
+            /// * [`CannotVoteOnOwnJob`](crate::utils::Error::CannotVoteOnOwnJob) if the voter is either of Job Poster or Worker
+            /// * [`VotingNotStarted`](crate::utils::Error::VotingNotStarted) if the voting was not yet started for this job
             pub fn vote(&mut self, voting_id: VotingId, voting_type: VotingType, choice: Choice, stake: Balance);
 
             /// Finishes voting. Depending on type of voting, different actions are performed.
             /// [Read more](VotingEngine::finish_voting())
             ///
             /// # Events
-            /// * [`VotingEnded`](crate::voting::events::VotingEnded)
-            /// * [`BallotCast`](crate::voting::events::BallotCast) - when formal voting starts
-            /// * [`Unstake`](crate::reputation::Unstake)
-            /// * [`Stake`](crate::reputation::Stake)
-            /// * [`Mint`](crate::reputation::Mint)
+            /// * [`VotingEnded`](crate::voting::voting_engine::events::VotingEnded)
+            /// * [`BallotCast`](crate::voting::voting_engine::events::BallotCast) - when formal voting starts
+            /// * [`Unstake`](crate::core_contracts::Unstake)
+            /// * [`Stake`](crate::core_contracts::Stake)
+            /// * [`Mint`](crate::core_contracts::Mint)
             ///
             /// # Errors
-            /// * [`BidNotFound`](Error::BidNotFound) if the bid was not found
-            /// * [`VotingDoesNotExist`](Error::VotingDoesNotExist) if the voting does not exist
-            /// * [`VotingWithGivenTypeNotInProgress`](Error::VotingWithGivenTypeNotInProgress) if the voting
+            /// * [`BidNotFound`](crate::utils::Error::BidNotFound) if the bid was not found
+            /// * [`VotingDoesNotExist`](crate::utils::Error::VotingDoesNotExist) if the voting does not exist
+            /// * [`VotingWithGivenTypeNotInProgress`](crate::utils::Error::VotingWithGivenTypeNotInProgress) if the voting
             /// is not in progress
-            /// * [`FinishingCompletedVotingNotAllowed`](Error::FinishingCompletedVotingNotAllowed) if the
+            /// * [`FinishingCompletedVotingNotAllowed`](crate::utils::Error::FinishingCompletedVotingNotAllowed) if the
             /// voting is already completed
             pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary;
 
@@ -454,15 +454,15 @@ impl BidEscrowContract {
     ///
     /// # Note
     /// Initializes contract elements:
-    /// * Sets up [`ContractRefsWithKycStorage`] by writing addresses of [`Variable Repository`](crate::variable_repository::VariableRepositoryContract),
-    /// [`Reputation Token`](crate::reputation::ReputationContract), [`VA Token`](crate::va_nft::VaNftContract), [`KYC Token`](crate::kyc_nft::KycNftContract).
+    /// * Sets up the contract by saving addresses of [`Variable Repository`](crate::core_contracts::VariableRepositoryContract),
+    /// [`Reputation Token`](crate::core_contracts::ReputationContract), [`VA Token`](crate::core_contracts::VaNftContract), [`KYC Token`](crate::core_contracts::KycNftContract).
     /// * Sets [`caller`] as the owner of the contract.
     /// * Adds [`caller`] to the whitelist.
     ///
     /// # Events
     /// Emits:
-    /// * [`OwnerChanged`](casper_dao_modules::events::OwnerChanged),
-    /// * [`AddedToWhitelist`](casper_dao_modules::events::AddedToWhitelist),
+    /// * [`OwnerChanged`](crate::modules::owner::events::OwnerChanged),
+    /// * [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist),
     #[odra(init)]
     pub fn init(
         &mut self,

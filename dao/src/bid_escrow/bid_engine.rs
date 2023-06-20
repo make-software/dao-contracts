@@ -1,3 +1,6 @@
+//! Bid engine module.
+//! It is responsible for handling all Bid-related operations.
+//! It stores all Bids and Jobs.
 use crate::bid_escrow::bid::{Bid, BidStatus, CancelBidRequest, SubmitBidRequest};
 use crate::bid_escrow::events::{
     BidCancelled, BidSubmitted, JobCreated, JobOfferCreated, TransferReason,
@@ -37,7 +40,7 @@ impl BidEngine {
         self.bid_storage.get_job_offer(&job_offer_id)
     }
 
-    /// Gets the [JobOffer] with a given id or reverts with [JobOfferNotFound](casper_dao_utils::Error::JobOfferNotFound).
+    /// Gets the [JobOffer] with a given id or reverts with [JobOfferNotFound](crate::utils::Error::JobOfferNotFound).
     pub fn get_job_offer_or_revert(&self, job_offer_id: &JobOfferId) -> JobOffer {
         self.bid_storage.get_job_offer_or_revert(job_offer_id)
     }
@@ -47,7 +50,7 @@ impl BidEngine {
         self.bid_storage.get_bid(&bid_id)
     }
 
-    /// Gets the [Bid] with a given id or reverts with [BidNotFound](casper_dao_utils::Error::BidNotFound).
+    /// Gets the [Bid] with a given id or reverts with [BidNotFound](crate::utils::Error::BidNotFound).
     pub fn get_bid_or_revert(&self, bid_id: &BidId) -> Bid {
         self.bid_storage.get_bid_or_revert(bid_id)
     }
@@ -188,7 +191,7 @@ impl BidEngine {
     ///
     /// [`HasPermissionsToCancelJobOffer`]: crate::rules::validation::bid_escrow::HasPermissionsToCancelJobOffer
     /// [`CanJobOfferBeCancelled`]: crate::rules::validation::bid_escrow::CanJobOfferBeCancelled
-    /// [`Error::JobOfferNotFound`]: casper_dao_utils::Error::JobOfferNotFound
+    /// [`Error::JobOfferNotFound`]: crate::utils::Error::JobOfferNotFound
     pub fn cancel_job_offer(&mut self, job_offer_id: JobOfferId) {
         let mut job_offer = self.bid_storage.get_job_offer_or_revert(&job_offer_id);
         let cancel_job_offer_request = CancelJobOfferRequest {

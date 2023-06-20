@@ -84,4 +84,12 @@ impl DaoWorld {
             real_balance
         );
     }
+
+    pub fn burn_all_reputation(&mut self, burner: &Account, holder: &Account) {
+        let holder = self.get_address(holder);
+
+        let holder_balance = self.reputation_token.balance_of(holder);
+        self.set_caller(burner);
+        self.reputation_token.burn(holder, holder_balance);
+    }
 }

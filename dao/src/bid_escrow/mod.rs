@@ -1,3 +1,4 @@
+//! Bid escrow module.
 pub mod bid;
 pub mod bid_engine;
 pub mod contract;

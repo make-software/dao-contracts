@@ -1,3 +1,4 @@
+//! The Owner module.
 use crate::modules::owner::events::OwnerChanged;
 use crate::utils::Error;
 use odra::contract_env::{caller, revert};
@@ -5,7 +6,6 @@ use odra::types::event::OdraEvent;
 use odra::types::Address;
 use odra::Variable;
 
-/// The Owner module.
 #[odra::module]
 pub struct Owner {
     pub owner: Variable<Address>,
@@ -47,7 +47,7 @@ pub mod events {
     use odra::types::Address;
     use odra::Event;
 
-    /// Informs the owner change.
+    /// Event emitted when the owner change.
     #[derive(Debug, PartialEq, Eq, Event)]
     pub struct OwnerChanged {
         pub new_owner: Address,
