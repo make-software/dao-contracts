@@ -1,17 +1,11 @@
 [workspace]
-members = [
-    "dao",
-    "macros",
-]
+members = ["dao", "macros"]
 
-exclude = [
-    "cucumber-runner",
-    "dao-client"
-]
+exclude = ["cucumber-runner", "dao-client"]
 
 [workspace.dependencies]
-odra = { git = "https://github.com/odradev/odra.git", branch = "release/0.4.0", default-features = false }
-odra-modules = { git = "https://github.com/odradev/odra.git", branch = "release/0.4.0", default-features = false }
+odra = { version = "0.4.0", default-features = false }
+odra-modules = { version = "0.4.0", default-features = false }
 
 [profile.release]
 codegen-units = 1
