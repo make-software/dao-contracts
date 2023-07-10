@@ -95,6 +95,7 @@ impl BidCancelled {
 /// Event emitted when a new [Job](Job) has been created.
 #[derive(Debug, PartialEq, Eq, Event)]
 pub struct JobCreated {
+    job_id: JobId,
     bid_id: BidId,
     job_poster: Address,
     worker: Address,
@@ -106,6 +107,7 @@ impl JobCreated {
     /// Creates a new event.
     pub fn new(job: &Job) -> JobCreated {
         JobCreated {
+            job_id: job.job_id(),
             bid_id: job.bid_id(),
             job_poster: job.poster(),
             worker: job.worker(),
