@@ -29,6 +29,7 @@ pub struct JobEngine {
     job_storage: JobStorage,
     bid_storage: BidStorage,
     refs: ContractRefs,
+    #[odra(using = "refs")]
     voting_engine: VotingEngine,
 }
 

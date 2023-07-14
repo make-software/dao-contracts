@@ -1,7 +1,7 @@
 use odra::{
     contract_env::{caller, revert},
     types::{event::OdraEvent, Address, Balance, BlockTime},
-    Composer, Event, Instance, Mapping, OdraType, UnwrapOrRevert, Variable,
+    Event, Mapping, OdraType, UnwrapOrRevert, Variable,
 };
 
 use crate::rules::validation::IsVa;
@@ -16,7 +16,7 @@ use crate::{
         voting_engine::{
             events::VotingCreatedInfo,
             voting_state_machine::{VotingResult, VotingStateMachine, VotingSummary, VotingType},
-            VotingEngine, VotingEngineComposer,
+            VotingEngine,
         },
     },
 };
@@ -24,30 +24,14 @@ use crate::{
 /// Slashing Voter contract uses [VotingEngine](VotingEngine) to vote on changes of ownership and managing whitelists of other contracts.
 ///
 /// Slashing Voter contract needs to have permissions to perform those actions.
-#[odra::module(skip_instance, events = [SlashingVotingCreated])]
+#[odra::module(events = [SlashingVotingCreated])]
 pub struct SlashingVoterContract {
     refs: ContractRefs,
+    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     tasks: Mapping<VotingId, SlashTask>,
     slashable_contracts: Variable<Vec<Address>>,
     access_control: AccessControl,
-}
-
-impl Instance for SlashingVoterContract {
-    fn instance(namespace: &str) -> Self {
-        let refs = Composer::new(namespace, "refs").compose();
-        let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
-            .with_refs(&refs)
-            .compose();
-
-        Self {
-            refs,
-            voting_engine,
-            tasks: Composer::new(namespace, "tasks").compose(),
-            slashable_contracts: Composer::new(namespace, "slashable_contracts").compose(),
-            access_control: Composer::new(namespace, "access_control").compose(),
-        }
-    }
 }
 
 #[odra::module]

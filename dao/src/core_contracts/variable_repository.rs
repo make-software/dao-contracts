@@ -141,22 +141,22 @@ impl VariableRepositoryContract {
     ///
     /// If the given index exceeds #keys-1 the `None` value is returned.
     pub fn get_key_at(&self, index: u32) -> Option<String> {
-        self.repository.keys.get(index)
+        self.repository.keys2.get(index)
     }
 
     /// Returns the number of existing keys in the [`Repository`](crate::modules::repository::Repository).
     pub fn keys_count(&self) -> u32 {
-        self.repository.keys.len()
+        self.repository.keys2.len()
     }
 
     /// Reads all the stored variables and returns a map key to value.
     pub fn all_variables(&self) -> BTreeMap<String, Bytes> {
         let mut result: BTreeMap<String, Bytes> = BTreeMap::new();
 
-        for key in 0..self.repository.keys.len() {
+        for key in 0..self.repository.keys2.len() {
             let repo_key = self
                 .repository
-                .keys
+                .keys2
                 .get(key)
                 .unwrap_or_revert_with(Error::RepositoryError);
             let value = self
