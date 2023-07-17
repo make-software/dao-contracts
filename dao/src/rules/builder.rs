@@ -1,3 +1,5 @@
+use alloc::boxed::Box;
+
 use crate::rules::{
     validation::{Validation, VotingValidation},
     Rules,
@@ -13,8 +15,8 @@ impl RulesBuilder {
     pub fn new() -> Self {
         Self {
             rules: Rules {
-                validations: vec![],
-                voting_validations: vec![],
+                validations: alloc::vec![],
+                voting_validations: alloc::vec![],
             },
         }
     }

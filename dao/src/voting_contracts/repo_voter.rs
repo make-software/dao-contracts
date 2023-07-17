@@ -1,3 +1,4 @@
+use alloc::string::{String, ToString};
 use odra::{
     contract_env::caller,
     types::{event::OdraEvent, Address, Balance, BlockTime, Bytes, CallArgs},

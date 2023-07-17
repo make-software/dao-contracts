@@ -1,3 +1,4 @@
+use alloc::string::String;
 use odra::types::{Address, Balance, CallArgs};
 use odra::{call_contract, OdraType};
 

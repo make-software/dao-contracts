@@ -454,7 +454,7 @@ impl VotingSummary {
     }
 
     fn is_rejected(&self) -> bool {
-        vec![VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
+        alloc::vec![VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
     }
 }
 

@@ -17,11 +17,12 @@ use crate::voting::cspr_redistribution::{
 use crate::voting::types::VotingId;
 use crate::voting::voting_engine::voting_state_machine::{VotingResult, VotingSummary, VotingType};
 use crate::voting::voting_engine::VotingEngine;
+use alloc::vec::Vec;
 use odra::contract_env::{attached_value, caller, get_block_time, revert};
 use odra::types::Address;
 use odra::types::{event::OdraEvent, Balance};
 use odra::UnwrapOrRevert;
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
 /// Manages Jobs lifecycle.
 #[odra::module(events = [JobSubmitted, JobRejected, JobCancelled, JobDone, BidEscrowVotingCreated])]
@@ -350,7 +351,7 @@ impl JobEngine {
     /// Returns the lists of slashed jobs, canceled votings and affected votings.
     pub fn slash_voter(&mut self, voter: Address) -> (Vec<JobId>, Vec<VotingId>, Vec<VotingId>) {
         let (canceled_votings, affected_votings) = self.voting_engine.slash_voter(voter);
-        let mut slashed_jobs = vec![];
+        let mut slashed_jobs = alloc::vec![];
         for job_id in self.job_storage.get_active_jobs() {
             let job = self.job_storage.get_job_or_revert(job_id);
             if job.worker() == voter {

@@ -4,10 +4,12 @@ use crate::configuration::Configuration;
 use crate::utils::consts;
 use crate::utils::ContractCall;
 use crate::utils::Error;
+use alloc::string::String;
+use alloc::vec::Vec;
 use odra::call_contract;
 use odra::contract_env::revert;
 use odra::types::{Address, Balance, Bytes, CallArgs, OdraType};
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
 /// Utility to crate a [Configuration] instance.
 pub struct ConfigurationBuilder {
@@ -108,7 +110,7 @@ impl ConfigurationBuilder {
 
     /// Sets the `contract_calls` field with a vec with a single call.
     pub fn contract_call(self, contract_call: ContractCall) -> Self {
-        self.contract_calls(vec![contract_call])
+        self.contract_calls(alloc::vec![contract_call])
     }
 
     /// Sets the `contract_calls` field.

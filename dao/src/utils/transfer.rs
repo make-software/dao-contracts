@@ -1,4 +1,5 @@
 use crate::bid_escrow::events::{CSPRTransfer, TransferReason};
+use alloc::string::ToString;
 use odra::contract_env::{self_address, transfer_tokens};
 use odra::types::{event::OdraEvent, Address, Balance};
 

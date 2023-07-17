@@ -1,8 +1,9 @@
-use std::hash::Hash;
+use core::hash::Hash;
 
 use crate::modules::AccessControl;
 use crate::utils::Error;
 
+use alloc::vec::Vec;
 use odra::{
     contract_env,
     types::{Address, Balance, OdraType},
@@ -29,7 +30,7 @@ impl StakesStorage {
     }
 
     pub fn unstake(&mut self, voter: Address, stake: Balance) {
-        self.bulk_unstake(vec![(voter, stake)]);
+        self.bulk_unstake(alloc::vec![(voter, stake)]);
     }
 
     pub fn bulk_unstake(&mut self, stakes: Vec<(Address, Balance)>) {

@@ -11,6 +11,7 @@
 //!
 //! [`KYC Voting`]: crate::voting_contracts::KycVoterContract
 use crate::core_contracts::dao_nft::{DaoNft, TokenId, TokenUri};
+use alloc::string::String;
 use odra::types::{Address, Balance, U256};
 
 /// NFT contract that tells the system if user is KYC'd.

@@ -28,6 +28,7 @@ use crate::voting::voting_engine::events::VotingCreatedInfo;
 use crate::voting::voting_engine::voting_state_machine::VotingType;
 use crate::voting::voting_engine::voting_state_machine::{VotingStateMachine, VotingSummary};
 use crate::voting::voting_engine::VotingEngine;
+use alloc::string::ToString;
 use odra::contract_env::{self, caller};
 use odra::types::event::OdraEvent;
 use odra::types::{Address, Balance, BlockTime, CallArgs};

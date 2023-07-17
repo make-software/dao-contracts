@@ -14,8 +14,8 @@ pub fn expand_derive_rule(input: DeriveInput) -> TokenStream {
                 impl #ident {
                     pub fn create(
                        #fn_args
-                    ) -> Box<Self> {
-                        Box::new(Self {
+                    ) -> alloc::boxed::Box<Self> {
+                        alloc::boxed::Box::new(Self {
                             # ( #struct_args ),*
                         })
                     }

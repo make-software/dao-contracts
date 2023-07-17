@@ -9,7 +9,7 @@ use crate::rules::validation::IsUserKyced;
 use crate::rules::RulesBuilder;
 use odra::types::{Address, Balance, BlockTime};
 use odra::OdraType;
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 /// Serializable JobOffer status representation.
 #[derive(OdraType, PartialEq)]

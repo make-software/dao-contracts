@@ -7,7 +7,7 @@ use crate::voting::voting_engine::voting_state_machine::{
 };
 use odra::types::{Address, Balance, BlockTime};
 use odra::{Event, OdraType};
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
 /// Represents an explanation for a particular action (mint, burn, stake).
 #[derive(OdraType, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Debug)]

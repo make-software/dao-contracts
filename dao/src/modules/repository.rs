@@ -2,6 +2,8 @@
 use crate::modules::repository::events::ValueUpdated;
 use crate::utils::consts;
 use crate::utils::Error::{ActivationTimeInPast, KeyValueStorageError};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use odra::contract_env::{get_block_time, revert};
 use odra::types::event::OdraEvent;
 use odra::types::{Address, Balance, Bytes, OdraType as OdraTyped};
@@ -141,7 +143,7 @@ impl RepositoryDefaults {
 
 impl Default for RepositoryDefaults {
     fn default() -> Self {
-        let mut items = RepositoryDefaults { items: vec![] };
+        let mut items = RepositoryDefaults { items: alloc::vec![] };
         items.push(consts::POST_JOB_DOS_FEE, Balance::from(10000));
         items.push(consts::INTERNAL_AUCTION_TIME, 604800000u64);
         items.push(consts::PUBLIC_AUCTION_TIME, 864000000u64);
@@ -173,6 +175,7 @@ impl Default for RepositoryDefaults {
 }
 
 pub mod events {
+    use alloc::string::String;
     use odra::types::Bytes;
     use odra::Event;
 

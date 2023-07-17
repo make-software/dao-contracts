@@ -2,7 +2,7 @@ use odra::{
     types::{Address, Balance},
     OdraType,
 };
-use std::collections::BTreeMap;
+use alloc::{collections::BTreeMap, vec::Vec};
 
 use super::balances::BalanceStorage;
 

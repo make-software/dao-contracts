@@ -1,6 +1,8 @@
 //! Abstractions facilitating error handling.
 
 use crate::rules::validation::{Validation, VotingValidation};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use odra::contract_env::revert;
 
 mod builder;

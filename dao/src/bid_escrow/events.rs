@@ -6,6 +6,8 @@ use crate::bid_escrow::types::{BidId, JobId, JobOfferId};
 use crate::configuration::Configuration;
 use crate::utils::types::DocumentHash;
 use crate::voting::types::VotingId;
+use alloc::string::String;
+use alloc::vec::Vec;
 use odra::types::{Address, Balance, BlockTime};
 use odra::Event;
 
@@ -271,8 +273,8 @@ pub enum TransferReason {
     OnboardingStakeReturn,
 }
 
-impl ToString for TransferReason {
-    fn to_string(&self) -> String {
+impl alloc::string::ToString for TransferReason {
+    fn to_string(&self) -> alloc::string::String {
         match self {
             TransferReason::JobPayment => "JobPayment".to_string(),
             TransferReason::JobPaymentReturn => "JobPaymentReturn".to_string(),

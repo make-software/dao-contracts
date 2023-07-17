@@ -12,6 +12,7 @@
 //! Each [`Address`] can own only one VA token.
 //!
 //! [`Bid Escrow`]: crate::bid_escrow::BidEscrowContractInterface.
+use alloc::string::String;
 use odra::types::{Address, Balance, U256};
 
 use crate::core_contracts::dao_nft::{DaoNft, TokenId, TokenUri};

@@ -4,7 +4,7 @@ use crate::utils::Error;
 use macros::Rule;
 use odra::contract_env::attached_value;
 use odra::types::Balance;
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 /// Makes sure the `Job DOS Fee` is high enough. May return [Error::DosFeeTooLow].
 #[derive(Rule)]

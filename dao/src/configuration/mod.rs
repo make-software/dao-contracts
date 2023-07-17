@@ -10,6 +10,7 @@ mod builder;
 mod dao_configuration;
 mod voting_configuration;
 
+use alloc::vec::Vec;
 pub use builder::ConfigurationBuilder;
 pub use dao_configuration::DaoConfiguration;
 pub use voting_configuration::VotingConfiguration;

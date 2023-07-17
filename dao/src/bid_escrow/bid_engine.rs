@@ -12,9 +12,10 @@ use crate::bid_escrow::types::{BidId, JobOfferId};
 use crate::configuration::{Configuration, ConfigurationBuilder};
 use crate::modules::refs::ContractRefs;
 use crate::utils::withdraw;
+use alloc::vec::Vec;
 use odra::contract_env::{caller, get_block_time};
 use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 /// Manages the Bidding process.
 #[odra::module(events = [JobCreated, JobOfferCreated, BidSubmitted, BidCancelled])]
@@ -246,8 +247,8 @@ impl BidEngine {
     }
 
     pub fn slash_voter(&mut self, voter: Address) -> (Vec<JobOfferId>, Vec<BidId>) {
-        let mut slashed_job_offers = vec![];
-        let mut slashed_bids = vec![];
+        let mut slashed_job_offers = alloc::vec![];
+        let mut slashed_bids = alloc::vec![];
         for job_offer_id in self.bid_storage.get_active_offers() {
             let job_offer = self.bid_storage.get_job_offer_or_revert(&job_offer_id);
             if voter == job_offer.job_poster {

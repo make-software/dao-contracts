@@ -37,10 +37,11 @@
 
 use crate::modules::{AccessControl, Record, Repository};
 use crate::utils::Error;
+use alloc::string::String;
 use odra::contract_env::caller;
 use odra::types::{Address, Bytes};
 use odra::UnwrapOrRevert;
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
 /// Variable Repository Contract.
 #[odra::module]

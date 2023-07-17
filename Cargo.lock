@@ -1393,6 +1393,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
 
 [[package]]
+name = "ink_allocator"
+version = "4.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cb3178f207f6a37c3512142c8c6c2561a2aac61d60baa934d08d1e55a67d4a8"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "instant"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1500,6 +1509,9 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+dependencies = [
+ "spin",
+]
 
 [[package]]
 name = "libc"
@@ -1775,7 +1787,6 @@ dependencies = [
 name = "odra"
 version = "0.5.0"
 dependencies = [
- "cfg-if",
  "num-traits",
  "odra-casper-backend",
  "odra-casper-codegen",
@@ -1795,6 +1806,7 @@ dependencies = [
  "casper-contract",
  "casper-event-standard",
  "casper-types",
+ "ink_allocator",
  "lazy_static",
  "odra-casper-shared",
  "odra-casper-types",
@@ -1849,6 +1861,7 @@ dependencies = [
 name = "odra-casper-shared"
 version = "0.5.0"
 dependencies = [
+ "casper-contract",
  "casper-event-standard",
  "odra-casper-types",
  "odra-utils",
@@ -2664,6 +2677,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "spin"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "static_assertions"

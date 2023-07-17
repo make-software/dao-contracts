@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use odra::{
     contract_env::{caller, revert},
     types::{event::OdraEvent, Address, Balance, BlockTime},
