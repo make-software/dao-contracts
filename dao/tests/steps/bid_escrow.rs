@@ -98,6 +98,31 @@ fn submit_bid_external(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
+#[when(
+    expr = "InternalWorker posted the Bid for JobOffer {int} with {balance} CSPR and {reputation} REP staked"
+)]
+fn submit_bid_internal_cspr_stake(
+    w: &mut DaoWorld,
+    job_offer_id: u32,
+    cspr_stake: CsprBalance,
+    reputation_stake: ReputationBalance,
+) {
+    let worker = w.get_address(&Account::InternalWorker);
+    test_env::set_caller(worker);
+    suppress(|| {
+        w.post_bid(
+            job_offer_id,
+            Account::InternalWorker,
+            1000,
+            100.into(),
+            *reputation_stake,
+            false,
+            Some(*cspr_stake),
+        )
+    });
+}
+
 #[when(expr = "{account} picked the Bid of {account}")]
 fn bid_picked(w: &mut DaoWorld, job_poster: Account, worker: Account) {
     w.pick_bid(job_poster, worker);

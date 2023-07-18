@@ -4,7 +4,8 @@ use crate::bid_escrow::job_offer::{AuctionState, JobOfferStatus};
 use crate::bid_escrow::types::{BidId, JobOfferId};
 use crate::rules::validation::bid_escrow::{
     CanBeOnboarded, CanBidBeCancelled, CanBidOnAuctionState, CanBidOnOwnJob, CanPickBid,
-    DoesProposedPaymentExceedBudget, HasPermissionsToCancelBid, IsGracePeriod, IsStakeNonZero,
+    DoesProposedPaymentExceedBudget, HasPermissionsToCancelBid, IsBidStakeCorrect, IsGracePeriod,
+    IsStakeNonZero,
 };
 use crate::rules::validation::IsUserKyced;
 use crate::rules::RulesBuilder;
@@ -153,6 +154,11 @@ impl Bid {
                 request.auction_state,
                 request.worker_is_va,
                 request.va_can_bid_on_public_auction,
+            ))
+            .add_validation(IsBidStakeCorrect::create(
+                request.worker_is_va,
+                request.cspr_stake,
+                request.reputation_stake,
             ))
             .build()
             .validate_generic_validations();

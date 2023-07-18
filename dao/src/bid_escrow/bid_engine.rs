@@ -113,9 +113,6 @@ impl BidEngine {
         let bid_id = self.bid_storage.next_bid_id();
         let block_time = get_block_time();
 
-        let cspr_stake =
-            self.stake_cspr_or_reputation_for_bid(reputation_stake, cspr_stake, worker);
-
         let submit_bid_request = SubmitBidRequest {
             bid_id,
             timestamp: block_time,
@@ -135,6 +132,9 @@ impl BidEngine {
         };
 
         let bid = Bid::new(submit_bid_request);
+
+        let cspr_stake =
+            self.stake_cspr_or_reputation_for_bid(reputation_stake, cspr_stake, worker);
 
         self.bid_storage.store_bid(bid);
         self.bid_storage.store_bid_id(job_offer_id, bid_id);

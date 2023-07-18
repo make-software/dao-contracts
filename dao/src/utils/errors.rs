@@ -65,6 +65,7 @@ execution_error! {
         VotingAddressNotFound => 3415,
         OnboardingRequestNotFound => 3416,
         OnboardingConfigurationNotFound => 3417,
+        AttachedValueMismatch => 3418,
 
         // Bid Escrow Errors.
         CannotPostJobForSelf => 4000,
@@ -102,6 +103,9 @@ execution_error! {
         JobCannotBeYetCanceled => 4032,
         FiatRateNotSet => 4033,
         OnlyJobPosterCanModifyJobOffer => 4034,
+        OnboardedWorkerCannotStakeCSPR => 4035,
+        NotOnboardedWorkerMustStakeCSPR => 4036,
+        CannotStakeBothCSPRAndReputation => 4037,
 
         // Reputation Token Errors.
         CannotStakeTwice => 4500,
