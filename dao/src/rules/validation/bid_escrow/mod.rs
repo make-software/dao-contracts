@@ -12,6 +12,7 @@ mod does_proposed_payment_match_transferred;
 mod exists_ongoing_voting;
 mod has_permissions_to_cancel_bid;
 mod has_permissions_to_cancel_job_offer;
+mod is_bid_stake_correct;
 mod is_dos_fee_enough;
 mod is_grace_period;
 mod is_not_va;
@@ -29,6 +30,7 @@ pub use does_proposed_payment_match_transferred::DoesProposedPaymentMatchTransfe
 pub use exists_ongoing_voting::ExistsOngoingVoting;
 pub use has_permissions_to_cancel_bid::HasPermissionsToCancelBid;
 pub use has_permissions_to_cancel_job_offer::HasPermissionsToCancelJobOffer;
+pub use is_bid_stake_correct::IsBidStakeCorrect;
 pub use is_dos_fee_enough::IsDosFeeEnough;
 pub use is_grace_period::IsGracePeriod;
 pub use is_not_va::IsNotVa;
