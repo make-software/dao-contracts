@@ -28,7 +28,6 @@ use crate::{
 #[odra::module(events = [RepoVotingCreated])]
 pub struct RepoVoterContract {
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     access_control: AccessControl,
 }

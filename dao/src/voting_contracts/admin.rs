@@ -19,7 +19,6 @@ use odra::{Event, OdraType};
 #[odra::module(events = [AdminVotingCreated])]
 pub struct AdminContract {
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     access_control: AccessControl,
 }

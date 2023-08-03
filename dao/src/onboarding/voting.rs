@@ -27,7 +27,6 @@ pub struct Onboarding {
     configurations: Mapping<VotingId, Configuration>,
     ids: Mapping<Address, VotingId>,
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting: VotingEngine,
 }
 

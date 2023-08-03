@@ -42,10 +42,8 @@ use odra::{Event, UnwrapOrRevert};
 #[odra::module(events = [KycVotingCreated])]
 pub struct KycVoterContract {
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     access_control: AccessControl,
-    #[odra(using = "refs")]
     kyc: KycInfo,
 }
 

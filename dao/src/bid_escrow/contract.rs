@@ -216,11 +216,10 @@ use super::storage::{BidStorage, JobStorage};
 pub struct BidEscrowContract {
     refs: ContractRefs,
     access_control: AccessControl,
-    #[odra(using = "refs, voting_engine, job_storage, bid_storage")]
+    #[odra(using = "voting_engine, job_storage, bid_storage")]
     job_engine: JobEngine,
-    #[odra(using = "refs, job_storage, bid_storage")]
+    #[odra(using = "job_storage, bid_storage")]
     bid_engine: BidEngine,
-    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     job_storage: JobStorage,
     bid_storage: BidStorage,

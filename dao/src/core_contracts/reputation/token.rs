@@ -15,11 +15,9 @@ use super::{
 /// Implementation of the Reputation Contract.
 #[odra::module]
 pub struct ReputationContract {
-    #[odra(using = "access_control")]
     reputation_storage: BalanceStorage,
-    #[odra(using = "access_control")]
     passive_reputation_storage: BalanceStorage,
-    #[odra(using = "access_control, reputation_storage")]
+    #[odra(using = "reputation_storage")]
     stakes_storage: StakesStorage,
     #[odra(using = "reputation_storage")]
     aggregates: BalanceAggregates,

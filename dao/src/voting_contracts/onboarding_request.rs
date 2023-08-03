@@ -45,10 +45,9 @@ use odra::Event;
 #[odra::module(events = [OnboardingVotingCreated])]
 pub struct OnboardingRequestContract {
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting: VotingEngine,
     access_control: AccessControl,
-    #[odra(using = "refs, voting")]
+    #[odra(using = "voting")]
     onboarding: Onboarding,
 }
 

@@ -1,28 +1,27 @@
 //! Whitelist module.
 use crate::modules::whitelist::events::{AddedToWhitelist, RemovedFromWhitelist};
 use crate::utils::Error;
-use odra::contract_env::{caller, revert};
+use odra::contract_env::{caller, revert, self};
 use odra::types::event::OdraEvent;
 use odra::types::Address;
-use odra::Mapping;
+
+const KEY_WH: &[u8] = b"__odra_whitelist";
 
 /// The Whitelist module.
 #[odra::module]
-pub struct Whitelist {
-    pub whitelist: Mapping<Address, bool>,
-}
+pub struct Whitelist;
 
 #[odra::module]
 impl Whitelist {
     /// Add new `address` to the whitelist.
     pub fn add_to_whitelist(&mut self, address: Address) {
-        self.whitelist.set(&address, true);
+        contract_env::set_dict_value(KEY_WH, &address, true);
         AddedToWhitelist { address }.emit();
     }
 
     /// Remove an `address` from the whitelist.
     pub fn remove_from_whitelist(&mut self, address: Address) {
-        self.whitelist.set(&address, false);
+        contract_env::set_dict_value(KEY_WH, &address, false);
         RemovedFromWhitelist { address }.emit();
     }
 
@@ -35,7 +34,7 @@ impl Whitelist {
 
     /// Returns true if the address is whitelisted.
     pub fn is_whitelisted(&self, address: Address) -> bool {
-        self.whitelist.get(&address).unwrap_or(false)
+        contract_env::get_dict_value(KEY_WH, &address).unwrap_or(false)
     }
 }
 

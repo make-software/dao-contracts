@@ -27,7 +27,6 @@ use crate::{
 #[odra::module(events = [SimpleVotingCreated])]
 pub struct SimpleVoterContract {
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
     access_control: AccessControl,

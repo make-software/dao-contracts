@@ -28,7 +28,6 @@ use crate::{
 #[odra::module(events = [SlashingVotingCreated])]
 pub struct SlashingVoterContract {
     refs: ContractRefs,
-    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     tasks: Mapping<VotingId, SlashTask>,
     slashable_contracts: Variable<Vec<Address>>,

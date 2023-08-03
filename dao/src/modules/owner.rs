@@ -1,15 +1,14 @@
 //! The Owner module.
 use crate::modules::owner::events::OwnerChanged;
 use crate::utils::Error;
-use odra::contract_env::{caller, revert};
+use odra::contract_env::{caller, revert, self};
 use odra::types::event::OdraEvent;
 use odra::types::Address;
-use odra::Variable;
+
+const KEY_OWNER: &[u8] = b"__odra_owner";
 
 #[odra::module]
-pub struct Owner {
-    pub owner: Variable<Address>,
-}
+pub struct Owner;
 
 /// Module entrypoints implementation.
 #[odra::module]
@@ -22,14 +21,14 @@ impl Owner {
 
     /// Set the owner to the new address.
     pub fn change_ownership(&mut self, owner: Address) {
-        self.owner.set(owner);
+        contract_env::set_var(KEY_OWNER, owner);
 
         OwnerChanged { new_owner: owner }.emit();
     }
 
     /// Verify if the contract caller is the owner. Revert otherwise.
     pub fn ensure_owner(&self) {
-        if let Some(owner) = self.owner.get() {
+        if let Some(owner) = contract_env::get_var::<Address>(KEY_OWNER) {
             if owner != caller() {
                 revert(Error::NotAnOwner)
             }
@@ -39,7 +38,7 @@ impl Owner {
     }
 
     pub fn get_owner(&self) -> Option<Address> {
-        self.owner.get()
+        contract_env::get_var(KEY_OWNER)
     }
 }
 pub mod events {
