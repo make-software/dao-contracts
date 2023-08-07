@@ -230,6 +230,7 @@ pub struct BidEscrowVotingCreated {
     config_double_time_between_votings: bool,
     config_voting_clearness_delta: Balance,
     config_time_between_informal_and_formal_voting: BlockTime,
+    config_voting_start_after_job_submission: BlockTime,
 }
 
 impl BidEscrowVotingCreated {
@@ -256,6 +257,7 @@ impl BidEscrowVotingCreated {
             config_voting_clearness_delta: configuration.voting_clearness_delta(),
             config_time_between_informal_and_formal_voting: configuration
                 .time_between_informal_and_formal_voting(),
+            config_voting_start_after_job_submission: configuration.voting_delay(),
         }
     }
 }
