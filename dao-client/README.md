@@ -38,3 +38,23 @@ Example:
 ```bash
 cargo run -- setup-va account-hash-3b4ffcfb21411ced5fc1560c3f6ffed86f4885e5ea05cde49d90962a48a14d95 1000000000
 ```
+
+## Print Variables
+To print all DAO variables and their values run:
+```bash
+cargo run -- print-variables
+```
+
+## Update Variable
+To update DAO variable run:
+```bash
+cargo run -- update-variable <variable_name> <variable_value>
+```
+
+for example:
+```bash
+cargo run -- set-variable FormalQuorumRatio 100
+cargo run -- set-variable ForumKycRequired false
+```
+
+To see available variable names and sample values, use `print-variables` command.
