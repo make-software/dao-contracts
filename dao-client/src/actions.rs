@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, str::FromStr};
 
+use dao::configuration::get_variable;
 use dao::{
     bid_escrow::contract::BidEscrowContractDeployer,
     core_contracts::{
@@ -13,13 +14,12 @@ use dao::{
         SlashingVoterContractDeployer,
     },
 };
-use odra::{client_env, types::Address};
-use odra::types::BlockTime;
 use odra::types::Balance;
+use odra::types::BlockTime;
 use odra::types::OdraType;
-use dao::configuration::get_variable;
-use dao::utils::consts::*;
+use odra::{client_env, types::Address};
 
+use crate::variables::VariableType;
 use crate::{
     cspr, error::Error, log, DaoSnapshot, DeployedContractsToml, DEFAULT_CSPR_USD_RATE,
     DEPLOYED_CONTRACTS_FILE,
@@ -293,64 +293,83 @@ pub fn print_variables() {
 
     // print all variables
     for (name, _) in variables.clone() {
-        match name.as_str() {
-            POST_JOB_DOS_FEE | DEFAULT_POLICING_RATE | REPUTATION_CONVERSION_RATE |
-            BID_ESCROW_INFORMAL_QUORUM_RATIO | BID_ESCROW_FORMAL_QUORUM_RATIO |
-            INFORMAL_QUORUM_RATIO | FORMAL_QUORUM_RATIO |
-            DEFAULT_REPUTATION_SLASH | VOTING_CLEARNESS_DELTA | BID_ESCROW_PAYMENT_RATIO => {
-                log::info(format!("{}: {}", name, get_variable::<Balance>(name.as_str(), &variables)));
-            }
-            INTERNAL_AUCTION_TIME | PUBLIC_AUCTION_TIME | BID_ESCROW_INFORMAL_VOTING_TIME |
-            BID_ESCROW_FORMAL_VOTING_TIME | INFORMAL_VOTING_TIME | FORMAL_VOTING_TIME |
-            TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING | VA_BID_ACCEPTANCE_TIMEOUT |
-            VOTING_START_AFTER_JOB_WORKER_SUBMISSION => {
-                log::info(format!("{}: {}", name, get_variable::<BlockTime>(name.as_str(), &variables)));
-            }
-            FIAT_CONVERSION_RATE_ADDRESS | BID_ESCROW_WALLET_ADDRESS | VOTING_IDS_ADDRESS=> {
-                log::info(format!("{}: {:?}", name, get_variable::<Address>(name.as_str(), &variables)));
-            }
-            FORUM_KYC_REQUIRED | INFORMAL_STAKE_REPUTATION | VA_CAN_BID_ON_PUBLIC_AUCTION |
-            DISTRIBUTE_PAYMENT_TO_NON_VOTERS => {
-                log::info(format!("{}: {:?}", name, get_variable::<bool>(name.as_str(), &variables)));
-            }
-
-            _ => {
-                log::info(format!("Unknown variable type: {}", name));
-            }
+        match VariableType::from_str(name.as_str()) {
+            VariableType::Balance => log::info(format!(
+                "{}: {}",
+                name,
+                get_variable::<Balance>(name.as_str(), &variables)
+            )),
+            VariableType::BlockTime => log::info(format!(
+                "{}: {}",
+                name,
+                get_variable::<BlockTime>(name.as_str(), &variables)
+            )),
+            VariableType::Address => log::info(format!(
+                "{}: {:?}",
+                name,
+                get_variable::<Address>(name.as_str(), &variables)
+            )),
+            VariableType::Bool => log::info(format!(
+                "{}: {:?}",
+                name,
+                get_variable::<bool>(name.as_str(), &variables)
+            )),
+            VariableType::Unknown => log::info(format!("Unknown variable type: {}", name)),
         }
     }
 }
 
 pub fn set_variable(name: &str, value: &str) {
     let mut dao = DaoSnapshot::load();
-        client_env::set_gas(cspr(5));
+    client_env::set_gas(cspr(5));
 
-    match name {
-        POST_JOB_DOS_FEE | DEFAULT_POLICING_RATE | REPUTATION_CONVERSION_RATE |
-        BID_ESCROW_INFORMAL_QUORUM_RATIO | BID_ESCROW_FORMAL_QUORUM_RATIO |
-        INFORMAL_QUORUM_RATIO | FORMAL_QUORUM_RATIO |
-        DEFAULT_REPUTATION_SLASH | VOTING_CLEARNESS_DELTA | BID_ESCROW_PAYMENT_RATIO => {
-            dao.variable_repository.update_at(name.to_string(), Balance::from(value.parse::<u64>().unwrap()).serialize().unwrap().into(), None);
-            log::info(format!("Updated {} to {}", name,  value));
+    match VariableType::from_str(name) {
+        VariableType::Balance => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                Balance::from(value.parse::<u64>().unwrap())
+                    .serialize()
+                    .unwrap()
+                    .into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
         }
-        INTERNAL_AUCTION_TIME | PUBLIC_AUCTION_TIME | BID_ESCROW_INFORMAL_VOTING_TIME |
-        BID_ESCROW_FORMAL_VOTING_TIME | INFORMAL_VOTING_TIME | FORMAL_VOTING_TIME |
-        TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING | VA_BID_ACCEPTANCE_TIMEOUT |
-        VOTING_START_AFTER_JOB_WORKER_SUBMISSION => {
-            dao.variable_repository.update_at(name.to_string(), value.parse::<BlockTime>().unwrap().serialize().unwrap().into(), None);
-            log::info(format!("Updated {} to {}", name,  value));
+        VariableType::BlockTime => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                value
+                    .parse::<BlockTime>()
+                    .unwrap()
+                    .serialize()
+                    .unwrap()
+                    .into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
         }
-        FIAT_CONVERSION_RATE_ADDRESS | BID_ESCROW_WALLET_ADDRESS | VOTING_IDS_ADDRESS=> {
-            dao.variable_repository.update_at(name.to_string(), value.parse::<Address>().unwrap().serialize().unwrap().into(), None);
-            log::info(format!("Updated {} to {}", name,  value));
+        VariableType::Address => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                value
+                    .parse::<Address>()
+                    .unwrap()
+                    .serialize()
+                    .unwrap()
+                    .into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
         }
-        FORUM_KYC_REQUIRED | INFORMAL_STAKE_REPUTATION | VA_CAN_BID_ON_PUBLIC_AUCTION |
-        DISTRIBUTE_PAYMENT_TO_NON_VOTERS => {
-            dao.variable_repository.update_at(name.to_string(), value.parse::<bool>().unwrap().serialize().unwrap().into(), None);
-            log::info(format!("Updated {} to {}", name,  value));
+        VariableType::Bool => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                value.parse::<bool>().unwrap().serialize().unwrap().into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
         }
-
-        _ => {
+        VariableType::Unknown => {
             log::info(format!("Unknown variable: {}", name));
         }
     }
