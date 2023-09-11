@@ -10,15 +10,15 @@ mod builder;
 mod dao_configuration;
 mod voting_configuration;
 
-use std::collections::BTreeMap;
 pub use builder::ConfigurationBuilder;
 pub use dao_configuration::DaoConfiguration;
+use std::collections::BTreeMap;
 pub use voting_configuration::VotingConfiguration;
 
 use crate::utils::{per_mil_of, per_mil_of_as_u32, to_per_mils, ContractCall, Error};
+use odra::contract_env::revert;
 use odra::types::{Address, Balance, BlockTime, Bytes, OdraType};
 use odra::{OdraType, UnwrapOrRevert};
-use odra::contract_env::revert;
 
 /// Represents the current system configuration.
 #[derive(OdraType)]

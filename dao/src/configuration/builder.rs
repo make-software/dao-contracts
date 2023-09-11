@@ -1,6 +1,6 @@
 use crate::configuration::dao_configuration::DaoConfiguration;
 use crate::configuration::voting_configuration::VotingConfiguration;
-use crate::configuration::{Configuration, get_variable};
+use crate::configuration::{get_variable, Configuration};
 use crate::utils::consts;
 use crate::utils::ContractCall;
 use odra::call_contract;
@@ -23,10 +23,7 @@ impl ConfigurationBuilder {
                     internal_auction_time: get_variable(INTERNAL_AUCTION_TIME, variables),
                     public_auction_time: get_variable(PUBLIC_AUCTION_TIME, variables),
                     default_policing_rate: get_variable(DEFAULT_POLICING_RATE, variables),
-                    reputation_conversion_rate: get_variable(
-                        REPUTATION_CONVERSION_RATE,
-                        variables,
-                    ),
+                    reputation_conversion_rate: get_variable(REPUTATION_CONVERSION_RATE, variables),
                     fiat_conversion_rate_address: get_variable(
                         FIAT_CONVERSION_RATE_ADDRESS,
                         variables,
@@ -50,18 +47,12 @@ impl ConfigurationBuilder {
                     ),
                     informal_voting_time: get_variable(INFORMAL_VOTING_TIME, variables),
                     formal_voting_time: get_variable(FORMAL_VOTING_TIME, variables),
-                    informal_stake_reputation: get_variable(
-                        INFORMAL_STAKE_REPUTATION,
-                        variables,
-                    ),
+                    informal_stake_reputation: get_variable(INFORMAL_STAKE_REPUTATION, variables),
                     time_between_informal_and_formal_voting: get_variable(
                         TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING,
                         variables,
                     ),
-                    va_bid_acceptance_timeout: get_variable(
-                        VA_BID_ACCEPTANCE_TIMEOUT,
-                        variables,
-                    ),
+                    va_bid_acceptance_timeout: get_variable(VA_BID_ACCEPTANCE_TIMEOUT, variables),
                     va_can_bid_on_public_auction: get_variable(
                         VA_CAN_BID_ON_PUBLIC_AUCTION,
                         variables,
@@ -70,14 +61,8 @@ impl ConfigurationBuilder {
                         DISTRIBUTE_PAYMENT_TO_NON_VOTERS,
                         variables,
                     ),
-                    bid_escrow_wallet_address: get_variable(
-                        BID_ESCROW_WALLET_ADDRESS,
-                        variables,
-                    ),
-                    default_reputation_slash: get_variable(
-                        DEFAULT_REPUTATION_SLASH,
-                        variables,
-                    ),
+                    bid_escrow_wallet_address: get_variable(BID_ESCROW_WALLET_ADDRESS, variables),
+                    default_reputation_slash: get_variable(DEFAULT_REPUTATION_SLASH, variables),
                     voting_clearness_delta: get_variable(VOTING_CLEARNESS_DELTA, variables),
                     voting_start_after_job_worker_submission: get_variable(
                         VOTING_START_AFTER_JOB_WORKER_SUBMISSION,
@@ -85,10 +70,7 @@ impl ConfigurationBuilder {
                     ),
                     informal_quorum_ratio: get_variable(INFORMAL_QUORUM_RATIO, variables),
                     formal_quorum_ratio: get_variable(FORMAL_QUORUM_RATIO, variables),
-                    bid_escrow_payment_ratio: get_variable(
-                        BID_ESCROW_PAYMENT_RATIO,
-                        variables,
-                    ),
+                    bid_escrow_payment_ratio: get_variable(BID_ESCROW_PAYMENT_RATIO, variables),
                     voting_ids_address: get_variable(VOTING_IDS_ADDRESS, variables),
                 },
                 VotingConfiguration {
