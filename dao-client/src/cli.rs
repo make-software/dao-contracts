@@ -19,6 +19,11 @@ enum Commands {
         account_hash: String,
         reputation_amount: u64,
     },
+    PrintVariables,
+    SetVariable {
+        name: String,
+        value: String,
+    },
 }
 
 pub fn parse() {
@@ -32,5 +37,7 @@ pub fn parse() {
             account_hash,
             reputation_amount,
         } => actions::setup_va(&account_hash, reputation_amount),
+        PrintVariables => actions::print_variables(),
+        SetVariable { name, value } => actions::set_variable(&name, &value),
     }
 }

@@ -1,12 +1,10 @@
 use crate::configuration::dao_configuration::DaoConfiguration;
 use crate::configuration::voting_configuration::VotingConfiguration;
-use crate::configuration::Configuration;
+use crate::configuration::{Configuration, get_variable};
 use crate::utils::consts;
 use crate::utils::ContractCall;
-use crate::utils::Error;
 use odra::call_contract;
-use odra::contract_env::revert;
-use odra::types::{Address, Balance, Bytes, CallArgs, OdraType};
+use odra::types::{Address, Balance, Bytes, CallArgs};
 use std::collections::BTreeMap;
 
 /// Utility to crate a [Configuration] instance.
@@ -21,77 +19,77 @@ impl ConfigurationBuilder {
         ConfigurationBuilder {
             configuration: Configuration::new(
                 DaoConfiguration {
-                    post_job_dos_fee: Self::get_variable(POST_JOB_DOS_FEE, variables),
-                    internal_auction_time: Self::get_variable(INTERNAL_AUCTION_TIME, variables),
-                    public_auction_time: Self::get_variable(PUBLIC_AUCTION_TIME, variables),
-                    default_policing_rate: Self::get_variable(DEFAULT_POLICING_RATE, variables),
-                    reputation_conversion_rate: Self::get_variable(
+                    post_job_dos_fee: get_variable(POST_JOB_DOS_FEE, variables),
+                    internal_auction_time: get_variable(INTERNAL_AUCTION_TIME, variables),
+                    public_auction_time: get_variable(PUBLIC_AUCTION_TIME, variables),
+                    default_policing_rate: get_variable(DEFAULT_POLICING_RATE, variables),
+                    reputation_conversion_rate: get_variable(
                         REPUTATION_CONVERSION_RATE,
                         variables,
                     ),
-                    fiat_conversion_rate_address: Self::get_variable(
+                    fiat_conversion_rate_address: get_variable(
                         FIAT_CONVERSION_RATE_ADDRESS,
                         variables,
                     ),
-                    forum_kyc_required: Self::get_variable(FORUM_KYC_REQUIRED, variables),
-                    bid_escrow_informal_quorum_ratio: Self::get_variable(
+                    forum_kyc_required: get_variable(FORUM_KYC_REQUIRED, variables),
+                    bid_escrow_informal_quorum_ratio: get_variable(
                         BID_ESCROW_INFORMAL_QUORUM_RATIO,
                         variables,
                     ),
-                    bid_escrow_formal_quorum_ratio: Self::get_variable(
+                    bid_escrow_formal_quorum_ratio: get_variable(
                         BID_ESCROW_FORMAL_QUORUM_RATIO,
                         variables,
                     ),
-                    bid_escrow_informal_voting_time: Self::get_variable(
+                    bid_escrow_informal_voting_time: get_variable(
                         BID_ESCROW_INFORMAL_VOTING_TIME,
                         variables,
                     ),
-                    bid_escrow_formal_voting_time: Self::get_variable(
+                    bid_escrow_formal_voting_time: get_variable(
                         BID_ESCROW_FORMAL_VOTING_TIME,
                         variables,
                     ),
-                    informal_voting_time: Self::get_variable(INFORMAL_VOTING_TIME, variables),
-                    formal_voting_time: Self::get_variable(FORMAL_VOTING_TIME, variables),
-                    informal_stake_reputation: Self::get_variable(
+                    informal_voting_time: get_variable(INFORMAL_VOTING_TIME, variables),
+                    formal_voting_time: get_variable(FORMAL_VOTING_TIME, variables),
+                    informal_stake_reputation: get_variable(
                         INFORMAL_STAKE_REPUTATION,
                         variables,
                     ),
-                    time_between_informal_and_formal_voting: Self::get_variable(
+                    time_between_informal_and_formal_voting: get_variable(
                         TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING,
                         variables,
                     ),
-                    va_bid_acceptance_timeout: Self::get_variable(
+                    va_bid_acceptance_timeout: get_variable(
                         VA_BID_ACCEPTANCE_TIMEOUT,
                         variables,
                     ),
-                    va_can_bid_on_public_auction: Self::get_variable(
+                    va_can_bid_on_public_auction: get_variable(
                         VA_CAN_BID_ON_PUBLIC_AUCTION,
                         variables,
                     ),
-                    distribute_payment_to_non_voters: Self::get_variable(
+                    distribute_payment_to_non_voters: get_variable(
                         DISTRIBUTE_PAYMENT_TO_NON_VOTERS,
                         variables,
                     ),
-                    bid_escrow_wallet_address: Self::get_variable(
+                    bid_escrow_wallet_address: get_variable(
                         BID_ESCROW_WALLET_ADDRESS,
                         variables,
                     ),
-                    default_reputation_slash: Self::get_variable(
+                    default_reputation_slash: get_variable(
                         DEFAULT_REPUTATION_SLASH,
                         variables,
                     ),
-                    voting_clearness_delta: Self::get_variable(VOTING_CLEARNESS_DELTA, variables),
-                    voting_start_after_job_worker_submission: Self::get_variable(
+                    voting_clearness_delta: get_variable(VOTING_CLEARNESS_DELTA, variables),
+                    voting_start_after_job_worker_submission: get_variable(
                         VOTING_START_AFTER_JOB_WORKER_SUBMISSION,
                         variables,
                     ),
-                    informal_quorum_ratio: Self::get_variable(INFORMAL_QUORUM_RATIO, variables),
-                    formal_quorum_ratio: Self::get_variable(FORMAL_QUORUM_RATIO, variables),
-                    bid_escrow_payment_ratio: Self::get_variable(
+                    informal_quorum_ratio: get_variable(INFORMAL_QUORUM_RATIO, variables),
+                    formal_quorum_ratio: get_variable(FORMAL_QUORUM_RATIO, variables),
+                    bid_escrow_payment_ratio: get_variable(
                         BID_ESCROW_PAYMENT_RATIO,
                         variables,
                     ),
-                    voting_ids_address: Self::get_variable(VOTING_IDS_ADDRESS, variables),
+                    voting_ids_address: get_variable(VOTING_IDS_ADDRESS, variables),
                 },
                 VotingConfiguration {
                     is_bid_escrow: false,
@@ -148,19 +146,5 @@ impl ConfigurationBuilder {
     /// Builds the final [Configuration].
     pub fn build(self) -> Configuration {
         self.configuration
-    }
-
-    fn get_variable<T: OdraType>(key: &str, variables: &BTreeMap<String, Bytes>) -> T {
-        let variable = variables.get(key);
-        let bytes = match variable {
-            None => revert(Error::ValueNotAvailable),
-            Some(bytes) => bytes,
-        };
-
-        let result = <T>::deserialize(bytes.as_slice()).unwrap_or_else(|| {
-            revert(Error::BytesDeserializationError);
-        });
-
-        result
     }
 }
