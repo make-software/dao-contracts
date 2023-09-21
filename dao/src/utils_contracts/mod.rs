@@ -3,8 +3,7 @@ mod ids;
 mod rate_provider;
 
 pub use rate_provider::{
-    CSPRRateProviderContract, CSPRRateProviderContractComposer, CSPRRateProviderContractDeployer,
-    CSPRRateProviderContractRef,
+    CSPRRateProviderContract, CSPRRateProviderContractDeployer, CSPRRateProviderContractRef,
 };
 
-pub use ids::{DaoIdsContract, DaoIdsContractComposer, DaoIdsContractDeployer, DaoIdsContractRef};
+pub use ids::{DaoIdsContract, DaoIdsContractDeployer, DaoIdsContractRef};

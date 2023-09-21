@@ -14,9 +14,9 @@ use crate::voting::voting_engine::voting_state_machine::{
     VotingResult, VotingStateMachine, VotingSummary, VotingType,
 };
 use odra::contract_env::{emit_event, get_block_time, revert};
+use odra::prelude::{collections::BTreeMap, vec, vec::Vec};
 use odra::types::{Address, Balance};
 use odra::{List, Mapping, UnwrapOrRevert, Variable};
-use std::collections::BTreeMap;
 
 pub mod events;
 pub mod voting_state_machine;

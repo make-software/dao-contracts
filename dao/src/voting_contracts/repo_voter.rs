@@ -1,7 +1,8 @@
 use odra::{
     contract_env::caller,
+    prelude::string::{String, ToString},
     types::{event::OdraEvent, Address, Balance, BlockTime, Bytes, CallArgs},
-    Composer, Event, Instance,
+    Event,
 };
 
 use crate::{
@@ -14,7 +15,7 @@ use crate::{
         voting_engine::{
             events::VotingCreatedInfo,
             voting_state_machine::{VotingStateMachine, VotingSummary, VotingType},
-            VotingEngine, VotingEngineComposer,
+            VotingEngine,
         },
     },
 };
@@ -24,26 +25,12 @@ use crate::{
 /// It is responsible for managing variables held in [Variable Repo](crate::core_contracts::VariableRepositoryContract).
 ///
 /// Each change to the variable is being voted on, and when the voting passes, a change is made at given time.
-#[odra::module(skip_instance, events = [RepoVotingCreated])]
+#[odra::module(events = [RepoVotingCreated])]
 pub struct RepoVoterContract {
     refs: ContractRefs,
+    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     access_control: AccessControl,
-}
-
-impl Instance for RepoVoterContract {
-    fn instance(namespace: &str) -> Self {
-        let refs = Composer::new(namespace, "refs").compose();
-        let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
-            .with_refs(&refs)
-            .compose();
-
-        Self {
-            refs,
-            voting_engine,
-            access_control: Composer::new(namespace, "access_control").compose(),
-        }
-    }
 }
 
 #[odra::module]

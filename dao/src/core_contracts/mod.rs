@@ -5,16 +5,12 @@ mod reputation;
 mod va_nft;
 mod variable_repository;
 
-pub use dao_nft::{DaoNft, DaoNftComposer, DaoNftDeployer, DaoNftRef, TokenId, TokenUri};
-pub use kyc_ntf::{
-    KycNftContract, KycNftContractComposer, KycNftContractDeployer, KycNftContractRef,
-};
+pub use dao_nft::{DaoNft, DaoNftDeployer, DaoNftRef, TokenId, TokenUri};
+pub use kyc_ntf::{KycNftContract, KycNftContractDeployer, KycNftContractRef};
 pub use reputation::token::{
-    events::*, ReputationContract, ReputationContractComposer, ReputationContractDeployer,
-    ReputationContractRef,
+    events::*, ReputationContract, ReputationContractDeployer, ReputationContractRef,
 };
-pub use va_nft::{VaNftContract, VaNftContractComposer, VaNftContractDeployer, VaNftContractRef};
+pub use va_nft::{VaNftContract, VaNftContractDeployer, VaNftContractRef};
 pub use variable_repository::{
-    VariableRepositoryContract, VariableRepositoryContractComposer,
-    VariableRepositoryContractDeployer, VariableRepositoryContractRef,
+    VariableRepositoryContract, VariableRepositoryContractDeployer, VariableRepositoryContractRef,
 };

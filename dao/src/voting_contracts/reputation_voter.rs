@@ -22,36 +22,23 @@ use crate::voting::types::VotingId;
 use crate::voting::voting_engine::events::VotingCreatedInfo;
 use crate::voting::voting_engine::voting_state_machine::VotingType;
 use crate::voting::voting_engine::voting_state_machine::{VotingStateMachine, VotingSummary};
-use crate::voting::voting_engine::{VotingEngine, VotingEngineComposer};
+use crate::voting::voting_engine::VotingEngine;
 use odra::contract_env::{caller, emit_event};
+use odra::prelude::string::{String, ToString};
 use odra::types::{Address, Balance, BlockTime, CallArgs};
-use odra::{Composer, Event, Instance, OdraType};
+use odra::{Event, OdraType};
 
 /// ReputationVoterContract
 ///
 /// It is responsible for managing variables held in [Variable Repo](crate::core_contracts::VariableRepositoryContract).
 ///
 /// Each change to the variable is being voted on, and when the voting passes, a change is made at given time.
-#[odra::module(skip_instance, events = [ReputationVotingCreated])]
+#[odra::module(events = [ReputationVotingCreated])]
 pub struct ReputationVoterContract {
     refs: ContractRefs,
+    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     access_control: AccessControl,
-}
-
-impl Instance for ReputationVoterContract {
-    fn instance(namespace: &str) -> Self {
-        let refs = Composer::new(namespace, "refs").compose();
-        let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
-            .with_refs(&refs)
-            .compose();
-
-        Self {
-            refs,
-            voting_engine,
-            access_control: Composer::new(namespace, "access_control").compose(),
-        }
-    }
 }
 
 #[odra::module]

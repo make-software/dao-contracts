@@ -1,4 +1,5 @@
 use crate::utils::ContractCall;
+use odra::prelude::vec::Vec;
 use odra::types::Address;
 use odra::OdraType;
 

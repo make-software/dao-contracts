@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-odra = { version = "0.4.0", default-features = false }
+odra = { version = "0.6.0", default-features = false }
 dao = { path = "../dao", default-features = false }
 toml = "0.7"
 serde = "1.0"

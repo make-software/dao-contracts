@@ -1,7 +1,7 @@
 use odra::{
     contract_env::caller,
     types::{event::OdraEvent, Address, Balance, BlockTime},
-    Composer, Event, Instance, Mapping, UnwrapOrRevert,
+    Event, Mapping, UnwrapOrRevert,
 };
 
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
         voting_engine::{
             events::VotingCreatedInfo,
             voting_state_machine::{VotingStateMachine, VotingSummary, VotingType},
-            VotingEngine, VotingEngineComposer,
+            VotingEngine,
         },
     },
 };
@@ -24,28 +24,13 @@ use crate::{
 /// It is responsible for votings that do not perform any actions on the blockchain.
 ///
 /// The topic of the voting is handled by `document_hash` which is a hash of a document being voted on.
-#[odra::module(skip_instance, events = [SimpleVotingCreated])]
+#[odra::module(events = [SimpleVotingCreated])]
 pub struct SimpleVoterContract {
     refs: ContractRefs,
+    #[odra(using = "refs")]
     voting_engine: VotingEngine,
     simple_votings: Mapping<VotingId, DocumentHash>,
     access_control: AccessControl,
-}
-
-impl Instance for SimpleVoterContract {
-    fn instance(namespace: &str) -> Self {
-        let refs = Composer::new(namespace, "refs").compose();
-        let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
-            .with_refs(&refs)
-            .compose();
-
-        Self {
-            refs,
-            voting_engine,
-            access_control: Composer::new(namespace, "access_control").compose(),
-            simple_votings: Composer::new(namespace, "simple_votings").compose(),
-        }
-    }
 }
 
 #[odra::module]

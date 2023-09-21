@@ -2,4 +2,4 @@
 mod request;
 mod voting;
 
-pub use voting::{Onboarding, OnboardingComposer};
+pub use voting::Onboarding;

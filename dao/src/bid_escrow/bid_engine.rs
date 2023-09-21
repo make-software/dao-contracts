@@ -1,6 +1,8 @@
 //! Bid engine module.
 //! It is responsible for handling all Bid-related operations.
 //! It stores all Bids and Jobs.
+extern crate alloc;
+
 use crate::bid_escrow::bid::{Bid, BidStatus, CancelBidRequest, SubmitBidRequest};
 use crate::bid_escrow::events::{
     BidCancelled, BidSubmitted, JobCreated, JobOfferCreated, TransferReason,
@@ -12,9 +14,10 @@ use crate::bid_escrow::types::{BidId, JobOfferId};
 use crate::configuration::{Configuration, ConfigurationBuilder};
 use crate::modules::refs::ContractRefs;
 use crate::utils::withdraw;
+use alloc::rc::Rc;
 use odra::contract_env::{caller, get_block_time};
+use odra::prelude::{vec, vec::Vec};
 use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
-use std::rc::Rc;
 
 /// Manages the Bidding process.
 #[odra::module(events = [JobCreated, JobOfferCreated, BidSubmitted, BidCancelled])]

@@ -1,5 +1,5 @@
 use odra::types::{Address, Balance, CallArgs};
-use odra::{call_contract, OdraType};
+use odra::{call_contract, prelude::string::String, OdraType};
 
 /// A serializable data structure that represent a contract call.
 #[derive(OdraType)]

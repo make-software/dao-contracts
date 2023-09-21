@@ -2,6 +2,7 @@ use crate::modules::AccessControl;
 use crate::utils::Error;
 use odra::{
     contract_env,
+    prelude::{format, string::String},
     types::{event::OdraEvent, Address, Balance, U256},
     Mapping, Sequence, Variable,
 };

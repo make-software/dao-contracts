@@ -187,10 +187,10 @@
 //! [`Governance Variable`]: crate::core_contracts::VariableRepositoryContract#available-keys
 
 use crate::bid_escrow::bid::Bid;
-use crate::bid_escrow::bid_engine::{BidEngine, BidEngineComposer};
+use crate::bid_escrow::bid_engine::BidEngine;
 use crate::bid_escrow::events::BidEscrowSlashResults;
 use crate::bid_escrow::job::Job;
-use crate::bid_escrow::job_engine::{JobEngine, JobEngineComposer};
+use crate::bid_escrow::job_engine::JobEngine;
 use crate::bid_escrow::job_offer::JobOffer;
 use crate::bid_escrow::types::{BidId, JobId, JobOfferId};
 use crate::modules::refs::ContractRefs;
@@ -201,51 +201,29 @@ use crate::voting::types::VotingId;
 use crate::voting::voting_engine::voting_state_machine::{
     VotingStateMachine, VotingSummary, VotingType,
 };
-use crate::voting::voting_engine::{VotingEngine, VotingEngineComposer};
+use crate::voting::voting_engine::VotingEngine;
 use odra::contract_env::{caller, self_balance};
 use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
-use odra::{Composer, Instance};
+
+use super::storage::{BidStorage, JobStorage};
 
 /// A contract that manages the full `Bid Escrow` process.
 /// Uses [`VotingEngine`](crate::voting::voting_engine::VotingEngine) to conduct the voting process.
 ///
 /// For details see [BidEscrowContract](BidEscrowContract).
-#[odra::module(skip_instance)]
+#[odra::module]
+#[allow(dead_code)]
 pub struct BidEscrowContract {
     refs: ContractRefs,
     access_control: AccessControl,
+    #[odra(using = "refs, voting_engine, job_storage, bid_storage")]
     job_engine: JobEngine,
+    #[odra(using = "refs, job_storage, bid_storage")]
     bid_engine: BidEngine,
+    #[odra(using = "refs")]
     voting_engine: VotingEngine,
-}
-
-impl Instance for BidEscrowContract {
-    fn instance(namespace: &str) -> Self {
-        let refs = Composer::new(namespace, "refs").compose();
-        let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
-            .with_refs(&refs)
-            .compose();
-        let job_storage = Composer::new(namespace, "job_storage").compose();
-        let bid_storage = Composer::new(namespace, "bid_storage").compose();
-        let job_engine = JobEngineComposer::new(namespace, "job_engine")
-            .with_refs(&refs)
-            .with_job_storage(&job_storage)
-            .with_bid_storage(&bid_storage)
-            .with_voting_engine(&voting_engine)
-            .compose();
-        let bid_engine = BidEngineComposer::new(namespace, "bid_engine")
-            .with_refs(&refs)
-            .with_job_storage(&job_storage)
-            .with_bid_storage(&bid_storage)
-            .compose();
-        Self {
-            refs,
-            access_control: Composer::new(namespace, "access_control").compose(),
-            job_engine,
-            bid_engine,
-            voting_engine,
-        }
-    }
+    job_storage: JobStorage,
+    bid_storage: BidStorage,
 }
 
 #[odra::module]

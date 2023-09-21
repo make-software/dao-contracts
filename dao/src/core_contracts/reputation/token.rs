@@ -1,54 +1,30 @@
-use std::collections::BTreeMap;
+use odra::prelude::collections::BTreeMap;
 
-use crate::modules::{access_control::AccessControlComposer, AccessControl};
+use crate::modules::AccessControl;
 use odra::{
     contract_env,
+    prelude::vec::Vec,
     types::{Address, Balance},
-    Instance,
 };
 
 use super::{
-    agg::{AggregatedBalance, BalanceAggregates, BalanceAggregatesComposer},
-    balances::{BalanceStorage, BalanceStorageComposer},
-    stakes::{StakesStorage, StakesStorageComposer},
+    agg::{AggregatedBalance, BalanceAggregates},
+    balances::BalanceStorage,
+    stakes::StakesStorage,
 };
 
 /// Implementation of the Reputation Contract.
-#[odra::module(skip_instance)]
+#[odra::module]
 pub struct ReputationContract {
+    #[odra(using = "access_control")]
     reputation_storage: BalanceStorage,
+    #[odra(using = "access_control")]
     passive_reputation_storage: BalanceStorage,
+    #[odra(using = "access_control, reputation_storage")]
     stakes_storage: StakesStorage,
+    #[odra(using = "reputation_storage")]
     aggregates: BalanceAggregates,
     access_control: AccessControl,
-}
-
-impl Instance for ReputationContract {
-    fn instance(namespace: &str) -> Self {
-        let access_control = AccessControlComposer::new(namespace, "access_control").compose();
-        let reputation_storage = BalanceStorageComposer::new(namespace, "reputation")
-            .with_access_control(&access_control)
-            .compose();
-        let passive_reputation_storage =
-            BalanceStorageComposer::new(namespace, "passive_reputation")
-                .with_access_control(&access_control)
-                .compose();
-        let stakes_storage = StakesStorageComposer::new(namespace, "stakes")
-            .with_access_control(&access_control)
-            .with_reputation_storage(&reputation_storage)
-            .compose();
-        let aggregates = BalanceAggregatesComposer::new(namespace, "aggregates")
-            .with_reputation_storage(&reputation_storage)
-            .compose();
-
-        ReputationContractComposer::new(namespace, "reputation")
-            .with_reputation_storage(&reputation_storage)
-            .with_passive_reputation_storage(&passive_reputation_storage)
-            .with_stakes_storage(&stakes_storage)
-            .with_aggregates(&aggregates)
-            .with_access_control(&access_control)
-            .compose()
-    }
 }
 
 #[odra::module]

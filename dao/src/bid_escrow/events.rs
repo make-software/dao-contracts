@@ -6,6 +6,10 @@ use crate::bid_escrow::types::{BidId, JobId, JobOfferId};
 use crate::configuration::Configuration;
 use crate::utils::types::DocumentHash;
 use crate::voting::types::VotingId;
+use odra::prelude::{
+    string::{String, ToString},
+    vec::Vec,
+};
 use odra::types::{Address, Balance, BlockTime};
 use odra::Event;
 

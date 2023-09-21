@@ -27,7 +27,7 @@
 //! [submission process]: crate::bid_escrow#submitting-a-job-proof
 use crate::modules::refs::ContractRefs;
 use crate::modules::AccessControl;
-use crate::onboarding::{Onboarding, OnboardingComposer};
+use crate::onboarding::Onboarding;
 use crate::utils::types::DocumentHash;
 use crate::voting::ballot::{Ballot, Choice};
 use crate::voting::types::VotingId;
@@ -35,38 +35,21 @@ use crate::voting::voting_engine::events::VotingCreatedInfo;
 use crate::voting::voting_engine::voting_state_machine::{
     VotingStateMachine, VotingSummary, VotingType,
 };
-use crate::voting::voting_engine::{VotingEngine, VotingEngineComposer};
+use crate::voting::voting_engine::VotingEngine;
 use odra::contract_env::{attached_value, caller, self_balance};
 use odra::types::event::OdraEvent;
 use odra::types::{Address, Balance, BlockTime};
-use odra::{Composer, Event, Instance};
+use odra::Event;
 
 /// Onboarding Request Contract.
-#[odra::module(skip_instance, events = [OnboardingVotingCreated])]
+#[odra::module(events = [OnboardingVotingCreated])]
 pub struct OnboardingRequestContract {
     refs: ContractRefs,
+    #[odra(using = "refs")]
     voting: VotingEngine,
     access_control: AccessControl,
+    #[odra(using = "refs, voting")]
     onboarding: Onboarding,
-}
-
-impl Instance for OnboardingRequestContract {
-    fn instance(namespace: &str) -> Self {
-        let refs = Composer::new(namespace, "refs").compose();
-        let voting_engine = VotingEngineComposer::new(namespace, "voting_engine")
-            .with_refs(&refs)
-            .compose();
-        let onboarding = OnboardingComposer::new(namespace, "onboarding")
-            .with_refs(&refs)
-            .with_voting(&voting_engine)
-            .compose();
-        Self {
-            refs,
-            voting: voting_engine,
-            access_control: Composer::new(namespace, "access_control").compose(),
-            onboarding,
-        }
-    }
 }
 
 #[odra::module]

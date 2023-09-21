@@ -5,9 +5,9 @@ use crate::voting::types::VotingId;
 use crate::voting::voting_engine::voting_state_machine::{
     Stats, VotingResult, VotingStateMachine, VotingType,
 };
+use odra::prelude::collections::BTreeMap;
 use odra::types::{Address, Balance, BlockTime};
 use odra::{Event, OdraType};
-use std::collections::BTreeMap;
 
 /// Represents an explanation for a particular action (mint, burn, stake).
 #[derive(OdraType, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Debug)]

@@ -1,7 +1,7 @@
 //! Abstractions facilitating error handling.
-
 use crate::rules::validation::{Validation, VotingValidation};
 use odra::contract_env::revert;
+use odra::prelude::{boxed::Box, vec::Vec};
 
 mod builder;
 pub mod validation;
