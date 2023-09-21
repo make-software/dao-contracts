@@ -30,7 +30,7 @@ pub struct Record {
 #[odra::module(events = [ValueUpdated])]
 pub struct Repository {
     pub storage: Mapping<String, Record>,
-    pub keys2: List<String>,
+    pub all_keys: List<String>,
 }
 
 #[odra::module]
@@ -100,7 +100,7 @@ impl Repository {
             }
         };
         self.storage.set(&key, new_value);
-        self.keys2.push(key.clone());
+        self.all_keys.push(key.clone());
         ValueUpdated {
             key,
             value: value_for_event,
