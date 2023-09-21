@@ -25,7 +25,7 @@ use crate::{
 /// Slashing Voter contract uses [VotingEngine](VotingEngine) to vote on changes of ownership and managing whitelists of other contracts.
 ///
 /// Slashing Voter contract needs to have permissions to perform those actions.
-#[odra::module(events = [SlashingVotingCreated])]
+#[odra::module(events = [SlashingVotingCreated, SlashSummary])]
 pub struct SlashingVoterContract {
     refs: ContractRefs,
     #[odra(using = "refs")]
@@ -35,7 +35,7 @@ pub struct SlashingVoterContract {
     access_control: AccessControl,
 }
 
-#[odra::module(events = [SlashSummary, SlashingVotingCreated])]
+#[odra::module]
 impl SlashingVoterContract {
     delegate! {
         to self.voting_engine {
@@ -167,10 +167,8 @@ impl SlashingVoterContract {
                 subject: slash_task.subject,
                 ratio: slash_task.ratio,
                 slash_amount,
-                slashed_votings: SlashedVotings {
-                    cancelled_votings: vec![],
-                    affected_votings: vec![],
-                },
+                cancelled_votings: vec![],
+                affected_votings: vec![],
             }
             .emit();
             return;
@@ -196,10 +194,8 @@ impl SlashingVoterContract {
             subject: slash_task.subject,
             ratio: slash_task.ratio,
             slash_amount: reputation.balance_of(slash_task.subject),
-            slashed_votings: SlashedVotings {
-                cancelled_votings,
-                affected_votings,
-            },
+            cancelled_votings,
+            affected_votings,
         }
         .emit();
     }
@@ -210,7 +206,8 @@ pub struct SlashSummary {
     pub subject: Address,
     pub ratio: u32,
     pub slash_amount: Balance,
-    pub slashed_votings: SlashedVotings,
+    pub cancelled_votings: Vec<VotingId>,
+    pub affected_votings: Vec<VotingId>,
 }
 
 #[derive(Debug, PartialEq, Eq, OdraType)]

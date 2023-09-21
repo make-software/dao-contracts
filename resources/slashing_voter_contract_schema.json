@@ -297,6 +297,35 @@
       ]
     },
     {
+      "name": "SlashSummary",
+      "fields": [
+        {
+          "name": "subject",
+          "ty": "Key"
+        },
+        {
+          "name": "ratio",
+          "ty": "U32"
+        },
+        {
+          "name": "slash_amount",
+          "ty": "U512"
+        },
+        {
+          "name": "cancelled_votings",
+          "ty": {
+            "List": "U32"
+          }
+        },
+        {
+          "name": "affected_votings",
+          "ty": {
+            "List": "U32"
+          }
+        }
+      ]
+    },
+    {
       "name": "VotingCreatedInfo",
       "fields": [
         {

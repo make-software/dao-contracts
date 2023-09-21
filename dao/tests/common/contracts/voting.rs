@@ -12,6 +12,7 @@ use odra::{
     test_env,
     types::{Address, Balance, Bytes},
 };
+use dao::voting_contracts::SlashedVotings;
 
 use crate::common::{
     params::{
@@ -33,7 +34,7 @@ pub trait Voter {
         stake: Balance,
     );
     fn finish_voting(&mut self, voting_id: VotingId, voting_type: DaoVotingType) -> VotingSummary;
-    fn slash_voter(&mut self, voter: Address);
+    fn slash_voter(&mut self, voter: Address) -> SlashedVotings;
     fn voting_exists(&self, voting_id: VotingId, voting_type: DaoVotingType) -> bool;
     fn get_voting(&self, voting_id: VotingId) -> Option<VotingStateMachine>;
     fn get_ballot(
@@ -179,7 +180,7 @@ impl DaoWorld {
         let voter = self.get_address(&voter);
         let contract = self.get_address(&contract);
         test_env::set_caller(caller);
-        VoterRef::at(&contract).slash_voter(voter);
+        let _ = VoterRef::at(&contract).slash_voter(voter);
     }
 
     pub fn get_voting(&mut self, contract: &Account, voting_id: VotingId) -> VotingStateMachine {
