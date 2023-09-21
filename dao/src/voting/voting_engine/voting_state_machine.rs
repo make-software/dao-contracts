@@ -4,6 +4,7 @@ use crate::rules::validation::voting::{AfterFormalVoting, VoteInTime, VotingNotC
 use crate::rules::RulesBuilder;
 use crate::voting::ballot::Choice;
 use crate::voting::types::VotingId;
+use odra::prelude::vec;
 use odra::types::{Address, Balance, BlockTime};
 use odra::OdraType;
 

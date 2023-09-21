@@ -1,4 +1,7 @@
 //! JobOffer-related structs.
+
+extern crate alloc;
+
 use crate::bid_escrow::job::PickBidRequest;
 use crate::bid_escrow::types::JobOfferId;
 use crate::configuration::Configuration;
@@ -7,9 +10,9 @@ use crate::rules::validation::bid_escrow::{
 };
 use crate::rules::validation::IsUserKyced;
 use crate::rules::RulesBuilder;
+use alloc::rc::Rc;
 use odra::types::{Address, Balance, BlockTime};
 use odra::OdraType;
-use std::rc::Rc;
 
 /// Serializable JobOffer status representation.
 #[derive(OdraType, PartialEq)]

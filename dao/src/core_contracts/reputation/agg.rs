@@ -1,8 +1,8 @@
 use odra::{
+    prelude::{collections::BTreeMap, vec::Vec},
     types::{Address, Balance},
     OdraType,
 };
-use std::collections::BTreeMap;
 
 use super::balances::BalanceStorage;
 

@@ -1,5 +1,6 @@
 use odra::{
     contract_env::caller,
+    prelude::string::{String, ToString},
     types::{event::OdraEvent, Address, Balance, BlockTime, Bytes, CallArgs},
     Event,
 };

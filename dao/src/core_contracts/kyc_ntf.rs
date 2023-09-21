@@ -11,7 +11,10 @@
 //!
 //! [`KYC Voting`]: crate::voting_contracts::KycVoterContract
 use crate::core_contracts::dao_nft::{DaoNft, TokenId, TokenUri};
-use odra::types::{Address, Balance, U256};
+use odra::{
+    prelude::string::String,
+    types::{Address, Balance, U256},
+};
 
 /// NFT contract that tells the system if user is KYC'd.
 /// Kyc Owned Nft contract acts like an erc-721 token and derives most of erc-721 standard.

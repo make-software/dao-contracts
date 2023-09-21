@@ -7,6 +7,7 @@ use crate::bid_escrow::types::{BidId, JobId, JobOfferId};
 use crate::configuration::Configuration;
 use crate::utils::Error;
 use crate::voting::types::VotingId;
+use odra::prelude::vec::Vec;
 use odra::types::Address;
 use odra::{List, Mapping, Sequence, UnwrapOrRevert, Variable};
 

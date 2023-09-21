@@ -1,10 +1,12 @@
+extern crate alloc;
+
 use crate::configuration::Configuration;
 use crate::rules::validation::Validation;
 use crate::utils::Error;
+use alloc::rc::Rc;
 use macros::Rule;
 use odra::contract_env::attached_value;
 use odra::types::Balance;
-use std::rc::Rc;
 
 /// Makes sure the `Job DOS Fee` is high enough. May return [Error::DosFeeTooLow].
 #[derive(Rule)]

@@ -3,6 +3,11 @@ use crate::modules::repository::events::ValueUpdated;
 use crate::utils::consts;
 use crate::utils::Error::{ActivationTimeInPast, KeyValueStorageError};
 use odra::contract_env::{get_block_time, revert};
+use odra::prelude::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 use odra::types::event::OdraEvent;
 use odra::types::{Address, Balance, Bytes, OdraType as OdraTyped};
 use odra::{List, Mapping, OdraType, UnwrapOrRevert};
@@ -173,6 +178,7 @@ impl Default for RepositoryDefaults {
 }
 
 pub mod events {
+    use odra::prelude::string::String;
     use odra::types::Bytes;
     use odra::Event;
 

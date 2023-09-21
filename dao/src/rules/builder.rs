@@ -2,6 +2,7 @@ use crate::rules::{
     validation::{Validation, VotingValidation},
     Rules,
 };
+use odra::prelude::{boxed::Box, vec};
 
 /// A utility to build a set of validation rules.
 pub struct RulesBuilder {

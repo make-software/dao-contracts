@@ -18,10 +18,10 @@ use crate::voting::types::VotingId;
 use crate::voting::voting_engine::voting_state_machine::{VotingResult, VotingSummary, VotingType};
 use crate::voting::voting_engine::VotingEngine;
 use odra::contract_env::{attached_value, caller, get_block_time, revert};
+use odra::prelude::{collections::BTreeMap, vec, vec::Vec};
 use odra::types::Address;
 use odra::types::{event::OdraEvent, Balance};
 use odra::UnwrapOrRevert;
-use std::collections::BTreeMap;
 
 /// Manages Jobs lifecycle.
 #[odra::module(events = [JobSubmitted, JobRejected, JobCancelled, JobDone, BidEscrowVotingCreated])]

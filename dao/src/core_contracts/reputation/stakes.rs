@@ -1,10 +1,11 @@
-use std::hash::Hash;
+use core::hash::Hash;
 
 use crate::modules::AccessControl;
 use crate::utils::Error;
 
 use odra::{
     contract_env,
+    prelude::{vec, vec::Vec},
     types::{Address, Balance, OdraType},
     List, Mapping, UnwrapOrRevert,
 };

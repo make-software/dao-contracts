@@ -4,8 +4,8 @@ use crate::configuration::{get_variable, Configuration};
 use crate::utils::consts;
 use crate::utils::ContractCall;
 use odra::call_contract;
+use odra::prelude::{collections::BTreeMap, string::String, vec, vec::Vec};
 use odra::types::{Address, Balance, Bytes, CallArgs};
-use std::collections::BTreeMap;
 
 /// Utility to crate a [Configuration] instance.
 pub struct ConfigurationBuilder {

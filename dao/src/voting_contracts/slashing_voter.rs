@@ -1,5 +1,6 @@
 use odra::{
     contract_env::{caller, revert},
+    prelude::vec::Vec,
     types::{event::OdraEvent, Address, Balance, BlockTime},
     Event, Mapping, OdraType, UnwrapOrRevert, Variable,
 };
