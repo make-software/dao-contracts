@@ -57,7 +57,7 @@ impl StakesStorage {
             .saturating_sub(user_stake);
 
         if available_balance < stake {
-            contract_env::revert(Error::InsufficientBalance)
+            contract_env::revert(Error::InsufficientBalanceForStake)
         }
     }
 

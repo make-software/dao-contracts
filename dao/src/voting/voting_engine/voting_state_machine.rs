@@ -11,7 +11,7 @@ use odra::OdraType;
 /// Serializable voting state with a state machine capabilities.
 ///
 /// Stores voting metadata, the configuration and the voting progress (stakes).
-#[derive(OdraType)]
+#[derive(OdraType, Debug)]
 pub struct VotingStateMachine {
     voting_id: VotingId,
     state: VotingState,
@@ -362,7 +362,7 @@ impl VotingStateMachine {
 }
 
 /// Voting statistics.
-#[derive(OdraType, Default)]
+#[derive(OdraType, Default, Debug)]
 pub struct Stats {
     /// The total `in favor` stake.
     pub stake_in_favor: Balance,

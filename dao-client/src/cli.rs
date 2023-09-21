@@ -24,6 +24,15 @@ enum Commands {
         name: String,
         value: String,
     },
+    BalanceOf {
+        account_hash: String,
+    },
+    StakeOf {
+        account_hash: String,
+    },
+    GetVoting {
+        voting_id: String,
+    }
 }
 
 pub fn parse() {
@@ -39,5 +48,8 @@ pub fn parse() {
         } => actions::setup_va(&account_hash, reputation_amount),
         PrintVariables => actions::print_variables(),
         SetVariable { name, value } => actions::set_variable(&name, &value),
+        BalanceOf { account_hash } => actions::balance_of(&account_hash),
+        StakeOf { account_hash } => actions::stake_of(&account_hash),
+        GetVoting { voting_id } => actions::get_voting(&voting_id),
     }
 }
