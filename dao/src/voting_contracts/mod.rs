@@ -20,5 +20,5 @@ pub use reputation_voter::{
 };
 pub use simple_voter::{SimpleVoterContract, SimpleVoterContractDeployer, SimpleVoterContractRef};
 pub use slashing_voter::{
-    SlashingVoterContract, SlashingVoterContractDeployer, SlashingVoterContractRef,
+    SlashedVotings, SlashingVoterContract, SlashingVoterContractDeployer, SlashingVoterContractRef,
 };

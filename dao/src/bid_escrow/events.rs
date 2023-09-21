@@ -310,6 +310,6 @@ pub struct BidEscrowSlashResults {
     pub slashed_job_offers: Vec<JobOfferId>,
     pub slashed_jobs: Vec<JobId>,
     pub slashed_bids: Vec<BidId>,
-    pub canceled_votings: Vec<VotingId>,
+    pub cancelled_votings: Vec<VotingId>,
     pub affected_votings: Vec<VotingId>,
 }

@@ -28,6 +28,7 @@ use crate::voting::voting_engine::events::VotingCreatedInfo;
 use crate::voting::voting_engine::voting_state_machine::VotingType;
 use crate::voting::voting_engine::voting_state_machine::{VotingStateMachine, VotingSummary};
 use crate::voting::voting_engine::VotingEngine;
+use crate::voting_contracts::SlashedVotings;
 use odra::contract_env::{self, caller};
 use odra::prelude::string::ToString;
 use odra::types::event::OdraEvent;
@@ -154,9 +155,9 @@ impl KycVoterContract {
         summary
     }
 
-    pub fn slash_voter(&mut self, voter: Address) {
+    pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
-        self.voting_engine.slash_voter(voter);
+        self.voting_engine.slash_voter(voter)
     }
 
     fn assert_not_kyced(&self, address: &Address) {

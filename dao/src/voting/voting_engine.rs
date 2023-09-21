@@ -13,6 +13,7 @@ use crate::voting::voting_engine::events::{
 use crate::voting::voting_engine::voting_state_machine::{
     VotingResult, VotingStateMachine, VotingSummary, VotingType,
 };
+use crate::voting_contracts::SlashedVotings;
 use odra::contract_env::{emit_event, get_block_time, revert};
 use odra::prelude::{collections::BTreeMap, vec, vec::Vec};
 use odra::types::{Address, Balance};
@@ -682,20 +683,23 @@ impl VotingEngine {
     /// Otherwise, only his vote is invalidated.
     ///
     /// Returns a tuple of vectors listing canceled and affected votings.j
-    pub fn slash_voter(&mut self, voter: Address) -> (Vec<VotingId>, Vec<VotingId>) {
+    pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         let active_voting_ids = self.active_votings.get_or_default();
         let mut affected_votings = vec![];
-        let mut canceled_votings = vec![];
+        let mut cancelled_votings = vec![];
         for voting_id in active_voting_ids.into_iter() {
             let voting = self.get_voting_or_revert(voting_id);
             if voting.creator() == &voter {
                 self.cancel_voting(voting);
-                canceled_votings.push(voting_id);
+                cancelled_votings.push(voting_id);
             } else if self.cancel_ballot(voting, voter) {
                 affected_votings.push(voting_id);
             }
         }
-        (canceled_votings, affected_votings)
+        SlashedVotings {
+            cancelled_votings,
+            affected_votings,
+        }
     }
 
     fn cancel_voting(&mut self, mut voting: VotingStateMachine) {

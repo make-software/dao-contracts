@@ -36,6 +36,7 @@ use crate::voting::voting_engine::voting_state_machine::{
     VotingStateMachine, VotingSummary, VotingType,
 };
 use crate::voting::voting_engine::VotingEngine;
+use crate::voting_contracts::SlashedVotings;
 use odra::contract_env::{attached_value, caller, self_balance};
 use odra::types::event::OdraEvent;
 use odra::types::{Address, Balance, BlockTime};
@@ -150,9 +151,9 @@ impl OnboardingRequestContract {
     }
 
     /// Erases the voter from voting with the given id. [Read more](VotingEngine::slash_voter).
-    pub fn slash_voter(&mut self, voter: Address) {
+    pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
-        self.voting.slash_voter(voter);
+        self.voting.slash_voter(voter)
     }
 }
 
