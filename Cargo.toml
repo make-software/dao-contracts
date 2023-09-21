@@ -10,8 +10,8 @@ exclude = [
 ]
 
 [workspace.dependencies]
-odra = { path = "../odra/odra/core", default-features = false }
-odra-modules = { path = "../odra/odra/modules", default-features = false }
+odra = { version = "0.5.0", default-features = false }
+odra-modules = { version = "0.5.0", default-features = false }
 
 [profile.release]
 codegen-units = 1
