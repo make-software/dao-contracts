@@ -20,6 +20,7 @@ impl FromStr for Error {
             "CannotDepositZeroAmount" => dao::utils::Error::CannotDepositZeroAmount,
             "PurseBalanceMismatch" => dao::utils::Error::PurseBalanceMismatch,
             "InsufficientBalance" => dao::utils::Error::InsufficientBalance,
+            "InsufficientBalanceForStake" => dao::utils::Error::InsufficientBalanceForStake,
             "PurseError" => dao::utils::Error::PurseError,
             "NotAnOwner" => dao::utils::Error::NotAnOwner,
             "OwnerIsNotInitialized" => dao::utils::Error::OwnerIsNotInitialized,

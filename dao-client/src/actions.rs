@@ -14,12 +14,11 @@ use dao::{
         SlashingVoterContractDeployer,
     },
 };
+use odra::casper::casper_types::account::AccountHash;
 use odra::types::Balance;
 use odra::types::BlockTime;
 use odra::types::OdraType;
 use odra::{client_env, types::Address};
-use odra::casper::casper_types::account::AccountHash;
-use dao::voting::types::VotingId;
 
 use crate::variables::VariableType;
 use crate::{
@@ -394,6 +393,6 @@ pub fn stake_of(account_hash: &str) {
 pub fn get_voting(voting_id: &str) {
     let dao = DaoSnapshot::load();
     let voting_id = voting_id.parse::<u32>().unwrap();
-    let voting = dao.bid_escrow.get_voting(VotingId::from(voting_id));
+    let voting = dao.bid_escrow.get_voting(voting_id);
     log::info(format!("Voting: {:?}", voting));
 }

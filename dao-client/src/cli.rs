@@ -32,7 +32,7 @@ enum Commands {
     },
     GetVoting {
         voting_id: String,
-    }
+    },
 }
 
 pub fn parse() {

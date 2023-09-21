@@ -1,3 +1,4 @@
+use dao::voting_contracts::SlashedVotings;
 use dao::{
     utils::{types::DocumentHash, Error},
     voting::{
@@ -12,7 +13,6 @@ use odra::{
     test_env,
     types::{Address, Balance, Bytes},
 };
-use dao::voting_contracts::SlashedVotings;
 
 use crate::common::{
     params::{
