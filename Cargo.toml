@@ -1,13 +1,7 @@
 [workspace]
-members = [
-    "dao",
-    "macros",
-]
+members = ["dao", "macros"]
 
-exclude = [
-    "cucumber-runner",
-    "dao-client"
-]
+exclude = ["cucumber-runner", "dao-client"]
 
 [workspace.dependencies]
 odra = { version = "0.5.0", default-features = false }

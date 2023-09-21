@@ -560,6 +560,10 @@
         {
           "name": "config_time_between_informal_and_formal_voting",
           "ty": "U64"
+        },
+        {
+          "name": "config_voting_start_after_job_submission",
+          "ty": "U64"
         }
       ]
     },
@@ -786,6 +790,10 @@
     {
       "name": "JobCreated",
       "fields": [
+        {
+          "name": "job_id",
+          "ty": "U32"
+        },
         {
           "name": "bid_id",
           "ty": "U32"

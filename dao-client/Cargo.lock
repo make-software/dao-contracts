@@ -1490,7 +1490,8 @@ dependencies = [
 [[package]]
 name = "odra"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01a318bf3030c9b4bce75ae33765459755b67870926d4c566b486c123a3ad6fa"
 dependencies = [
  "cfg-if",
  "hex",
@@ -1506,7 +1507,8 @@ dependencies = [
 [[package]]
 name = "odra-casper-livenet"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d3b75be3124408bd5bb041c2d536765a1508c7b55124ece9fffa3c7838c2142"
 dependencies = [
  "blake2",
  "casper-execution-engine",
@@ -1533,7 +1535,8 @@ dependencies = [
 [[package]]
 name = "odra-casper-shared"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5020747873b0069f0e139ad4ddf9cd046e551f59f06cca709adae93338869c4"
 dependencies = [
  "casper-event-standard",
  "hex",
@@ -1543,7 +1546,8 @@ dependencies = [
 [[package]]
 name = "odra-casper-types"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3dcf336d6f42b391709f5b561f673a6960f12212c2c34c0a52b6c037c9390806"
 dependencies = [
  "casper-types",
  "num-traits",
@@ -1553,7 +1557,8 @@ dependencies = [
 [[package]]
 name = "odra-codegen"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ea886eb3ce92f4dd5331c7250d0f033401a55937414e40f8d4b965a32cd311b"
 dependencies = [
  "convert_case",
  "derive_more",
@@ -1569,7 +1574,8 @@ dependencies = [
 [[package]]
 name = "odra-ir"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "142a77e3febb2fefcfc0b96e43254a73703f7699a83d3de704f601b19e3f22c8"
 dependencies = [
  "anyhow",
  "itertools",
@@ -1582,7 +1588,8 @@ dependencies = [
 [[package]]
 name = "odra-mock-vm"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc5e10b6d06978f1bdd2c4432585822c9ad94aff76f79234fa59dd7f813c14d1"
 dependencies = [
  "anyhow",
  "colored",
@@ -1596,7 +1603,8 @@ dependencies = [
 [[package]]
 name = "odra-mock-vm-types"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "738b9925445f7a94ca3e3869608ba9649f2ad5c9ae1c0d5144d078e78e12f51e"
 dependencies = [
  "borsh",
  "hex",
@@ -1609,7 +1617,8 @@ dependencies = [
 [[package]]
 name = "odra-modules"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1eedb8e6f4a2b2c1f5d78c0aecfa85874d47fe67e30fb178c40141e6f4cb59e7"
 dependencies = [
  "hex",
  "odra",
@@ -1619,7 +1628,8 @@ dependencies = [
 [[package]]
 name = "odra-proc-macros"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4170e249bd6a15ba687df623b49c9d2f25267e8c585bd660d7c8e3621cb80ac"
 dependencies = [
  "odra-codegen",
  "odra-ir",
@@ -1631,12 +1641,14 @@ dependencies = [
 [[package]]
 name = "odra-types"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1243b188a01cd84fc88a88054f7806256e8e2c5b3a88da43417a93f329306134"
 
 [[package]]
 name = "odra-utils"
 version = "0.4.0"
-source = "git+https://github.com/odradev/odra.git?branch=release/0.4.0#40ebbbbef19fec6307adfa7153fff2351c8bb95e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a5158dcf20472b883c9fceb1fb5ae07c225ae416abe11c972eda0c35cfeb30b"
 dependencies = [
  "convert_case",
 ]

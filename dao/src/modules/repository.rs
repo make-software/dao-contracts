@@ -106,8 +106,8 @@ impl Repository {
 
     pub fn get(&self, key: String) -> Option<Bytes> {
         let record = self.storage.get(&key)?;
-        let now = get_block_time();
         if let Some((value, activation_time)) = record.next_value {
+            let now = get_block_time();
             if now > activation_time {
                 return Some(value);
             }

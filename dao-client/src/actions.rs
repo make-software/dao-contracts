@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, str::FromStr};
 
+use dao::configuration::get_variable;
 use dao::{
     bid_escrow::contract::BidEscrowContractDeployer,
     core_contracts::{
@@ -13,8 +14,12 @@ use dao::{
         SlashingVoterContractDeployer,
     },
 };
+use odra::types::Balance;
+use odra::types::BlockTime;
+use odra::types::OdraType;
 use odra::{client_env, types::Address};
 
+use crate::variables::VariableType;
 use crate::{
     cspr, error::Error, log, DaoSnapshot, DeployedContractsToml, DEFAULT_CSPR_USD_RATE,
     DEPLOYED_CONTRACTS_FILE,
@@ -278,6 +283,94 @@ pub fn setup_va(account_hash: &str, reputation_amount: u64) {
             client_env::set_gas(cspr(10));
             dao.reputation_token
                 .burn(va, current_reputation - reputation_amount);
+        }
+    }
+}
+
+pub fn print_variables() {
+    let dao = DaoSnapshot::load();
+    let variables = dao.variable_repository.all_variables();
+
+    // print all variables
+    for (name, _) in variables.clone() {
+        match VariableType::from_str(name.as_str()) {
+            VariableType::Balance => log::info(format!(
+                "{}: {}",
+                name,
+                get_variable::<Balance>(name.as_str(), &variables)
+            )),
+            VariableType::BlockTime => log::info(format!(
+                "{}: {}",
+                name,
+                get_variable::<BlockTime>(name.as_str(), &variables)
+            )),
+            VariableType::Address => log::info(format!(
+                "{}: {:?}",
+                name,
+                get_variable::<Address>(name.as_str(), &variables)
+            )),
+            VariableType::Bool => log::info(format!(
+                "{}: {:?}",
+                name,
+                get_variable::<bool>(name.as_str(), &variables)
+            )),
+            VariableType::Unknown => log::info(format!("Unknown variable type: {}", name)),
+        }
+    }
+}
+
+pub fn set_variable(name: &str, value: &str) {
+    let mut dao = DaoSnapshot::load();
+    client_env::set_gas(cspr(5));
+
+    match VariableType::from_str(name) {
+        VariableType::Balance => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                Balance::from(value.parse::<u64>().unwrap())
+                    .serialize()
+                    .unwrap()
+                    .into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
+        }
+        VariableType::BlockTime => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                value
+                    .parse::<BlockTime>()
+                    .unwrap()
+                    .serialize()
+                    .unwrap()
+                    .into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
+        }
+        VariableType::Address => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                value
+                    .parse::<Address>()
+                    .unwrap()
+                    .serialize()
+                    .unwrap()
+                    .into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
+        }
+        VariableType::Bool => {
+            dao.variable_repository.update_at(
+                name.to_string(),
+                value.parse::<bool>().unwrap().serialize().unwrap().into(),
+                None,
+            );
+            log::info(format!("Updated {} to {}", name, value));
+        }
+        VariableType::Unknown => {
+            log::info(format!("Unknown variable: {}", name));
         }
     }
 }
