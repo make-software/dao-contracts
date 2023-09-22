@@ -6,6 +6,7 @@ execution_error! {
         PurseBalanceMismatch => 403,
         InsufficientBalance => 404,
         PurseError => 405,
+        InsufficientBalanceForStake => 406,
         NotAnOwner => 1000,
         OwnerIsNotInitialized => 1001,
         NotWhitelisted => 1002,

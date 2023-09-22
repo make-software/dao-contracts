@@ -83,7 +83,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit"
+      "return_ty": "Any"
     },
     {
       "name": "voting_exists",

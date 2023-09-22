@@ -99,7 +99,7 @@
           "ty": "Key"
         }
       ],
-      "return_ty": "Unit"
+      "return_ty": "Any"
     },
     {
       "name": "voting_exists",
@@ -293,6 +293,35 @@
         {
           "name": "config_time_between_informal_and_formal_voting",
           "ty": "U64"
+        }
+      ]
+    },
+    {
+      "name": "SlashSummary",
+      "fields": [
+        {
+          "name": "subject",
+          "ty": "Key"
+        },
+        {
+          "name": "ratio",
+          "ty": "U32"
+        },
+        {
+          "name": "slash_amount",
+          "ty": "U512"
+        },
+        {
+          "name": "cancelled_votings",
+          "ty": {
+            "List": "U32"
+          }
+        },
+        {
+          "name": "affected_votings",
+          "ty": {
+            "List": "U32"
+          }
         }
       ]
     },

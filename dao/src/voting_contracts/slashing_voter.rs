@@ -1,6 +1,6 @@
 use odra::{
     contract_env::{caller, revert},
-    prelude::vec::Vec,
+    prelude::{vec, vec::Vec},
     types::{event::OdraEvent, Address, Balance, BlockTime},
     Event, Mapping, OdraType, UnwrapOrRevert, Variable,
 };
@@ -25,7 +25,7 @@ use crate::{
 /// Slashing Voter contract uses [VotingEngine](VotingEngine) to vote on changes of ownership and managing whitelists of other contracts.
 ///
 /// Slashing Voter contract needs to have permissions to perform those actions.
-#[odra::module(events = [SlashingVotingCreated])]
+#[odra::module(events = [SlashingVotingCreated, SlashSummary])]
 pub struct SlashingVoterContract {
     refs: ContractRefs,
     #[odra(using = "refs")]
@@ -145,18 +145,15 @@ impl SlashingVoterContract {
         summary
     }
 
-    pub fn slash_voter(&mut self, voter: Address) {
+    pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
-        self.voting_engine.slash_voter(voter);
+        self.voting_engine.slash_voter(voter)
     }
 }
 
 impl SlashingVoterContract {
     fn slash(&mut self, voting_id: VotingId) {
         let slash_task = self.tasks.get(&voting_id).unwrap_or_revert();
-
-        // Burn VA token.
-        self.refs.va_token().burn(slash_task.subject);
 
         let mut reputation = self.refs.reputation_token();
         // If partial slash only burn reputation.
@@ -165,22 +162,63 @@ impl SlashingVoterContract {
                 * Balance::from(slash_task.ratio))
                 / Balance::from(1000);
             reputation.burn(slash_task.subject, slash_amount);
+
+            SlashSummary {
+                subject: slash_task.subject,
+                ratio: slash_task.ratio,
+                slash_amount,
+                cancelled_votings: vec![],
+                affected_votings: vec![],
+            }
+            .emit();
             return;
         }
 
+        // We're doing full slash.
+        // Burn VA token.
+        self.refs.va_token().burn(slash_task.subject);
+
         // Slash subject in all voter contracts.
+        let mut cancelled_votings = vec![];
+        let mut affected_votings = vec![];
         for address in self.slashable_contracts.get_or_default() {
-            SlashableRef::at(&address).slash_voter(slash_task.subject);
+            let slashed_votings = SlashableRef::at(&address).slash_voter(slash_task.subject);
+            cancelled_votings.extend(slashed_votings.cancelled_votings);
+            affected_votings.extend(slashed_votings.affected_votings);
         }
 
-        // If full slash burn all reputation
+        // Burn all reputation
         reputation.burn_all(slash_task.subject);
+
+        SlashSummary {
+            subject: slash_task.subject,
+            ratio: slash_task.ratio,
+            slash_amount: reputation.balance_of(slash_task.subject),
+            cancelled_votings,
+            affected_votings,
+        }
+        .emit();
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Event)]
+pub struct SlashSummary {
+    pub subject: Address,
+    pub ratio: u32,
+    pub slash_amount: Balance,
+    pub cancelled_votings: Vec<VotingId>,
+    pub affected_votings: Vec<VotingId>,
+}
+
+#[derive(Debug, PartialEq, Eq, OdraType)]
+pub struct SlashedVotings {
+    pub cancelled_votings: Vec<VotingId>,
+    pub affected_votings: Vec<VotingId>,
 }
 
 #[odra::external_contract]
 trait Slashable {
-    fn slash_voter(&mut self, voter: Address);
+    fn slash_voter(&mut self, voter: Address) -> SlashedVotings;
 }
 
 #[derive(Debug, OdraType)]

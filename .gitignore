@@ -10,3 +10,4 @@ gas_report.txt
 dao-client/target
 doa-client/wasm
 dao-client/.env
+dao-client/*.toml*

@@ -206,6 +206,7 @@ use odra::contract_env::{caller, self_balance};
 use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
 
 use super::storage::{BidStorage, JobStorage};
+use crate::voting_contracts::SlashedVotings;
 
 /// A contract that manages the full `Bid Escrow` process.
 /// Uses [`VotingEngine`](crate::voting::voting_engine::VotingEngine) to conduct the voting process.
@@ -473,18 +474,24 @@ impl BidEscrowContract {
     ///
     /// # Events
     /// * [`BidEscrowSlashResults`](BidEscrowSlashResults)
-    pub fn slash_voter(&mut self, voter: Address) {
+    pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
         let (slashed_job_offers, slashed_bids) = self.bid_engine.slash_voter(voter);
-        let (slashed_jobs, canceled_votings, affected_votings) = self.job_engine.slash_voter(voter);
+        let (slashed_jobs, cancelled_votings, affected_votings) =
+            self.job_engine.slash_voter(voter);
 
         BidEscrowSlashResults {
             slashed_job_offers,
             slashed_bids,
             slashed_jobs,
-            canceled_votings,
-            affected_votings,
+            cancelled_votings: cancelled_votings.clone(),
+            affected_votings: affected_votings.clone(),
         }
         .emit();
+
+        SlashedVotings {
+            cancelled_votings,
+            affected_votings,
+        }
     }
 }

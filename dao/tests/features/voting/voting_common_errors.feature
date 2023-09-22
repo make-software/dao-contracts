@@ -19,10 +19,10 @@ Feature: Voting errors
        #| VA1     | 100        | yes     | - automatically voted by the system
         | VA2     | 200        | yes     |
       Then votes in <voting_contract> informal voting with id 0 fail
-        | user    | REP stake  | choice   | result              |
-        | VA1     | 100        | against  | CannotVoteTwice     |
-        | VA3     | 0          | against  | ZeroStake           |
-        | VA4     | 1001       | against  | InsufficientBalance |
+        | user    | REP stake  | choice   | result                       |
+        | VA1     | 100        | against  | CannotVoteTwice              |
+        | VA3     | 0          | against  | ZeroStake                    |
+        | VA4     | 1001       | against  | InsufficientBalanceForStake  |
       And users balances are
         | account | REP balance  | REP stake  |
         | VA1     | 1000         | 100        |

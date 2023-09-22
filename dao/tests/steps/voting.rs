@@ -128,6 +128,9 @@ fn assert_vote_fails(
             DaoError::InsufficientBalance => {
                 world.failing_vote(&contract, &ballot, DaoError::InsufficientBalance)
             }
+            DaoError::InsufficientBalanceForStake => {
+                world.failing_vote(&contract, &ballot, DaoError::InsufficientBalanceForStake)
+            }
             DaoError::ZeroStake => world.failing_vote(&contract, &ballot, DaoError::ZeroStake),
             _ => panic!("Unknown error"),
         }

@@ -4,6 +4,7 @@ use odra::{
     Event, Mapping, UnwrapOrRevert,
 };
 
+use crate::voting_contracts::SlashedVotings;
 use crate::{
     configuration::ConfigurationBuilder,
     modules::{refs::ContractRefs, AccessControl},
@@ -130,9 +131,9 @@ impl SimpleVoterContract {
             .vote(caller(), voting_id, voting_type, choice, stake);
     }
 
-    pub fn slash_voter(&mut self, voter: Address) {
+    pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
-        self.voting_engine.slash_voter(voter);
+        self.voting_engine.slash_voter(voter)
     }
 }
 

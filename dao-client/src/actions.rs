@@ -14,6 +14,7 @@ use dao::{
         SlashingVoterContractDeployer,
     },
 };
+use odra::casper::casper_types::account::AccountHash;
 use odra::types::Balance;
 use odra::types::BlockTime;
 use odra::types::OdraType;
@@ -373,4 +374,25 @@ pub fn set_variable(name: &str, value: &str) {
             log::info(format!("Unknown variable: {}", name));
         }
     }
+}
+
+pub fn balance_of(account_hash: &str) {
+    let account: Address = Address::Account(AccountHash::from_formatted_str(account_hash).unwrap());
+    let dao = DaoSnapshot::load();
+    let balance = dao.reputation_token.balance_of(account);
+    log::info(format!("{} has {} reputation.", account_hash, balance));
+}
+
+pub fn stake_of(account_hash: &str) {
+    let account: Address = Address::Account(AccountHash::from_formatted_str(account_hash).unwrap());
+    let dao = DaoSnapshot::load();
+    let stake = dao.reputation_token.get_stake(account);
+    log::info(format!("{} has {} stake.", account_hash, stake));
+}
+
+pub fn get_voting(voting_id: &str) {
+    let dao = DaoSnapshot::load();
+    let voting_id = voting_id.parse::<u32>().unwrap();
+    let voting = dao.bid_escrow.get_voting(voting_id);
+    log::info(format!("Voting: {:?}", voting));
 }
