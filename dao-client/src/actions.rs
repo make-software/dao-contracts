@@ -406,3 +406,16 @@ pub fn get_voting(voting_id: &str, contract: &str) {
     };
     log::info(format!("Voting: {:?}", voting));
 }
+
+pub fn get_account(account_hash: &str) {
+    let account: Address = Address::Account(AccountHash::from_formatted_str(account_hash).unwrap());
+    let dao = DaoSnapshot::load();
+    let stake = dao.reputation_token.get_stake(account);
+    let reputation = dao.reputation_token.balance_of(account);
+    let kyc_token = dao.kyc_token.balance_of(&account);
+    let va_token = dao.va_token.balance_of(&account);
+    log::info(format!(
+        "Account {}:\n\tstake: {}\n\treputation: {}\n\tkyc_token: {}\n\tva_token: {}",
+        account_hash, stake, reputation, kyc_token, va_token
+    ));
+}

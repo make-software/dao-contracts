@@ -53,6 +53,11 @@ enum Commands {
         /// Possible values: kyc_voter, repo_voter, reputation_voter, admin, slashing_voter, simple_voter, bid_escrow
         contract: String,
     },
+    /// Get account information
+    GetAccount {
+        /// Account hash of the address in a form "account-hash-..."
+        account_hash: String,
+    },
 }
 
 pub fn parse() {
@@ -74,5 +79,6 @@ pub fn parse() {
             voting_id,
             contract,
         } => actions::get_voting(&voting_id, &contract),
+        GetAccount { account_hash } => actions::get_account(&account_hash),
     }
 }

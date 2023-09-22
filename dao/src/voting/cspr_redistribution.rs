@@ -12,7 +12,9 @@ pub fn redistribute_cspr_to_all_vas(to_redistribute: Balance, refs: &ContractRef
     let total_supply = all_balances.total_supply();
     for (address, balance) in all_balances.balances() {
         let amount = to_redistribute * *balance / total_supply;
-        transfer_tokens(address, amount);
+        if !amount.is_zero() {
+            transfer_tokens(address, amount);
+        }
     }
 }
 
@@ -22,6 +24,8 @@ pub fn redistribute_cspr_to_all_vas(to_redistribute: Balance, refs: &ContractRef
 pub fn redistribute_to_governance(amount: Balance, configuration: &Configuration) -> Balance {
     let governance_wallet: Address = configuration.bid_escrow_wallet_address();
     let governance_wallet_payment = configuration.apply_bid_escrow_payment_ratio_to(amount);
-    transfer_tokens(&governance_wallet, governance_wallet_payment);
+    if !amount.is_zero() {
+        transfer_tokens(&governance_wallet, governance_wallet_payment);
+    }
     amount - governance_wallet_payment
 }
