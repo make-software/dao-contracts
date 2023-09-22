@@ -57,4 +57,19 @@ cargo run -- set-variable FormalQuorumRatio 100
 cargo run -- set-variable ForumKycRequired false
 ```
 
+## Querying balance and stake
+
+To query balance and stake of a user run respectively:
+```bash
+cargo run -- balance_of account-hash-<account_hash>
+cargo run -- stake_of account-hash-<account_hash>
+```
+
+## Showing voting stats
+
+To show stats of BidEscrow voting run:
+```bash
+cargo run -- get-voting <voting_id>
+```
+
 To see available variable names and sample values, use `print-variables` command.

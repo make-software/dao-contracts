@@ -390,9 +390,32 @@ pub fn stake_of(account_hash: &str) {
     log::info(format!("{} has {} stake.", account_hash, stake));
 }
 
-pub fn get_voting(voting_id: &str) {
+pub fn get_voting(voting_id: &str, contract: &str) {
     let dao = DaoSnapshot::load();
     let voting_id = voting_id.parse::<u32>().unwrap();
-    let voting = dao.bid_escrow.get_voting(voting_id);
+    let voting = match contract {
+        "bid_escrow" => dao.bid_escrow.get_voting(voting_id),
+        "kyc_voter" => dao.kyc_voter.get_voting(voting_id),
+        "slashing_voter" => dao.slashing_voter.get_voting(voting_id),
+        "reputation_voter" => dao.reputation_voter.get_voting(voting_id),
+        "repo_voter" => dao.repo_voter.get_voting(voting_id),
+        "simple_voter" => dao.simple_voter.get_voting(voting_id),
+        "onboarding" => dao.onboarding.get_voting(voting_id),
+        "admin" => dao.admin.get_voting(voting_id),
+        _ => panic!("Unknown contract: {}", contract),
+    };
     log::info(format!("Voting: {:?}", voting));
+}
+
+pub fn get_account(account_hash: &str) {
+    let account: Address = Address::Account(AccountHash::from_formatted_str(account_hash).unwrap());
+    let dao = DaoSnapshot::load();
+    let stake = dao.reputation_token.get_stake(account);
+    let reputation = dao.reputation_token.balance_of(account);
+    let kyc_token = dao.kyc_token.balance_of(&account);
+    let va_token = dao.va_token.balance_of(&account);
+    log::info(format!(
+        "Account {}:\n\tstake: {}\n\treputation: {}\n\tkyc_token: {}\n\tva_token: {}",
+        account_hash, stake, reputation, kyc_token, va_token
+    ));
 }
