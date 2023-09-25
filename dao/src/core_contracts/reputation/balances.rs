@@ -4,9 +4,11 @@ use core::ops::{AddAssign, SubAssign};
 use odra::{
     contract_env,
     prelude::collections::BTreeMap,
-    types::{Address, Balance},
+    types::{event::OdraEvent, Address, Balance},
     Iter, List, Mapping, UnwrapOrRevert, Variable,
 };
+
+use super::token::events::{Burn, Mint};
 
 /// A module that stores information about the users' token balances and the total token supply.
 ///
@@ -16,7 +18,7 @@ use odra::{
 /// If an Address owns a "passive token", it means he's impacted the system (eg. have done a job).
 ///
 /// Having both types of balances allows for keeping track of the total value of the system.
-#[odra::module]
+#[odra::module(events = [Mint, Burn])]
 pub struct BalanceStorage {
     balances: Mapping<Address, Balance>,
     holders: List<Address>,
@@ -26,6 +28,7 @@ pub struct BalanceStorage {
 
 impl BalanceStorage {
     /// Increases the user's balance and the total supply.
+    /// If the call succeeds, emits a [Mint] event.
     ///
     /// # Arguments
     ///
@@ -41,9 +44,16 @@ impl BalanceStorage {
         self.total_supply += amount;
 
         self.holders.push(recipient);
+
+        Mint {
+            address: recipient,
+            amount,
+        }
+        .emit();
     }
 
     /// Decreases the user's balance and the total supply.
+    /// If the call succeeds, emits a [Burn] event.
     ///
     /// # Arguments
     ///
@@ -57,6 +67,12 @@ impl BalanceStorage {
         self.access_control.ensure_whitelisted();
         self.dec_balance(&owner, amount);
         self.total_supply -= amount;
+
+        Burn {
+            address: owner,
+            amount,
+        }
+        .emit();
     }
 
     /// Performs mint and/or burn for multiple accounts at once.
