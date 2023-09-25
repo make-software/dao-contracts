@@ -142,3 +142,24 @@ impl ReputationContract {
         self.passive_reputation_storage.balance_of(address)
     }
 }
+
+pub mod events {
+    use odra::{
+        types::{Address, Balance},
+        Event,
+    };
+
+    /// Event emitted when tokens have been burnt.
+    #[derive(Debug, PartialEq, Eq, Event)]
+    pub struct Burn {
+        pub address: Address,
+        pub amount: Balance,
+    }
+
+    /// Event emitted when tokens have been minted.
+    #[derive(Debug, PartialEq, Eq, Event)]
+    pub struct Mint {
+        pub address: Address,
+        pub amount: Balance,
+    }
+}

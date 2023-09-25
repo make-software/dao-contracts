@@ -51,6 +51,8 @@ To update DAO variable run:
 cargo run -- update-variable <variable_name> <variable_value>
 ```
 
+To see available variable names and sample values, use `print-variables` command.
+
 for example:
 ```bash
 cargo run -- set-variable FormalQuorumRatio 100
@@ -67,9 +69,9 @@ cargo run -- stake_of account-hash-<account_hash>
 
 ## Showing voting stats
 
-To show stats of BidEscrow voting run:
+To show stats of a voting run:
 ```bash
-cargo run -- get-voting <voting_id>
+cargo run -- get-voting <voting_id> <contract_name>
 ```
 
-To see available variable names and sample values, use `print-variables` command.
+Possible values for <contract_name> are: `kyc_voter`, `repo_voter`, `reputation_voter`, `admin`, `slashing_voter`, `simple_voter` and `bid_escrow`.
