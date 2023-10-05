@@ -156,6 +156,7 @@ impl SlashingVoterContract {
         let slash_task = self.tasks.get(&voting_id).unwrap_or_revert();
 
         let mut reputation = self.refs.reputation_token();
+        let reputation_before_slash = reputation.balance_of(slash_task.subject);
         // If partial slash only burn reputation.
         if slash_task.ratio != 1000 {
             let slash_amount = (slash_task.reputation_at_voting_creation
@@ -167,6 +168,8 @@ impl SlashingVoterContract {
                 subject: slash_task.subject,
                 ratio: slash_task.ratio,
                 slash_amount,
+                reputation_before_slash,
+                reputation_after_slash: reputation_before_slash - slash_amount,
                 cancelled_votings: vec![],
                 affected_votings: vec![],
             }
@@ -193,7 +196,9 @@ impl SlashingVoterContract {
         SlashSummary {
             subject: slash_task.subject,
             ratio: slash_task.ratio,
-            slash_amount: reputation.balance_of(slash_task.subject),
+            reputation_before_slash,
+            reputation_after_slash: reputation.balance_of(slash_task.subject),
+            slash_amount: slash_task.reputation_at_voting_creation,
             cancelled_votings,
             affected_votings,
         }
@@ -206,6 +211,8 @@ pub struct SlashSummary {
     pub subject: Address,
     pub ratio: u32,
     pub slash_amount: Balance,
+    pub reputation_before_slash: Balance,
+    pub reputation_after_slash: Balance,
     pub cancelled_votings: Vec<VotingId>,
     pub affected_votings: Vec<VotingId>,
 }
