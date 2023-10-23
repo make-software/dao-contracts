@@ -312,6 +312,14 @@
           "ty": "U512"
         },
         {
+          "name": "reputation_before_slash",
+          "ty": "U512"
+        },
+        {
+          "name": "reputation_after_slash",
+          "ty": "U512"
+        },
+        {
           "name": "cancelled_votings",
           "ty": {
             "List": "U32"
