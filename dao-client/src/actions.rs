@@ -20,11 +20,11 @@ use odra::types::BlockTime;
 use odra::types::OdraType;
 use odra::{client_env, types::Address};
 
-use crate::variables::VariableType;
 use crate::{
     cspr, error::Error, log, DaoSnapshot, DeployedContractsToml, DEFAULT_CSPR_USD_RATE,
     DEPLOYED_CONTRACTS_FILE,
 };
+use dao::utils::variable_type::VariableType;
 
 /// Deploy all DAO contracts.
 pub fn deploy_all() {
@@ -294,7 +294,7 @@ pub fn print_variables() {
 
     // print all variables
     for (name, _) in variables.clone() {
-        match VariableType::from_str(name.as_str()) {
+        match VariableType::from_key(name.as_str()) {
             VariableType::Balance => log::info(format!(
                 "{}: {}",
                 name,
@@ -324,7 +324,7 @@ pub fn set_variable(name: &str, value: &str) {
     let mut dao = DaoSnapshot::load();
     client_env::set_gas(cspr(5));
 
-    match VariableType::from_str(name) {
+    match VariableType::from_key(name) {
         VariableType::Balance => {
             dao.variable_repository.update_at(
                 name.to_string(),

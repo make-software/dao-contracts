@@ -22,6 +22,7 @@ execution_error! {
         NoSuchMethod => 1101,
         VariableValueNotSet => 1102,
         BytesDeserializationError => 1103,
+        CouldntDeserializeValueToCorrectType => 1104,
         TokenDoesNotExist => 1700,
         TokenAlreadyExists => 1701,
         ApprovalToCurrentOwner => 1702,

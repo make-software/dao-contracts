@@ -1,3 +1,5 @@
+use odra::contract_env::revert;
+use odra::types::OdraType;
 use odra::{
     contract_env::caller,
     prelude::string::{String, ToString},
@@ -5,6 +7,8 @@ use odra::{
     Event,
 };
 
+use crate::utils::variable_type::VariableType;
+use crate::utils::Error::CouldntDeserializeValueToCorrectType;
 use crate::voting_contracts::SlashedVotings;
 use crate::{
     configuration::ConfigurationBuilder,
@@ -88,6 +92,8 @@ impl RepoVoterContract {
         activation_time: Option<u64>,
         stake: Balance,
     ) {
+        Self::assert_correct_value_type(&key, &value);
+
         let voting_configuration = ConfigurationBuilder::new(
             self.refs.va_token().total_supply(),
             &self.refs.variable_repository().all_variables(),
@@ -127,6 +133,22 @@ impl RepoVoterContract {
     pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
         self.voting_engine.slash_voter(voter)
+    }
+}
+
+impl RepoVoterContract {
+    fn assert_correct_value_type(key: &str, value: &Bytes) {
+        let result = match VariableType::from_key(key) {
+            VariableType::Balance => Balance::deserialize(value).is_some(),
+            VariableType::BlockTime => BlockTime::deserialize(value).is_some(),
+            VariableType::Address => Address::deserialize(value).is_some(),
+            VariableType::Bool => bool::deserialize(value).is_some(),
+            VariableType::Unknown => true,
+        };
+
+        if !result {
+            revert(CouldntDeserializeValueToCorrectType)
+        }
     }
 }
 

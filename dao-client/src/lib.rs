@@ -7,7 +7,6 @@ mod deployed_contracts_toml;
 pub use dao_snapshot::DaoSnapshot;
 pub use deployed_contracts_toml::DeployedContractsToml;
 mod error;
-mod variables;
 
 // 1CSPR ~= 0.02924$
 const DEFAULT_CSPR_USD_RATE: u64 = 34_000_000_000;
