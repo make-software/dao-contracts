@@ -31,3 +31,14 @@ Scenario: RepoVoter sets the of PostJobDOSFee with activation time
   # voting lasts 12 days
   When 3 days passed
   Then value of PostJobDOSFee is 12345
+
+# Following scenario fails while creating first voting, which is correct behaviour
+#Scenario: RepoVoter sets the value of TimeBetweenInformalAndFormalVoting to incorrect value
+#  When RepoVoter voting with id 0 created by VA1 passes
+#    | voting_contract | stake | arg1               | arg2                                  | arg3   |
+#    | RepoVoter       | 100   | VariableRepository | TimeBetweenInformalAndFormalVoting    | false  |
+#  Then value of PostJobDOSFee is 10
+#  When RepoVoter voting with id 1 created by VA1 passes
+#    | voting_contract | stake | arg1               | arg2             | arg3   |
+#    | RepoVoter       | 100   | VariableRepository | PostJobDOSFee    | 99999  |
+#  Then value of PostJobDOSFee is 99999

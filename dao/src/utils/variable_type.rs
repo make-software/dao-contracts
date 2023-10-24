@@ -1,4 +1,4 @@
-use dao::utils::*;
+use crate::utils::consts::*;
 
 pub enum VariableType {
     Balance,
@@ -9,7 +9,7 @@ pub enum VariableType {
 }
 
 impl VariableType {
-    pub fn from_str(name: &str) -> VariableType {
+    pub fn from_key(name: &str) -> VariableType {
         match name {
             POST_JOB_DOS_FEE
             | DEFAULT_POLICING_RATE

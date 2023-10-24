@@ -5,6 +5,8 @@ mod errors;
 mod math;
 mod transfer;
 pub mod types;
+pub mod variable_type;
+
 pub use consts::*;
 pub use contract_call::ContractCall;
 pub use errors::Error;
