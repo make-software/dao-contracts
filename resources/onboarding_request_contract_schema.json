@@ -506,6 +506,27 @@
       ]
     },
     {
+      "name": "CSPRTransfer",
+      "fields": [
+        {
+          "name": "from",
+          "ty": "Key"
+        },
+        {
+          "name": "to",
+          "ty": "Key"
+        },
+        {
+          "name": "amount",
+          "ty": "U512"
+        },
+        {
+          "name": "reason",
+          "ty": "String"
+        }
+      ]
+    },
+    {
       "name": "VotingCreatedInfo",
       "fields": [
         {
