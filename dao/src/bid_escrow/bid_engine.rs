@@ -5,7 +5,7 @@ extern crate alloc;
 
 use crate::bid_escrow::bid::{Bid, BidStatus, CancelBidRequest, SubmitBidRequest};
 use crate::bid_escrow::events::{
-    BidCancelled, BidSubmitted, JobCreated, JobOfferCreated, TransferReason,
+    BidCancelled, BidSubmitted, CSPRTransfer, JobCreated, JobOfferCreated, TransferReason,
 };
 use crate::bid_escrow::job::{Job, PickBidRequest};
 use crate::bid_escrow::job_offer::{CancelJobOfferRequest, JobOffer, PostJobOfferRequest};
@@ -20,7 +20,7 @@ use odra::prelude::{vec, vec::Vec};
 use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
 
 /// Manages the Bidding process.
-#[odra::module(events = [JobCreated, JobOfferCreated, BidSubmitted, BidCancelled])]
+#[odra::module(events = [JobCreated, JobOfferCreated, BidSubmitted, BidCancelled, CSPRTransfer])]
 pub struct BidEngine {
     bid_storage: BidStorage,
     job_storage: JobStorage,

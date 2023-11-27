@@ -1,7 +1,8 @@
 //! Job Engine module.
 use crate::bid_escrow::bid::{Bid, ReclaimBidRequest};
 use crate::bid_escrow::events::{
-    BidEscrowVotingCreated, JobCancelled, JobDone, JobRejected, JobSubmitted, TransferReason,
+    BidEscrowVotingCreated, CSPRTransfer, JobCancelled, JobDone, JobRejected, JobSubmitted,
+    TransferReason,
 };
 use crate::bid_escrow::job::{Job, ReclaimJobRequest, SubmitJobProofRequest, WorkerType};
 use crate::bid_escrow::storage::{BidStorage, JobStorage};
@@ -24,7 +25,7 @@ use odra::types::{event::OdraEvent, Balance};
 use odra::UnwrapOrRevert;
 
 /// Manages Jobs lifecycle.
-#[odra::module(events = [JobSubmitted, JobRejected, JobCancelled, JobDone, BidEscrowVotingCreated])]
+#[odra::module(events = [JobSubmitted, JobRejected, JobCancelled, JobDone, BidEscrowVotingCreated, CSPRTransfer])]
 pub struct JobEngine {
     job_storage: JobStorage,
     bid_storage: BidStorage,

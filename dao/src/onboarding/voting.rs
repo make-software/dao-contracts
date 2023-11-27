@@ -1,6 +1,6 @@
 //! Voting module for onboarding requests.
 
-use crate::bid_escrow::events::TransferReason;
+use crate::bid_escrow::events::{CSPRTransfer, TransferReason};
 use crate::configuration::{Configuration, ConfigurationBuilder};
 use crate::modules::refs::ContractRefs;
 use crate::onboarding::request::{OnboardingRequest, Request};
@@ -21,7 +21,7 @@ use odra::types::{Address, Balance};
 use odra::{Mapping, UnwrapOrRevert};
 
 /// Onboarding voting module.
-#[odra::module]
+#[odra::module(events = [CSPRTransfer])]
 pub struct Onboarding {
     requests: Mapping<VotingId, Request>,
     configurations: Mapping<VotingId, Configuration>,
