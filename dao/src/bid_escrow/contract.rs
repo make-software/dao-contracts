@@ -494,4 +494,29 @@ impl BidEscrowContract {
             affected_votings,
         }
     }
+
+    /// Cancels a voting that has not been finished in defined time
+    ///
+    /// # Errors
+    /// * [crate::utils::Error::VotingDoesNotExist]
+    /// * [crate::utils::Error::VotingWithGivenTypeNotInProgress]
+    /// * [crate::utils::Error::FinishingCompletedVotingNotAllowed]
+    /// * [crate::utils::Error::VotingNotStarted]
+    /// * [crate::utils::Error::VotingAlreadyFinished]
+    /// * [crate::utils::Error::VotingAlreadyCancelled]
+    pub fn cancel_finished_voting(&mut self, voting_id: VotingId) {
+        // cancel voting
+        self.voting_engine.cancel_finished_voting(voting_id);
+
+        // return cspr
+        let mut job = self.job_storage.get_job_by_voting_id(voting_id);
+        self.job_engine.return_job_poster_payment_and_dos_fee(&job);
+        if job.external_worker_cspr_stake() > 0.into() {
+            self.job_engine.return_external_worker_cspr_stake(&job);
+        }
+
+        // cancel and save job
+        job.cancel();
+        self.job_storage.store_job(job);
+    }
 }

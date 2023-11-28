@@ -1,6 +1,8 @@
 //! Voting State Machine.
 use crate::configuration::Configuration;
-use crate::rules::validation::voting::{AfterFormalVoting, VoteInTime, VotingNotCompleted};
+use crate::rules::validation::voting::{
+    AfterFormalVoting, FinishedVotingCanBeCancelled, VoteInTime, VotingNotCompleted,
+};
 use crate::rules::RulesBuilder;
 use crate::voting::ballot::Choice;
 use crate::voting::types::VotingId;
@@ -356,6 +358,18 @@ impl VotingStateMachine {
         RulesBuilder::new()
             .add_voting_validation(AfterFormalVoting::create(block_time))
             .add_voting_validation(VotingNotCompleted::create())
+            .build()
+            .validate(self, configuration);
+    }
+
+    pub fn guard_cancel_finished_voting(
+        &self,
+        block_time: BlockTime,
+        configuration: &Configuration,
+    ) {
+        RulesBuilder::new()
+            .add_voting_validation(VotingNotCompleted::create())
+            .add_voting_validation(FinishedVotingCanBeCancelled::create(block_time))
             .build()
             .validate(self, configuration);
     }

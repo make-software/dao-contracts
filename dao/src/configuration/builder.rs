@@ -72,6 +72,10 @@ impl ConfigurationBuilder {
                     formal_quorum_ratio: get_variable(FORMAL_QUORUM_RATIO, variables),
                     bid_escrow_payment_ratio: get_variable(BID_ESCROW_PAYMENT_RATIO, variables),
                     voting_ids_address: get_variable(VOTING_IDS_ADDRESS, variables),
+                    cancel_finished_voting_timeout: get_variable(
+                        CANCEL_FINISHED_VOTING_TIMEOUT,
+                        variables,
+                    ),
                 },
                 VotingConfiguration {
                     is_bid_escrow: false,

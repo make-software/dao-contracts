@@ -30,4 +30,5 @@ pub struct DaoConfiguration {
     pub voting_start_after_job_worker_submission: BlockTime,
     pub bid_escrow_payment_ratio: Balance,
     pub voting_ids_address: Address,
+    pub cancel_finished_voting_timeout: BlockTime,
 }

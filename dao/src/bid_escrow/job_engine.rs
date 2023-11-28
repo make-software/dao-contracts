@@ -1,5 +1,6 @@
 //! Job Engine module.
 use crate::bid_escrow::bid::{Bid, ReclaimBidRequest};
+#[allow(unused_imports)]
 use crate::bid_escrow::events::{
     BidEscrowVotingCreated, CSPRTransfer, JobCancelled, JobDone, JobRejected, JobSubmitted,
     TransferReason,
@@ -416,7 +417,7 @@ impl JobEngine {
             .burn(job.worker(), amount_to_burn);
     }
 
-    fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
+    pub fn return_job_poster_payment_and_dos_fee(&mut self, job: &Job) {
         let job_offer = self
             .bid_storage
             .get_job_offer_or_revert(&job.job_offer_id());
@@ -427,7 +428,7 @@ impl JobEngine {
         );
     }
 
-    fn return_external_worker_cspr_stake(&mut self, job: &Job) {
+    pub fn return_external_worker_cspr_stake(&mut self, job: &Job) {
         withdraw(
             &job.worker(),
             job.external_worker_cspr_stake(),

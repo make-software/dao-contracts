@@ -45,6 +45,7 @@ execution_error! {
         FormalVotingNotCompleted => 2110,
         InformalVotingNotStarted => 2111,
         ConfigurationNotFound => 2112,
+        VotingCannotBeCancelledYet => 2113,
         VaOnboardedAlready => 2201,
         OnboardingAlreadyInProgress => 2202,
         NotOnboarded => 2203,

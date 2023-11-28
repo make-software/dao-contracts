@@ -194,6 +194,18 @@ impl Onboarding {
         );
     }
 
+    pub fn return_cspr(&mut self, voting_id: VotingId) {
+        let request = self
+            .requests
+            .get(&voting_id)
+            .unwrap_or_revert_with(Error::OnboardingRequestNotFound);
+        withdraw(
+            &request.creator(),
+            request.cspr_deposit(),
+            TransferReason::OnboardingStakeReturn,
+        );
+    }
+
     fn on_informal_voting_finished(&mut self, _voting_id: VotingId) {}
 
     fn on_formal_voting_in_favor(&mut self, voting_id: VotingId, request: &Request) {

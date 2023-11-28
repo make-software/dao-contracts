@@ -51,6 +51,7 @@ impl SlashingVoterContract {
                 voting_type: VotingType,
                 voter: Address,
             ) -> Option<Ballot>;
+            pub fn cancel_finished_voting(&mut self, voting_id: VotingId);
         }
 
         to self.access_control {

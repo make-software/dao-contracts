@@ -155,6 +155,23 @@ impl OnboardingRequestContract {
         self.access_control.ensure_whitelisted();
         self.voting.slash_voter(voter)
     }
+
+    /// Cancels a voting that has not been finished in defined time
+    ///
+    /// # Errors
+    /// * [crate::utils::Error::VotingDoesNotExist]
+    /// * [crate::utils::Error::VotingWithGivenTypeNotInProgress]
+    /// * [crate::utils::Error::FinishingCompletedVotingNotAllowed]
+    /// * [crate::utils::Error::VotingNotStarted]
+    /// * [crate::utils::Error::VotingAlreadyFinished]
+    /// * [crate::utils::Error::VotingAlreadyCancelled]
+    pub fn cancel_finished_voting(&mut self, voting_id: VotingId) {
+        // return cspr
+        self.onboarding.return_cspr(voting_id);
+
+        // cancel voting
+        self.voting.cancel_finished_voting(voting_id);
+    }
 }
 
 /// Event emitted when onboarding voting has been created.

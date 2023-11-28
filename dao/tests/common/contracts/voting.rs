@@ -43,6 +43,7 @@ pub trait Voter {
         voting_type: DaoVotingType,
         address: Address,
     ) -> Option<DaoBallot>;
+    fn cancel_finished_voting(&mut self, voting_id: VotingId);
 }
 
 #[allow(dead_code)]
@@ -161,6 +162,18 @@ impl DaoWorld {
         let voting_type = voting_type.map(|vt| vt.into()).unwrap();
         let contract = self.get_address(contract);
         VoterRef::at(&contract).finish_voting(voting_id, voting_type);
+    }
+
+    pub fn cancel_finished_voting(
+        &mut self,
+        contract: &Account,
+        account: &Account,
+        voting_id: u32,
+    ) {
+        let account = self.get_address(account);
+        let contract = self.get_address(contract);
+        test_env::set_caller(account);
+        VoterRef::at(&contract).cancel_finished_voting(voting_id);
     }
 
     pub fn voting_exists(
