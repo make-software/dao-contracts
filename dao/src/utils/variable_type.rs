@@ -29,6 +29,7 @@ impl VariableType {
             | FORMAL_VOTING_TIME
             | TIME_BETWEEN_INFORMAL_AND_FORMAL_VOTING
             | VA_BID_ACCEPTANCE_TIMEOUT
+            | CANCEL_FINISHED_VOTING_TIMEOUT
             | VOTING_START_AFTER_JOB_WORKER_SUBMISSION => VariableType::BlockTime,
             FIAT_CONVERSION_RATE_ADDRESS | BID_ESCROW_WALLET_ADDRESS | VOTING_IDS_ADDRESS => {
                 VariableType::Address

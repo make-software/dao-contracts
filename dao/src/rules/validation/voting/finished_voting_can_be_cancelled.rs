@@ -17,6 +17,7 @@ impl VotingValidation for FinishedVotingCanBeCancelled {
         voting_state_machine: &VotingStateMachine,
         configuration: &Configuration,
     ) -> Result<(), Error> {
+        // shorthand for checking if block_time > voting_end_time + cancel_finished_voting_timeout
         if voting_state_machine.state_in_time(
             self.block_time - configuration.cancel_finished_voting_timeout(),
             configuration,
