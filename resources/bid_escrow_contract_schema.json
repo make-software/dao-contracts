@@ -42,6 +42,17 @@
       "return_ty": "Any"
     },
     {
+      "name": "cancel_finished_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
       "name": "voting_exists",
       "is_mutable": false,
       "args": [

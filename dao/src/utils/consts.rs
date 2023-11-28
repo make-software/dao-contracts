@@ -102,6 +102,8 @@ pub const VOTING_START_AFTER_JOB_WORKER_SUBMISSION: &str = "VotingStartAfterJobS
 pub const DEFAULT_REPUTATION_SLASH: &str = "DefaultReputationSlash";
 /// An address of a contract that generates a next voting id.
 pub const VOTING_IDS_ADDRESS: &str = "VotingIdsAddress";
+/// Amount of time after formal voting end, when it can be cancelled
+pub const CANCEL_FINISHED_VOTING_TIMEOUT: &str = "CancelFinishedVotingTimeout";
 
 /// Contract keys.
 pub const CONTRACT_MAIN_PURSE: &str = "__contract_main_purse";

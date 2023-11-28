@@ -42,6 +42,7 @@ impl AdminContract {
             ) -> Option<Ballot>;
             pub fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
             pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary;
+            pub fn cancel_finished_voting(&mut self, voting_id: VotingId);
         }
 
         to self.access_control {

@@ -336,6 +336,10 @@ impl Configuration {
             Err(Error::FiatRateNotSet)
         }
     }
+
+    pub fn cancel_finished_voting_timeout(&self) -> BlockTime {
+        self.dao_configuration.cancel_finished_voting_timeout
+    }
 }
 
 pub fn get_variable<T: OdraType>(key: &str, variables: &BTreeMap<String, Bytes>) -> T {

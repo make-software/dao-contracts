@@ -225,6 +225,14 @@ impl VotingEngine {
         summary
     }
 
+    /// Cancels finished voting if CancelFinishedVotingTimeout has passed.
+    pub fn cancel_finished_voting(&mut self, voting_id: VotingId) {
+        let voting = self.get_voting_or_revert(voting_id);
+        let configuration = self.get_configuration_or_revert(voting_id);
+        voting.guard_cancel_finished_voting(get_block_time(), &configuration);
+        self.cancel_voting(voting);
+    }
+
     /// Marks voting finished but do nothing with the staked reputation.
     ///
     /// # Errors

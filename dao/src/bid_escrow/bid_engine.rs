@@ -4,8 +4,10 @@
 extern crate alloc;
 
 use crate::bid_escrow::bid::{Bid, BidStatus, CancelBidRequest, SubmitBidRequest};
+#[allow(unused_imports)]
+use crate::bid_escrow::events::CSPRTransfer;
 use crate::bid_escrow::events::{
-    BidCancelled, BidSubmitted, CSPRTransfer, JobCreated, JobOfferCreated, TransferReason,
+    BidCancelled, BidSubmitted, JobCreated, JobOfferCreated, TransferReason,
 };
 use crate::bid_escrow::job::{Job, PickBidRequest};
 use crate::bid_escrow::job_offer::{CancelJobOfferRequest, JobOffer, PostJobOfferRequest};

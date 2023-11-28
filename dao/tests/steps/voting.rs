@@ -72,6 +72,28 @@ fn end_voting(world: &mut DaoWorld, voting_type: VotingType, voting_id: u32, con
     world.finish_voting(&contract, voting_id, Some(voting_type));
 }
 
+#[when(expr = "{account} cancels voting in {account} contract with id {int}")]
+fn cancel_finished_voting(
+    world: &mut DaoWorld,
+    account: Account,
+    contract: Account,
+    voting_id: u32,
+) {
+    world.cancel_finished_voting(&contract, &account, voting_id);
+}
+
+#[when(expr = "{account} cannot cancel voting in {account} contract with id {int}")]
+fn cannot_cancel_finished_voting(
+    world: &mut DaoWorld,
+    account: Account,
+    contract: Account,
+    voting_id: u32,
+) {
+    test_env::assert_exception(DaoError::VotingCannotBeCancelledYet, || {
+        world.cancel_finished_voting(&contract, &account, voting_id)
+    });
+}
+
 #[when(expr = "{account} calls {account} to slash {account}")]
 fn slash_voter(world: &mut DaoWorld, caller: Account, contract: Account, voter: Account) {
     world.slash_voter(caller, contract, voter);

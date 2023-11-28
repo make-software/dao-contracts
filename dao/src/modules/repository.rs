@@ -173,6 +173,7 @@ impl Default for RepositoryDefaults {
             259200000u64,
         );
         items.push(consts::BID_ESCROW_PAYMENT_RATIO, Balance::from(100));
+        items.push(consts::CANCEL_FINISHED_VOTING_TIMEOUT, 2592000000u64);
         items
     }
 }
