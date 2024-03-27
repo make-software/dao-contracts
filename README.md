@@ -41,7 +41,7 @@ just prepare
 To build `WASM` files execute:
 
 ```bash
-just build-all
+just build-dao-contracts
 ```
 Contracts will be located in the `wasm/` folder.
 

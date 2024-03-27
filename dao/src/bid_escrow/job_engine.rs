@@ -1,4 +1,5 @@
 //! Job Engine module.
+#![allow(unused_imports)]
 use crate::bid_escrow::bid::{Bid, ReclaimBidRequest};
 use crate::bid_escrow::events::{
     BidEscrowVotingCreated, CSPRTransfer, JobCancelled, JobDone, JobRejected, JobSubmitted,

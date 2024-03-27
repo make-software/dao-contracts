@@ -1,6 +1,7 @@
 //! Bid engine module.
 //! It is responsible for handling all Bid-related operations.
 //! It stores all Bids and Jobs.
+#![allow(unused_imports)]
 extern crate alloc;
 
 use crate::bid_escrow::bid::{Bid, BidStatus, CancelBidRequest, SubmitBidRequest};

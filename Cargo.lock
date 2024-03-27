@@ -513,13 +513,13 @@ checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
 name = "colored"
-version = "2.0.0"
+version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
+checksum = "2674ec482fbc38012cf31e6c42ba0177b431a0cb6f15fe40efa5aab1bda516f6"
 dependencies = [
- "atty",
+ "is-terminal",
  "lazy_static",
- "winapi",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -1807,9 +1807,9 @@ dependencies = [
 
 [[package]]
 name = "odra"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0987a28d40d137c72b634335060e5286fc78a457bf8c99b52ec2b0a956eb7d94"
+checksum = "74e05e9b4a991849925387beb1c0f70d0e04ee219daf5881c6d20892697e684e"
 dependencies = [
  "num-traits",
  "odra-casper-backend",
@@ -1825,9 +1825,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-backend"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af0ead29b855ad15006a911eb2998694fb6682d976c3ab44284bb49661bdd618"
+checksum = "9d74362966f9323d4313e6b29e8ee153b0122ef735f58e528169d2fe317523f4"
 dependencies = [
  "casper-contract",
  "casper-event-standard",
@@ -1841,9 +1841,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-codegen"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18711a69349cf92c6e80c895bdaaca9f2bfddc991125f77287b1fd342d616922"
+checksum = "2512e06f2abae0b4e635c374e2561a640e7d786a4f7227ecdda244dcda58e9aa"
 dependencies = [
  "casper-event-standard",
  "casper-types",
@@ -1861,9 +1861,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-livenet"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dc39ecc18554649321f8d3291f6cf0893af83135223df22f0cc74385a18de6b"
+checksum = "08c925dd937d84d7c4dfc4cbb39c627f9d4c570955c0ea8b31628029f366a867"
 dependencies = [
  "blake2",
  "casper-execution-engine",
@@ -1889,9 +1889,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-shared"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6a6630e9875f0fc35bbe0ec674d686fdd2d406d030fac431813fc4428589344"
+checksum = "8ba169a3c85d70376ab96edcbd8e84cd1c08d7c1e80b7fef389fe01c87763b63"
 dependencies = [
  "casper-contract",
  "casper-event-standard",
@@ -1901,9 +1901,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-test-env"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "997486225c02d5b4919d6c98204bfa925a7574da7107c2688a5fe1dec8aef4d8"
+checksum = "c4c34758837305104565f8c26a1f7615dfc4dcd451c6af1cba96b03805149557"
 dependencies = [
  "casper-engine-test-support",
  "casper-execution-engine",
@@ -1917,9 +1917,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-types"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f948f0d07c4afbe2db83a50ba61350e41554c51be79376416d6913b293317ae"
+checksum = "c01b494ce43c5d59921debb1e8912190a892f4409cba20103e7717515a48498a"
 dependencies = [
  "casper-types",
  "num-traits",
@@ -1928,9 +1928,9 @@ dependencies = [
 
 [[package]]
 name = "odra-codegen"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3449dbd2fba1467e8c6a39330705a250984e8bb611b7b18d3ace6aff0a4fc26a"
+checksum = "396a89738c34c1f01ab8f68597cdcc4cacdefcb6edad29c7bbb97f3a45461232"
 dependencies = [
  "convert_case 0.5.0",
  "derive_more",
@@ -1945,9 +1945,9 @@ dependencies = [
 
 [[package]]
 name = "odra-ir"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43e5e3d6499a7e6bb52906e63df5e06352139414a98f87fdbef0254937fe4832"
+checksum = "13a2cf2a1e288f1b7fcb6437a9be4e7d3953ec733e7e0d600be6dadcc12e476f"
 dependencies = [
  "anyhow",
  "itertools",
@@ -1960,9 +1960,9 @@ dependencies = [
 
 [[package]]
 name = "odra-mock-vm"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "204060586a6ec1eed0adef5ff6e0f97e183f308c3c2e85b45a1099b6ea583625"
+checksum = "e699806bfd6d24672ff45465c4602ac51d518bda6c050584daa1df8594b83fdc"
 dependencies = [
  "anyhow",
  "colored",
@@ -1975,9 +1975,9 @@ dependencies = [
 
 [[package]]
 name = "odra-mock-vm-types"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d5653be24034fec476bda6cbf7e5dfeb0e5c38ee500eef0c93c6cb86b892719"
+checksum = "8cc1bd83895a3cdc176dc7a8e177263556f21558b1fc155fccf417c33a12c334"
 dependencies = [
  "borsh",
  "hex",
@@ -1989,9 +1989,9 @@ dependencies = [
 
 [[package]]
 name = "odra-modules"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4349499c4fd6ea47148b7f7e6bd0906299efc8ccbb1c65d5babe38bd007971f3"
+checksum = "5cb8012a54fbed863d81742a437a7cac251bd7e02d3079445ad80b7cebffdae2"
 dependencies = [
  "hex",
  "odra",
@@ -2000,9 +2000,9 @@ dependencies = [
 
 [[package]]
 name = "odra-proc-macros"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7f211e77a47749131d05a624960a2dd45da848f9e840b8e5053aa9b9d3c9251"
+checksum = "a13c6fba07217d8d75a3006e0010339b51de31576b0d561251f53172e3f09634"
 dependencies = [
  "odra-codegen",
  "odra-ir",
@@ -2013,15 +2013,15 @@ dependencies = [
 
 [[package]]
 name = "odra-types"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cba424484a1f64e86a1e70d6b42938e8cf0d7abb572d4a3f705ebd2684bb411"
+checksum = "d819ce09b1097e8f0014018beda80588e6517a2d4c8ece9d8ced1f24ad9c37c4"
 
 [[package]]
 name = "odra-utils"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01c433c83ef203de1b30800607906cb115213a5c1a375413d9eb2eea1930e826"
+checksum = "6ed66ddcdad9a553a2fa40730015904ba99c77a1381c758a5e3743cbf6f35111"
 dependencies = [
  "convert_case 0.5.0",
 ]
