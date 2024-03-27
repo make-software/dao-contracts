@@ -1,7 +1,6 @@
 prepare:
     rustup target add wasm32-unknown-unknown
-    sudo apt install wabt
-    cargo install cargo-odra --locked
+    cargo install --version 0.0.9 --force --locked cargo-odra
 
 build-dao-contracts:
     cargo odra build -b casper

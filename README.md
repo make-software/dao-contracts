@@ -26,9 +26,10 @@ Live version: https://make-software.github.io/dao-contracts.
 ### Prerequisites
 
 - `Rust` toolchain installed (see [rustup.rs](https://rustup.rs/)),
-- `cargo odra` installed `cargo install cargo-odra`
+- `cargo odra` installed `cargo install --version 0.0.10 --force --locked cargo-odra`
 - `wasmstrip` tool installed (see [wabt](https://github.com/WebAssembly/wabt)).
 - `just` tool installed (see [just](https://github.com/casey/just)).
+- `wabt` installed (see [wabt](https://github.com/WebAssembly/wabt)).
 
 To prepare your environment execute:
 
@@ -40,7 +41,7 @@ just prepare
 To build `WASM` files execute:
 
 ```bash
-just build-all
+just build-dao-contracts
 ```
 Contracts will be located in the `wasm/` folder.
 
