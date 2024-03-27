@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TransferReason"],"struct":["BidCancelled","BidEscrowSlashResults","BidEscrowVotingCreated","BidSubmitted","CSPRTransfer","JobCancelled","JobCreated","JobDone","JobOfferCreated","JobRejected","JobSubmitted"]};

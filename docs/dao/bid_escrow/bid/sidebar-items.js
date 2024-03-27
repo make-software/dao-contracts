@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["BidStatus"],"struct":["Bid","CancelBidRequest","ReclaimBidRequest","SubmitBidRequest"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Choice"],"struct":["Ballot","ShortenedBallot"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["events","voting_state_machine"],"struct":["VotingEngine"]};

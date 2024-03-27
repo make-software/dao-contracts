@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["events"],"struct":["Record","Repository","RepositoryDeployer","RepositoryRef"]};

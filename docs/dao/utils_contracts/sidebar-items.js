@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CSPRRateProviderContract","CSPRRateProviderContractDeployer","CSPRRateProviderContractRef","DaoIdsContract","DaoIdsContractDeployer","DaoIdsContractRef"]};
