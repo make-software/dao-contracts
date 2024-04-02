@@ -41,12 +41,12 @@ pub fn deploy_all() {
     contracts.add_contract("DaoIdsContract", ids.address());
 
     // Deploy CSPR Rate Provider.
-    client_env::set_gas(cspr(90));
+    client_env::set_gas(cspr(110));
     let rate_provider = CSPRRateProviderContractDeployer::init(DEFAULT_CSPR_USD_RATE.into());
     contracts.add_contract("CSPRRateProviderContract", rate_provider.address());
 
     // Deploy Variable Repository.
-    client_env::set_gas(cspr(230));
+    client_env::set_gas(cspr(200));
     let variable_repository = VariableRepositoryContractDeployer::init(
         *rate_provider.address(),
         multisig_wallet,
@@ -55,7 +55,7 @@ pub fn deploy_all() {
     contracts.add_contract("VariableRepositoryContract", variable_repository.address());
 
     // Deploy Reputation Token.
-    client_env::set_gas(cspr(180));
+    client_env::set_gas(cspr(200));
     let reputation_token = ReputationContractDeployer::init();
     contracts.add_contract("ReputationContract", reputation_token.address());
 
@@ -72,7 +72,7 @@ pub fn deploy_all() {
     contracts.add_contract("VaNftContract", va_token.address());
 
     // Deploy Admin.
-    client_env::set_gas(cspr(350));
+    client_env::set_gas(cspr(500));
     let admin = AdminContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -81,7 +81,7 @@ pub fn deploy_all() {
     contracts.add_contract("AdminContract", admin.address());
 
     // Deploy Reputation Voter.
-    client_env::set_gas(cspr(350));
+    client_env::set_gas(cspr(500));
     let reputation_voter = ReputationVoterContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -90,7 +90,7 @@ pub fn deploy_all() {
     contracts.add_contract("ReputationVoterContract", reputation_voter.address());
 
     // Deploy KYC Voter.
-    client_env::set_gas(cspr(350));
+    client_env::set_gas(cspr(600));
     let kyc_voter = KycVoterContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -100,7 +100,7 @@ pub fn deploy_all() {
     contracts.add_contract("KycVoterContract", kyc_voter.address());
 
     // Deploy Repo Voter.
-    client_env::set_gas(cspr(350));
+    client_env::set_gas(cspr(600));
     let repo_voter = RepoVoterContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -109,7 +109,7 @@ pub fn deploy_all() {
     contracts.add_contract("RepoVoterContract", repo_voter.address());
 
     // Deploy Simple Voter.
-    client_env::set_gas(cspr(350));
+    client_env::set_gas(cspr(500));
     let simple_voter = SimpleVoterContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -118,7 +118,7 @@ pub fn deploy_all() {
     contracts.add_contract("SimpleVoterContract", simple_voter.address());
 
     // Deploy Slashing Voter.
-    client_env::set_gas(cspr(370));
+    client_env::set_gas(cspr(600));
     let slashing_voter = SlashingVoterContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -127,7 +127,7 @@ pub fn deploy_all() {
     contracts.add_contract("SlashingVoterContract", slashing_voter.address());
 
     // Deploy BidEscrow.
-    client_env::set_gas(cspr(550));
+    client_env::set_gas(cspr(800));
     let bid_escrow = BidEscrowContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
@@ -137,7 +137,7 @@ pub fn deploy_all() {
     contracts.add_contract("BidEscrowContract", bid_escrow.address());
 
     // Deploy Onboarding.
-    client_env::set_gas(cspr(800));
+    client_env::set_gas(cspr(600));
     let onboarding = OnboardingRequestContractDeployer::init(
         *variable_repository.address(),
         *reputation_token.address(),
