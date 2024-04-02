@@ -48,7 +48,7 @@ cargo run -- print-variables
 ## Update Variable
 To update DAO variable run:
 ```bash
-cargo run -- update-variable <variable_name> <variable_value>
+cargo run -- set-variable <variable_name> <variable_value>
 ```
 
 To see available variable names and sample values, use `print-variables` command.
@@ -63,8 +63,8 @@ cargo run -- set-variable ForumKycRequired false
 
 To query balance and stake of a user run respectively:
 ```bash
-cargo run -- balance_of account-hash-<account_hash>
-cargo run -- stake_of account-hash-<account_hash>
+cargo run -- balance-of account-hash-<account_hash>
+cargo run -- stake-of account-hash-<account_hash>
 ```
 
 ## Showing voting stats
