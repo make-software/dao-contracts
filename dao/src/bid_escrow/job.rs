@@ -48,6 +48,8 @@ pub struct PickBidRequest {
     pub payment: Balance,
     /// The amount transferred by `Job Poster`.
     pub transferred_cspr: Balance,
+    /// The amount declared to be transferred by `Job Poster`.
+    pub cspr_amount: Balance,
     /// Bid reputation stake.
     pub stake: Balance,
     /// Bid CSPR stake - for an [External Worker](crate::bid_escrow#definitions).
@@ -114,6 +116,7 @@ impl Job {
             .add_validation(DoesProposedPaymentMatchTransferred::create(
                 request.payment,
                 request.transferred_cspr,
+                request.cspr_amount,
             ))
             .build()
             .validate_generic_validations();

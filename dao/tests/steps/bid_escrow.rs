@@ -1,4 +1,5 @@
 use cucumber::{then, when};
+use dao::bid_escrow::bid::BidStatus;
 use dao::bid_escrow::contract::BidEscrowContractRef;
 use dao::bid_escrow::job::JobStatus;
 use dao::bid_escrow::job_offer::JobOfferStatus;
@@ -128,6 +129,11 @@ fn bid_picked(w: &mut DaoWorld, job_poster: Account, worker: Account) {
     w.pick_bid(job_poster, worker);
 }
 
+#[when(expr = "{account} picked the Bid without paying for {account}")]
+fn bid_picked_without_paying(w: &mut DaoWorld, job_poster: Account, worker: Account) {
+    w.pick_bid_without_enough_payment(job_poster, worker);
+}
+
 #[when(expr = "{account} submits the JobProof of Job {int}")]
 fn submit_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
     let worker = w.get_address(&worker);
@@ -224,6 +230,13 @@ fn assert_job_offer_status(world: &mut DaoWorld, job_poster: Account, job_offer_
         true => assert!(offer_id.is_some()),
         false => assert!(offer_id.is_none()),
     };
+}
+
+#[then(expr = "the Bid of InternalWorker is in state Created")]
+fn assert_bid_status(world: &mut DaoWorld) {
+    let job_poster = Account::InternalWorker;
+    let bid = world.get_bid(0, job_poster).unwrap();
+    assert_eq!(bid.status, BidStatus::Created);
 }
 
 #[then(expr = "{account} cannot submit the JobProof of Job {int}")]
