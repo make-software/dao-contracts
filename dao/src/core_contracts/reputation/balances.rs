@@ -155,7 +155,9 @@ impl BalanceStorage {
 
     fn dec_balance(&mut self, owner: &Address, amount: Balance) {
         let balance = self.balances.get(owner).unwrap_or_default();
-        let new_balance = balance.saturating_sub(amount);
+        let new_balance = balance
+            .checked_sub(amount)
+            .unwrap_or_revert_with(Error::ArithmeticOverflow);
         self.set_balance(owner, new_balance);
     }
 }
