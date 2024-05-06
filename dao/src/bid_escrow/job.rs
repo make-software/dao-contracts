@@ -85,6 +85,7 @@ pub struct ReclaimJobRequest {
 pub struct SubmitJobProofRequest {
     pub proof: DocumentHash,
     pub caller: Address,
+    pub block_time: BlockTime,
 }
 
 /// Serializable representation of a `Job`.
@@ -227,6 +228,10 @@ impl Job {
 
         if self.worker() != request.caller {
             revert(Error::OnlyWorkerCanSubmitProof);
+        }
+
+        if self.finish_time() + self.grace_period() < request.block_time {
+            revert(Error::JobProofSubmittedAfterGracePeriod);
         }
 
         self.job_proof = Some(request.proof);

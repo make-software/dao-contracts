@@ -263,3 +263,13 @@ fn cannot_submit_job_proof_second_time(w: &mut DaoWorld, worker: Account, job_id
 fn bid_pick_failed(w: &mut DaoWorld, job_poster: Account, worker: Account) {
     w.pick_bid_failed(job_poster, worker);
 }
+
+#[then(expr = "{account} fails submit the JobProof of outdated Job {int}")]
+fn submit_outdated_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
+    let worker = w.get_address(&worker);
+    test_env::set_caller(worker);
+    test_env::assert_exception(Error::JobProofSubmittedAfterGracePeriod, || {
+        w.bid_escrow
+            .submit_job_proof(job_id, DocumentHash::from("Job Proof"));
+    });
+}

@@ -1,6 +1,6 @@
 Feature: Pick a canceled bid
   JobPoster cannot pick a bid that has already been cancelled.
-This is a presentation of HAL-02 issue fix.
+  This is a presentation of HAL-02 issue fix.
   Background:
     Given accounts
       | account | CSPR balance | REP balance | REP stake | is_kyced | is_va |
