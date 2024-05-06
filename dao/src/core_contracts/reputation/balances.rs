@@ -65,8 +65,10 @@ impl BalanceStorage {
     /// [`NotWhitelisted`](crate::utils::Error::NotWhitelisted) if called by a not whitelisted account.
     pub fn burn(&mut self, owner: Address, amount: Balance) {
         self.access_control.ensure_whitelisted();
-        self.dec_balance(&owner, amount);
-        self.total_supply -= amount;
+
+        let decreased = self.dec_balance(&owner, amount);
+
+        self.total_supply -= decreased;
 
         Burn {
             address: owner,
@@ -99,8 +101,7 @@ impl BalanceStorage {
             total_supply += amount;
         }
         for (address, amount) in burns {
-            self.dec_balance(&address, amount);
-            total_supply -= amount;
+            total_supply -= self.dec_balance(&address, amount);
         }
 
         self.total_supply.set(total_supply);
@@ -153,12 +154,14 @@ impl BalanceStorage {
         self.set_balance(owner, new_balance);
     }
 
-    fn dec_balance(&mut self, owner: &Address, amount: Balance) {
+    /// Returns the amount actually decreased.
+    fn dec_balance(&mut self, owner: &Address, amount: Balance) -> Balance {
         let balance = self.balances.get(owner).unwrap_or_default();
-        let new_balance = balance
-            .checked_sub(amount)
-            .unwrap_or_revert_with(Error::ArithmeticOverflow);
-        self.set_balance(owner, new_balance);
+        let amount = if amount > balance { balance } else { amount };
+
+        self.set_balance(owner, balance - amount);
+
+        amount
     }
 }
 
