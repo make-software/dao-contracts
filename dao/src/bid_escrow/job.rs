@@ -192,10 +192,6 @@ impl Job {
     /// * [`Error::CannotCancelJob`]
     /// * [`Error::JobCannotBeYetCanceled`]
     pub fn validate_cancel(&self, block_time: BlockTime, caller: Address) -> Result<(), Error> {
-        if self.status() != JobStatus::Created {
-            return Err(Error::CannotCancelJob);
-        }
-
         if self.finish_time() + self.grace_period() >= block_time {
             return Err(Error::JobCannotBeYetCanceled);
         }
