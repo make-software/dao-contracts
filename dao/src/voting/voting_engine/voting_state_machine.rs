@@ -79,10 +79,7 @@ impl VotingStateMachine {
                 let voting_time = configuration.informal_voting_time();
                 start_time + voting_time <= block_time
             }
-            VotingType::Formal => {
-                self.formal_voting_end_time(configuration)
-                    <= block_time
-            }
+            VotingType::Formal => self.formal_voting_end_time(configuration) <= block_time,
         }
     }
 
