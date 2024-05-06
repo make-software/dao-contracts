@@ -80,7 +80,7 @@ impl VotingStateMachine {
                 start_time + voting_time <= block_time
             }
             VotingType::Formal => {
-                self.informal_voting_start_time(configuration) + configuration.formal_voting_time()
+                self.formal_voting_end_time(configuration)
                     <= block_time
             }
         }
