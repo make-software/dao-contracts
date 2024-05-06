@@ -258,3 +258,8 @@ fn cannot_submit_job_proof_second_time(w: &mut DaoWorld, worker: Account, job_id
         bid_escrow.submit_job_proof(job_id, DocumentHash::from("Job Proof"))
     });
 }
+
+#[then(expr = "{account} fails to pick the Bid of {account}")]
+fn bid_pick_failed(w: &mut DaoWorld, job_poster: Account, worker: Account) {
+    w.pick_bid_failed(job_poster, worker);
+}

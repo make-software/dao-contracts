@@ -13,7 +13,7 @@ use odra::types::{Address, Balance, BlockTime};
 use odra::OdraType;
 
 /// Bid status representation
-#[derive(OdraType, PartialEq, Debug)]
+#[derive(OdraType, PartialEq, Debug, Copy)]
 pub enum BidStatus {
     /// Placed, awaiting to be picked.
     Created,

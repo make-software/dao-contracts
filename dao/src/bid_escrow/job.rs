@@ -1,7 +1,10 @@
 //! Bid-related structs.
 
+use crate::bid_escrow::bid::BidStatus;
 use crate::bid_escrow::types::{BidId, JobId, JobOfferId};
-use crate::rules::validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred};
+use crate::rules::validation::bid_escrow::{
+    CanBidBePicked, CanPickBid, DoesProposedPaymentMatchTransferred,
+};
 use crate::rules::RulesBuilder;
 use crate::utils::types::DocumentHash;
 use crate::utils::Error;
@@ -54,6 +57,8 @@ pub struct PickBidRequest {
     pub stake: Balance,
     /// Bid CSPR stake - for an [External Worker](crate::bid_escrow#definitions).
     pub external_worker_cspr_stake: Balance,
+    /// Bid status
+    pub bid_status: BidStatus,
 }
 
 /// Data required to reclaim the Job.
@@ -113,6 +118,7 @@ impl Job {
     pub fn new(request: &PickBidRequest) -> Self {
         RulesBuilder::new()
             .add_validation(CanPickBid::create(request.caller, request.poster))
+            .add_validation(CanBidBePicked::create(request.bid_status))
             .add_validation(DoesProposedPaymentMatchTransferred::create(
                 request.payment,
                 request.transferred_cspr,

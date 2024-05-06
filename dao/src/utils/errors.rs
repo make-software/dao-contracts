@@ -109,6 +109,9 @@ execution_error! {
         OnboardedWorkerCannotStakeCSPR => 4035,
         NotOnboardedWorkerMustStakeCSPR => 4036,
         CannotStakeBothCSPRAndReputation => 4037,
+        BidAlreadyPicked => 4038,
+        BidCanceled => 4039,
+        BidRejected => 4040,
 
         // Reputation Token Errors.
         CannotStakeTwice => 4500,

@@ -236,6 +236,7 @@ impl BidEngine {
             cspr_amount,
             stake: bid.reputation_stake,
             external_worker_cspr_stake: bid.cspr_stake.unwrap_or_default(),
+            bid_status: bid.status,
         };
 
         let job = Job::new(&pick_bid_request);

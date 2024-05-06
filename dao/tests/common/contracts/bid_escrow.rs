@@ -97,6 +97,25 @@ impl DaoWorld {
         );
     }
 
+    pub fn pick_bid_failed(&mut self, job_poster: Account, worker: Account) {
+        let job_poster = self.get_address(&job_poster);
+        let worker = self.get_address(&worker);
+        let job_offer_id = self.offers.get(&job_poster).expect("Job Offer not found.");
+        let bid_id = self
+            .bids
+            .get(&(*job_offer_id, worker))
+            .expect("Bid id not found.");
+        let bid = self.bid_escrow.get_bid(*bid_id).expect("Bid not found.");
+        test_env::set_caller(job_poster);
+        test_env::assert_exception(Error::BidCanceled, || {
+            self.bid_escrow.with_tokens(bid.proposed_payment).pick_bid(
+                *job_offer_id,
+                *bid_id,
+                bid.proposed_payment,
+            );
+        });
+    }
+
     pub fn pick_bid_without_enough_payment(&mut self, job_poster: Account, worker: Account) {
         let job_poster = self.get_address(&job_poster);
         let worker = self.get_address(&worker);
