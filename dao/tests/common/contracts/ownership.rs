@@ -5,6 +5,8 @@ use crate::common::{params::Account, DaoWorld};
 #[odra::external_contract]
 trait AccessControl {
     fn change_ownership(&mut self, owner: Address);
+    fn propose_new_owner(&mut self, owner: Address);
+    fn accept_new_owner(&mut self);
     fn is_whitelisted(&self, address: Address) -> bool;
     fn remove_from_whitelist(&mut self, address: Address);
     fn add_to_whitelist(&mut self, address: Address);
@@ -39,11 +41,21 @@ impl DaoWorld {
     }
 
     pub fn change_ownership(&mut self, contract: &Account, caller: &Account, new_owner: &Account) {
+        let new_owner_address = self.get_address(new_owner);
+        let contract = self.get_address(contract);
+        self.set_caller(caller);
+        AccessControlRef::at(&contract).change_ownership(new_owner_address);
+    }
+
+    pub fn propose_new_owner(&mut self, contract: &Account, new_owner: &Account) {
         let new_owner = self.get_address(new_owner);
         let contract = self.get_address(contract);
+        AccessControlRef::at(&contract).propose_new_owner(new_owner);
+    }
 
-        self.set_caller(caller);
-        AccessControlRef::at(&contract).change_ownership(new_owner);
+    pub fn accept_new_owner(&mut self, contract: &Account) {
+        let contract = self.get_address(contract);
+        AccessControlRef::at(&contract).accept_new_owner();
     }
 
     pub fn is_whitelisted(&mut self, contract: &Account, account: &Account) -> bool {

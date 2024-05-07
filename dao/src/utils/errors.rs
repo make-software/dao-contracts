@@ -69,6 +69,8 @@ execution_error! {
         OnboardingRequestNotFound => 3416,
         OnboardingConfigurationNotFound => 3417,
         AttachedValueMismatch => 3418,
+        NotAProposedOwner => 3419,
+        NoProposedOwner => 3420,
 
         // Bid Escrow Errors.
         CannotPostJobForSelf => 4000,

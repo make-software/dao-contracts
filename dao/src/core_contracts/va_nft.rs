@@ -39,7 +39,13 @@ impl VaNftContract {
         to self.token {
             /// Changes the ownership of the contract. Transfers ownership to the `owner`.
             /// Only the current owner is permitted to call this method.
-            /// [`Read more`](crate::modules::access_control::AccessControl::change_ownership())
+            /// [`Read more`](crate::modules::access_control::AccessControl::propose_new_owner())
+            pub fn propose_new_owner(&mut self, owner: Address);
+            /// Accepts the new owner proposition. This can be called only by the proposed owner.
+            /// [`Read more`](crate::modules::access_control::AccessControl::accept_new_owner())
+            pub fn accept_new_owner(&mut self);
+            /// Changes the ownership of the contract to the new address.
+            /// [`Read more`](AccessControl::change_ownership())
             pub fn change_ownership(&mut self, owner: Address);
             /// Adds a new address to the whitelist.
             /// [`Read more`](crate::modules::access_control::AccessControl::add_to_whitelist())

@@ -10,8 +10,8 @@ Background:
     | VA2     | true  | 1000        |                 |
     | VA3     | true  | 1000        |                 |
   And Admin is the owner of all contracts
-  Then Alice is not whitelisted in ReputationToken contract 
-  And Bob is whitelisted in ReputationToken contract 
+  Then Alice is not whitelisted in ReputationToken contract
+  And Bob is whitelisted in ReputationToken contract
   And Bob is not the owner of ReputationToken contract
 
 Scenario Outline: Voting passed, action applied

@@ -1,5 +1,6 @@
 //! AccessControl module.
 use crate::modules::{Owner, Whitelist};
+use odra::contract_env::caller;
 use odra::types::Address;
 
 /// A AccessControl module storage definition.
@@ -23,16 +24,37 @@ impl AccessControl {
         self.whitelist.add_to_whitelist(address);
     }
 
-    /// Changes ownership of the contract. Transfer the ownership to the `owner`. Only the current owner
-    /// is permited to call this method.
+    /// Proposes a change of ownership of the contract. Owner will be changed if accepted by propsed
+    /// new owner. Only the current owner is permited to call this method.
     ///
     /// # Errors
     /// Throws [`NotAnOwner`](crate::utils::Error::NotAnOwner) if caller
     /// is not the current owner.
     ///
+    pub fn propose_new_owner(&mut self, owner: Address) {
+        self.owner.ensure_owner();
+        self.owner.propose_owner(owner);
+    }
+
+    /// Accepts the new owner proposition. This can be called only by the proposed owner.
+    ///
     /// # Events
     /// Emits [`OwnerChanged`](crate::modules::owner::events::OwnerChanged),
     /// [`AddedToWhitelist`](crate::modules::whitelist::events::AddedToWhitelist) events.
+    pub fn accept_new_owner(&mut self) {
+        let caller = caller();
+        self.owner.accept_owner(caller);
+        self.whitelist.add_to_whitelist(caller);
+    }
+
+    /// Changes the ownership of the contract to the new address.
+    ///
+    /// # Events
+    /// Emits [`OwnerChanged`](crate::modules::owner::events::OwnerChanged) event.
+    ///
+    /// # Errors
+    /// Throws [`NotAnOwner`](crate::utils::Error::NotAnOwner) if caller
+    /// is not the current owner.
     pub fn change_ownership(&mut self, owner: Address) {
         self.owner.ensure_owner();
         self.owner.change_ownership(owner);

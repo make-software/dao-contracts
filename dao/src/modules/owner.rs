@@ -9,6 +9,7 @@ use odra::Variable;
 #[odra::module]
 pub struct Owner {
     pub owner: Variable<Address>,
+    pub proposed_owner: Variable<Option<Address>>,
 }
 
 /// Module entrypoints implementation.
@@ -20,9 +21,27 @@ impl Owner {
         self.change_ownership(owner);
     }
 
+    /// Sets a new owner proposition.
+    pub fn propose_owner(&mut self, owner: Address) {
+        self.proposed_owner.set(Some(owner));
+    }
+
+    /// Accepts the new owner proposition.
+    pub fn accept_owner(&mut self, caller: Address) {
+        if let Some(proposed_owner) = self.proposed_owner.get_or_default() {
+            if proposed_owner != caller {
+                revert(Error::NotAProposedOwner);
+            }
+            self.change_ownership(proposed_owner);
+        } else {
+            revert(Error::NoProposedOwner);
+        }
+    }
+
     /// Set the owner to the new address.
     pub fn change_ownership(&mut self, owner: Address) {
         self.owner.set(owner);
+        self.proposed_owner.set(None);
 
         OwnerChanged { new_owner: owner }.emit();
     }

@@ -43,6 +43,15 @@ fn assert_ownership(world: &mut DaoWorld, user: Account, contract: Account) {
     assert_eq!(owner, Some(user_address));
 }
 
+#[then(expr = "{account} is the proposed owner of {account} contract")]
+fn assert_proposed_ownership(world: &mut DaoWorld, user: Account, contract: Account) {
+    let user_address = world.get_address(&user);
+    world.set_caller(&user);
+    world.accept_new_owner(&contract);
+    let owner = world.get_owner(&contract);
+    assert_eq!(owner, Some(user_address));
+}
+
 #[then(expr = "{account} is not the owner of {account} contract")]
 fn assert_ne_ownership(world: &mut DaoWorld, user: Account, contract: Account) {
     let user_address = world.get_address(&user);

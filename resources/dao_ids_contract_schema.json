@@ -14,7 +14,7 @@
       "return_ty": "U32"
     },
     {
-      "name": "change_ownership",
+      "name": "propose_new_owner",
       "is_mutable": true,
       "args": [
         {

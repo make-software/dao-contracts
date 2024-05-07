@@ -21,6 +21,23 @@
       "return_ty": "Unit"
     },
     {
+      "name": "propose_new_owner",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "accept_new_owner",
+      "is_mutable": true,
+      "args": [],
+      "return_ty": "Unit"
+    },
+    {
       "name": "change_ownership",
       "is_mutable": true,
       "args": [
