@@ -39,9 +39,6 @@ impl ReputationContract {
             /// Accepts the new owner proposition. This can be called only by the proposed owner.
             /// See [AccessControl](AccessControl::accept_new_owner())
             pub fn accept_new_owner(&mut self);
-            /// Changes the ownership of the contract to the new address.
-            /// [`Read more`](AccessControl::change_ownership())
-            pub fn change_ownership(&mut self, owner: Address);
             /// Adds a  new address to the whitelist.
             ///
             /// See [AccessControl](AccessControl::add_to_whitelist())

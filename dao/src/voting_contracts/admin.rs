@@ -48,7 +48,6 @@ impl AdminContract {
         to self.access_control {
             pub fn propose_new_owner(&mut self, owner: Address);
             pub fn accept_new_owner(&mut self);
-            pub fn change_ownership(&mut self, owner: Address);
             pub fn add_to_whitelist(&mut self, address: Address);
             pub fn remove_from_whitelist(&mut self, address: Address);
             pub fn is_whitelisted(&self, address: Address) -> bool;
@@ -180,7 +179,6 @@ impl AdminVotingCreated {
 pub enum Action {
     AddToWhitelist,
     RemoveFromWhitelist,
-    ChangeOwnership,
     ProposeNewOwner,
 }
 
@@ -189,7 +187,6 @@ impl Action {
         match self {
             Action::AddToWhitelist => "add_to_whitelist",
             Action::RemoveFromWhitelist => "remove_from_whitelist",
-            Action::ChangeOwnership => "change_ownership",
             Action::ProposeNewOwner => "propose_new_owner",
         }
         .to_string()
@@ -199,7 +196,6 @@ impl Action {
         match self {
             Action::AddToWhitelist => "address",
             Action::RemoveFromWhitelist => "address",
-            Action::ChangeOwnership => "owner",
             Action::ProposeNewOwner => "owner",
         }
     }

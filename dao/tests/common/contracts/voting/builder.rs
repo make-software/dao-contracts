@@ -19,7 +19,7 @@ pub fn build(world: &DaoWorld, voting: Voting) -> VotingSetup {
             let action = match action.as_str() {
                 "add_to_whitelist" => AdminAction::AddToWhitelist,
                 "remove_from_whitelist" => AdminAction::RemoveFromWhitelist,
-                "change_ownership" => AdminAction::ChangeOwnership,
+                "propose_new_owner" => AdminAction::ProposeNewOwner,
                 unknown => panic!("{:?} is not a valid action", unknown),
             };
 

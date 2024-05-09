@@ -47,20 +47,6 @@ impl AccessControl {
         self.whitelist.add_to_whitelist(caller);
     }
 
-    /// Changes the ownership of the contract to the new address.
-    ///
-    /// # Events
-    /// Emits [`OwnerChanged`](crate::modules::owner::events::OwnerChanged) event.
-    ///
-    /// # Errors
-    /// Throws [`NotAnOwner`](crate::utils::Error::NotAnOwner) if caller
-    /// is not the current owner.
-    pub fn change_ownership(&mut self, owner: Address) {
-        self.owner.ensure_owner();
-        self.owner.change_ownership(owner);
-        self.whitelist.add_to_whitelist(owner);
-    }
-
     /// Adds a new address to the whitelist.
     ///
     /// # Errors

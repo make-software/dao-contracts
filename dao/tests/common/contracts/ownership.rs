@@ -1,3 +1,5 @@
+use dao::utils::Error::NoProposedOwner;
+use odra::test_env;
 use odra::types::address::OdraAddress;
 use odra::types::Address;
 
@@ -67,6 +69,13 @@ impl DaoWorld {
     pub fn accept_new_owner(&mut self, contract: &Account) {
         let contract = self.get_address(contract);
         AccessControlRef::at(&contract).accept_new_owner();
+    }
+
+    pub fn accept_new_owner_fails(&mut self, contract: &Account) {
+        let contract = self.get_address(contract);
+        test_env::assert_exception(NoProposedOwner, || {
+            AccessControlRef::at(&contract).accept_new_owner()
+        });
     }
 
     pub fn accept_new_owner_as_contract(&mut self, contract: &Account, new_owner: &Account) {

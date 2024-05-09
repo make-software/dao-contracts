@@ -40,9 +40,6 @@ impl DaoNft {
             /// Accepts the new owner proposition. This can be called only by the proposed owner.
             /// [`Read more`](AccessControl::accept_new_owner())
             pub fn accept_new_owner(&mut self);
-            /// Changes the ownership of the contract to the new address.
-            /// [`Read more`](AccessControl::change_ownership())
-            pub fn change_ownership(&mut self, owner: Address);
             /// Adds a new address to the whitelist.
             /// [`Read more`](AccessControl::add_to_whitelist())
             pub fn add_to_whitelist(&mut self, address: Address);
