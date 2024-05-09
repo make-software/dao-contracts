@@ -1,6 +1,6 @@
 use crate::configuration::ConfigurationBuilder;
 use crate::modules::refs::ContractRefs;
-use crate::modules::AccessControl;
+use crate::modules::{AccessControl, AccessControlRef};
 use crate::utils::ContractCall;
 use crate::voting::ballot::{Ballot, Choice};
 use crate::voting::types::VotingId;
@@ -117,6 +117,11 @@ impl AdminContract {
     pub fn slash_voter(&mut self, voter: Address) -> SlashedVotings {
         self.access_control.ensure_whitelisted();
         self.voting_engine.slash_voter(voter)
+    }
+
+    /// Accepts ownership of the contract.
+    pub fn accept_ownership(&mut self, contract_address: Address) {
+        AccessControlRef::at(&contract_address).accept_new_owner();
     }
 }
 

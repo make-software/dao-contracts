@@ -78,6 +78,17 @@
       "return_ty": "Any"
     },
     {
+      "name": "accept_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "contract_address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
       "name": "voting_exists",
       "is_mutable": false,
       "args": [
