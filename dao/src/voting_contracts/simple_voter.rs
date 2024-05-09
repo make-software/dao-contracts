@@ -54,7 +54,8 @@ impl SimpleVoterContract {
         }
 
         to self.access_control {
-            pub fn change_ownership(&mut self, owner: Address);
+            pub fn propose_new_owner(&mut self, owner: Address);
+            pub fn accept_new_owner(&mut self);
             pub fn add_to_whitelist(&mut self, address: Address);
             pub fn remove_from_whitelist(&mut self, address: Address);
             pub fn is_whitelisted(&self, address: Address) -> bool;
@@ -100,19 +101,13 @@ impl SimpleVoterContract {
     pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
         let voting_summary = self.voting_engine.finish_voting(voting_id, voting_type);
 
-        if let VotingType::Informal = voting_summary.voting_type() {
-            match voting_summary.voting_type() {
-                VotingType::Informal => {}
-                // Informal voting ended in favor, creating a new formal voting
-                VotingType::Formal => {
-                    self.simple_votings.set(
-                        &voting_id,
-                        self.simple_votings
-                            .get(&voting_id)
-                            .unwrap_or_revert_with(Error::VariableValueNotSet),
-                    );
-                }
-            }
+        if let VotingType::Formal = voting_summary.voting_type() {
+            self.simple_votings.set(
+                &voting_id,
+                self.simple_votings
+                    .get(&voting_id)
+                    .unwrap_or_revert_with(Error::VariableValueNotSet),
+            );
         }
         voting_summary
     }

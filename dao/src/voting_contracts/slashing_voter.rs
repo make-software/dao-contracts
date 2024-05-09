@@ -55,7 +55,8 @@ impl SlashingVoterContract {
         }
 
         to self.access_control {
-            pub fn change_ownership(&mut self, owner: Address);
+            pub fn propose_new_owner(&mut self, owner: Address);
+            pub fn accept_new_owner(&mut self);
             pub fn add_to_whitelist(&mut self, address: Address);
             pub fn remove_from_whitelist(&mut self, address: Address);
             pub fn is_whitelisted(&self, address: Address) -> bool;

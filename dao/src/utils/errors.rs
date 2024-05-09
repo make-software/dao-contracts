@@ -69,6 +69,8 @@ execution_error! {
         OnboardingRequestNotFound => 3416,
         OnboardingConfigurationNotFound => 3417,
         AttachedValueMismatch => 3418,
+        NotAProposedOwner => 3419,
+        NoProposedOwner => 3420,
 
         // Bid Escrow Errors.
         CannotPostJobForSelf => 4000,
@@ -109,6 +111,10 @@ execution_error! {
         OnboardedWorkerCannotStakeCSPR => 4035,
         NotOnboardedWorkerMustStakeCSPR => 4036,
         CannotStakeBothCSPRAndReputation => 4037,
+        BidAlreadyPicked => 4038,
+        BidCanceled => 4039,
+        BidRejected => 4040,
+        JobProofSubmittedAfterGracePeriod => 4041,
 
         // Reputation Token Errors.
         CannotStakeTwice => 4500,

@@ -8,11 +8,15 @@ use odra::types::Balance;
 pub struct DoesProposedPaymentMatchTransferred {
     proposed_payment: Balance,
     transferred: Balance,
+    declared: Balance,
 }
 
 impl Validation for DoesProposedPaymentMatchTransferred {
     fn validate(&self) -> Result<(), Error> {
-        if self.proposed_payment != self.transferred {
+        if (self.proposed_payment != self.transferred)
+            || (self.proposed_payment != self.declared)
+            || self.transferred != self.declared
+        {
             return Err(Error::PurseBalanceMismatch);
         }
 

@@ -82,6 +82,7 @@ impl StakesStorage {
     }
 }
 
+#[allow(dead_code)]
 trait UpdatableVec<K, R> {
     fn push_record(&mut self, key: &K, record: R);
     fn remove_record(&mut self, key: &K, record: R);

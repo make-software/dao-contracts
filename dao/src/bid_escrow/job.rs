@@ -1,7 +1,10 @@
 //! Bid-related structs.
 
+use crate::bid_escrow::bid::BidStatus;
 use crate::bid_escrow::types::{BidId, JobId, JobOfferId};
-use crate::rules::validation::bid_escrow::{CanPickBid, DoesProposedPaymentMatchTransferred};
+use crate::rules::validation::bid_escrow::{
+    CanBidBePicked, CanPickBid, DoesProposedPaymentMatchTransferred,
+};
 use crate::rules::RulesBuilder;
 use crate::utils::types::DocumentHash;
 use crate::utils::Error;
@@ -48,10 +51,14 @@ pub struct PickBidRequest {
     pub payment: Balance,
     /// The amount transferred by `Job Poster`.
     pub transferred_cspr: Balance,
+    /// The amount declared to be transferred by `Job Poster`.
+    pub cspr_amount: Balance,
     /// Bid reputation stake.
     pub stake: Balance,
     /// Bid CSPR stake - for an [External Worker](crate::bid_escrow#definitions).
     pub external_worker_cspr_stake: Balance,
+    /// Bid status
+    pub bid_status: BidStatus,
 }
 
 /// Data required to reclaim the Job.
@@ -78,6 +85,7 @@ pub struct ReclaimJobRequest {
 pub struct SubmitJobProofRequest {
     pub proof: DocumentHash,
     pub caller: Address,
+    pub block_time: BlockTime,
 }
 
 /// Serializable representation of a `Job`.
@@ -111,9 +119,11 @@ impl Job {
     pub fn new(request: &PickBidRequest) -> Self {
         RulesBuilder::new()
             .add_validation(CanPickBid::create(request.caller, request.poster))
+            .add_validation(CanBidBePicked::create(request.bid_status))
             .add_validation(DoesProposedPaymentMatchTransferred::create(
                 request.payment,
                 request.transferred_cspr,
+                request.cspr_amount,
             ))
             .build()
             .validate_generic_validations();
@@ -182,10 +192,6 @@ impl Job {
     /// * [`Error::CannotCancelJob`]
     /// * [`Error::JobCannotBeYetCanceled`]
     pub fn validate_cancel(&self, block_time: BlockTime, caller: Address) -> Result<(), Error> {
-        if self.status() != JobStatus::Created {
-            return Err(Error::CannotCancelJob);
-        }
-
         if self.finish_time() + self.grace_period() >= block_time {
             return Err(Error::JobCannotBeYetCanceled);
         }
@@ -218,6 +224,10 @@ impl Job {
 
         if self.worker() != request.caller {
             revert(Error::OnlyWorkerCanSubmitProof);
+        }
+
+        if self.finish_time() + self.grace_period() < request.block_time {
+            revert(Error::JobProofSubmittedAfterGracePeriod);
         }
 
         self.job_proof = Some(request.proof);

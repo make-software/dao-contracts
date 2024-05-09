@@ -28,6 +28,7 @@ Live version: https://make-software.github.io/dao-contracts.
 - `Rust` toolchain installed (see [rustup.rs](https://rustup.rs/)),
 - `cargo odra` installed `cargo install --version 0.0.10 --force --locked cargo-odra`
 - `wasmstrip` tool installed (see [wabt](https://github.com/WebAssembly/wabt)).
+- `wasm-opt` tool installed (see [binaryen](https://github.com/WebAssembly/binaryen)).
 - `just` tool installed (see [just](https://github.com/casey/just)).
 - `wabt` installed (see [wabt](https://github.com/WebAssembly/wabt)).
 

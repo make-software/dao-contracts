@@ -18,6 +18,7 @@ use crate::configuration::{Configuration, ConfigurationBuilder};
 use crate::modules::refs::ContractRefs;
 use crate::utils::withdraw;
 use alloc::rc::Rc;
+use odra::contract_env;
 use odra::contract_env::{caller, get_block_time};
 use odra::prelude::{vec, vec::Vec};
 use odra::types::{event::OdraEvent, Address, Balance, BlockTime};
@@ -231,9 +232,11 @@ impl BidEngine {
             block_time: get_block_time(),
             timeframe: bid.proposed_timeframe,
             payment: bid.proposed_payment,
-            transferred_cspr: cspr_amount,
+            transferred_cspr: contract_env::attached_value(),
+            cspr_amount,
             stake: bid.reputation_stake,
             external_worker_cspr_stake: bid.cspr_stake.unwrap_or_default(),
+            bid_status: bid.status,
         };
 
         let job = Job::new(&pick_bid_request);

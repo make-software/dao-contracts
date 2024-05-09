@@ -78,6 +78,17 @@
       "return_ty": "Any"
     },
     {
+      "name": "accept_ownership",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "contract_address",
+          "ty": "Key"
+        }
+      ],
+      "return_ty": "Unit"
+    },
+    {
       "name": "voting_exists",
       "is_mutable": false,
       "args": [
@@ -174,7 +185,7 @@
       "return_ty": "Unit"
     },
     {
-      "name": "change_ownership",
+      "name": "propose_new_owner",
       "is_mutable": true,
       "args": [
         {
@@ -182,6 +193,12 @@
           "ty": "Key"
         }
       ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "accept_new_owner",
+      "is_mutable": true,
+      "args": [],
       "return_ty": "Unit"
     },
     {

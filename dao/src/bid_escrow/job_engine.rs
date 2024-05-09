@@ -64,6 +64,7 @@ impl JobEngine {
         job.submit_proof(SubmitJobProofRequest {
             proof,
             caller: worker,
+            block_time: get_block_time(),
         });
 
         JobSubmitted::new(&job).emit();

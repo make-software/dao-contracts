@@ -10,8 +10,8 @@ Background:
     | VA2     | true  | 1000        |                 |
     | VA3     | true  | 1000        |                 |
   And Admin is the owner of all contracts
-  Then Alice is not whitelisted in ReputationToken contract 
-  And Bob is whitelisted in ReputationToken contract 
+  Then Alice is not whitelisted in ReputationToken contract
+  And Bob is whitelisted in ReputationToken contract
   And Bob is not the owner of ReputationToken contract
 
 Scenario Outline: Voting passed, action applied
@@ -23,7 +23,7 @@ Scenario Outline: Voting passed, action applied
     | action                | subject | result                                         |
     | add_to_whitelist      | Alice   | is whitelisted in ReputationToken contract     |
     | remove_from_whitelist | Bob     | is not whitelisted in ReputationToken contract |
-    | change_ownership      | Bob     | is the owner of ReputationToken contract       |
+    | propose_new_owner     | Bob     | is the proposed owner of ReputationToken contract       |
 
 Scenario Outline: Voting rejected, action not applied
   When Admin voting with id 0 created by VA1 fails
@@ -34,4 +34,4 @@ Scenario Outline: Voting rejected, action not applied
     | action                | subject | result                                         |
     | add_to_whitelist      | Alice   | is not whitelisted in ReputationToken contract |
     | remove_from_whitelist | Bob     | is whitelisted in ReputationToken contract     |
-    | change_ownership      | Bob     | is not the owner of ReputationToken contract   |
+    | propose_new_owner     | Bob     | is not the proposed owner of ReputationToken contract   |

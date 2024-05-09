@@ -1,6 +1,6 @@
 use crate::configuration::ConfigurationBuilder;
 use crate::modules::refs::ContractRefs;
-use crate::modules::AccessControl;
+use crate::modules::{AccessControl, AccessControlRef};
 use crate::utils::ContractCall;
 use crate::voting::ballot::{Ballot, Choice};
 use crate::voting::types::VotingId;
@@ -46,7 +46,8 @@ impl AdminContract {
         }
 
         to self.access_control {
-            pub fn change_ownership(&mut self, owner: Address);
+            pub fn propose_new_owner(&mut self, owner: Address);
+            pub fn accept_new_owner(&mut self);
             pub fn add_to_whitelist(&mut self, address: Address);
             pub fn remove_from_whitelist(&mut self, address: Address);
             pub fn is_whitelisted(&self, address: Address) -> bool;
@@ -116,6 +117,11 @@ impl AdminContract {
         self.access_control.ensure_whitelisted();
         self.voting_engine.slash_voter(voter)
     }
+
+    /// Accepts ownership of the contract.
+    pub fn accept_ownership(&mut self, contract_address: Address) {
+        AccessControlRef::at(&contract_address).accept_new_owner();
+    }
 }
 
 /// Event emitted once voting is created.
@@ -173,7 +179,7 @@ impl AdminVotingCreated {
 pub enum Action {
     AddToWhitelist,
     RemoveFromWhitelist,
-    ChangeOwner,
+    ProposeNewOwner,
 }
 
 impl Action {
@@ -181,7 +187,7 @@ impl Action {
         match self {
             Action::AddToWhitelist => "add_to_whitelist",
             Action::RemoveFromWhitelist => "remove_from_whitelist",
-            Action::ChangeOwner => "change_ownership",
+            Action::ProposeNewOwner => "propose_new_owner",
         }
         .to_string()
     }
@@ -190,7 +196,7 @@ impl Action {
         match self {
             Action::AddToWhitelist => "address",
             Action::RemoveFromWhitelist => "address",
-            Action::ChangeOwner => "owner",
+            Action::ProposeNewOwner => "owner",
         }
     }
 }

@@ -123,7 +123,7 @@
       }
     },
     {
-      "name": "change_ownership",
+      "name": "propose_new_owner",
       "is_mutable": true,
       "args": [
         {
@@ -131,6 +131,12 @@
           "ty": "Key"
         }
       ],
+      "return_ty": "Unit"
+    },
+    {
+      "name": "accept_new_owner",
+      "is_mutable": true,
+      "args": [],
       "return_ty": "Unit"
     },
     {
