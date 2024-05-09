@@ -20,6 +20,10 @@ mock-vm = ["odra/mock-vm", "odra-modules/mock-vm", "macros/mock-vm"]
 casper = ["odra/casper", "odra-modules/casper", "macros/casper"]
 casper-livenet = ["odra/casper-livenet", "odra-modules/casper-livenet", "macros/casper-livenet"]
 
+[lints.clippy]
+non_canonical_clone_impl = "allow"
+get_first = "allow"
+
 [[test]]
 name = "test_ownership"
 harness = false

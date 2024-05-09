@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-odra = { version = "0.6.1", default-features = false }
+odra = { version = "0.6.2", default-features = false }
 dao = { path = "../dao", default-features = false }
-toml = "0.7"
+toml = "0.8.12"
 serde = "1.0"
 serde_derive = "1.0"
 chrono = "0.4.26"

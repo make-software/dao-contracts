@@ -6,7 +6,6 @@ use crate::rules::validation::voting::{
 use crate::rules::RulesBuilder;
 use crate::voting::ballot::Choice;
 use crate::voting::types::VotingId;
-use odra::prelude::vec;
 use odra::types::{Address, Balance, BlockTime};
 use odra::OdraType;
 
@@ -466,7 +465,7 @@ impl VotingSummary {
     }
 
     fn is_rejected(&self) -> bool {
-        vec![VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
+        [VotingResult::Against, VotingResult::QuorumNotReached].contains(&self.result)
     }
 }
 
