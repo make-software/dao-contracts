@@ -226,8 +226,8 @@ impl Job {
             revert(Error::OnlyWorkerCanSubmitProof);
         }
 
-        if self.finish_time() + self.grace_period() < request.block_time {
-            revert(Error::JobProofSubmittedAfterGracePeriod);
+        if self.finish_time() < request.block_time {
+            revert(Error::JobProofSubmittedAfterFinishTime);
         }
 
         self.job_proof = Some(request.proof);
