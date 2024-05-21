@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["bid_escrow","voting"],"struct":["IsUserKyced","IsVa"],"trait":["Validation","VotingValidation"]};

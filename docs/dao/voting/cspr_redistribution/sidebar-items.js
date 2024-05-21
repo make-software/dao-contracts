@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["redistribute_cspr_to_all_vas","redistribute_to_governance"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["access_control","kyc_info","owner","refs","repository","whitelist"]};

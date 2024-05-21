@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"fn":["per_mil_of","per_mil_of_as_u32","to_per_mils","withdraw"],"mod":["consts","types","variable_type"],"struct":["ContractCall"]};

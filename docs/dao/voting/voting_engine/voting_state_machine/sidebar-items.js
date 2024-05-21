@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["VotingResult","VotingState","VotingStateInTime","VotingType"],"struct":["Stats","VotingStateMachine","VotingSummary"]};

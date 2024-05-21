@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BidEscrowContract","BidEscrowContractDeployer","BidEscrowContractRef"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["JobStatus","WorkerType"],"struct":["Job","PickBidRequest","ReclaimJobRequest","SubmitJobProofRequest"]};
