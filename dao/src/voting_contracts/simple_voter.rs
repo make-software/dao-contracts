@@ -51,6 +51,7 @@ impl SimpleVoterContract {
             ) -> Option<Ballot>;
             pub fn get_voter(&self, voting_id: VotingId, voting_type: VotingType, at: u32) -> Option<Address>;
             pub fn cancel_finished_voting(&mut self, voting_id: VotingId);
+            pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary;
         }
 
         to self.access_control {
@@ -96,20 +97,6 @@ impl SimpleVoterContract {
             .set(&info.voting_id, document_hash.clone());
 
         SimpleVotingCreated::new(document_hash, info).emit();
-    }
-
-    pub fn finish_voting(&mut self, voting_id: VotingId, voting_type: VotingType) -> VotingSummary {
-        let voting_summary = self.voting_engine.finish_voting(voting_id, voting_type);
-
-        if let VotingType::Formal = voting_summary.voting_type() {
-            self.simple_votings.set(
-                &voting_id,
-                self.simple_votings
-                    .get(&voting_id)
-                    .unwrap_or_revert_with(Error::VariableValueNotSet),
-            );
-        }
-        voting_summary
     }
 
     pub fn get_document_hash(&self, voting_id: VotingId) -> Option<DocumentHash> {

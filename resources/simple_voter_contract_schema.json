@@ -36,21 +36,6 @@
       "return_ty": "Unit"
     },
     {
-      "name": "finish_voting",
-      "is_mutable": true,
-      "args": [
-        {
-          "name": "voting_id",
-          "ty": "U32"
-        },
-        {
-          "name": "voting_type",
-          "ty": "U32"
-        }
-      ],
-      "return_ty": "Any"
-    },
-    {
       "name": "get_document_hash",
       "is_mutable": false,
       "args": [
@@ -177,6 +162,21 @@
         }
       ],
       "return_ty": "Unit"
+    },
+    {
+      "name": "finish_voting",
+      "is_mutable": true,
+      "args": [
+        {
+          "name": "voting_id",
+          "ty": "U32"
+        },
+        {
+          "name": "voting_type",
+          "ty": "U32"
+        }
+      ],
+      "return_ty": "Any"
     },
     {
       "name": "propose_new_owner",
