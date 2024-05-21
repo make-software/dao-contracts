@@ -114,7 +114,7 @@ execution_error! {
         BidAlreadyPicked => 4038,
         BidCanceled => 4039,
         BidRejected => 4040,
-        JobProofSubmittedAfterGracePeriod => 4041,
+        JobProofSubmittedAfterFinishTime => 4041,
 
         // Reputation Token Errors.
         CannotStakeTwice => 4500,

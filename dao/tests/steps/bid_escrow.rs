@@ -268,7 +268,7 @@ fn bid_pick_failed(w: &mut DaoWorld, job_poster: Account, worker: Account) {
 fn submit_outdated_job_proof(w: &mut DaoWorld, worker: Account, job_id: JobId) {
     let worker = w.get_address(&worker);
     test_env::set_caller(worker);
-    test_env::assert_exception(Error::JobProofSubmittedAfterGracePeriod, || {
+    test_env::assert_exception(Error::JobProofSubmittedAfterFinishTime, || {
         w.bid_escrow
             .submit_job_proof(job_id, DocumentHash::from("Job Proof"));
     });
