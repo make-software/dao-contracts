@@ -1,14 +1,14 @@
 use odra::{
     contract_env::caller,
     types::{event::OdraEvent, Address, Balance, BlockTime},
-    Event, Mapping, UnwrapOrRevert,
+    Event, Mapping,
 };
 
 use crate::voting_contracts::SlashedVotings;
 use crate::{
     configuration::ConfigurationBuilder,
     modules::{refs::ContractRefs, AccessControl},
-    utils::{types::DocumentHash, Error},
+    utils::types::DocumentHash,
     voting::{
         ballot::{Ballot, Choice},
         types::VotingId,
