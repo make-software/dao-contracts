@@ -4,7 +4,7 @@ The following is a set of rules and guidelines for contributing to this repo. Pl
 
 ## Submitting issues
 
-If you have questions about how to use MVPR DAO for Casper, please direct these to the related channels on the [Casper Discord server](https://discord.gg/casperblockchain).
+If you have questions about how to use MVPR DAO for Casper, please direct these to the related channels on the [Casper Discord server](https://discord.gg/caspernetwork).
 
 ### Guidelines
 * Please search the existing issues first, it's likely that your issue was already reported or even fixed.
